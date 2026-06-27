@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -63,7 +64,7 @@ class FixtureReplayTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "malformed.json"
-            path.write_text(f"{fixture!r}".replace("'", '"'), encoding="utf-8")
+            path.write_text(json.dumps(fixture), encoding="utf-8")
 
             with self.assertRaisesRegex(
                 FixtureReplayError,
