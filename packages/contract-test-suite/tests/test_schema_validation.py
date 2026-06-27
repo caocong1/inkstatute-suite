@@ -146,6 +146,18 @@ class SchemaValidationTests(unittest.TestCase):
                 fixture_id=self.fixtures[0]["fixture_id"],
             )
 
+    def test_unknown_event_keys_under_bundle_events_fail(self) -> None:
+        fixture = copy.deepcopy(self.fixtures[0])
+        fixture["events"]["raw_legal_payload"] = {
+            "raw_payload": "Synthetic confidential legal text must stay out of contract events."
+        }
+
+        with self.assertRaisesRegex(
+            ContractValidationError,
+            r"raw_legal_payload.*unknown event key",
+        ):
+            validate_event_bundle(fixture, self.schemas)
+
     def test_forbidden_top_level_fields_fail_even_if_schema_allows_them(self) -> None:
         schemas = copy.deepcopy(self.schemas)
         schemas["agent_turn"]["properties"]["client_name"] = {"type": "string"}

@@ -96,6 +96,10 @@ def validate_event_bundle(
     if not isinstance(events, dict):
         raise ContractValidationError(f"{fixture_id}: events must be object")
 
+    extra_events = sorted(set(events) - set(EVENT_SCHEMA_BY_KEY))
+    if extra_events:
+        raise ContractValidationError(f"{fixture_id}.{extra_events[0]}: unknown event key")
+
     for event_key in EVENT_SCHEMA_BY_KEY:
         if event_key not in events:
             raise ContractValidationError(f"{fixture_id}.{event_key}: missing event")
