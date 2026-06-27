@@ -2,9 +2,3 @@ docs:
   - path: docs/requirements/V2-PRD.md
     type: PRD
     precedence: 10
-  - path: README.md
-    type: DOC
-    precedence: 50
-  - path: AGENTS.md
-    type: DOC
-    precedence: 40

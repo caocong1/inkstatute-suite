@@ -498,7 +498,7 @@ lawfirm 行业包 V2 就是 Hermes lawfirm profile 本身，加上契约层 hook
 ### 10.1 仓库与文档验收（基础）
 
 - `README.md` 说明 V2 定位、仓库结构、V2 文档入口。
-- `docs/requirements/V2-PRD.md` 覆盖目标、现状、功能范围、非目标、契约 schema、安全合规、验收。
+- 本文件覆盖目标、现状、功能范围、非目标、契约 schema、安全合规、验收。
 - `.gitignore` 排除密钥、日志、数据库、缓存、运行状态、客户文档、构建产物。
 - 仓库是 git repository。
 

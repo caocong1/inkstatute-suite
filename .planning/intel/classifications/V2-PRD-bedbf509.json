@@ -1,0 +1,30 @@
+{
+  "source_path": "/home/sorawatcher/workspace/inkstatute-suite/docs/requirements/V2-PRD.md",
+  "type": "PRD",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "墨律 InkStatute V2 需求规格说明书",
+  "summary": "Defines InkStatute V2 requirements for a Hermes lawfirm thin contract layer, contract schemas, feedback normalization, read views, CI, and lawyer trial acceptance.",
+  "scope": [
+    "InkStatute V2",
+    "Hermes lawfirm profile",
+    "platform-contract",
+    "contract-test-suite",
+    "hermes-contract-layer",
+    "conversation-read-view",
+    "feedback-service",
+    "WeCom bot",
+    "AgentTurn",
+    "AgentResult",
+    "FeedbackEvent",
+    "ExecutionTrace",
+    "RouteDecision",
+    "async task state machine",
+    "contract logs",
+    "lawyer trial acceptance"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": 10,
+  "notes": ""
+}
