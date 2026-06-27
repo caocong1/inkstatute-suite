@@ -1,0 +1,79 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-06-27T18:45:12.763Z",
+  "phase": "03",
+  "phase_name": "Hermes Integration Spike and Risk Closure",
+  "phase_dir": ".planning/phases/03-hermes-integration-spike-and-risk-closure",
+  "plan": 2,
+  "task": 1,
+  "total_tasks": 2,
+  "status": "blocked",
+  "completed_tasks": [
+    {
+      "id": "03-01",
+      "name": "Source inventory and integration risk matrix",
+      "status": "done",
+      "commit": "feeb1cc"
+    },
+    {
+      "id": "03-03",
+      "name": "Identifier, state, privacy, idempotency, and safety rules",
+      "status": "done",
+      "commit": "4800226"
+    },
+    {
+      "id": "03-02-partial",
+      "name": "Hook-order evidence gate and AgentTurn decision artifact",
+      "status": "blocked",
+      "commit": "983c852",
+      "progress": "03-HOOK-ORDER-EVIDENCE.md and 03-HOOK-AND-TURN-DECISIONS.md exist, but the evidence artifact contains BLOCKING_VERIFICATION_GAP and no successful 03-02 summary was created."
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": "03-02",
+      "name": "Replace blocking_gap with source_confirmed or sanitized_probe_tested hook-order evidence",
+      "status": "blocked"
+    },
+    {
+      "id": "03-04",
+      "name": "Non-happy-path fixtures and contract-test-suite coverage",
+      "status": "not_started",
+      "blocked_by": "03-02"
+    }
+  ],
+  "blockers": [
+    {
+      "description": "No Hermes source/runtime evidence or sanitized tested hook-order probe exists in this repo, so Plan 03-02 cannot prove whether contract_result_recorder can run after response_filter.",
+      "type": "external",
+      "workaround": "Mount Hermes source/runtime evidence or provide a sanitized tested hook-order probe. Do not mark 03-02 complete while 03-HOOK-ORDER-EVIDENCE.md contains BLOCKING_VERIFICATION_GAP."
+    }
+  ],
+  "human_actions_pending": [
+    {
+      "action": "Provide Hermes source/runtime files or a sanitized tested hook-order probe covering agent:end, response_filter, and candidate contract_result_recorder order.",
+      "context": "Phase 3 success criteria require a yes/no hook-order decision before 03-04 and Phase 4 production hook work can proceed.",
+      "blocking": true
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Treat PRD descriptions of Hermes hooks as specification evidence only.",
+      "rationale": "The repo has no source-confirmed Hermes hook loader, HOOK.yaml, handler.py, runtime trace, or sanitized probe output.",
+      "phase": "03"
+    },
+    {
+      "decision": "Do not run Plan 03-04 while Plan 03-02 is blocked.",
+      "rationale": "03-04 depends on 03-02 and Phase 3 verification requires hook-order evidence, not a placeholder.",
+      "phase": "03"
+    },
+    {
+      "decision": "Use AgentTurn reverse inference only as a limited fallback until inbound Hermes evidence exists.",
+      "rationale": "agent:end context can be incomplete and source-dependent fields must stay tagged as requires Hermes source/runtime.",
+      "phase": "03"
+    }
+  ],
+  "uncommitted_files": [],
+  "next_action": "Do not execute 03-04. First read .planning/phases/03-hermes-integration-spike-and-risk-closure/03-HOOK-ORDER-EVIDENCE.md and 03-HOOK-AND-TURN-DECISIONS.md, then either mount/provide Hermes hook-order evidence and rerun 03-02, or ask the user for that evidence.",
+  "context_notes": "Phase 03 Plan 01 and Plan 03-03 are complete. Plan 03-02 intentionally blocked instead of creating a false success summary. The working tree was clean before this handoff was written."
+}

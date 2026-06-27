@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
+status: blocked
 stopped_at: "Blocked at 03-02-PLAN.md: hook order verification gap"
-last_updated: "2026-06-27T18:43:21.896Z"
-last_activity: 2026-06-27 - Blocked Phase 03 Plan 02 on missing Hermes hook-order source/runtime or sanitized probe evidence.
+last_updated: "2026-06-27T18:45:12.763Z"
+last_activity: "2026-06-27 - Blocked Phase 03 Plan 02 on missing Hermes hook-order source/runtime or sanitized probe evidence."
 progress:
   total_phases: 8
   completed_phases: 2
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 
 Phase: 3 of 8 (hermes integration spike and risk closure)
 Plan: 2 of 4
-Status: Ready to execute
-Last activity: 2026-06-27 - Completed Phase 03 Plan 03 identifier, state, privacy, idempotency, and safety rules.
+Status: Blocked at 03-02 hook-order evidence gate
+Last activity: 2026-06-27 - Blocked Phase 03 Plan 02 on missing Hermes hook-order source/runtime or sanitized probe evidence.
 
 Progress: [████████░░] 80%
 
@@ -117,4 +117,4 @@ Items acknowledged and carried forward from previous milestone close:
 
 Last session: 2026-06-27T18:43:04.437Z
 Stopped at: Blocked at 03-02-PLAN.md: hook order verification gap
-Resume file: None
+Resume file: .planning/phases/03-hermes-integration-spike-and-risk-closure/.continue-here.md
