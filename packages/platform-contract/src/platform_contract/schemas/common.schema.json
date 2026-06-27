@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/common.schema.json",
+  "title": "InkStatute Platform Contract Shared Definitions",
+  "type": "object",
+  "$defs": {
+    "datetime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "industry_context": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "async_task_state": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "waiting_for_user",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "error_category": {
+      "type": "string",
+      "enum": [
+        "contract_error",
+        "runtime_error",
+        "channel_error"
+      ]
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "wecom",
+        "qqbot",
+        "web",
+        "desktop"
+      ]
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "file",
+        "image",
+        "voice",
+        "button_callback"
+      ]
+    },
+    "agent_result_status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "partial",
+        "failed",
+        "blocked",
+        "needs_clarification"
+      ]
+    },
+    "reply_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "markdown",
+        "file",
+        "card",
+        "status_update"
+      ]
+    },
+    "artifact_kind": {
+      "type": "string",
+      "enum": [
+        "docx",
+        "pptx",
+        "trackchanges_docx",
+        "xlsx",
+        "pdf",
+        "markdown",
+        "json",
+        "other"
+      ]
+    },
+    "feedback_source": {
+      "type": "string",
+      "enum": [
+        "card_button",
+        "text_command",
+        "web_form",
+        "admin_annotation"
+      ]
+    },
+    "feedback_event_type": {
+      "type": "string",
+      "enum": [
+        "rating",
+        "correction",
+        "fact_missing",
+        "citation_error",
+        "route_mismatch",
+        "format_issue",
+        "compliance_issue",
+        "skill_candidate"
+      ]
+    },
+    "feedback_action": {
+      "type": "string",
+      "enum": [
+        "up",
+        "down",
+        "needs_fix",
+        "route_wrong"
+      ]
+    },
+    "feedback_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "triaged",
+        "resolved",
+        "dismissed"
+      ]
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "skill_candidate_source": {
+      "type": "string",
+      "enum": [
+        "route_mismatch",
+        "repeated_feedback",
+        "unknown_task"
+      ]
+    },
+    "route_mode": {
+      "type": "string",
+      "enum": [
+        "matched",
+        "simple_qa",
+        "skipped",
+        "zero_match"
+      ]
+    },
+    "language_register": {
+      "type": "string",
+      "enum": [
+        "formal",
+        "colloquial"
+      ]
+    },
+    "attachment_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attachment_id",
+        "kind",
+        "uri"
+      ],
+      "properties": {
+        "attachment_id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "mime_type": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      }
+    },
+    "output_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "docx",
+            "pptx",
+            "xlsx",
+            "pdf",
+            "markdown",
+            "text",
+            "json",
+            "card",
+            "other"
+          ]
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "template_ref": {
+          "type": "string"
+        },
+        "citation_style": {
+          "type": "string"
+        },
+        "language_register": {
+          "$ref": "#/$defs/language_register"
+        },
+        "must_cite": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "kind",
+        "name",
+        "uri"
+      ],
+      "properties": {
+        "artifact_id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/artifact_kind"
+        },
+        "name": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "mime_type": {
+          "type": "string"
+        },
+        "template_ref": {
+          "type": "string"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      }
+    },
+    "skill_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "detected",
+        "source"
+      ],
+      "properties": {
+        "detected": {
+          "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/$defs/skill_candidate_source"
+        },
+        "proposed_name": {
+          "type": "string"
+        },
+        "risk_level": {
+          "$ref": "#/$defs/risk_level"
+        },
+        "requires_human_review": {
+          "type": "boolean",
+          "default": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "error_info": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category"
+      ],
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/error_category"
+        },
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "details": {
+          "$ref": "#/$defs/metadata"
+        }
+      }
+    }
+  }
+}
