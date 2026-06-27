@@ -94,6 +94,70 @@ Route mismatch, repeated negative feedback, or unknown-task evidence may create 
 - Candidate evidence must reference `feedback_id`, `turn_id`, `result_id`, `feedback_target`, or `raw_payload_ref`; it must not embed sensitive legal/customer payload text.
 - If Hermes runtime has an existing skill optimization flow, the boundary between normalized feedback and that flow is `requires Hermes source/runtime` until source confirms no automatic legal modification is triggered.
 
+## Async Task State Mapping Rules
+
+### D-06 Exact State Vocabulary
+
+D-06 locks the platform-visible async states to the `AsyncTaskState` enum in `packages/platform-contract/src/platform_contract/enums.py`:
+
+```text
+queued -> running -> waiting_for_user | succeeded | failed | cancelled
+```
+
+The exact values are `queued`, `running`, `waiting_for_user`, `succeeded`, `failed`, and `cancelled`. Phase 4 must not add aliases such as `pending`, `processing`, `done`, `error`, or `canceled` to contract logs.
+
+### Candidate Hermes Signal Table
+
+| AsyncTaskState value | Candidate Hermes signal | Contract meaning | Status tag | If signal is unavailable |
+|----------------------|-------------------------|------------------|------------|--------------------------|
+| `queued` | WeCom/gateway task accepted before skill execution or a Hermes queue/task record created after 5s ACK. | Task is accepted for async execution but active skill/tool work has not started. | requires Hermes source/runtime | Mark `queued` unavailable and start the trace at the earliest confirmed state; do not infer from receipt time alone unless source/runtime confirms the queue boundary. |
+| `running` | Active skill execution, tool/MCP call, or long-task worker log after routing. | Hermes is executing the task or generating artifacts. | requires Hermes source/runtime | Mark `running` unavailable; do not approximate from final result duration without a confirmed execution-start signal. |
+| `waiting_for_user` | Clarification gate, ask-user-enforcement prompt, or channel state showing user input is required. | Task is blocked on user clarification or additional materials and can resume without being terminal. | requires Hermes source/runtime | If no stable gate signal exists, record the AgentResult as `needs_clarification` where supported and mark async `waiting_for_user` unavailable. |
+| `succeeded` | Final response/file/card dispatch prepared or confirmed for the task. | Task completed successfully and produced user-visible output or artifact references. | requires Hermes source/runtime | If dispatch confirmation is missing, only mark `succeeded` from the final Hermes result event that Phase 4 proves is post-filter and user-visible. |
+| `failed` | Runtime, channel, contract validation, tool, or model error that prevents successful completion. | Task reached a terminal failure; `AgentResult.status=failed` and `ExecutionTrace.errors` should carry stage/category details. | requires Hermes source/runtime | If failure stage is absent, record a generic failure only when Hermes exposes an explicit failed result; do not classify silent missing output as failure without evidence. |
+| `cancelled` | Explicit user/operator cancellation, timeout cancellation, or worker cancellation event. | Task ended intentionally before completion and should not continue processing. | requires Hermes source/runtime | Mark `cancelled` unavailable unless a source/runtime cancellation signal exists; do not map ordinary failure or timeout to cancellation silently. |
+
+Unavailable states must stay visible in mapper documentation and fixture notes. Missing Hermes signals are not a reason to invent states or silently collapse them into `running` or `failed`.
+
+## Raw Payload Reference Rules
+
+### D-07 Reference-First Storage
+
+D-07 requires contract logs and fixtures to prefer `raw_payload_ref` over embedded payload bodies. The namespace rules are:
+
+| Namespace | Intended source | Example shape | Status |
+|-----------|-----------------|---------------|--------|
+| `raw_payload_ref:input` | User input, attachments, or session-source records used to infer `AgentTurn`. | `raw_payload_ref:input:{conversation_id}:{turn_id}` | assumed |
+| `raw_payload_ref:callback` | Template-card callback payload or `feedback.jsonl` source row. | `raw_payload_ref:callback:{feedback_target}:{callback_event_id_or_hash}` | assumed |
+| `raw_payload_ref:artifact` | Runtime-owned generated files or external artifact records. | `raw_payload_ref:artifact:{artifact_id}` | assumed |
+| `raw_payload_ref:runtime` | Hermes-owned source records, logs, preview rows, or session records. | `raw_payload_ref:runtime:{source}:{record_id}` | requires Hermes source/runtime |
+| `fixture://raw/...` | Synthetic test fixture payload placeholders only. | `fixture://raw/phase3-feedback-001` | confirmed |
+
+These namespace examples are contract-layer candidates, not confirmed Hermes paths. Actual source paths, record ids, access controls, and retention windows are `requires Hermes source/runtime`.
+
+## Retention and Storage Owner Assumptions
+
+- Contract logs own normalized contract events and minimal metadata only.
+- Hermes or the deployed runtime remains the assumed owner of raw input, callback, preview, session, and artifact payload storage until source/runtime evidence says otherwise.
+- Storage location, retention duration, deletion/destruction policy, and redaction enforcement are `requires Hermes source/runtime`.
+- If the retention owner cannot be identified in Phase 4, the writer must omit raw payload bodies and store only `raw_payload_ref` plus non-sensitive metadata.
+- Contract logs must not become a fallback raw payload store to satisfy coverage targets.
+
+## Minimum Redaction Rules
+
+Contract logs, Phase 3/4 fixtures, summaries, and normalized feedback records must not include these inline by default:
+
+- Sensitive full legal text, customer documents, complete case facts, or full contract content.
+- Full callback raw payload bodies.
+- plaintext secrets, tokens, keys, cookies, webhook signatures, or credential material.
+- complete ID numbers.
+- phone numbers.
+- bank accounts.
+- addresses.
+- Admin-only notes intended to be stripped from ordinary user-visible responses.
+
+Allowed values should be references, stable identifiers, coarse labels, counts, statuses, categories, and redacted previews only. When a later implementation needs raw evidence for debugging, the event must point to `raw_payload_ref` and rely on the runtime owner for access control, retention, and redaction.
+
 ## Phase 4/6 Inputs
 
 Phase 4 mapper work can consume the confirmed contract-side graph now. Phase 4/6 implementation must still obtain Hermes source/runtime evidence for:
@@ -102,3 +166,5 @@ Phase 4 mapper work can consume the confirmed contract-side graph now. Phase 4/6
 2. Actual `template_card_id`, `callback_event_id`, callback action, user id, and timestamp field names.
 3. Whether `feedback.jsonl` already contains enough fields to populate `FeedbackEvent.result_id`, `FeedbackEvent.feedback_target`, and `raw_payload_ref`.
 4. Whether existing Hermes skill optimization can be invoked only after explicit human review.
+5. Which Hermes source/runtime signals map to `queued`, `running`, `waiting_for_user`, `succeeded`, `failed`, and `cancelled`.
+6. Which raw payload storage owner, storage location, retention policy, and redaction mechanism can satisfy D-07 without embedding sensitive data in contract logs.
