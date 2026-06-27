@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 02-contract-test-suite-foundation-01-PLAN.md
-last_updated: "2026-06-27T17:03:19.486Z"
-last_activity: 2026-06-27 - Phase 2 Plan 01 completed: dependency-free contract-test-suite schema validation harness.
+stopped_at: Completed 02-contract-test-suite-foundation-02-PLAN.md
+last_updated: "2026-06-27T17:13:18.799Z"
+last_activity: "2026-06-27 - Phase 2 Plan 02 completed: fixture replay relationship integrity harness."
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
-  percent: 67
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
@@ -26,17 +26,17 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 2 of 8 (contract test suite foundation)
-Plan: 2 of 3
-Status: In Progress
-Last activity: 2026-06-27 - Phase 2 Plan 01 completed: dependency-free contract-test-suite schema validation harness.
+Plan: 3 of 3
+Status: Ready to execute
+Last activity: 2026-06-27 - Phase 2 Plan 02 completed: fixture replay relationship integrity harness.
 
-Progress: [███████░░░] 67%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -45,7 +45,7 @@ Progress: [███████░░░] 67%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 | 3 | - | - |
-| 2 | 1 | - | - |
+| 2 | 2 | - | - |
 
 **Recent Trend:**
 
@@ -56,6 +56,7 @@ Progress: [███████░░░] 67%
 | Phase 01-platform-contract-foundation P01 | 8min | 2 tasks | 7 files |
 | Phase 01-platform-contract-foundation P03 | 4m19s | 2 tasks | 6 files |
 | Phase 02-contract-test-suite-foundation P01 | 3m55s | 2 tasks | 6 files |
+| Phase 02-contract-test-suite-foundation P02 | 3m57s | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 02]: Keep the contract-test-suite dependency-free and use only Python stdlib unittest/json/pathlib.
 - [Phase 02]: Consume Phase 1 platform-contract schemas and fixtures by path instead of duplicating contract definitions.
 - [Phase 02]: Reject forbidden legal/sensitive top-level fields in the validator even if a future schema accidentally allows them.
+- [Phase 02]: Keep fixture replay dependency-free and reuse Plan 02-01 validate_event_bundle before relationship checks.
+- [Phase 02]: Model relationship failures as structured RelationshipIssue records with fixture id, field path, expected value, and actual value.
+- [Phase 02]: Enforce relationship breakage tolerance in assert_relationship_integrity while replay_fixtures returns a structured report.
 
 ### Pending Todos
 
@@ -97,6 +101,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T17:03:19.482Z
-Stopped at: Completed 02-contract-test-suite-foundation-01-PLAN.md
+Last session: 2026-06-27T17:13:18.738Z
+Stopped at: Completed 02-contract-test-suite-foundation-02-PLAN.md
 Resume file: None
