@@ -56,7 +56,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### Contract Verification
 
-- [ ] **REQ-contract-test-suite**: Provide a contract test suite that validates schemas, replays fixtures, verifies event relationships, and enforces composability in CI.
+- [x] **REQ-contract-test-suite**: Provide a contract test suite that validates schemas, replays fixtures, verifies event relationships, and enforces composability in CI.
   - Schema validation covers required fields, enums, and invalid values for all five schemas.
   - Fixture replay validates golden examples from Hermes hook output.
   - Relationship checks verify message-to-task-to-route-to-response-to-feedback continuity with a breakage rate no greater than 5%.
@@ -182,7 +182,7 @@ Explicitly excluded from V2 to prevent scope creep.
 |-------------|-------|--------|
 | REQ-platform-contract-package | Phase 1 | Complete |
 | REQ-contract-event-schemas | Phase 1 | Complete |
-| REQ-contract-test-suite | Phase 2 | Pending |
+| REQ-contract-test-suite | Phase 2 | Complete |
 | REQ-implementation-risk-resolution | Phase 3 | Pending |
 | REQ-hermes-contract-layer | Phase 4 | Pending |
 | REQ-observability-and-replay | Phase 4 | Pending |
