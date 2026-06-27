@@ -69,6 +69,12 @@
     },
     "created_at": {
       "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
     }
   }
 }

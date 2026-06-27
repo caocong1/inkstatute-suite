@@ -74,8 +74,9 @@ class SkillCandidate:
 @dataclass(frozen=True, slots=True)
 class ErrorInfo:
     category: ErrorCategory | str
-    code: str
-    message: str
+    code: str | None = None
+    message: str | None = None
+    stage: str | None = None
     retryable: bool | None = None
     details: JsonObject = field(default_factory=dict)
     metadata: JsonObject = field(default_factory=dict)
@@ -125,6 +126,7 @@ class FeedbackEvent:
     status: FeedbackStatus | str
     created_at: str
     result_id: str | None = None
+    feedback_target: str | None = None
     rating: float | None = None
     action: FeedbackAction | str | None = None
     message: str | None = None

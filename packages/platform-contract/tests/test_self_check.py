@@ -1,5 +1,6 @@
 import sys
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -44,8 +45,25 @@ class SelfCheckTests(unittest.TestCase):
     def test_fixture_required_fields_and_enums(self):
         self_check.assert_fixture_required_fields(self.schemas, self.fixtures)
 
+    def test_fixture_rejects_unknown_top_level_fields(self):
+        fixtures = deepcopy(self.fixtures)
+        fixtures[0]["events"]["feedback_event"]["unsupported_field"] = "not allowed"
+
+        with self.assertRaisesRegex(AssertionError, "unsupported fields"):
+            self_check.assert_fixture_required_fields(self.schemas, fixtures)
+
+    def test_fixture_rejects_sensitive_top_level_fields(self):
+        fixtures = deepcopy(self.fixtures)
+        fixtures[0]["events"]["agent_turn"]["raw_payload"] = "sensitive content"
+
+        with self.assertRaisesRegex(AssertionError, "forbidden top-level fields"):
+            self_check.assert_fixture_required_fields(self.schemas, fixtures)
+
     def test_fixture_relationships(self):
         self_check.assert_fixture_relationships(self.fixtures)
+
+    def test_python_binding_schema_parity(self):
+        self_check.assert_python_binding_schema_parity(self.schemas)
 
     def test_main_returns_zero(self):
         self.assertEqual(self_check.main(), 0)

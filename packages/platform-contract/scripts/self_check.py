@@ -159,6 +159,7 @@ def main():
     assert_fixture_required_fields(schemas, fixtures)
     assert_fixture_relationships(fixtures)
     _assert_python_bindings_compile()
+    assert_python_binding_schema_parity(schemas)
 
     print("platform-contract self-check passed")
     return 0
@@ -181,15 +182,60 @@ def _assert_python_bindings_compile():
             raise AssertionError(f"{cls.__name__} has no dataclass fields")
 
 
+def assert_python_binding_schema_parity(schemas):
+    import platform_contract
+
+    event_pairs = {
+        "agent_turn": platform_contract.AgentTurn,
+        "agent_result": platform_contract.AgentResult,
+        "feedback_event": platform_contract.FeedbackEvent,
+        "execution_trace": platform_contract.ExecutionTrace,
+        "route_decision": platform_contract.RouteDecision,
+    }
+    common_pairs = {
+        "attachment_ref": platform_contract.AttachmentRef,
+        "output_constraints": platform_contract.OutputConstraints,
+        "artifact": platform_contract.Artifact,
+        "skill_candidate": platform_contract.SkillCandidate,
+        "error_info": platform_contract.ErrorInfo,
+    }
+
+    for schema_name, cls in event_pairs.items():
+        _assert_field_parity(schema_name, schemas[schema_name], cls)
+
+    common_defs = schemas["common"]["$defs"]
+    for schema_name, cls in common_pairs.items():
+        _assert_field_parity(schema_name, common_defs[schema_name], cls)
+
+
+def _assert_field_parity(schema_name, schema, cls):
+    schema_fields = set(schema.get("properties", {}))
+    binding_fields = {field.name for field in fields(cls)}
+    if schema_fields != binding_fields:
+        raise AssertionError(
+            f"{schema_name} schema/binding mismatch: "
+            f"schema_only={sorted(schema_fields - binding_fields)}, "
+            f"binding_only={sorted(binding_fields - schema_fields)}"
+        )
+
+
 def _assert_required_and_enums(schema, value, schemas, context):
     if not isinstance(value, dict):
         raise AssertionError(f"{context} must be an object")
+
+    properties = schema.get("properties", {})
+    forbidden = set(value) & FORBIDDEN_REQUIRED_FIELDS
+    if forbidden:
+        raise AssertionError(f"{context} has forbidden top-level fields: {sorted(forbidden)}")
+
+    extra_fields = set(value) - set(properties)
+    if schema.get("additionalProperties") is False and extra_fields:
+        raise AssertionError(f"{context} has unsupported fields: {sorted(extra_fields)}")
 
     for field_name in schema.get("required", []):
         if field_name not in value:
             raise AssertionError(f"{context} missing required field {field_name}")
 
-    properties = schema.get("properties", {})
     for field_name, field_value in value.items():
         field_schema = properties.get(field_name)
         if field_schema is None:
