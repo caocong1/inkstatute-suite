@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-06-27T18:30:29.274Z"
-last_activity: 2026-06-27 - Completed Phase 03 Plan 01 source inventory and integration risk matrix.
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-06-27T18:38:19.740Z"
+last_activity: 2026-06-27 - Completed Phase 03 Plan 03 identifier, state, privacy, idempotency, and safety rules.
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 10
-  completed_plans: 7
-  percent: 70
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -26,17 +26,17 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 3 of 8 (hermes integration spike and risk closure)
-Plan: 1 of 4
-Status: Executing
-Last activity: 2026-06-27 - Completed Phase 03 Plan 01 source inventory and integration risk matrix.
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-06-27 - Completed Phase 03 Plan 03 identifier, state, privacy, idempotency, and safety rules.
 
-Progress: [███████░░░] 70%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -59,6 +59,7 @@ Progress: [███████░░░] 70%
 | Phase 02-contract-test-suite-foundation P02 | 3m57s | 2 tasks | 4 files |
 | Phase 02-contract-test-suite-foundation P03 | 4m27s | 3 tasks | 7 files |
 | Phase 03 P01 | 3m53s | 2 tasks | 3 files |
+| Phase 03 P03 | 3m07s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,10 @@ Recent decisions affecting current work:
 - [Phase 03]: [Phase 03 Plan 01]: Treat PRD descriptions of Hermes hooks and feedback flow as specification evidence, not source-confirmed Hermes API evidence.
 - [Phase 03]: [Phase 03 Plan 01]: Block separate Phase 4 contract_result_recorder hook work until Hermes hook ordering after response_filter is source/runtime-confirmed or a fallback is selected.
 - [Phase 03]: [Phase 03 Plan 01]: Carry message_id, callback payload, long-task state, and raw payload storage details into downstream plans as requires Hermes source/runtime.
+- [Phase 03]: [Phase 03 Plan 03]: Use feedback_target = message_id only after Hermes source/runtime proves message_id survives response filtering, preview storage, card dispatch, callbacks, and feedback rows.
+- [Phase 03]: [Phase 03 Plan 03]: Map async task states only to exact platform AsyncTaskState values and mark missing Hermes signals unavailable rather than approximating them.
+- [Phase 03]: [Phase 03 Plan 03]: Keep raw payloads reference-first with raw_payload_ref namespaces; storage location, retention owner, and redaction enforcement remain requires Hermes source/runtime.
+- [Phase 03]: [Phase 03 Plan 03]: Route mismatch and skill_candidate feedback require human review and must not auto-modify legal skills.
 
 ### Pending Todos
 
@@ -109,6 +114,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T18:30:29.078Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-06-27T18:38:19.735Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None
