@@ -37,7 +37,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### Platform Contract
 
-- [ ] **REQ-platform-contract-package**: Provide a pure-definition platform-contract package with five event schemas, async task state machine, error codes, fixtures, and bindings.
+- [x] **REQ-platform-contract-package**: Provide a pure-definition platform-contract package with five event schemas, async task state machine, error codes, fixtures, and bindings.
   - Defines AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision schemas.
   - Provides JSON Schema and Python types first; TypeScript types may follow after V2 priority work.
   - Defines async task states: queued, running, waiting_for_user, succeeded, failed, cancelled.
@@ -45,7 +45,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Contains no runtime service logic.
   - Can be consumed by hermes-contract-layer, conversation-read-view, feedback-service, and contract-test-suite.
 
-- [ ] **REQ-contract-event-schemas**: The five contract objects must be modeled as platform events, not database table definitions, and must support traceable end-to-end relationships.
+- [x] **REQ-contract-event-schemas**: The five contract objects must be modeled as platform events, not database table definitions, and must support traceable end-to-end relationships.
   - AgentTurn includes required turn_id, conversation_id, channel, user_id, message_type, received_at.
   - AgentResult includes required result_id, turn_id, status, reply_type and optional artifacts, execution_trace, route_mismatch, skill_candidate, error, metadata.
   - FeedbackEvent includes required feedback_id, turn_id, conversation_id, user_id, source, event_type, status, created_at.
@@ -180,8 +180,8 @@ Explicitly excluded from V2 to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-platform-contract-package | Phase 1 | Pending |
-| REQ-contract-event-schemas | Phase 1 | Pending |
+| REQ-platform-contract-package | Phase 1 | Complete |
+| REQ-contract-event-schemas | Phase 1 | Complete |
 | REQ-contract-test-suite | Phase 2 | Pending |
 | REQ-implementation-risk-resolution | Phase 3 | Pending |
 | REQ-hermes-contract-layer | Phase 4 | Pending |
@@ -196,6 +196,7 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-v2-development-order | Phase 8 | Pending |
 
 **Coverage:**
+
 - Active V2 requirements: 14 total
 - Mapped to phases: 14
 - Unmapped: 0
