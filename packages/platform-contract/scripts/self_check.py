@@ -86,7 +86,13 @@ def assert_fixture_required_fields(schemas, fixtures):
             raise AssertionError(f"{fixture.get('fixture_id')} missing events: {sorted(missing_events)}")
 
         for event_key, schema_name in EVENT_SCHEMA_BY_KEY.items():
-            _assert_required_and_enums(schemas[schema_name], events[event_key], schemas, f"{fixture['fixture_id']}.{event_key}")
+            _assert_required_and_enums(
+                schemas[schema_name],
+                events[event_key],
+                schemas,
+                f"{fixture['fixture_id']}.{event_key}",
+                is_event_top_level=True,
+            )
 
 
 def assert_fixture_relationships(fixtures):
@@ -219,13 +225,13 @@ def _assert_field_parity(schema_name, schema, cls):
         )
 
 
-def _assert_required_and_enums(schema, value, schemas, context):
+def _assert_required_and_enums(schema, value, schemas, context, *, is_event_top_level=False):
     if not isinstance(value, dict):
         raise AssertionError(f"{context} must be an object")
 
     properties = schema.get("properties", {})
     forbidden = set(value) & FORBIDDEN_REQUIRED_FIELDS
-    if forbidden:
+    if is_event_top_level and forbidden:
         raise AssertionError(f"{context} has forbidden top-level fields: {sorted(forbidden)}")
 
     extra_fields = set(value) - set(properties)

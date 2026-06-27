@@ -59,6 +59,12 @@ class SelfCheckTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "forbidden top-level fields"):
             self_check.assert_fixture_required_fields(self.schemas, fixtures)
 
+    def test_fixture_allows_legal_fields_inside_industry_context(self):
+        fixtures = deepcopy(self.fixtures)
+        fixtures[0]["events"]["agent_turn"].setdefault("industry_context", {})["jurisdiction"] = "CN"
+
+        self_check.assert_fixture_required_fields(self.schemas, fixtures)
+
     def test_fixture_relationships(self):
         self_check.assert_fixture_relationships(self.fixtures)
 
