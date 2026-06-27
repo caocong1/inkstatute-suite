@@ -2,7 +2,7 @@
 
 InkStatute is a full-stack Agent platform project. The first industry package is a legal assistant for mainland China law practice, based on the existing Hermes `lawfirm` profile. The platform should also support other industry agents in the future.
 
-This repository starts as a product and architecture workspace. V1 is a requirements-first milestone: define the backend platform, agent adapters, skill and MCP orchestration, feedback loop, and frontend access surfaces before implementation.
+This repository starts as a V2 product, architecture, and implementation workspace. V2 deliberately does not rebuild Hermes: Hermes `lawfirm` remains the runtime backend, and this repository adds the platform contract layer, contract tests, read views, and feedback normalization needed to make the system observable, testable, and portable.
 
 ## Positioning
 
@@ -13,25 +13,24 @@ This repository starts as a product and architecture workspace. V1 is a requirem
 - First vertical: law firm assistant
 - Long-term direction: reusable industry Agent platform
 
-## V1 Documentation
+## V2 Source Of Truth
 
-- [V1 Requirements Specification](docs/requirements/V1-PRD.md)
+- [V2 Requirements Specification](docs/requirements/V2-PRD.md)
 
-## Planned Monorepo Shape
+V1 has been retired. V2 is the current specification and replaces the earlier platform rebuild plan.
 
-The first code milestone should use this logical layout:
+## V2 Monorepo Shape
+
+The V2 implementation should use this logical layout:
 
 ```text
-apps/
-  web/                  # Web client
-  desktop/              # Tauri desktop client
-  bots/                 # WeCom, QQ Bot, and future channel adapters
 services/
-  backend/              # Unified API, task orchestration, auth, audit, storage
+  hermes-contract-layer/ # Hermes hook adapters, mappers, contract event writer
+  conversation-read-view/# Read-only conversation/task view built from contract logs
+  feedback-service/     # feedback.jsonl normalization, dedupe, queue export
 packages/
-  agent-core/           # Agent runtime abstractions and provider interfaces
-  skills/               # Skill registry, industry packs, and skill packaging
-  connectors/           # MCP, legal databases, document tooling, external systems
+  platform-contract/    # JSON Schema, Python types, async state machine, error codes
+  contract-test-suite/  # schema validation, fixture replay, composability CI
 docs/
   requirements/         # Product requirements
   architecture/         # Architecture decisions and diagrams
@@ -39,9 +38,9 @@ docs/
   operations/           # Deployment and maintenance notes
 ```
 
-## Current Source Of Truth
+## Hermes Source Context
 
-The first requirements document is derived from the local Hermes `lawfirm` profile, especially:
+The V2 requirements are derived from the local Hermes `lawfirm` profile, especially:
 
 - `SOUL.md`: legal assistant identity, compliance boundaries, and operating rules
 - `skills/`: legal skills, workflow skills, methodology skills, and platform skills
@@ -52,3 +51,10 @@ The first requirements document is derived from the local Hermes `lawfirm` profi
 
 Sensitive runtime data, logs, account tokens, local databases, and user files must stay outside this repository.
 
+## AI Development Workflow
+
+This repository uses GSD planning state for autonomous AI development:
+
+- `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md` are the continuation source once generated.
+- Start a new session with `$gsd-resume-work` or continue automatically with `$gsd-progress --next --auto`.
+- Keep V2 contract tests and fixtures ahead of Hermes hook changes.
