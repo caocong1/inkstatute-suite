@@ -107,6 +107,30 @@ class SchemaValidationTests(unittest.TestCase):
                         fixture_id=self.fixtures[0]["fixture_id"],
                     )
 
+    def test_invalid_date_time_format_errors_cover_contract_timestamps(self) -> None:
+        cases = (
+            ("agent_turn", ("received_at",)),
+            ("route_decision", ("created_at",)),
+            ("execution_trace", ("occurred_at",)),
+            ("feedback_event", ("created_at",)),
+        )
+
+        for event_key, path in cases:
+            event = copy.deepcopy(self.fixtures[0]["events"][event_key])
+            self._set_path(event, path, "not-a-date")
+
+            with self.subTest(event=event_key, path=".".join(path)):
+                with self.assertRaisesRegex(
+                    ContractValidationError,
+                    rf"{event_key}.*{'.'.join(path)}.*date-time",
+                ):
+                    validate_event(
+                        event_key,
+                        event,
+                        self.schemas,
+                        fixture_id=self.fixtures[0]["fixture_id"],
+                    )
+
     def test_unknown_top_level_event_fields_fail(self) -> None:
         event = copy.deepcopy(self.fixtures[0]["events"]["agent_turn"])
         event["unexpected_top_level"] = "not allowed"

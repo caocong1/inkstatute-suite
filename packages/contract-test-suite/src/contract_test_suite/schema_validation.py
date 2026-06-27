@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -118,6 +119,9 @@ def _validate_schema(
     if "type" in resolved:
         _validate_type(resolved["type"], value, path)
 
+    if resolved.get("format") == "date-time":
+        _validate_date_time(value, path)
+
     if "enum" in resolved and value not in resolved["enum"]:
         allowed = ", ".join(repr(item) for item in resolved["enum"])
         raise ContractValidationError(f"{_path(path)}: value {value!r} not in enum [{allowed}]")
@@ -215,6 +219,16 @@ def _validate_type(expected: str | list[str], value: Any, path: tuple[str, ...])
 
     expected_text = " or ".join(expected_types)
     raise ContractValidationError(f"{_path(path)}: expected type {expected_text}, got {_type_name(value)}")
+
+
+def _validate_date_time(value: Any, path: tuple[str, ...]) -> None:
+    if not isinstance(value, str):
+        return
+
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ContractValidationError(f"{_path(path)}: invalid date-time format") from exc
 
 
 def _matches_type(type_name: str, value: Any) -> bool:
