@@ -4,21 +4,14 @@ verified: 2026-06-27T16:40:14Z
 status: passed
 score: 9/9 must-haves verified
 overrides_applied: 0
-re_verification:
-  previous_status: gaps_found
-  previous_score: 8/9
-  gaps_closed:
-    - "Python binding fields match the V2 PRD event contract shape and the schema/fixture relationship contract"
-  gaps_remaining: []
-  regressions: []
 ---
 
 # Phase 1: Platform Contract Foundation Verification Report
 
 **Phase Goal:** Developers can consume a pure platform-contract package that defines V2 event contracts without any runtime service behavior.
-**Verified:** 2026-06-27T16:40:14Z
+**Verified:** 2026-06-27T16:43:12Z
 **Status:** passed
-**Re-verification:** Yes - after gap closure commit `ebd20df`
+**Re-verification:** Yes - after gap closure commits `ebd20df` and `d0ded39`
 
 ## Goal Achievement
 
@@ -49,8 +42,8 @@ re_verification:
 | `packages/platform-contract/src/platform_contract/events.py` | Python dataclass bindings for five events | VERIFIED | 196 lines; `FeedbackEvent.feedback_target` is present and schema parity confirms no missing or extra fields for event bindings. |
 | `packages/platform-contract/src/platform_contract/schemas/*.schema.json` | Common schema plus five event schemas | VERIFIED | Six schema files exist and parse; `feedback_target` is present in both AgentResult and FeedbackEvent schemas. |
 | `packages/platform-contract/fixtures/*.json` | Synthetic legal and non-legal relationship fixtures | VERIFIED | Two fixture files contain all five event objects and linked `result_id`/`feedback_target` pairs. |
-| `packages/platform-contract/scripts/self_check.py` | Stdlib package self-check | VERIFIED | 310 lines; checks schema shape, required fields, enum membership, relationships, privacy boundary, dataclass compilation, and schema/binding field parity. |
-| `packages/platform-contract/tests/test_self_check.py` | unittest coverage for self-check | VERIFIED | 8 unittest cases pass, including explicit Python binding/schema parity coverage. |
+| `packages/platform-contract/scripts/self_check.py` | Stdlib package self-check | VERIFIED | Checks schema shape, required fields, enum membership, relationships, privacy boundary, dataclass compilation, and schema/binding field parity. |
+| `packages/platform-contract/tests/test_self_check.py` | unittest coverage for self-check | VERIFIED | 9 unittest cases pass, including explicit Python binding/schema parity and industry_context extension coverage. |
 
 ### Key Link Verification
 
@@ -73,7 +66,7 @@ re_verification:
 | Behavior | Command | Result | Status |
 |---|---|---|---|
 | Package self-check passes | `cd packages/platform-contract && PYTHONPATH=src python scripts/self_check.py` | `platform-contract self-check passed` | PASS |
-| Unit tests pass | `cd packages/platform-contract && PYTHONPATH=src python -m unittest discover -s tests` | `Ran 8 tests ... OK` | PASS |
+| Unit tests pass | `cd packages/platform-contract && PYTHONPATH=src python -m unittest discover -s tests` | `Ran 9 tests ... OK` | PASS |
 | FeedbackEvent schema/binding parity is closed | `PYTHONPATH=src python - <<'PY' ... fields(FeedbackEvent) ...` | `FeedbackEvent schema-only: []`; `FeedbackEvent binding-only: []`; AgentResult feedback target present in binding and schema | PASS |
 | Import bindings and enum values | `PYTHONPATH=packages/platform-contract/src python - <<'PY' ...` | Imports succeed; async states and error categories match expected values | PASS |
 
@@ -103,9 +96,9 @@ None.
 
 ### Gaps Summary
 
-No gaps remain. The previous blocker is closed: `FeedbackEvent` now exposes `feedback_target`, fixtures still use the relationship consistently, and the stdlib self-check plus unittest suite now enforce schema/binding field parity so the mismatch cannot silently recur.
+No gaps remain. The previous blocker is closed: `FeedbackEvent` now exposes `feedback_target`, fixtures still use the relationship consistently, and the stdlib self-check plus unittest suite now enforce schema/binding field parity so the mismatch cannot silently recur. The follow-up privacy-boundary warning is also closed: forbidden sensitive/legal field names are rejected only at event top level, while legal extension fields remain valid inside `industry_context`.
 
 ---
 
-_Verified: 2026-06-27T16:40:14Z_
+_Verified: 2026-06-27T16:43:12Z_
 _Verifier: the agent (gsd-verifier)_
