@@ -1,0 +1,68 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+
+# Runtime state and local data
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+*.pid
+*.lock
+logs/
+router_logs/
+sessions/
+cache/
+audio_cache/
+image_cache/
+output/
+tmp/
+temp/
+
+# Legal/customer documents must be deliberately added, never swept in by default
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.pdf
+
+# Node / web
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Rust / Tauri
+target/
+src-tauri/target/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
