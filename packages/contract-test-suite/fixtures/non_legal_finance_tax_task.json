@@ -1,0 +1,162 @@
+{
+  "fixture_id": "non-legal-finance-tax-task-001",
+  "description": "Synthetic non-legal finance and tax turn demonstrating platform contract composability without legal-only top-level fields.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-finance-tax-001",
+      "conversation_id": "conv-finance-tax-demo-001",
+      "channel": "web",
+      "user_id": "user-finance-tax-demo-001",
+      "message_type": "text",
+      "content": "Summarize quarterly tax deduction categories from the referenced bookkeeping export.",
+      "output_constraints": {
+        "format": "xlsx",
+        "features": [
+          "summary_table",
+          "category_totals"
+        ],
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "finance_tax",
+        "task_type": "quarterly_tax_deduction_summary",
+        "period": "2026-Q2",
+        "source_ref": "fixture://raw/finance-tax-turn-001"
+      },
+      "received_at": "2026-06-27T12:00:00Z",
+      "metadata": {
+        "profile": "finance-tax-demo",
+        "raw_payload_ref": "fixture://raw/finance-tax-turn-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-finance-tax-001",
+      "turn_id": "turn-finance-tax-001",
+      "primary_skill": "spreadsheet_summary",
+      "supporting_skills": [
+        "category_extraction"
+      ],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [
+        "fixture_spreadsheet_reader"
+      ],
+      "confidence": 0.74,
+      "matched_rule": "finance_tax_summary",
+      "reason": "Synthetic bookkeeping summary can be routed to spreadsheet summarization without legal profile fields.",
+      "mode": "matched",
+      "route_mismatch": false,
+      "created_at": "2026-06-27T12:00:02Z",
+      "industry_context": {
+        "domain": "finance_tax"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-finance-tax-001",
+      "turn_id": "turn-finance-tax-001",
+      "started_at": "2026-06-27T12:00:03Z",
+      "ended_at": "2026-06-27T12:00:25Z",
+      "active_skill_name": "spreadsheet_summary",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-27T12:00:26Z",
+      "ingested_at": "2026-06-27T12:00:27Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "load_bookkeeping_export",
+          "state": "succeeded",
+          "input_ref": "fixture://raw/finance-tax-turn-001"
+        },
+        {
+          "name": "summarize_deduction_categories",
+          "state": "succeeded"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "fixture_spreadsheet_reader",
+          "status": "succeeded",
+          "input_ref": "fixture://raw/finance-tax-turn-001"
+        }
+      ],
+      "artifacts_written": [
+        "artifact-finance-tax-summary-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-finance-tax-001",
+        "turn_id": "turn-finance-tax-001",
+        "primary_skill": "spreadsheet_summary",
+        "confidence": 0.74,
+        "mode": "matched",
+        "created_at": "2026-06-27T12:00:02Z"
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {
+        "domain": "finance_tax"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-finance-tax-001",
+      "turn_id": "turn-finance-tax-001",
+      "status": "success",
+      "reply_type": "file",
+      "content": "Synthetic quarterly deduction summary generated from referenced bookkeeping data.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-finance-tax-summary-001",
+          "kind": "xlsx",
+          "name": "quarterly-deduction-summary.xlsx",
+          "uri": "fixture://artifacts/finance-tax-summary-001",
+          "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "features": [
+            "summary_table",
+            "category_totals"
+          ],
+          "source_refs": [
+            "fixture://raw/finance-tax-turn-001"
+          ],
+          "metadata": {
+            "synthetic": true,
+            "domain": "finance_tax"
+          }
+        }
+      ],
+      "feedback_target": "feedback-target-finance-tax-001",
+      "route_mismatch": false,
+      "industry_context": {
+        "domain": "finance_tax",
+        "period": "2026-Q2"
+      },
+      "metadata": {
+        "trace_id": "trace-finance-tax-001",
+        "route_decision_id": "route-finance-tax-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-finance-tax-001",
+      "turn_id": "turn-finance-tax-001",
+      "result_id": "result-finance-tax-001",
+      "conversation_id": "conv-finance-tax-demo-001",
+      "user_id": "user-finance-tax-demo-001",
+      "source": "web_form",
+      "event_type": "rating",
+      "rating": 4,
+      "action": "up",
+      "message": "Synthetic feedback confirms the deduction summary categories are useful.",
+      "route_mismatch": false,
+      "labels": [
+        "finance_tax",
+        "summary"
+      ],
+      "related_route_decision": "route-finance-tax-001",
+      "feedback_target": "feedback-target-finance-tax-001",
+      "status": "triaged",
+      "created_at": "2026-06-27T12:01:00Z",
+      "raw_payload_ref": "fixture://raw/finance-tax-feedback-001",
+      "industry_context": {
+        "domain": "finance_tax"
+      }
+    }
+  }
+}

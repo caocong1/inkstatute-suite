@@ -1,0 +1,153 @@
+{
+  "fixture_id": "non-legal-education-task-001",
+  "description": "Synthetic non-legal education turn demonstrating platform contract composability without legal-only top-level fields.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-education-001",
+      "conversation_id": "conv-education-demo-001",
+      "channel": "web",
+      "user_id": "user-education-demo-001",
+      "message_type": "text",
+      "content": "Generate a lesson plan and rubric from the referenced middle-school science objective.",
+      "output_constraints": {
+        "format": "markdown",
+        "features": [
+          "lesson_plan",
+          "rubric"
+        ],
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "education",
+        "task_type": "lesson_plan_generation",
+        "grade_band": "middle_school",
+        "source_ref": "fixture://raw/education-turn-001"
+      },
+      "received_at": "2026-06-27T13:00:00Z",
+      "metadata": {
+        "profile": "education-demo",
+        "raw_payload_ref": "fixture://raw/education-turn-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-education-001",
+      "turn_id": "turn-education-001",
+      "primary_skill": "lesson_plan_writer",
+      "supporting_skills": [
+        "rubric_generator"
+      ],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "confidence": 0.78,
+      "matched_rule": "education_lesson_plan",
+      "reason": "Synthetic education request maps to lesson planning without legal profile fields.",
+      "mode": "matched",
+      "route_mismatch": false,
+      "created_at": "2026-06-27T13:00:02Z",
+      "industry_context": {
+        "domain": "education"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-education-001",
+      "turn_id": "turn-education-001",
+      "started_at": "2026-06-27T13:00:03Z",
+      "ended_at": "2026-06-27T13:00:21Z",
+      "active_skill_name": "lesson_plan_writer",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-27T13:00:22Z",
+      "ingested_at": "2026-06-27T13:00:23Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "draft_lesson_sequence",
+          "state": "succeeded"
+        },
+        {
+          "name": "build_assessment_rubric",
+          "state": "succeeded"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-education-lesson-plan-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-education-001",
+        "turn_id": "turn-education-001",
+        "primary_skill": "lesson_plan_writer",
+        "confidence": 0.78,
+        "mode": "matched",
+        "created_at": "2026-06-27T13:00:02Z"
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {
+        "domain": "education"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-education-001",
+      "turn_id": "turn-education-001",
+      "status": "success",
+      "reply_type": "markdown",
+      "content": "Synthetic lesson plan and rubric generated from a referenced science objective.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-education-lesson-plan-001",
+          "kind": "markdown",
+          "name": "science-lesson-plan.md",
+          "uri": "fixture://artifacts/education-lesson-plan-001",
+          "mime_type": "text/markdown",
+          "features": [
+            "lesson_plan",
+            "rubric"
+          ],
+          "source_refs": [
+            "fixture://raw/education-turn-001"
+          ],
+          "metadata": {
+            "synthetic": true,
+            "domain": "education"
+          }
+        }
+      ],
+      "feedback_target": "feedback-target-education-001",
+      "route_mismatch": false,
+      "industry_context": {
+        "domain": "education",
+        "grade_band": "middle_school"
+      },
+      "metadata": {
+        "trace_id": "trace-education-001",
+        "route_decision_id": "route-education-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-education-001",
+      "turn_id": "turn-education-001",
+      "result_id": "result-education-001",
+      "conversation_id": "conv-education-demo-001",
+      "user_id": "user-education-demo-001",
+      "source": "web_form",
+      "event_type": "rating",
+      "rating": 5,
+      "action": "up",
+      "message": "Synthetic feedback confirms the lesson plan is classroom-ready.",
+      "route_mismatch": false,
+      "labels": [
+        "education",
+        "lesson_plan"
+      ],
+      "related_route_decision": "route-education-001",
+      "feedback_target": "feedback-target-education-001",
+      "status": "triaged",
+      "created_at": "2026-06-27T13:01:00Z",
+      "raw_payload_ref": "fixture://raw/education-feedback-001",
+      "industry_context": {
+        "domain": "education"
+      }
+    }
+  }
+}
