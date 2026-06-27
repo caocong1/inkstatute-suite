@@ -114,22 +114,29 @@ class SchemaValidationTests(unittest.TestCase):
             ("execution_trace", ("occurred_at",)),
             ("feedback_event", ("created_at",)),
         )
+        invalid_values = (
+            "not-a-date",
+            "2026-06-27",
+            "2026-06-27T13:00:00",
+            "2026-06-27 13:00:00Z",
+        )
 
         for event_key, path in cases:
-            event = copy.deepcopy(self.fixtures[0]["events"][event_key])
-            self._set_path(event, path, "not-a-date")
+            for invalid_value in invalid_values:
+                event = copy.deepcopy(self.fixtures[0]["events"][event_key])
+                self._set_path(event, path, invalid_value)
 
-            with self.subTest(event=event_key, path=".".join(path)):
-                with self.assertRaisesRegex(
-                    ContractValidationError,
-                    rf"{event_key}.*{'.'.join(path)}.*date-time",
-                ):
-                    validate_event(
-                        event_key,
-                        event,
-                        self.schemas,
-                        fixture_id=self.fixtures[0]["fixture_id"],
-                    )
+                with self.subTest(event=event_key, path=".".join(path), value=invalid_value):
+                    with self.assertRaisesRegex(
+                        ContractValidationError,
+                        rf"{event_key}.*{'.'.join(path)}.*date-time",
+                    ):
+                        validate_event(
+                            event_key,
+                            event,
+                            self.schemas,
+                            fixture_id=self.fixtures[0]["fixture_id"],
+                        )
 
     def test_unknown_top_level_event_fields_fail(self) -> None:
         event = copy.deepcopy(self.fixtures[0]["events"]["agent_turn"])

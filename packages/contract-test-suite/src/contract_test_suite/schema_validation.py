@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
@@ -36,6 +37,12 @@ FORBIDDEN_TOP_LEVEL_FIELDS = {
     "address",
     "raw_payload",
 }
+
+_RFC3339_DATE_TIME = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T"
+    r"\d{2}:\d{2}:\d{2}(?:\.\d+)?"
+    r"(?:Z|[+-]\d{2}:\d{2})$"
+)
 
 
 def load_json(path: str | Path) -> Any:
@@ -228,6 +235,9 @@ def _validate_type(expected: str | list[str], value: Any, path: tuple[str, ...])
 def _validate_date_time(value: Any, path: tuple[str, ...]) -> None:
     if not isinstance(value, str):
         return
+
+    if not _RFC3339_DATE_TIME.fullmatch(value):
+        raise ContractValidationError(f"{_path(path)}: invalid date-time format")
 
     try:
         datetime.fromisoformat(value.replace("Z", "+00:00"))
