@@ -1,0 +1,131 @@
+{
+  "fixture_id": "non-legal-engineering-task-001",
+  "description": "Synthetic non-legal engineering turn demonstrating the same platform contract relationships.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-engineering-001",
+      "conversation_id": "conv-engineering-demo-001",
+      "channel": "web",
+      "user_id": "user-engineering-demo-001",
+      "message_type": "text",
+      "content": "Summarize this deployment checklist into a short engineering handoff.",
+      "output_constraints": {
+        "format": "markdown",
+        "features": [
+          "checklist"
+        ],
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "engineering",
+        "system": "deployment",
+        "task_type": "handoff_summary"
+      },
+      "received_at": "2026-06-27T11:00:00Z",
+      "metadata": {
+        "profile": "engineering-demo",
+        "raw_payload_ref": "fixture://raw/engineering-turn-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-engineering-001",
+      "turn_id": "turn-engineering-001",
+      "primary_skill": null,
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "confidence": 0.61,
+      "matched_rule": "simple_markdown_summary",
+      "reason": "Synthetic engineering request can be handled as simple QA without a registered skill.",
+      "mode": "simple_qa",
+      "route_mismatch": false,
+      "created_at": "2026-06-27T11:00:02Z"
+    },
+    "execution_trace": {
+      "trace_id": "trace-engineering-001",
+      "turn_id": "turn-engineering-001",
+      "started_at": "2026-06-27T11:00:03Z",
+      "ended_at": "2026-06-27T11:00:20Z",
+      "active_skill_name": null,
+      "matched_registered_skill": false,
+      "occurred_at": "2026-06-27T11:00:21Z",
+      "ingested_at": "2026-06-27T11:00:22Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "simple_qa_response",
+          "state": "succeeded"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-engineering-report-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-engineering-001",
+        "turn_id": "turn-engineering-001",
+        "primary_skill": null,
+        "confidence": 0.61,
+        "mode": "simple_qa",
+        "created_at": "2026-06-27T11:00:02Z"
+      },
+      "gates": [],
+      "errors": []
+    },
+    "agent_result": {
+      "result_id": "result-engineering-001",
+      "turn_id": "turn-engineering-001",
+      "status": "success",
+      "reply_type": "markdown",
+      "content": "Synthetic engineering handoff summary generated from a deployment checklist.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-engineering-report-001",
+          "kind": "markdown",
+          "name": "deployment-handoff.md",
+          "uri": "fixture://artifacts/engineering-report-001",
+          "mime_type": "text/markdown",
+          "features": [
+            "checklist"
+          ],
+          "source_refs": [
+            "fixture://raw/engineering-turn-001"
+          ],
+          "metadata": {
+            "synthetic": true,
+            "domain": "engineering"
+          }
+        }
+      ],
+      "feedback_target": "feedback-target-engineering-001",
+      "route_mismatch": false,
+      "metadata": {
+        "trace_id": "trace-engineering-001",
+        "route_decision_id": "route-engineering-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-engineering-001",
+      "turn_id": "turn-engineering-001",
+      "result_id": "result-engineering-001",
+      "conversation_id": "conv-engineering-demo-001",
+      "user_id": "user-engineering-demo-001",
+      "source": "web_form",
+      "event_type": "rating",
+      "rating": 5,
+      "action": "up",
+      "message": "Synthetic feedback confirms the handoff is clear.",
+      "route_mismatch": false,
+      "labels": [
+        "engineering",
+        "handoff"
+      ],
+      "related_route_decision": "route-engineering-001",
+      "feedback_target": "feedback-target-engineering-001",
+      "status": "triaged",
+      "created_at": "2026-06-27T11:01:00Z",
+      "raw_payload_ref": "fixture://raw/engineering-feedback-001"
+    }
+  }
+}

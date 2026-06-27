@@ -1,0 +1,174 @@
+{
+  "fixture_id": "legal-wecom-contract-review-001",
+  "description": "Synthetic WeCom lawfirm contract review turn with a track changes artifact and feedback relationship.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-lawfirm-001",
+      "conversation_id": "conv-lawfirm-demo-001",
+      "channel": "wecom",
+      "user_id": "user-lawfirm-demo-001",
+      "message_type": "file",
+      "attachments": [
+        {
+          "attachment_id": "attachment-lawfirm-contract-001",
+          "kind": "docx",
+          "uri": "fixture://inputs/lawfirm-contract-001",
+          "name": "synthetic-contract.docx",
+          "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "metadata": {
+            "synthetic": true
+          }
+        }
+      ],
+      "output_constraints": {
+        "format": "docx",
+        "features": [
+          "track_changes",
+          "comments"
+        ],
+        "template_ref": "fixture://templates/lawfirm-review-v1",
+        "citation_style": "chinese_legal",
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "lawfirm",
+        "matter_type": "contract_review",
+        "review_focus": [
+          "liability_clause",
+          "termination_clause"
+        ]
+      },
+      "received_at": "2026-06-27T10:00:00Z",
+      "metadata": {
+        "profile": "lawfirm",
+        "raw_payload_ref": "fixture://raw/lawfirm-turn-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-lawfirm-001",
+      "turn_id": "turn-lawfirm-001",
+      "primary_skill": "lawfirm.contract_review",
+      "supporting_skills": [
+        "lawfirm.document_redline"
+      ],
+      "gates_before": [
+        "attachment_available"
+      ],
+      "gates_after": [
+        "human_review_required"
+      ],
+      "required_tools": [
+        "document_renderer"
+      ],
+      "confidence": 0.92,
+      "matched_rule": "lawfirm_contract_review_docx",
+      "reason": "Synthetic file turn requests a contract review document with tracked changes.",
+      "mode": "matched",
+      "route_mismatch": false,
+      "created_at": "2026-06-27T10:00:03Z"
+    },
+    "execution_trace": {
+      "trace_id": "trace-lawfirm-001",
+      "turn_id": "turn-lawfirm-001",
+      "started_at": "2026-06-27T10:00:04Z",
+      "ended_at": "2026-06-27T10:01:30Z",
+      "active_skill_name": "lawfirm.contract_review",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-27T10:01:31Z",
+      "ingested_at": "2026-06-27T10:01:32Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "classify_request",
+          "state": "succeeded"
+        },
+        {
+          "name": "write_trackchanges_artifact",
+          "state": "succeeded"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool": "document_renderer",
+          "purpose": "create_synthetic_trackchanges_docx"
+        }
+      ],
+      "artifacts_written": [
+        "artifact-lawfirm-trackchanges-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-lawfirm-001",
+        "turn_id": "turn-lawfirm-001",
+        "primary_skill": "lawfirm.contract_review",
+        "confidence": 0.92,
+        "mode": "matched",
+        "created_at": "2026-06-27T10:00:03Z"
+      },
+      "gates": [
+        {
+          "name": "human_review_required",
+          "outcome": "recorded"
+        }
+      ],
+      "errors": []
+    },
+    "agent_result": {
+      "result_id": "result-lawfirm-001",
+      "turn_id": "turn-lawfirm-001",
+      "status": "success",
+      "reply_type": "file",
+      "content": "Synthetic reviewed document is available for lawyer review.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-lawfirm-trackchanges-001",
+          "kind": "trackchanges_docx",
+          "name": "synthetic-contract-reviewed.docx",
+          "uri": "fixture://artifacts/lawfirm-trackchanges-001",
+          "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "template_ref": "fixture://templates/lawfirm-review-v1",
+          "features": [
+            "track_changes",
+            "comments"
+          ],
+          "source_refs": [
+            "attachment-lawfirm-contract-001"
+          ],
+          "metadata": {
+            "synthetic": true,
+            "review_mode": "lawyer_draft"
+          }
+        }
+      ],
+      "feedback_target": "feedback-target-lawfirm-001",
+      "route_mismatch": false,
+      "metadata": {
+        "trace_id": "trace-lawfirm-001",
+        "route_decision_id": "route-lawfirm-001",
+        "human_review_required": true
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-lawfirm-001",
+      "turn_id": "turn-lawfirm-001",
+      "result_id": "result-lawfirm-001",
+      "conversation_id": "conv-lawfirm-demo-001",
+      "user_id": "user-lawfirm-demo-001",
+      "source": "card_button",
+      "event_type": "format_issue",
+      "rating": 4,
+      "action": "needs_fix",
+      "message": "Synthetic feedback asks for clearer tracked-change comments.",
+      "route_mismatch": false,
+      "labels": [
+        "format",
+        "track_changes"
+      ],
+      "related_skill": "lawfirm.contract_review",
+      "related_route_decision": "route-lawfirm-001",
+      "feedback_target": "feedback-target-lawfirm-001",
+      "status": "pending",
+      "created_at": "2026-06-27T10:02:00Z",
+      "raw_payload_ref": "fixture://raw/lawfirm-feedback-001"
+    }
+  }
+}
