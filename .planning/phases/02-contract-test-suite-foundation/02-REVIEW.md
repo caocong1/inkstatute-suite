@@ -1,6 +1,6 @@
 ---
 phase: 02-contract-test-suite-foundation
-reviewed: 2026-06-27T17:35:26Z
+reviewed: 2026-06-27T17:41:35Z
 depth: standard
 files_reviewed: 12
 files_reviewed_list:
@@ -17,27 +17,44 @@ files_reviewed_list:
   - packages/contract-test-suite/tests/test_fixture_replay.py
   - packages/contract-test-suite/tests/test_schema_validation.py
 findings:
-  critical: 1
+  critical: 0
   warning: 0
   info: 0
-  total: 1
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 02: Code Review Report
 
-**Reviewed:** 2026-06-27T17:35:26Z
+**Reviewed:** 2026-06-27T17:41:35Z
 **Depth:** standard
 **Files Reviewed:** 12
-**Status:** issues_found
+**Status:** clean
 
 ## Summary
 
-Re-reviewed the Phase 2 contract-test-suite implementation after `.planning/phases/02-contract-test-suite-foundation/02-REVIEW-FIX.md`. CR-02 is resolved: unknown keys under fixture `events` are rejected and covered by regression tests. CR-03 is resolved: artifact relationship integrity is checked from `agent_result.artifacts` to `execution_trace.artifacts_written` and in the reverse direction, with regression coverage.
+复审了 Phase 2 contract-test-suite 的 12 个范围文件，并重点验证 iteration 2 对 RFC3339 `date-time` 校验的修复。当前实现先用正则强制 JSON Schema `date-time` 形状，要求 `T` 分隔符、秒字段，以及 `Z` 或 `+/-HH:MM` 时区，再用 `datetime.fromisoformat` 校验实际日期值。
 
-CR-01 is only partially fixed. The suite now rejects obviously invalid timestamp strings such as `not-a-date`, but the `format: date-time` validator is still too permissive and accepts strings that are not JSON Schema `date-time` values.
+直接验证结果：
 
-Verification run:
+```text
+REJECT 2026-06-27: targeted-rfc3339-check.agent_turn.received_at: invalid date-time format
+REJECT 2026-06-27T13:00:00: targeted-rfc3339-check.agent_turn.received_at: invalid date-time format
+REJECT 2026-06-27 13:00:00Z: targeted-rfc3339-check.agent_turn.received_at: invalid date-time format
+REJECT 2026-06-27 13:00:00: targeted-rfc3339-check.agent_turn.received_at: invalid date-time format
+ACCEPT 2026-06-27T13:00:00Z
+ACCEPT 2026-06-27T13:00:00+08:00
+```
+
+单元测试也覆盖了 `not-a-date`、date-only、无时区、空格分隔时间戳，且全部通过。上一轮 CR-02 仍保持修复状态：fixture `events` 下的未知事件键会被拒绝并有回归测试。上一轮 CR-03 也仍保持修复状态：`agent_result.artifacts` 与 `execution_trace.artifacts_written` 之间有双向关系检查和回归测试。
+
+未发现新的正确性、隐私或安全回归。所有 reviewed files meet quality standards. No issues found.
+
+## Narrative Findings (AI reviewer)
+
+No Critical, Warning, or Info findings.
+
+## Verification
 
 ```text
 cd packages/contract-test-suite && PYTHONPATH=src:../platform-contract/src python scripts/run_contract_tests.py
@@ -45,43 +62,10 @@ Ran 21 tests in 0.013s
 OK
 ```
 
-## Narrative Findings (AI reviewer)
-
-## Critical Issues
-
-### CR-01: BLOCKER - `date-time` validation accepts non-RFC3339 timestamps
-
-**File:** `packages/contract-test-suite/src/contract_test_suite/schema_validation.py:228`
-
-**Issue:** `_validate_date_time` uses `datetime.fromisoformat(value.replace("Z", "+00:00"))` as the only `format: date-time` check. Python's parser accepts values that JSON Schema `date-time` should reject, including date-only strings (`2026-06-27`), timestamps without a timezone (`2026-06-27T13:00:00`), and timestamps using a space instead of `T` (`2026-06-27 13:00:00`). I verified these values are currently accepted by `validate_event("agent_turn", ...)`. As a result, contract fixtures and replay can still pass with invalid platform event timestamps.
-
-**Fix:**
-```python
-import re
-from datetime import datetime
-
-_RFC3339_DATE_TIME = re.compile(
-    r"^\d{4}-\d{2}-\d{2}T"
-    r"\d{2}:\d{2}:\d{2}(?:\.\d+)?"
-    r"(?:Z|[+-]\d{2}:\d{2})$"
-)
-
-
-def _validate_date_time(value: Any, path: tuple[str, ...]) -> None:
-    if not isinstance(value, str):
-        return
-    if not _RFC3339_DATE_TIME.fullmatch(value):
-        raise ContractValidationError(f"{_path(path)}: invalid date-time format")
-    try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError as exc:
-        raise ContractValidationError(f"{_path(path)}: invalid date-time format") from exc
-```
-
-Add regression cases for `2026-06-27`, `2026-06-27T13:00:00`, and `2026-06-27 13:00:00Z` in `test_invalid_date_time_format_errors_cover_contract_timestamps`, alongside the existing `not-a-date` case.
+Additional pattern scan for hardcoded secrets, dangerous functions, debug artifacts, and empty catch blocks returned no matches in the reviewed file set.
 
 ---
 
-_Reviewed: 2026-06-27T17:35:26Z_
+_Reviewed: 2026-06-27T17:41:35Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
