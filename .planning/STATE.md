@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 02-contract-test-suite-foundation-03-PLAN.md
-last_updated: "2026-06-27T17:21:57.338Z"
-last_activity: "2026-06-27 - Phase 2 Plan 03 completed: local synthetic composability fixtures, tests, runner, and README."
+status: ready_to_plan
+stopped_at: Phase 2 verified and completed; ready for Phase 3 planning.
+last_updated: "2026-06-27T17:50:41Z"
+last_activity: "2026-06-27 - Phase 2 verified and completed; Phase 3 Hermes integration spike ready for planning."
 progress:
   total_phases: 8
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, and CI-verifiable without changing Hermes outbound behavior.
-**Current focus:** Phase 2 - Contract Test Suite Foundation
+**Current focus:** Phase 3 - Hermes Integration Spike and Risk Closure
 
 ## Current Position
 
-Phase: 2 of 8 (contract test suite foundation)
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-06-27 - Phase 2 Plan 03 completed: local synthetic composability fixtures, tests, runner, and README.
+Phase: 3 of 8 (hermes integration spike and risk closure)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-06-27 - Phase 2 verified and completed; Phase 3 Hermes integration spike ready for planning.
 
 Progress: [███░░░░░░░] 25%
 
@@ -105,6 +105,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T17:21:29.603Z
-Stopped at: Completed 02-contract-test-suite-foundation-03-PLAN.md
+Last session: 2026-06-27T17:50:41Z
+Stopped at: Phase 2 verified and completed; ready for Phase 3 planning.
 Resume file: None
