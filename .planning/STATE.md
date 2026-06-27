@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-06-27T18:38:19.740Z"
-last_activity: 2026-06-27 - Completed Phase 03 Plan 03 identifier, state, privacy, idempotency, and safety rules.
+stopped_at: "Blocked at 03-02-PLAN.md: hook order verification gap"
+last_updated: "2026-06-27T18:43:21.896Z"
+last_activity: 2026-06-27 - Blocked Phase 03 Plan 02 on missing Hermes hook-order source/runtime or sanitized probe evidence.
 progress:
   total_phases: 8
   completed_phases: 2
@@ -103,6 +103,7 @@ None yet.
 
 - Known Hermes integration risks are assigned to Phase 3: hook order, inbound turn inference, message_id stability, long-task state mapping, feedback targets, idempotency, raw payload retention, and redaction.
 - Legal/safety concerns require human review when they affect high-risk legal conclusions or lawyer trial acceptance.
+- Phase 03 Plan 03-02 blocked: Hermes hook-order evidence gap; no source/runtime evidence or sanitized tested hook-order probe exists in repo.
 
 ## Deferred Items
 
@@ -114,6 +115,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T18:38:19.735Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-06-27T18:43:04.437Z
+Stopped at: Blocked at 03-02-PLAN.md: hook order verification gap
 Resume file: None
