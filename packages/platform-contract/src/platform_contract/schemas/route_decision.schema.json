@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/route_decision.schema.json",
+  "title": "RouteDecision",
+  "description": "Standardized event for a router decision associated with an agent turn.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "route_decision_id",
+    "turn_id",
+    "primary_skill",
+    "confidence",
+    "mode",
+    "created_at"
+  ],
+  "properties": {
+    "route_decision_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "primary_skill": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "supporting_skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "gates_before": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "gates_after": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "matched_rule": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "mode": {
+      "$ref": "common.schema.json#/$defs/route_mode"
+    },
+    "route_mismatch": {
+      "type": "boolean"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    }
+  }
+}

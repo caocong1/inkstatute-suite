@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/execution_trace.schema.json",
+  "title": "ExecutionTrace",
+  "description": "Standardized event describing the observed execution path for a turn.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "trace_id",
+    "turn_id",
+    "started_at",
+    "ended_at",
+    "active_skill_name",
+    "matched_registered_skill",
+    "occurred_at",
+    "ingested_at",
+    "seq"
+  ],
+  "properties": {
+    "trace_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "started_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "ended_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "active_skill_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "matched_registered_skill": {
+      "type": "boolean"
+    },
+    "occurred_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "ingested_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/metadata"
+      }
+    },
+    "tool_calls": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/metadata"
+      }
+    },
+    "artifacts_written": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "route_decision": {
+      "oneOf": [
+        {
+          "$ref": "route_decision.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "gates": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/metadata"
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/error_info"
+      }
+    },
+    "model_usage": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/metadata"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "debug_payload": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/metadata"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

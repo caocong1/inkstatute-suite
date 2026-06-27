@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/feedback_event.schema.json",
+  "title": "FeedbackEvent",
+  "description": "Standardized event produced from feedback channels.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "feedback_id",
+    "turn_id",
+    "conversation_id",
+    "user_id",
+    "source",
+    "event_type",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "feedback_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "result_id": {
+      "type": "string"
+    },
+    "conversation_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "source": {
+      "$ref": "common.schema.json#/$defs/feedback_source"
+    },
+    "event_type": {
+      "$ref": "common.schema.json#/$defs/feedback_event_type"
+    },
+    "rating": {
+      "type": "number"
+    },
+    "action": {
+      "$ref": "common.schema.json#/$defs/feedback_action"
+    },
+    "message": {
+      "type": "string"
+    },
+    "route_mismatch": {
+      "type": "boolean"
+    },
+    "skill_candidate": {
+      "$ref": "common.schema.json#/$defs/skill_candidate"
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_skill": {
+      "type": "string"
+    },
+    "related_route_decision": {
+      "type": "string"
+    },
+    "feedback_target": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/feedback_status"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "raw_payload_ref": {
+      "type": "string"
+    }
+  }
+}

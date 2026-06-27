@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/agent_turn.schema.json",
+  "title": "AgentTurn",
+  "description": "Standardized event for a user input recognized as an agent turn.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "turn_id",
+    "conversation_id",
+    "channel",
+    "user_id",
+    "message_type",
+    "received_at"
+  ],
+  "properties": {
+    "turn_id": {
+      "type": "string"
+    },
+    "conversation_id": {
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "common.schema.json#/$defs/channel"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "message_type": {
+      "$ref": "common.schema.json#/$defs/message_type"
+    },
+    "content": {
+      "type": "string"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/attachment_ref"
+      }
+    },
+    "output_constraints": {
+      "$ref": "common.schema.json#/$defs/output_constraints"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "received_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

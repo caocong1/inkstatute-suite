@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/agent_result.schema.json",
+  "title": "AgentResult",
+  "description": "Standardized asynchronous result event for an agent turn.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "result_id",
+    "turn_id",
+    "status",
+    "reply_type"
+  ],
+  "properties": {
+    "result_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/agent_result_status"
+    },
+    "reply_type": {
+      "$ref": "common.schema.json#/$defs/reply_type"
+    },
+    "content": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/artifact"
+      }
+    },
+    "clarifying_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "execution_trace": {
+      "$ref": "execution_trace.schema.json"
+    },
+    "feedback_target": {
+      "type": "string"
+    },
+    "route_mismatch": {
+      "type": "boolean"
+    },
+    "skill_candidate": {
+      "$ref": "common.schema.json#/$defs/skill_candidate"
+    },
+    "error": {
+      "$ref": "common.schema.json#/$defs/error_info"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}
