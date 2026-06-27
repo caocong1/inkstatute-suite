@@ -8,7 +8,6 @@ from pathlib import Path
 
 from contract_test_suite.fixture_replay import (
     FixtureReplayError,
-    RelationshipIssue,
     ReplayReport,
     assert_relationship_integrity,
     load_fixture_paths,
@@ -71,6 +70,91 @@ class FixtureReplayTests(unittest.TestCase):
                 r"malformed\.json.*legal-wecom-contract-review-001.*agent_turn.*turn_id",
             ):
                 replay_fixtures([path], schemas=self.schemas)
+
+    def test_relationship_breaks_fail_with_fixture_name_expected_and_actual(self) -> None:
+        cases = (
+            (
+                "turn_id",
+                ("events", "agent_result", "turn_id"),
+                "turn-broken",
+                r"agent_result.turn_id.*expected='turn-lawfirm-001'.*actual='turn-broken'",
+            ),
+            (
+                "feedback_result_id",
+                ("events", "feedback_event", "result_id"),
+                "result-broken",
+                r"feedback_event.result_id.*expected='result-lawfirm-001'.*actual='result-broken'",
+            ),
+            (
+                "feedback_target",
+                ("events", "feedback_event", "feedback_target"),
+                "feedback-target-broken",
+                r"feedback_event.feedback_target.*expected='feedback-target-lawfirm-001'.*actual='feedback-target-broken'",
+            ),
+            (
+                "route_decision",
+                ("events", "feedback_event", "related_route_decision"),
+                "route-broken",
+                r"feedback_event.related_route_decision.*expected='route-lawfirm-001'.*actual='route-broken'",
+            ),
+            (
+                "trace_id",
+                ("events", "agent_result", "metadata", "trace_id"),
+                "trace-broken",
+                r"agent_result.metadata.trace_id.*expected='trace-lawfirm-001'.*actual='trace-broken'",
+            ),
+            (
+                "artifact_id",
+                ("events", "agent_result", "artifacts", 0, "artifact_id"),
+                "artifact-broken",
+                r"agent_result.artifacts\[0\].artifact_id.*expected=.*artifact-broken.*actual=.*artifact-lawfirm-trackchanges-001",
+            ),
+        )
+
+        for relationship, path, replacement, expected_message in cases:
+            with self.subTest(relationship=relationship):
+                fixture = copy.deepcopy(self.fixtures[0])
+                self._set_path(fixture, path, replacement)
+
+                with self.assertRaisesRegex(
+                    AssertionError,
+                    rf"legal-wecom-contract-review-001.*{relationship}.*{expected_message}",
+                ):
+                    self._assert_single_fixture_integrity(fixture)
+
+    def test_replay_calculates_breakage_rate_and_enforces_five_percent_tolerance(self) -> None:
+        fixture = copy.deepcopy(self.fixtures[0])
+        fixture["events"]["feedback_event"]["result_id"] = "result-broken"
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "broken.json"
+            path.write_text(json.dumps(fixture), encoding="utf-8")
+
+            report = replay_fixtures([path], schemas=self.schemas)
+
+            self.assertEqual(report.fixture_count, 1)
+            self.assertGreater(report.relationship_check_count, 1)
+            self.assertEqual(report.broken_relationship_count, 1)
+            self.assertGreater(report.breakage_rate, 0.05)
+            self.assertEqual(report.issues[0].relationship, "feedback_result_id")
+
+            with self.assertRaisesRegex(AssertionError, r"breakage rate.*5\.00%"):
+                assert_relationship_integrity([path], schemas=self.schemas)
+
+            assert_relationship_integrity([path], max_breakage_rate=1.0, schemas=self.schemas)
+
+    def _assert_single_fixture_integrity(self, fixture: dict) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "broken.json"
+            path.write_text(json.dumps(fixture), encoding="utf-8")
+            assert_relationship_integrity([path], schemas=self.schemas)
+
+    @staticmethod
+    def _set_path(value: dict, path: tuple[str | int, ...], replacement: object) -> None:
+        target = value
+        for segment in path[:-1]:
+            target = target[segment]
+        target[path[-1]] = replacement
 
 
 if __name__ == "__main__":
