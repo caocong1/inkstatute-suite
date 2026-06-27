@@ -14,7 +14,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 - Decimal phases (2.1, 2.2): Urgent insertions after planning.
 
 - [x] **Phase 1: Platform Contract Foundation** - Define the pure contract package, schemas, async states, errors, fixtures, and Python-first bindings. (completed 2026-06-27)
-- [ ] **Phase 2: Contract Test Suite Foundation** - Establish schema validation, fixture replay, relationship checks, and CI-ready harness before Hermes hook work.
+- [x] **Phase 2: Contract Test Suite Foundation** - Establish schema validation, fixture replay, relationship checks, and CI-ready harness before Hermes hook work. (completed 2026-06-27)
 - [ ] **Phase 3: Hermes Integration Spike and Risk Closure** - Resolve hook, message, long-task, feedback, idempotency, fixture, and privacy risks before production hooks.
 - [ ] **Phase 4: Hermes Shadow Event Layer** - Add the non-invasive hook, mapper, and writer that record standard contract events without changing Hermes behavior.
 - [ ] **Phase 5: WeCom Shadow Loop Validation** - Prove the existing WeCom daily loop still works while contract events and feedback are captured.
@@ -152,7 +152,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Platform Contract Foundation | 3/3 | Complete    | 2026-06-27 |
-| 2. Contract Test Suite Foundation | 2/3 | In Progress|  |
+| 2. Contract Test Suite Foundation | 3/3 | Complete   | 2026-06-27 |
 | 3. Hermes Integration Spike and Risk Closure | 0/TBD | Not started | - |
 | 4. Hermes Shadow Event Layer | 0/TBD | Not started | - |
 | 5. WeCom Shadow Loop Validation | 0/TBD | Not started | - |
