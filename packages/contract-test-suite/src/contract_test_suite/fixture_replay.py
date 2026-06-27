@@ -26,6 +26,7 @@ class RelationshipIssue:
     fixture_id: str
     fixture_path: Path | None
     relationship: str
+    field_path: str
     expected: Any
     actual: Any
 
@@ -68,7 +69,9 @@ def replay_fixtures(
         except ContractValidationError as exc:
             raise FixtureReplayError(f"{item.path}: {fixture_id}: {exc}") from exc
 
-        total_checks += 1
+        check_count, fixture_issues = _check_fixture_relationships(item.fixture, item.path)
+        total_checks += check_count
+        issues.extend(fixture_issues)
 
     broken_checks = len(issues)
     breakage_rate = broken_checks / total_checks if total_checks else 0.0
@@ -89,11 +92,136 @@ def assert_relationship_integrity(
 ) -> ReplayReport:
     report = replay_fixtures(fixture_paths, schemas=schemas)
     if report.breakage_rate > max_breakage_rate:
+        details = "; ".join(_format_issue(issue) for issue in report.issues)
         raise AssertionError(
             f"relationship breakage rate {report.breakage_rate:.2%} exceeds "
-            f"{max_breakage_rate:.2%}"
+            f"{max_breakage_rate:.2%}: {details}"
         )
     return report
+
+
+def _check_fixture_relationships(
+    fixture: dict[str, Any],
+    fixture_path: Path | None,
+) -> tuple[int, list[RelationshipIssue]]:
+    fixture_id = _fixture_id(fixture)
+    events = fixture["events"]
+    agent_turn = events["agent_turn"]
+    route_decision = events["route_decision"]
+    execution_trace = events["execution_trace"]
+    agent_result = events["agent_result"]
+    feedback_event = events["feedback_event"]
+
+    checks: list[tuple[str, str, Any, Any]] = []
+    turn_id = agent_turn["turn_id"]
+    for event_key in ("route_decision", "execution_trace", "agent_result", "feedback_event"):
+        checks.append(("turn_id", f"{event_key}.turn_id", turn_id, events[event_key]["turn_id"]))
+
+    checks.extend(
+        [
+            (
+                "feedback_conversation_id",
+                "feedback_event.conversation_id",
+                agent_turn["conversation_id"],
+                feedback_event["conversation_id"],
+            ),
+            (
+                "feedback_user_id",
+                "feedback_event.user_id",
+                agent_turn["user_id"],
+                feedback_event["user_id"],
+            ),
+            (
+                "feedback_result_id",
+                "feedback_event.result_id",
+                agent_result["result_id"],
+                feedback_event["result_id"],
+            ),
+            (
+                "feedback_target",
+                "feedback_event.feedback_target",
+                agent_result["feedback_target"],
+                feedback_event["feedback_target"],
+            ),
+        ]
+    )
+
+    route_decision_id = route_decision["route_decision_id"]
+    if "related_route_decision" in feedback_event:
+        checks.append(
+            (
+                "route_decision",
+                "feedback_event.related_route_decision",
+                route_decision_id,
+                feedback_event["related_route_decision"],
+            )
+        )
+    result_metadata = agent_result.get("metadata", {})
+    if isinstance(result_metadata, dict) and "route_decision_id" in result_metadata:
+        checks.append(
+            (
+                "route_decision",
+                "agent_result.metadata.route_decision_id",
+                route_decision_id,
+                result_metadata["route_decision_id"],
+            )
+        )
+    trace_route_decision = execution_trace.get("route_decision", {})
+    if isinstance(trace_route_decision, dict) and "route_decision_id" in trace_route_decision:
+        checks.append(
+            (
+                "route_decision",
+                "execution_trace.route_decision.route_decision_id",
+                route_decision_id,
+                trace_route_decision["route_decision_id"],
+            )
+        )
+
+    if isinstance(result_metadata, dict) and "trace_id" in result_metadata:
+        checks.append(
+            (
+                "trace_id",
+                "agent_result.metadata.trace_id",
+                execution_trace["trace_id"],
+                result_metadata["trace_id"],
+            )
+        )
+
+    artifacts_written = set(execution_trace.get("artifacts_written", []))
+    for index, artifact in enumerate(agent_result.get("artifacts", [])):
+        artifact_id = artifact.get("artifact_id")
+        checks.append(
+            (
+                "artifact_id",
+                f"agent_result.artifacts[{index}].artifact_id",
+                artifact_id,
+                sorted(artifacts_written),
+            )
+        )
+
+    issues: list[RelationshipIssue] = []
+    for relationship, field_path, expected, actual in checks:
+        matches = expected in actual if relationship == "artifact_id" else expected == actual
+        if not matches:
+            issues.append(
+                RelationshipIssue(
+                    fixture_id=fixture_id,
+                    fixture_path=fixture_path,
+                    relationship=relationship,
+                    field_path=field_path,
+                    expected=expected,
+                    actual=actual,
+                )
+            )
+
+    return len(checks), issues
+
+
+def _format_issue(issue: RelationshipIssue) -> str:
+    return (
+        f"{issue.fixture_id} {issue.relationship} {issue.field_path} "
+        f"expected={issue.expected!r} actual={issue.actual!r}"
+    )
 
 
 def _fixture_id(fixture: dict[str, Any]) -> str:
