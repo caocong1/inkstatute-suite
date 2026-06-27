@@ -30,7 +30,12 @@ class SchemaValidationTests(unittest.TestCase):
     def test_valid_platform_contract_fixtures_pass_for_all_events(self) -> None:
         self.assertEqual(
             {fixture["fixture_id"] for fixture in self.fixtures},
-            {"legal-wecom-contract-review-001", "non-legal-engineering-task-001"},
+            {
+                "legal-wecom-contract-review-001",
+                "non-legal-engineering-task-001",
+                "non-legal-finance-tax-task-001",
+                "non-legal-education-task-001",
+            },
         )
 
         for fixture in self.fixtures:
