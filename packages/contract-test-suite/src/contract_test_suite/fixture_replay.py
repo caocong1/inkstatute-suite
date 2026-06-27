@@ -188,20 +188,31 @@ def _check_fixture_relationships(
         )
 
     artifacts_written = set(execution_trace.get("artifacts_written", []))
+    result_artifact_ids: set[Any] = set()
     for index, artifact in enumerate(agent_result.get("artifacts", [])):
         artifact_id = artifact.get("artifact_id")
+        result_artifact_ids.add(artifact_id)
         checks.append(
             (
                 "artifact_id",
                 f"agent_result.artifacts[{index}].artifact_id",
                 artifact_id,
-                sorted(artifacts_written),
+                artifacts_written,
+            )
+        )
+    for artifact_id in artifacts_written:
+        checks.append(
+            (
+                "artifact_written",
+                "execution_trace.artifacts_written",
+                artifact_id,
+                result_artifact_ids,
             )
         )
 
     issues: list[RelationshipIssue] = []
     for relationship, field_path, expected, actual in checks:
-        matches = expected in actual if relationship == "artifact_id" else expected == actual
+        matches = expected in actual if relationship in {"artifact_id", "artifact_written"} else expected == actual
         if not matches:
             issues.append(
                 RelationshipIssue(

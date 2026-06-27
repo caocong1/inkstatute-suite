@@ -122,6 +122,16 @@ class FixtureReplayTests(unittest.TestCase):
                 ):
                     self._assert_single_fixture_integrity(fixture)
 
+    def test_unreferenced_execution_trace_artifact_fails_relationship_integrity(self) -> None:
+        fixture = copy.deepcopy(self.fixtures[0])
+        fixture["events"]["execution_trace"]["artifacts_written"].append("artifact-unreferenced")
+
+        with self.assertRaisesRegex(
+            AssertionError,
+            r"artifact_written.*execution_trace\.artifacts_written.*expected='artifact-unreferenced'.*actual=.*artifact-lawfirm-trackchanges-001",
+        ):
+            self._assert_single_fixture_integrity(fixture)
+
     def test_replay_calculates_breakage_rate_and_enforces_five_percent_tolerance(self) -> None:
         fixture = copy.deepcopy(self.fixtures[0])
         fixture["events"]["feedback_event"]["result_id"] = "result-broken"
