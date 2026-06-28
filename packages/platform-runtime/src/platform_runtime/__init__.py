@@ -32,6 +32,7 @@ from .ports import (
     IdFactory,
     RuntimeClock,
 )
+from .output_boundary import BoundaryAction, BoundaryDecision, DefaultAssistantOutputBoundary
 from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
 from .fakes import FakeBackendAdapter, FakeChannelAdapter, FakeIdFactory, FakeRuntimeClock
 from .runtime import DefaultRunRuntime, RunRuntimeStateError
@@ -46,6 +47,8 @@ __all__ = [
     "BackendAdapter",
     "BackendSolutionBundle",
     "BootstrapStatus",
+    "BoundaryAction",
+    "BoundaryDecision",
     "ChannelAdapter",
     "ChannelCapabilitySet",
     "ChannelDelivery",
@@ -54,6 +57,7 @@ __all__ = [
     "ContractLogPrivacyError",
     "ContractLogStore",
     "DefaultRunRuntime",
+    "DefaultAssistantOutputBoundary",
     "DeliveryResult",
     "FakeBackendAdapter",
     "FakeChannelAdapter",
