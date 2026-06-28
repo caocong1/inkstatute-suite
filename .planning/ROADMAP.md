@@ -20,7 +20,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 - [x] **Phase 5: WeCom Shadow Loop Validation** - Prove the existing WeCom daily loop still works while contract events and feedback are captured. (completed 2026-06-28)
 - [x] **Phase 5.5: InkStatute WeCom Service and Hermes Agent Adapter** - Build the WeCom receive/send service, define the agent backend adapter contract, make Hermes mode reproducible, and enforce a pure lawyer-assistant WeCom boundary. (completed 2026-06-28)
 - [x] **Phase 6: Read and Feedback Service APIs** - Deliver read-only conversation/task/feedback APIs plus feedback normalization, dedupe, classification, and pending queues. (completed 2026-06-28)
-- [ ] **Phase 7: CI, Composability, and Privacy Gates** - Enforce industry-neutral composability, coverage, relationship integrity, thin-layer boundaries, and safety baselines in CI.
+- [x] **Phase 7: CI, Composability, and Privacy Gates** - Enforce industry-neutral composability, coverage, relationship integrity, thin-layer boundaries, and safety baselines in CI. (completed 2026-06-28)
 - [ ] **Phase 8: Lawyer Trial Acceptance** - Run the five-workday lawyer trial and validate V2 acceptance metrics.
 
 ## Phase Details
@@ -216,5 +216,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
 | 5. WeCom Shadow Loop Validation | 3/3 | Complete   | 2026-06-28 |
 | 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 4/4 | Complete    | 2026-06-28 |
 | 6. Read and Feedback Service APIs | 3/3 | Complete    | 2026-06-28 |
-| 7. CI, Composability, and Privacy Gates | 2/3 | In Progress|  |
+| 7. CI, Composability, and Privacy Gates | 3/3 | Complete   | 2026-06-28 |
 | 8. Lawyer Trial Acceptance | 0/TBD | Not started | - |
