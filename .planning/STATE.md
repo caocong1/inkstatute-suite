@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: — Platform Foundation
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-06-28T18:38:21.005Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-06-28T18:51:38.890Z"
 last_activity: 2026-06-28 -- Phase 09 execution started
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 34
-  completed_plans: 31
+  completed_plans: 32
   percent: 64
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-28)
 
 Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
 Phase: 09 (Architecture Contracts & Schema Foundation) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Next action: `$gsd-autonomous --from 9 --to 13` (hands-free) or `$gsd-progress --next --auto`
 Last activity: 2026-06-28 -- Phase 09 execution started
@@ -93,6 +93,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 08 P08-03 | 3 min | 2 tasks | 1 files |
 | Phase 08 P08-04 | 35 min | 4 tasks | 13 files |
 | Phase 09 P09-01 | 6 min | 3 tasks | 14 files |
+| Phase 09 P09-02 | 8 min | 4 tasks | 23 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,10 @@ Recent decisions affecting current work:
 - [Phase 09]: [Plan 09-01] Keep packages/platform-runtime signature-only in Phase 09; runtime orchestration, storage, service, channel, backend, and solution behavior are deferred. — Phase 09 is schema and contract foundation only; Phase 10 owns runtime behavior.
 - [Phase 09]: [Plan 09-01] Use allowlist-aware boundary rules so Hermes, WeCom, lawfirm, codex, and provider_model appear only in approved contexts. — ADR-0007 records allowed enum/example names separately from forbidden runtime/private/secret/legal coupling.
 - [Phase 09]: [Plan 09-01] Promote the North Star document as v1.1 architecture authority while keeping docs/requirements/V2-PRD.md as existing lawyer-bot non-regression source. — Plan 09-01 promoted the architecture doc and clarified source-of-truth boundaries.
+- [Phase 09]: [Plan 09-02] Extend AdapterCapabilitySet additively so existing manifests and constructors remain valid while new run/runtime capabilities are expressible.
+- [Phase 09]: [Plan 09-02] Represent Run.status with the existing AsyncTaskState values instead of introducing a separate run-state enum.
+- [Phase 09]: [Plan 09-02] Keep ArtifactRecord as a top-level reference object while preserving nested AgentResult.artifacts unchanged.
+- [Phase 09]: [Plan 09-02] Use neutral skill and MCP descriptors in SolutionPackageManifest instead of Hermes SKILL.md runtime structure.
 
 ### Pending Todos
 
@@ -175,8 +180,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T18:37:49.299Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-06-28T18:51:38.886Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/drafts/agent-platformization-plan-v5.md

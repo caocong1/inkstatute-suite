@@ -187,7 +187,7 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
   - Platform core must not depend on Hermes paths, WeCom protocol internals, or legal fields.
   - The North Star architecture is recorded under `docs/architecture/` and is authoritative for platform shape.
 
-- [ ] **REQ-platform-contract-extension**: Extend `platform-contract` additively with new platform resources/events without breaking V2 schemas.
+- [x] **REQ-platform-contract-extension**: Extend `platform-contract` additively with new platform resources/events without breaking V2 schemas.
   - Adds `ChannelMessage`, `ChannelDelivery`, `Run`, `RunEvent`, `RunStep`, `ToolCall`, `Approval`, `ArtifactRecord`, `Session`, `Tenant`, `Workspace`, `SolutionPackageManifest` (+ neutral skill/mcp descriptors), `BotInstance`, `ChannelBinding`.
   - `Run.status` reuses the existing `AsyncTaskState` enum.
   - `ArtifactRecord` is a top-level ref distinct from nested `AgentResult.artifacts`.
