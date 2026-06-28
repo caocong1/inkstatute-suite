@@ -163,7 +163,13 @@ Plans:
   4. Repeated button clicks, network retries, and repeated shim writes dedupe through a stable idempotency key.
   5. Route-mismatch feedback produces pending human-review queues with skill_candidate evidence and never auto-modifies legal conclusion skills.
 
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+
+- [x] 06-01-PLAN.md — Contract log read model.
+- [x] 06-02-PLAN.md — Feedback classification and pending queue.
+- [x] 06-03-PLAN.md — Read API and contract fixture integration.
+
 **UI hint**: yes
 
 ### Phase 7: CI, Composability, and Privacy Gates
@@ -209,6 +215,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
 | 4. Hermes Shadow Event Layer | 3/3 | Complete | 2026-06-28 |
 | 5. WeCom Shadow Loop Validation | 3/3 | Complete   | 2026-06-28 |
 | 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 4/4 | Complete    | 2026-06-28 |
-| 6. Read and Feedback Service APIs | 2/3 | In Progress|  |
+| 6. Read and Feedback Service APIs | 3/3 | In Progress|  |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
 | 8. Lawyer Trial Acceptance | 0/TBD | Not started | - |
