@@ -22,11 +22,27 @@ class ErrorCategory(StrEnum):
     CHANNEL_ERROR = "channel_error"
 
 
+class ApprovalStatus(StrEnum):
+    REQUESTED = "requested"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
 class Channel(StrEnum):
     WECOM = "wecom"
     QQBOT = "qqbot"
     WEB = "web"
     DESKTOP = "desktop"
+
+
+class ChannelDeliveryStatus(StrEnum):
+    QUEUED = "queued"
+    SENT = "sent"
+    DELIVERED = "delivered"
+    FAILED = "failed"
+    SUPPRESSED = "suppressed"
 
 
 class MessageType(StrEnum):
@@ -79,6 +95,26 @@ class ArtifactKind(StrEnum):
     MARKDOWN = "markdown"
     JSON = "json"
     OTHER = "other"
+
+
+class RunEventType(StrEnum):
+    STATE_CHANGED = "state_changed"
+    STEP_STARTED = "step_started"
+    STEP_COMPLETED = "step_completed"
+    MESSAGE_DELTA = "message_delta"
+    TOOL_CALL_STARTED = "tool_call_started"
+    TOOL_CALL_COMPLETED = "tool_call_completed"
+    APPROVAL_REQUESTED = "approval_requested"
+    ARTIFACT_CREATED = "artifact_created"
+    ERROR = "error"
+
+
+class RunStepKind(StrEnum):
+    MODEL = "model"
+    TOOL = "tool"
+    APPROVAL = "approval"
+    DELIVERY = "delivery"
+    SYSTEM = "system"
 
 
 class SkillCandidateSource(StrEnum):
@@ -134,9 +170,11 @@ class RouteMode(StrEnum):
 
 __all__ = [
     "AgentResultStatus",
+    "ApprovalStatus",
     "ArtifactKind",
     "AsyncTaskState",
     "Channel",
+    "ChannelDeliveryStatus",
     "ErrorCategory",
     "FeedbackAction",
     "FeedbackEventType",
@@ -148,5 +186,7 @@ __all__ = [
     "ReplyType",
     "RiskLevel",
     "RouteMode",
+    "RunEventType",
+    "RunStepKind",
     "SkillCandidateSource",
 ]

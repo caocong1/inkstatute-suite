@@ -24,6 +24,13 @@ class AdapterCapabilitySet:
     artifact_return_support: bool = False
     trace_support: bool = False
     no_channel_io: bool | None = None
+    run_invocation_modes: list[str] = field(default_factory=list)
+    stream_event_support: bool = False
+    cancel_support: bool = False
+    approval_support: bool = False
+    live_update_support: bool = False
+    parallel_task_support: bool = False
+    session_memory_support: bool = False
 
 
 @dataclass(frozen=True, slots=True)

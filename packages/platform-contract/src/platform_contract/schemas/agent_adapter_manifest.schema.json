@@ -72,6 +72,30 @@
         },
         "no_channel_io": {
           "type": "boolean"
+        },
+        "run_invocation_modes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stream_event_support": {
+          "type": "boolean"
+        },
+        "cancel_support": {
+          "type": "boolean"
+        },
+        "approval_support": {
+          "type": "boolean"
+        },
+        "live_update_support": {
+          "type": "boolean"
+        },
+        "parallel_task_support": {
+          "type": "boolean"
+        },
+        "session_memory_support": {
+          "type": "boolean"
         }
       }
     },

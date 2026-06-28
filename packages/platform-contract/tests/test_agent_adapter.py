@@ -48,6 +48,38 @@ class AgentAdapterManifestTests(unittest.TestCase):
 
         self.assertEqual(validate_agent_backend_manifest(manifest), [])
 
+    def test_legacy_capability_constructor_remains_valid(self) -> None:
+        capabilities = AdapterCapabilitySet(invocation_mode="oneshot", no_channel_io=True)
+
+        self.assertEqual(capabilities.invocation_mode, "oneshot")
+        self.assertTrue(capabilities.no_channel_io)
+        self.assertEqual(capabilities.run_invocation_modes, [])
+        self.assertFalse(capabilities.stream_event_support)
+        self.assertFalse(capabilities.cancel_support)
+        self.assertFalse(capabilities.approval_support)
+        self.assertFalse(capabilities.live_update_support)
+        self.assertFalse(capabilities.parallel_task_support)
+        self.assertFalse(capabilities.session_memory_support)
+
+    def test_existing_manifest_shape_remains_valid(self) -> None:
+        self.assertEqual(validate_agent_backend_manifest(self.valid_manifest_dict()), [])
+
+    def test_extended_capability_manifest_is_valid(self) -> None:
+        manifest = self.valid_manifest_dict()
+        manifest["capabilities"].update(
+            {
+                "run_invocation_modes": ["oneshot", "async_run"],
+                "stream_event_support": True,
+                "cancel_support": True,
+                "approval_support": True,
+                "live_update_support": False,
+                "parallel_task_support": False,
+                "session_memory_support": True,
+            }
+        )
+
+        self.assertEqual(validate_agent_backend_manifest(manifest), [])
+
     def test_unsupported_mode_returns_structured_issue(self) -> None:
         manifest = {
             "adapter_name": "future",
