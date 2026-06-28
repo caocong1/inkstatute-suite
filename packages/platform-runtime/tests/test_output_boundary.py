@@ -3,12 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from platform_contract.enums import Channel, MessageType, RunEventType
+from platform_contract.enums import Channel, MessageType
 from platform_contract.events import AgentTurn
 from platform_runtime import BoundaryAction, DefaultAssistantOutputBoundary
 from platform_runtime import DefaultRunRuntime, RunRequest, RuntimeFeatureDisabledError, RuntimeFeatureFlags, SolutionBinding
 from platform_runtime.fakes import FakeBackendAdapter
-from platform_runtime.protocols import RunEvent
 
 
 FIXED_NOW = "2026-06-29T03:00:00Z"
@@ -30,18 +29,6 @@ def make_run_request() -> RunRequest:
         tenant_id="tenant-boundary-001",
         workspace_id="workspace-boundary-001",
         session_id="session-boundary-001",
-    )
-
-
-def make_message_event(run_id: str, text: str, *, seq: int = 100) -> RunEvent:
-    return RunEvent(
-        event_id=f"run-event-boundary-{seq}",
-        run_id=run_id,
-        event_type=RunEventType.MESSAGE_DELTA.value,
-        occurred_at=FIXED_NOW,
-        seq=seq,
-        payload={"message_delta": text, "raw_payload_ref": f"fixture://runs/{run_id}/events/{seq}"},
-        metadata={"scripted": True},
     )
 
 
@@ -135,8 +122,7 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
         )
         run = await runtime.create_run(make_run_request())
         text = "Under the agreement, the buyer may request cure before termination."
-        backend_event = make_message_event(run.run_id, text)
-        backend.events[run.run_id].append(backend_event)
+        backend_event = backend.append_message_delta(run.run_id, text, metadata={"scripted": True})
 
         events = [event async for event in runtime.stream(run.run_id)]
         streamed = events[-1]
@@ -158,7 +144,7 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
         )
         run = await runtime.create_run(make_run_request())
         original = "Hermes gateway restarted and is back online"
-        backend.events[run.run_id].append(make_message_event(run.run_id, original))
+        backend.append_message_delta(run.run_id, original, metadata={"scripted": True})
 
         events = [event async for event in runtime.stream(run.run_id)]
         streamed = events[-1]
@@ -180,7 +166,7 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
         )
         run = await runtime.create_run(make_run_request())
         original = "ADMIN_NOTICE stack trace at /home/example/.hermes/profiles/lawfirm token=secret"
-        backend.events[run.run_id].append(make_message_event(run.run_id, original))
+        backend.append_message_delta(run.run_id, original, metadata={"scripted": True})
 
         events = [event async for event in runtime.stream(run.run_id)]
         streamed = events[-1]
@@ -190,6 +176,43 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(original, repr(streamed))
         self.assertNotIn("token=secret", repr(streamed))
         self.assertNotIn(original, repr(streamed.metadata["output_boundary"]))
+
+    async def test_stream_policy_fixture_covers_allow_rewrite_progress_and_block_cases(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                streaming_lane_enabled=True,
+            ),
+        )
+        run = await runtime.create_run(make_run_request())
+        allowed = "The governing clause preserves the buyer's cure period before termination."
+        lifecycle = "Hermes gateway restarted after maintenance"
+        progress = "Tool progress: approval required before dangerous command execution"
+        blocked = "ADMIN_NOTICE traceback at /home/example/.hermes/profiles/lawfirm access_token=secret"
+        originals = [allowed, lifecycle, progress, blocked]
+        for text in originals:
+            backend.append_message_delta(run.run_id, text, metadata={"fixture_case": True})
+
+        events = [event async for event in runtime.stream(run.run_id)]
+        scripted = [event for event in events if event.metadata.get("fixture_case")]
+        visible_deltas = [event.payload.get("message_delta") for event in scripted if event.payload.get("message_delta")]
+        policy_actions = [event.metadata["output_boundary"]["action"] for event in scripted]
+
+        self.assertEqual(policy_actions, [BoundaryAction.ALLOW.value, BoundaryAction.REWRITE.value, BoundaryAction.REWRITE.value, BoundaryAction.BLOCK.value])
+        self.assertEqual(visible_deltas[0], allowed)
+        self.assertEqual(len(visible_deltas), 3)
+        self.assertTrue(all(delta == allowed or "InkStatute" in str(delta) for delta in visible_deltas))
+        self.assertNotIn(lifecycle, repr(scripted))
+        self.assertNotIn(progress, repr(scripted))
+        self.assertNotIn(blocked, repr(scripted))
+        self.assertNotIn("access_token=secret", repr(scripted))
+        for event in scripted:
+            audit = event.metadata["output_boundary"]["audit"]
+            self.assertEqual(audit["privacy"], "no_original_text_stored")
+            for original in originals:
+                self.assertNotIn(original, repr(audit))
 
 
 if __name__ == "__main__":

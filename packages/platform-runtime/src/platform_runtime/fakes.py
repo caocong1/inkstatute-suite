@@ -151,6 +151,26 @@ class FakeBackendAdapter:
         for event in tuple(self.events[run_id]):
             yield event
 
+    def append_message_delta(
+        self,
+        run_id: str,
+        text: str,
+        *,
+        metadata: dict[str, object] | None = None,
+    ) -> RunEvent:
+        run = self._require_run(run_id)
+        event = self._append_event(
+            run_id,
+            RunEventType.MESSAGE_DELTA,
+            status=run.status,
+            payload={"message_delta": text},
+        )
+        if metadata:
+            updated = replace(event, metadata={**event.metadata, **metadata})
+            self.events[run_id][-1] = updated
+            return updated
+        return event
+
     async def cancel_run(self, run_id: str) -> Run:
         run = self._require_run(run_id)
         self.cancelled_run_ids.append(run_id)
