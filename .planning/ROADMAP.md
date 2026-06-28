@@ -121,7 +121,13 @@ Plans:
   4. Template card feedback is captured by the existing shim and can be normalized into FeedbackEvent.
   5. Existing Hermes lawfirm WeCom feedback behavior does not regress, and QQ Bot/WeChat remain unbroken non-acceptance channels.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 05-01-PLAN.md — WeCom validation harness and runbook.
+- [ ] 05-02-PLAN.md — Minimal FeedbackEvent normalization for WeCom callbacks.
+- [ ] 05-03-PLAN.md — End-to-end WeCom loop replay and live evidence gate.
 
 ### Phase 6: Read and Feedback Service APIs
 
@@ -180,7 +186,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 | 2. Contract Test Suite Foundation | 3/3 | Complete    | 2026-06-27 |
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
 | 4. Hermes Shadow Event Layer | 3/3 | Complete | 2026-06-28 |
-| 5. WeCom Shadow Loop Validation | 0/TBD | Ready to Plan | - |
+| 5. WeCom Shadow Loop Validation | 0/3 | Planned    |  |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
 | 8. Lawyer Trial Acceptance | 0/TBD | Not started | - |
