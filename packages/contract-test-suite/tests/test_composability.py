@@ -18,11 +18,15 @@ from contract_test_suite.schema_validation import (
 
 
 EXPECTED_NON_LEGAL_DOMAINS = {"finance_tax", "engineering", "education"}
+LEGAL_FIXTURE_PATHS = (
+    PLATFORM_FIXTURE_ROOT / "legal_wecom_contract_review.json",
+)
 NON_LEGAL_FIXTURE_PATHS = (
     PLATFORM_FIXTURE_ROOT / "non_legal_engineering_task.json",
     LOCAL_FIXTURE_ROOT / "non_legal_finance_tax_task.json",
     LOCAL_FIXTURE_ROOT / "non_legal_education_task.json",
 )
+COMPOSABILITY_FIXTURE_PATHS = LEGAL_FIXTURE_PATHS + NON_LEGAL_FIXTURE_PATHS
 
 
 class ComposabilityTests(unittest.TestCase):
@@ -39,6 +43,14 @@ class ComposabilityTests(unittest.TestCase):
 
                 self.assertEqual(report.broken_relationship_count, 0)
                 self.assertEqual(report.breakage_rate, 0.0)
+
+    def test_legal_and_non_legal_fixtures_validate_without_platform_core_changes(self) -> None:
+        for fixture_path, fixture in load_composability_fixtures():
+            with self.subTest(fixture=fixture["fixture_id"]):
+                validate_event_bundle(fixture, self.schemas)
+                report = assert_relationship_integrity([fixture_path], max_breakage_rate=0.0, schemas=self.schemas)
+
+                self.assertEqual(report.broken_relationship_count, 0)
 
     def test_non_legal_domain_set_covers_finance_tax_engineering_and_education(self) -> None:
         self.assertEqual(non_legal_domains(self.fixtures), EXPECTED_NON_LEGAL_DOMAINS)
@@ -68,6 +80,13 @@ class ComposabilityTests(unittest.TestCase):
 def load_non_legal_composability_fixtures() -> list[tuple[Path, dict[str, Any]]]:
     fixtures: list[tuple[Path, dict[str, Any]]] = []
     for path in NON_LEGAL_FIXTURE_PATHS:
+        fixtures.append((path, json.loads(path.read_text(encoding="utf-8"))))
+    return fixtures
+
+
+def load_composability_fixtures() -> list[tuple[Path, dict[str, Any]]]:
+    fixtures: list[tuple[Path, dict[str, Any]]] = []
+    for path in COMPOSABILITY_FIXTURE_PATHS:
         fixtures.append((path, json.loads(path.read_text(encoding="utf-8"))))
     return fixtures
 
