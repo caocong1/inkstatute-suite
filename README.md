@@ -60,3 +60,13 @@ This repository uses GSD planning state for autonomous AI development:
 - `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md` are the continuation source once generated.
 - Start a new session with `$gsd-resume-work` or continue automatically with `$gsd-progress --next --auto`.
 - Keep V2 contract tests and fixtures ahead of WeCom service, Hermes agent adapter, hook, and output-policy changes.
+
+## V2 Contract Gates
+
+Run the local CI-equivalent gate command from the repository root:
+
+```bash
+python scripts/run_v2_gates.py
+```
+
+The command runs schema validation, fixture replay, event-stream replay, all package and service unit suites, legal and non-legal composability checks, coverage reporting, privacy scans, thin-layer boundary checks, and compileall. GitHub Actions wraps this same command; the local runner remains the source of truth for reproducing failures.

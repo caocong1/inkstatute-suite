@@ -45,3 +45,17 @@ This is fixture replay, not live validation. Live validation remains an operator
 Phase 5.5 fixtures are under `fixtures/phase55_*`. They prove the local contract path from InkStatute WeCom service callback normalization through Hermes adapter manifest selection, output-policy-filtered send envelope construction, and InkStatute feedback callback normalization.
 
 This fixture data cannot pass live acceptance. Live acceptance for Phase 5.5 requires operator evidence documented in `.planning/phases/05.5-inkstatute-wecom-service-and-hermes-agent-adapter/05.5-WECOM-LIVE-ACCEPTANCE.md`, including InkStatute-owned WeCom receive/send, Hermes used only for agent logic, output boundary evidence, and InkStatute feedback callback evidence.
+
+## Phase 7 Gates
+
+Phase 7 adds the repo-root gate command:
+
+```bash
+python scripts/run_v2_gates.py
+```
+
+The root command runs the package-local contract suite, service suites, coverage checks, privacy scans, thin-layer boundary checks, legal and non-legal composability tests, and compileall.
+
+Committed fixtures prove synthetic contract behavior only. Optional sanitized runtime input can be checked by `contract_test_suite.coverage_report`, but when no sanitized runtime input is supplied the report says runtime input is not provided. Fixture coverage must not be described as live trial evidence.
+
+Generated summaries must stay sanitized and should not be committed unless a plan explicitly defines a stable report artifact that is reference-first and payload-free. Phase 8 owns live lawyer-trial acceptance, including real-task coverage and trial metrics.
