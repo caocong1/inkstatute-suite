@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-platform-runtime"
+version = "0.1.0"
+description = "Signature-only runtime Protocol contracts for the InkStatute agent platform."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [
+  { name = "InkStatute" }
+]
+dependencies = []
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+platform_runtime = ["py.typed"]
+
