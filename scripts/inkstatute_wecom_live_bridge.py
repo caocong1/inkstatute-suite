@@ -24,6 +24,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -50,8 +51,10 @@ from gateway.platforms.base import BasePlatformAdapter  # noqa: E402
 from plugins.platforms.wecom.adapter import WeComAdapter  # noqa: E402
 from tools.credential_files import to_agent_visible_cache_path  # noqa: E402
 from wecom_service.active_task_router import AdapterTaskCapabilities, route_active_task_turn  # noqa: E402
+from wecom_service.delivery_guard import assess_delivery_completion  # noqa: E402
 from wecom_service.output_policy import apply_output_policy  # noqa: E402
 from wecom_service.owned_notices import build_owned_notice  # noqa: E402
+from wecom_service.runtime_audit import append_runtime_audit, parse_bool_env  # noqa: E402
 from wecom_service.task_flow import (  # noqa: E402
     TaskFlow,
     TaskFlowConfig,
@@ -83,6 +86,8 @@ class BridgeConfig:
     send_ack: bool
     turn_buffer_seconds: float
     long_task_notice_interval_seconds: float
+    audit_path: Path
+    audit_full_payloads: bool
     runtime_dir: Path
 
 
@@ -115,6 +120,12 @@ class InkStatuteWeComBridge(WeComAdapter):
             turn.get("chat_id"),
             turn.get("text_sha256_16"),
             turn.get("text_length"),
+        )
+        self._audit(
+            "bot_inbound",
+            "inbound",
+            payload=_event_audit_payload(event),
+            metadata=turn,
         )
 
         self._enqueue_turn(event)
@@ -241,7 +252,60 @@ class InkStatuteWeComBridge(WeComAdapter):
                 list(getattr(event, "media_urls", []) or []),
                 list(getattr(event, "media_types", []) or []),
                 timeout_seconds=self.bridge_config.hermes_timeout_seconds,
+                audit_path=self.bridge_config.audit_path,
+                audit_full_payloads=self.bridge_config.audit_full_payloads,
+                task_id=flow.task_id,
+                trace_id=flow.trace_id,
             )
+            completion = assess_delivery_completion(
+                user_text=str(getattr(event, "text", "") or ""),
+                answer_text=answer,
+                media_count=len(list(getattr(event, "media_urls", []) or [])),
+                file_count=0,
+            )
+            if not completion.completed:
+                LOGGER.error("agent output did not satisfy delivery contract: %s", completion.reason)
+                failed = record_stage(
+                    flow,
+                    WeComTaskStage.FAILED,
+                    metadata={
+                        "error_category": "runtime_error",
+                        "error_code": completion.issue_code,
+                        "retryable": True,
+                        "completion_assessment": completion.as_metadata(),
+                    },
+                )
+                _append_jsonl(self.events_path, failed.as_event())
+                _append_jsonl(
+                    self.events_path,
+                    {
+                        **_turn_record(event, stage="result_incomplete"),
+                        "output_sha256_16": _sha16(answer),
+                        "output_length": len(answer),
+                        "task_id": flow.task_id,
+                        "trace_id": flow.trace_id,
+                        "completion_assessment": completion.as_metadata(),
+                    },
+                )
+                self._audit(
+                    "hermes_output_rejected",
+                    "internal",
+                    payload={"answer": answer},
+                    metadata={
+                        "task_id": flow.task_id,
+                        "trace_id": flow.trace_id,
+                        **completion.as_metadata(),
+                    },
+                )
+                await self._send_owned_notice(
+                    event,
+                    build_owned_notice("incomplete_output", seed=flow.task_id),
+                    stage="processing_incomplete",
+                    error=completion.reason,
+                    task_id=flow.task_id,
+                    idempotency_key=failed.idempotency_key,
+                )
+                return
             delivery = await self._deliver_answer(event, answer)
             if delivery.get("file_count"):
                 artifact_ready = record_stage(
@@ -369,27 +433,88 @@ class InkStatuteWeComBridge(WeComAdapter):
 
         text_result = None
         if visible_text:
+            self._audit(
+                "bot_outbound_text_attempt",
+                "outbound",
+                payload={
+                    "chat_id": event.source.chat_id,
+                    "content": visible_text,
+                    "reply_to": getattr(event, "message_id", None),
+                    "stage": "result_text",
+                },
+            )
             text_result = await self.send(
                 chat_id=event.source.chat_id,
                 content=visible_text,
                 reply_to=getattr(event, "message_id", None),
             )
+            self._audit(
+                "bot_outbound_text_result",
+                "outbound",
+                payload={
+                    "message_id": getattr(text_result, "message_id", None),
+                    "success": text_result.success,
+                    "error": str(text_result.error) if text_result.error else None,
+                    "stage": "result_text",
+                },
+            )
 
         file_results = []
         for file_path in file_paths:
+            self._audit(
+                "bot_outbound_file_attempt",
+                "outbound",
+                payload={
+                    "chat_id": event.source.chat_id,
+                    "file_path": file_path,
+                    "reply_to": getattr(event, "message_id", None),
+                    "stage": "result_file",
+                },
+            )
             result = await self.send_document(
                 chat_id=event.source.chat_id,
                 file_path=file_path,
                 reply_to=getattr(event, "message_id", None),
             )
             file_results.append(result)
+            self._audit(
+                "bot_outbound_file_result",
+                "outbound",
+                payload={
+                    "message_id": getattr(result, "message_id", None),
+                    "success": result.success,
+                    "error": str(result.error) if result.error else None,
+                    "file_path": file_path,
+                    "stage": "result_file",
+                },
+            )
 
         if not visible_text and not file_paths:
             visible_text = build_owned_notice("blocked")
+            self._audit(
+                "bot_outbound_text_attempt",
+                "outbound",
+                payload={
+                    "chat_id": event.source.chat_id,
+                    "content": visible_text,
+                    "reply_to": getattr(event, "message_id", None),
+                    "stage": "blocked_fallback_text",
+                },
+            )
             text_result = await self.send(
                 chat_id=event.source.chat_id,
                 content=visible_text,
                 reply_to=getattr(event, "message_id", None),
+            )
+            self._audit(
+                "bot_outbound_text_result",
+                "outbound",
+                payload={
+                    "message_id": getattr(text_result, "message_id", None),
+                    "success": text_result.success,
+                    "error": str(text_result.error) if text_result.error else None,
+                    "stage": "blocked_fallback_text",
+                },
             )
 
         send_results = [result for result in [text_result, *file_results] if result is not None]
@@ -423,10 +548,34 @@ class InkStatuteWeComBridge(WeComAdapter):
         decision = apply_output_policy(text)
         if decision.action == "block" or not decision.visible_text:
             return
+        self._audit(
+            "bot_outbound_notice_attempt",
+            "outbound",
+            payload={
+                "chat_id": event.source.chat_id,
+                "content": decision.visible_text,
+                "reply_to": getattr(event, "message_id", None),
+                "stage": stage,
+                "task_id": task_id,
+                "send_idempotency_key": send_key,
+            },
+        )
         result = await self.send(
             chat_id=event.source.chat_id,
             content=decision.visible_text,
             reply_to=getattr(event, "message_id", None),
+        )
+        self._audit(
+            "bot_outbound_notice_result",
+            "outbound",
+            payload={
+                "message_id": getattr(result, "message_id", None),
+                "success": result.success,
+                "error": str(result.error) if result.error else None,
+                "stage": stage,
+                "task_id": task_id,
+                "send_idempotency_key": send_key,
+            },
         )
         _append_jsonl(
             self.events_path,
@@ -442,6 +591,23 @@ class InkStatuteWeComBridge(WeComAdapter):
                 "send_error": result.error,
                 "error": error,
             },
+        )
+
+    def _audit(
+        self,
+        kind: str,
+        direction: str,
+        *,
+        payload: Any | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        append_runtime_audit(
+            self.bridge_config.audit_path,
+            kind=kind,
+            direction=direction,
+            payload=payload,
+            include_payload=self.bridge_config.audit_full_payloads,
+            metadata=metadata,
         )
 
 
@@ -468,6 +634,16 @@ def main() -> int:
         default=float(long_task_notice_default),
         help="Seconds between long-task progress notices; 0 disables them",
     )
+    parser.add_argument(
+        "--audit-path",
+        default=os.environ.get("INKSTATUTE_WECOM_AUDIT_PATH", ""),
+        help="Private runtime audit JSONL path. Defaults to runtime-audit.jsonl under the runtime dir.",
+    )
+    parser.add_argument(
+        "--no-full-audit-payloads",
+        action="store_true",
+        help="Store only payload hashes/lengths in the runtime audit log.",
+    )
     args = parser.parse_args()
 
     _load_env_file(LAWFIRM_HOME / ".env")
@@ -476,6 +652,10 @@ def main() -> int:
     runtime_dir = RUNTIME_DIR
     runtime_dir.mkdir(parents=True, exist_ok=True)
     _setup_logging(runtime_dir / "bridge.log")
+    audit_path = Path(args.audit_path) if args.audit_path else runtime_dir / "runtime-audit.jsonl"
+    audit_full_payloads = parse_bool_env(os.environ.get("INKSTATUTE_WECOM_AUDIT_FULL_PAYLOADS"), default=True)
+    if args.no_full_audit_payloads:
+        audit_full_payloads = False
 
     bridge_config = BridgeConfig(
         chat_id=str(args.chat_id),
@@ -486,6 +666,8 @@ def main() -> int:
         send_ack=not args.no_ack,
         turn_buffer_seconds=max(0.0, args.turn_buffer),
         long_task_notice_interval_seconds=max(0.0, args.long_task_notice_interval),
+        audit_path=audit_path,
+        audit_full_payloads=audit_full_payloads,
         runtime_dir=runtime_dir,
     )
 
@@ -532,7 +714,21 @@ async def _run(adapter_config: PlatformConfig, bridge_config: BridgeConfig) -> i
             "hermes_timeout_seconds": bridge_config.hermes_timeout_seconds,
             "long_task_notice_interval_seconds": bridge_config.long_task_notice_interval_seconds,
             "turn_buffer_seconds": bridge_config.turn_buffer_seconds,
+            "audit_path": str(bridge_config.audit_path),
+            "audit_full_payloads": bridge_config.audit_full_payloads,
         },
+    )
+    append_runtime_audit(
+        bridge_config.audit_path,
+        kind="bridge_started",
+        direction="internal",
+        payload={
+            "chat_id": bridge_config.chat_id,
+            "runtime_dir": str(bridge_config.runtime_dir),
+            "audit_path": str(bridge_config.audit_path),
+            "audit_full_payloads": bridge_config.audit_full_payloads,
+        },
+        include_payload=bridge_config.audit_full_payloads,
     )
     LOGGER.info(
         "InkStatute WeCom bridge connected for chat_id=%s timeout=%ss long_notice_interval=%ss",
@@ -554,9 +750,35 @@ def _call_hermes_lawfirm(
     media_types: list[str] | None = None,
     *,
     timeout_seconds: int,
+    audit_path: Path,
+    audit_full_payloads: bool,
+    task_id: str | None = None,
+    trace_id: str | None = None,
 ) -> str:
     prompt = _build_lawfirm_prompt(message, media_urls or [], media_types or [])
     prompt_path = _write_prompt_file(prompt)
+    transcript_after_id = _latest_hermes_message_id()
+    audit_meta = {
+        "task_id": task_id,
+        "trace_id": trace_id,
+        "timeout_seconds": timeout_seconds,
+        "media_count": len(media_urls or []),
+        "hermes_transcript_after_id": transcript_after_id,
+    }
+    append_runtime_audit(
+        audit_path,
+        kind="hermes_request",
+        direction="outbound",
+        payload={
+            "prompt": prompt,
+            "message": message,
+            "media_urls": media_urls or [],
+            "media_types": media_types or [],
+            "prompt_path": str(prompt_path),
+        },
+        include_payload=audit_full_payloads,
+        metadata=audit_meta,
+    )
     runner = (
         "import pathlib, sys; "
         "from hermes_cli.oneshot import run_oneshot; "
@@ -580,10 +802,36 @@ def _call_hermes_lawfirm(
                 check=False,
             )
         except subprocess.TimeoutExpired as exc:
+            append_runtime_audit(
+                audit_path,
+                kind="hermes_timeout",
+                direction="inbound",
+                payload={"error": str(exc)},
+                include_payload=audit_full_payloads,
+                metadata=audit_meta,
+            )
             raise TimeoutError(f"Hermes one-shot timed out after {timeout_seconds} seconds") from exc
     finally:
         _unlink_quietly(prompt_path)
 
+    append_runtime_audit(
+        audit_path,
+        kind="hermes_response",
+        direction="inbound",
+        payload={
+            "returncode": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": _redact(proc.stderr),
+        },
+        include_payload=audit_full_payloads,
+        metadata=audit_meta,
+    )
+    _append_hermes_transcript_audit(
+        audit_path,
+        include_payload=audit_full_payloads,
+        after_id=transcript_after_id,
+        metadata=audit_meta,
+    )
     if proc.returncode != 0:
         raise RuntimeError(f"Hermes one-shot failed with exit {proc.returncode}: {_redact(proc.stderr)[-500:]}")
     output = proc.stdout.strip()
@@ -599,7 +847,9 @@ def _build_lawfirm_prompt(message: str, media_urls: list[str], media_types: list
         "请只输出普通律师用户可见的法律业务回复，不要输出 Hermes 网关、系统、更新、命令、"
         "调试、路径、token、运行时细节。不要声称已经完成无法确认的外部操作。\n\n"
         "如果你生成了需要交付给用户的文件，请在最终回复中单独写一行 MEDIA:<文件绝对路径>；"
-        "企业微信入口会把该文件作为附件发送，并移除这行路径。\n\n"
+        "企业微信入口会把该文件作为附件发送，并移除这行路径。"
+        "不要把“正在生成、接下来生成、现在开始生成”这类中间进度当作最终回复；"
+        "只有在文件已经真实生成且路径可读取时才说已完成。若不能生成，请明确说明失败原因。\n\n"
         f"{attachment_context}"
         f"用户消息：\n{message.strip() or '（用户这次没有输入文字正文，请结合附件处理。）'}"
     )
@@ -625,6 +875,100 @@ def _build_attachment_context(media_urls: list[str], media_types: list[str]) -> 
         "不要因为文字正文为空就要求用户重发。不要在回复中暴露本地路径。"
     )
     return "\n".join(notes) + "\n\n"
+
+
+def _latest_hermes_message_id() -> int:
+    db_path = LAWFIRM_HOME / "state.db"
+    if not db_path.exists():
+        return 0
+    try:
+        with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=2) as conn:
+            row = conn.execute("select coalesce(max(id), 0) from messages").fetchone()
+        return int(row[0] or 0) if row else 0
+    except Exception:
+        return 0
+
+
+def _append_hermes_transcript_audit(
+    audit_path: Path,
+    *,
+    include_payload: bool,
+    after_id: int,
+    metadata: dict[str, Any],
+) -> None:
+    db_path = LAWFIRM_HOME / "state.db"
+    if not db_path.exists():
+        append_runtime_audit(
+            audit_path,
+            kind="hermes_transcript_unavailable",
+            direction="internal",
+            payload={"reason": "state_db_missing", "state_db": str(db_path)},
+            include_payload=include_payload,
+            metadata=metadata,
+        )
+        return
+    try:
+        with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=2) as conn:
+            rows = conn.execute(
+                """
+                select id, session_id, role, content, tool_call_id, tool_calls,
+                       tool_name, timestamp, finish_reason, platform_message_id
+                from messages
+                where id > ?
+                order by id
+                """,
+                (after_id,),
+            ).fetchall()
+    except Exception as exc:
+        append_runtime_audit(
+            audit_path,
+            kind="hermes_transcript_unavailable",
+            direction="internal",
+            payload={"reason": "state_db_read_failed", "error": str(exc), "state_db": str(db_path)},
+            include_payload=include_payload,
+            metadata=metadata,
+        )
+        return
+
+    append_runtime_audit(
+        audit_path,
+        kind="hermes_transcript_batch",
+        direction="internal",
+        payload={"message_count": len(rows), "after_id": after_id},
+        include_payload=include_payload,
+        metadata=metadata,
+    )
+    for (
+        message_id,
+        session_id,
+        role,
+        content,
+        tool_call_id,
+        tool_calls,
+        tool_name,
+        timestamp,
+        finish_reason,
+        platform_message_id,
+    ) in rows:
+        append_runtime_audit(
+            audit_path,
+            kind="hermes_transcript_message",
+            direction="internal",
+            payload={
+                "id": message_id,
+                "session_id": session_id,
+                "role": role,
+                "content": content,
+                "tool_call_id": tool_call_id,
+                "tool_calls": tool_calls,
+                "tool_name": tool_name,
+                "timestamp": timestamp,
+                "finish_reason": finish_reason,
+                "platform_message_id": platform_message_id,
+            },
+            include_payload=include_payload,
+            metadata=metadata,
+        )
 
 
 def _write_prompt_file(prompt: str) -> Path:
@@ -669,6 +1013,26 @@ def _turn_record(event: Any, *, stage: str) -> dict[str, Any]:
         "media_types": media_types,
         "raw_payload_ref": _raw_payload_ref(event),
         "privacy": "no_raw_payload_or_legal_text_stored",
+    }
+
+
+def _event_audit_payload(event: Any) -> dict[str, Any]:
+    source = getattr(event, "source", None)
+    message_type = getattr(getattr(event, "message_type", None), "value", getattr(event, "message_type", ""))
+    return {
+        "message_id": str(getattr(event, "message_id", "") or ""),
+        "message_type": str(message_type),
+        "text": str(getattr(event, "text", "") or ""),
+        "media_urls": list(getattr(event, "media_urls", []) or []),
+        "media_types": list(getattr(event, "media_types", []) or []),
+        "reply_to_message_id": str(getattr(event, "reply_to_message_id", "") or ""),
+        "reply_to_text": str(getattr(event, "reply_to_text", "") or ""),
+        "timestamp": str(getattr(event, "timestamp", "") or ""),
+        "source": {
+            "platform": str(getattr(source, "platform", "") or ""),
+            "chat_id": str(getattr(source, "chat_id", "") or ""),
+            "user_id": str(getattr(source, "user_id", "") or ""),
+        },
     }
 
 

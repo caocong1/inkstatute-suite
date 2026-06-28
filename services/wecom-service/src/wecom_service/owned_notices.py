@@ -12,6 +12,7 @@ NoticeKind = Literal[
     "long_processing",
     "blocked",
     "failed",
+    "incomplete_output",
     "timeout",
     "backend_lifecycle",
     "status_running",
@@ -54,6 +55,11 @@ OWNED_NOTICE_TEMPLATES: dict[NoticeKind, tuple[str, ...]] = {
         "小律暂时没跑完，请稍后再试。",
         "小律这边出了点问题，请再试一次。",
         "小律没能完成这次处理，请稍后重发。",
+    ),
+    "incomplete_output": (
+        "小律这次没有生成最终交付文件，本次先记为未完成，请稍后重发。",
+        "小律刚才只跑到中间步骤，没有拿到最终文件，请稍后再试。",
+        "小律没有拿到可交付结果，本次不会标记为完成，请稍后重发。",
     ),
     "timeout": (
         "小律这次处理时间太长，已经先停在超时状态。请稍后重发或拆成更小的任务。",

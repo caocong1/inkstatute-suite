@@ -3,7 +3,7 @@ status: testing
 phase: 08-lawyer-trial-acceptance
 source: [08-VERIFICATION.md]
 started: 2026-06-28T09:48:00Z
-updated: 2026-06-28T22:48:44+08:00
+updated: 2026-06-28T23:53:52+08:00
 ---
 
 ## Current Test
@@ -12,14 +12,14 @@ number: 1
 name: Run live task-flow UAT before starting the trial clock
 expected: |
   InkStatute WeCom service handles long document tasks as background task flows: one quick ACK, recurring service-owned progress, explicit final/timeout/failure state, no empty-message answer for file+text turns, and a fast service response when the user sends a second message while the first task is still running.
-awaiting: live WeCom document+instruction UAT and a follow-up message while the task is still running
+awaiting: fresh live WeCom document+instruction UAT after 2026-06-28T23:53:44+08:00 bridge restart, plus a follow-up message while the task is still running
 
 ## Tests
 
 ### 1. Repair live long-task task flow before starting the trial clock
 
 expected: Long-running file/document tasks use task-flow runtime, and follow-up user input is handled through a fast control-plane route instead of waiting behind the active task.
-result: [pending] Local implementation is complete: task-flow/router tests passed, full V2 gates passed, and `inkstatute-wecom-live-bridge.service` was restarted successfully for chat `155` on 2026-06-28T22:47:35+08:00. Live WeCom document+instruction UAT is still required before this item can pass.
+result: [pending] Local task-flow/router implementation is complete and was rechecked. Live UAT at 2026-06-28T23:13-23:17+08:00 exposed a `completed` false positive: Hermes one-shot returned the 46-character intermediate progress sentence "合同全文已解析完毕...生成带修订痕迹的 DOCX", but no final DOCX was generated or sent (`file_count=0`). The bridge now has a delivery-completion guard that records this as `agent_backend_incomplete_output` instead of `completed`, plus private runtime audit JSONL for bot boundary messages, Hermes prompt/stdout/stderr, and newly written Hermes `state.db` transcript messages. Full V2 gates passed, and `inkstatute-wecom-live-bridge.service` was restarted successfully for chat `155` at 2026-06-28T23:53:44+08:00. Fresh live WeCom document+instruction UAT is still required before this item can pass.
 
 ### 2. Run live readiness gates before starting the trial clock
 
@@ -55,7 +55,7 @@ result: [pending]
 
 total: 7
 passed: 0
-issues: 0
+issues: 1
 pending: 7
 skipped: 0
 blocked: 1
@@ -63,4 +63,5 @@ blocked: 1
 ## Gaps
 
 - Live UAT exposed that the temporary one-shot Hermes bridge can time out long document work and cannot provide meaningful backend-neutral progress or fast mid-task follow-up handling.
-- 08-04 local repair is implemented and the live bridge has been restarted with task-flow code loaded, but the five-workday trial clock remains blocked until a fresh live WeCom file+instruction task proves quick ACK, recurring progress, explicit final/timeout/failure state, no empty-message answer, no Hermes meta leak, and fast follow-up response during an active task.
+- 08-04 local repair is implemented and the live bridge has been restarted with task-flow code loaded, but the 2026-06-28T23:13+08:00 live UAT found a completed false positive when Hermes returned an intermediate "now generating DOCX" message without an artifact.
+- 2026-06-28T23:53+08:00 repair adds delivery-completion guardrails and private runtime audit JSONL, including Hermes boundary request/response and `state.db` transcript capture. The five-workday trial clock remains blocked until a fresh live WeCom file+instruction task proves quick ACK, recurring progress, explicit final/timeout/failure state, no empty-message answer, no Hermes meta leak, final artifact delivery or honest incomplete/failure classification, and fast follow-up response during an active task.

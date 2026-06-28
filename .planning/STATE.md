@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: human_needed
-stopped_at: 08-04 local task-flow repair complete; live WeCom task-flow UAT pending
-last_updated: "2026-06-28T22:48:44+08:00"
-last_activity: 2026-06-28 -- 08-04 task-flow runtime implemented, V2 gates passed, live bridge restarted
+stopped_at: 08-04 delivery-completion guard and runtime audit repair deployed; fresh live WeCom task-flow UAT pending
+last_updated: "2026-06-28T23:53:52+08:00"
+last_activity: 2026-06-28 -- fixed live bridge completed false positive, added runtime audit, V2 gates passed, live bridge restarted
 progress:
   total_phases: 9
   completed_phases: 8
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-28)
 
 Phase: 08 (lawyer-trial-acceptance) — HUMAN_NEEDED
 Plan: 4 of 4
-Status: 08-04 local repair complete; live WeCom task-flow UAT and five-workday lawyer trial evidence still required
-Last activity: 2026-06-28 -- 08-04 task-flow runtime implemented, tests/gates passed, live bridge restarted for chat 155
+Status: 08-04 delivery-completion guard/runtime audit repair deployed; fresh live WeCom task-flow UAT and five-workday lawyer trial evidence still required
+Last activity: 2026-06-28 -- fixed live bridge completed false positive, added runtime audit, V2 gates passed, live bridge restarted
 
 Progress: [█████████░] 89% of roadmap phases
 
@@ -108,6 +108,7 @@ Recent decisions affecting current work:
 - The task-flow and active-task router contract must be backend-neutral for Hermes, future Codex mode, and future InkStatute-owned agents.
 - 08-04 maps WeCom task-flow stages to platform AsyncTaskState where possible and records service-only stages as ExecutionTrace metadata.
 - Hermes one-shot currently declares no live update, cancel, streaming-progress, or parallel-task support; InkStatute control-plane notices must not claim those capabilities until an adapter supports and confirms them.
+- Live WeCom UAT showed Hermes one-shot can return an intermediate "now generating DOCX" sentence; InkStatute delivery guard must not mark requested file/DOCX tasks as completed without a delivered artifact or final business answer.
 - [Phase 01]: Keep platform_contract Python bindings standard-library-only with no runtime dependencies.
 - [Phase 01]: Use industry_context and metadata containers for legal/profile-specific extension data instead of legal-only top-level required fields.
 - [Phase 01]: Keep Phase 1 fixture validation as a package-local stdlib self-check rather than a Phase 2 contract-test-suite harness. — Plan 01-03 is scoped to package-local fixtures and self-checks; Phase 2 owns the contract-test-suite.
@@ -150,6 +151,7 @@ None yet.
 - Live WeCom acceptance is blocked until Phase 5.5 proves InkStatute WeCom service owns receive/send, Hermes is used only for agent logic, and ordinary users see InkStatute lawyer-assistant output rather than Hermes operator UI.
 - Hermes agent adapter work must account for version drift with capability probing and a compatibility matrix before relying on hook/event/invocation behavior.
 - Phase 8 trial clock is blocked until live WeCom UAT proves the 08-04 task-flow runtime: quick ACK, recurring service-owned progress, explicit final/timeout/failure state, file+text merge, no empty-message answer, no Hermes meta leak, and fast response to follow-up messages during active long tasks.
+- Phase 8 trial clock is also blocked until fresh live UAT proves no progress-only backend output is recorded as `completed`; requested DOCX/file tasks must deliver an artifact or be recorded as explicit incomplete/failure.
 
 ## Deferred Items
 
@@ -161,6 +163,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T22:48:44+08:00
-Stopped at: 08-04 local implementation complete; awaiting live WeCom task-flow UAT
+Last session: 2026-06-28T23:53:52+08:00
+Stopped at: 08-04 delivery-completion guard/runtime audit deployed and bridge restarted; awaiting fresh live WeCom task-flow UAT
 Resume file: None - continue from .planning/phases/08-lawyer-trial-acceptance/08-UAT.md

@@ -13,6 +13,7 @@ from .active_task_router import (
 )
 from .idempotency import wecom_idempotency_key
 from .normalization import normalize_wecom_feedback_callback, normalize_wecom_turn
+from .delivery_guard import DeliveryCompletionAssessment, assess_delivery_completion
 from .output_policy import OutputPolicyDecision, apply_output_policy
 from .owned_notices import OWNED_NOTICE_TEMPLATES, build_owned_notice
 from .protocol import (
@@ -26,6 +27,7 @@ from .sender import (
     build_template_card_envelope,
     build_text_send_envelope,
 )
+from .runtime_audit import append_runtime_audit, parse_bool_env
 from .task_flow import (
     TASK_STAGE_TO_ASYNC_STATE,
     TERMINAL_TASK_STAGES,
@@ -49,6 +51,7 @@ __all__ = [
     "AgentBackendSelection",
     "AgentBackendSelectionError",
     "AdapterTaskCapabilities",
+    "DeliveryCompletionAssessment",
     "OutputPolicyDecision",
     "OWNED_NOTICE_TEMPLATES",
     "RawPayloadForbiddenError",
@@ -61,6 +64,8 @@ __all__ = [
     "WeComTaskStage",
     "ack_response",
     "apply_output_policy",
+    "append_runtime_audit",
+    "assess_delivery_completion",
     "build_owned_notice",
     "build_file_send_envelope",
     "build_template_card_envelope",
@@ -70,6 +75,7 @@ __all__ = [
     "normalize_wecom_feedback_callback",
     "normalize_wecom_turn",
     "parse_callback_envelope",
+    "parse_bool_env",
     "progress_notice_due",
     "record_stage",
     "route_active_task_turn",
