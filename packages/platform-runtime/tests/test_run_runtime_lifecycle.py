@@ -135,6 +135,97 @@ class DefaultRunRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
         self.assertIn("content_sha256", entries[0].event)
 
+    async def test_zero_channel_runtime_creates_polls_and_streams_fake_run(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            channels=(),
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                streaming_lane_enabled=True,
+            ),
+        )
+
+        created = await runtime.create_run(make_run_request())
+        polled = await runtime.poll(created.run_id)
+        events = [event async for event in runtime.stream(created.run_id)]
+
+        self.assertEqual(created.run_id, "run-001")
+        self.assertEqual(polled.status, AsyncTaskState.SUCCEEDED)
+        self.assertEqual([event.seq for event in events], [0, 1, 2])
+
+    async def test_cancel_returns_cancelled_state_and_records_append_only_event(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FakeBackendAdapter(clock=clock, id_factory=id_factory)
+        store = InMemoryContractLogStore(clock=clock.now)
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            channels=(),
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                contract_log_enabled=True,
+            ),
+            contract_log_store=store,
+            clock=clock,
+            id_factory=id_factory,
+        )
+        run = await runtime.create_run(make_run_request())
+
+        cancelled = await runtime.cancel(run.run_id)
+        entries = store.entries()
+
+        self.assertEqual(cancelled.status, AsyncTaskState.CANCELLED)
+        self.assertEqual([entry.seq for entry in entries], [0, 1, 2])
+        self.assertEqual(entries[-1].event["run_id"], run.run_id)
+        self.assertEqual(entries[-1].event["turn_id"], "turn-001")
+        self.assertEqual(entries[-1].event["status"], AsyncTaskState.CANCELLED.value)
+        self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
+
+    async def test_approve_updates_fake_backend_and_records_reference_first_state(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FakeBackendAdapter(clock=clock, id_factory=id_factory)
+        store = InMemoryContractLogStore(clock=clock.now)
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            channels=(),
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                approval_lane_enabled=True,
+                contract_log_enabled=True,
+            ),
+            contract_log_store=store,
+            clock=clock,
+            id_factory=id_factory,
+        )
+        run = await runtime.create_run(make_run_request())
+
+        approved = await runtime.approve(
+            run.run_id,
+            Approval(
+                approval_id="approval-001",
+                decision="approved",
+                decided_by="tester",
+                decided_at=FIXED_NOW,
+            ),
+        )
+        entries = store.entries()
+
+        self.assertEqual(approved.status, AsyncTaskState.RUNNING)
+        self.assertEqual(backend.submitted_approvals[0][1].approval_id, "approval-001")
+        self.assertEqual([entry.seq for entry in entries], [0, 1, 2])
+        self.assertEqual(entries[-1].event["run_id"], run.run_id)
+        self.assertEqual(entries[-1].event["turn_id"], "turn-001")
+        self.assertEqual(entries[-1].event["status"], AsyncTaskState.RUNNING.value)
+        self.assertEqual(entries[-1].event["metadata"]["approval_id"], "approval-001")
+        self.assertEqual(
+            entries[0].event["raw_payload_ref"],
+            "fixture://payloads/turn-001",
+        )
+        self.assertRegex(entries[0].event["content_sha256"], r"^[0-9a-f]{64}$")
+        self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
+
     async def test_approve_rejects_when_approval_lane_is_default_off(self) -> None:
         backend = FakeBackendAdapter()
         runtime = DefaultRunRuntime(
