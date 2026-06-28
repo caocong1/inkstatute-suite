@@ -33,6 +33,8 @@ from .ports import (
     RuntimeClock,
 )
 from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
+from .fakes import FakeBackendAdapter, FakeChannelAdapter, FakeIdFactory, FakeRuntimeClock
+from .runtime import DefaultRunRuntime, RunRuntimeStateError
 from .store import ContractLogEntry, ContractLogPrivacyError, InMemoryContractLogStore
 
 __all__ = [
@@ -51,7 +53,12 @@ __all__ = [
     "ContractLogEntry",
     "ContractLogPrivacyError",
     "ContractLogStore",
+    "DefaultRunRuntime",
     "DeliveryResult",
+    "FakeBackendAdapter",
+    "FakeChannelAdapter",
+    "FakeIdFactory",
+    "FakeRuntimeClock",
     "IdFactory",
     "InboundNormalized",
     "InMemoryContractLogStore",
@@ -62,6 +69,7 @@ __all__ = [
     "RunHandle",
     "RunRequest",
     "RunRuntime",
+    "RunRuntimeStateError",
     "RuntimeClock",
     "RuntimeFeatureDisabledError",
     "RuntimeFeatureFlags",

@@ -5,7 +5,15 @@ import unittest
 from platform_contract.enums import AsyncTaskState, Channel, MessageType
 from platform_contract.events import AgentTurn
 
-from platform_runtime import RunRequest, SolutionBinding
+from platform_runtime import (
+    Approval,
+    DefaultRunRuntime,
+    InMemoryContractLogStore,
+    RunRequest,
+    RuntimeFeatureDisabledError,
+    RuntimeFeatureFlags,
+    SolutionBinding,
+)
 from platform_runtime.fakes import (
     FakeBackendAdapter,
     FakeChannelAdapter,
@@ -72,6 +80,79 @@ class FakeAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.accepted)
         self.assertEqual(result.delivered_at, FIXED_NOW)
         self.assertEqual(channel.deliveries, [delivery])
+
+
+class DefaultRunRuntimeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_runtime_constructs_with_zero_channels_and_no_server(self) -> None:
+        runtime = DefaultRunRuntime(backend=FakeBackendAdapter(), channels=())
+
+        self.assertEqual(runtime.channels, ())
+        self.assertFalse(hasattr(runtime, "server"))
+
+    async def test_create_run_rejects_default_off_without_backend_call(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(backend=backend)
+
+        with self.assertRaisesRegex(
+            RuntimeFeatureDisabledError,
+            "runtime feature flag disabled: run_runtime_enabled",
+        ):
+            await runtime.create_run(make_run_request())
+
+        self.assertEqual(backend.submitted_requests, [])
+
+    async def test_create_run_with_flags_calls_backend_and_appends_contract_records(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FakeBackendAdapter(clock=clock, id_factory=id_factory)
+        store = InMemoryContractLogStore(clock=clock.now)
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            channels=(),
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                contract_log_enabled=True,
+            ),
+            contract_log_store=store,
+            clock=clock,
+            id_factory=id_factory,
+        )
+
+        run = await runtime.create_run(make_run_request())
+        entries = store.entries()
+
+        self.assertEqual(run.run_id, "run-001")
+        self.assertEqual(len(backend.submitted_requests), 1)
+        self.assertEqual([entry.event_key for entry in entries], ["run", "run_event"])
+        self.assertEqual(entries[0].event["run_id"], "run-001")
+        self.assertEqual(entries[0].event["turn_id"], "turn-001")
+        self.assertEqual(entries[0].event["status"], AsyncTaskState.QUEUED.value)
+        self.assertEqual(entries[1].event["status"], AsyncTaskState.QUEUED.value)
+        self.assertEqual(
+            entries[0].event["raw_payload_ref"],
+            "fixture://payloads/turn-001",
+        )
+        self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
+        self.assertIn("content_sha256", entries[0].event)
+
+    async def test_approve_rejects_when_approval_lane_is_default_off(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(run_runtime_enabled=True),
+        )
+        run = await runtime.create_run(make_run_request())
+
+        with self.assertRaisesRegex(
+            RuntimeFeatureDisabledError,
+            "runtime feature flag disabled: approval_lane_enabled",
+        ):
+            await runtime.approve(
+                run.run_id,
+                Approval(approval_id="approval-001", decision="approved"),
+            )
+
+        self.assertEqual(backend.submitted_approvals, [])
 
 
 if __name__ == "__main__":
