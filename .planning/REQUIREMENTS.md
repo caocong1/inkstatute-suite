@@ -26,7 +26,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Receives feedback callbacks directly and creates FeedbackEvent records; Hermes feedback.jsonl remains a compatibility/migration input only.
   - Does not perform agent reasoning; it dispatches AgentTurn to the selected agent backend adapter.
 
-- [ ] **REQ-agent-backend-adapter-contract**: V2 must define a backend-neutral agent adapter contract and runtime mode selector so Hermes, future Codex, and future direct provider-model backends can attach through the same platform contract.
+- [x] **REQ-agent-backend-adapter-contract**: V2 must define a backend-neutral agent adapter contract and runtime mode selector so Hermes, future Codex, and future direct provider-model backends can attach through the same platform contract.
   - Defines `agent_backend.mode` values: `hermes`, `codex`, and `provider_model`.
   - V2 production scope requires Hermes mode only; Codex/provider-model modes are contract-compatible future modes and must not be blocked by schema or config assumptions.
   - Adapter manifests include adapter name/version, backend version, hook/event support, invocation mode, feedback target support, session read support, artifact return support, and no-channel-io capability.
@@ -226,7 +226,7 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-hermes-contract-layer | Phase 4 | Complete |
 | REQ-observability-and-replay | Phase 4 | Complete |
 | REQ-inkstatute-wecom-service | Phase 5.5 | Complete |
-| REQ-agent-backend-adapter-contract | Phase 5.5 | Pending |
+| REQ-agent-backend-adapter-contract | Phase 5.5 | Complete |
 | REQ-hermes-adapter-bootstrap | Phase 5.5 | Pending |
 | REQ-assistant-output-boundary | Phase 5.5 | Complete |
 | REQ-wecom-daily-test-loop | Phase 5 | Complete |
