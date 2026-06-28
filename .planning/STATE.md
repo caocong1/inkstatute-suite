@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: "Ready for 03-04-PLAN.md: non-happy-path fixtures and contract-test-suite coverage"
-last_updated: "2026-06-28T09:25:10+08:00"
-last_activity: "2026-06-28 - Completed Phase 03 Plan 02 with source-confirmed Hermes hook-order evidence; ready for Plan 03-04."
+stopped_at: "All Phase 03 plans complete; ready for phase review and verification"
+last_updated: "2026-06-28T09:38:21+08:00"
+last_activity: "2026-06-28 - Completed Phase 03 Plan 04 with non-happy-path fixtures and contract-test-suite coverage; ready for Phase 03 review/verification."
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, and CI-verifiable without changing Hermes outbound behavior.
-**Current focus:** Phase 3 - Hermes Integration Spike and Risk Closure
+**Current focus:** Phase 3 - Hermes Integration Spike and Risk Closure verification
 
 ## Current Position
 
 Phase: 3 of 8 (hermes integration spike and risk closure)
 Plan: 4 of 4
-Status: Ready to execute 03-04 non-happy-path fixtures and contract-test-suite coverage
-Last activity: 2026-06-28 - Completed Phase 03 Plan 02 with source-confirmed Hermes hook-order evidence; ready for Plan 03-04.
+Status: All Phase 03 plans complete; ready for phase review and verification
+Last activity: 2026-06-28 - Completed Phase 03 Plan 04 with non-happy-path fixtures and contract-test-suite coverage; ready for Phase 03 review/verification.
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8
+- Total plans completed: 10
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -46,6 +46,7 @@ Progress: [█████████░] 90%
 |-------|-------|-------|----------|
 | 1 | 3 | - | - |
 | 2 | 3 | - | - |
+| 3 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -60,6 +61,8 @@ Progress: [█████████░] 90%
 | Phase 02-contract-test-suite-foundation P03 | 4m27s | 3 tasks | 7 files |
 | Phase 03 P01 | 3m53s | 2 tasks | 3 files |
 | Phase 03 P03 | 3m07s | 2 tasks | 2 files |
+| Phase 03 P02 | 10min | 2 tasks | 3 files |
+| Phase 03 P04 | 10min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -97,6 +100,9 @@ Recent decisions affecting current work:
 - [Phase 03]: [Phase 03 Plan 02]: A separate recorder can run after response_filter only when its hook directory sorts after response_filter; the manifest name is not the ordering key.
 - [Phase 03]: [Phase 03 Plan 02]: A canonical contract_result_recorder/ directory would run before response_filter and is not valid for after-filter recording.
 - [Phase 03]: [Phase 03 Plan 02]: AgentTurn should prefer source-confirmed agent:start metadata while full input content, attachments, message type, and received_at remain source-dependent.
+- [Phase 03]: [Phase 03 Plan 04]: Non-happy-path evidence lives in contract-test-suite fixtures and reuses validate_event_bundle plus assert_relationship_integrity.
+- [Phase 03]: [Phase 03 Plan 04]: Repeated feedback clicks are represented as one canonical FeedbackEvent with idempotency metadata and duplicate callback references.
+- [Phase 03]: [Phase 03 Plan 04]: Route mismatch fixtures require skill_candidate.requires_human_review and explicit no-auto-modify metadata.
 
 ### Pending Todos
 
@@ -119,5 +125,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-06-28T09:25:10+08:00
-Stopped at: Completed 03-02-PLAN.md; ready for 03-04-PLAN.md
+Stopped at: Completed all Phase 03 plans; ready for phase review and verification
 Resume file: None
