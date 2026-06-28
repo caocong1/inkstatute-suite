@@ -1,0 +1,429 @@
+{
+  "fixture_id": "phase10-runruntime-fake-backend-001",
+  "description": "Synthetic non-legal fake-backend run evidence for embedded DefaultRunRuntime replay.",
+  "metadata": {
+    "runtime_mode": "embedded",
+    "backend": "fake",
+    "backend_adapter": "FakeBackendAdapter",
+    "channels": [],
+    "channel_adapter_count": 0,
+    "server": "none",
+    "feature_flags_enabled_for_test": [
+      "run_runtime_enabled",
+      "streaming_lane_enabled",
+      "contract_log_enabled"
+    ],
+    "not_live_acceptance": true,
+    "evidence_scope": "sanitized_fixture_only",
+    "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+    "output_policy_evidence": {
+      "allowed_delta": {
+        "event_id": "event-phase10-fake-002",
+        "action": "allow",
+        "rule_id": "business_content",
+        "input_hash_prefix": "8b27f43c9a12",
+        "input_length": 39,
+        "privacy": "no_original_blocked_text_stored"
+      },
+      "blocked_delta": {
+        "event_id": "event-phase10-fake-003",
+        "action": "block",
+        "rule_id": "operator_control_notice",
+        "input_hash_prefix": "1d8f0a6bcb34",
+        "input_length": 51,
+        "privacy": "no_original_blocked_text_stored"
+      }
+    }
+  },
+  "events": {
+    "channel_message": {
+      "message_id": "msg-phase10-fake-001",
+      "tenant_id": "tenant-phase10-demo-001",
+      "workspace_id": "workspace-phase10-demo-001",
+      "channel": "web",
+      "channel_conversation_id": "conv-phase10-fake-001",
+      "sender_id": "user-phase10-fake-001",
+      "message_type": "text",
+      "raw_payload_ref": "fixture://phase10/source/request-001",
+      "session_id": "session-phase10-fake-001",
+      "run_id": "run-phase10-fake-001",
+      "received_at": "2026-06-28T10:00:00Z",
+      "industry_context": {
+        "domain": "education",
+        "task_type": "synthetic_status_summary"
+      },
+      "metadata": {
+        "synthetic": true,
+        "input_hash_sha256": "f2a2dbd4d1ef8f4c445708f05e6a4a2a1bbfb248f37e1b4c0f08c92a7632e51a",
+        "sanitized_summary": "Non-sensitive fixture request summary.",
+        "raw_payload_ref": "fixture://phase10/source/request-001"
+      }
+    },
+    "agent_turn": {
+      "turn_id": "turn-phase10-fake-001",
+      "conversation_id": "conv-phase10-fake-001",
+      "channel": "web",
+      "user_id": "user-phase10-fake-001",
+      "message_type": "text",
+      "output_constraints": {
+        "format": "json",
+        "features": [
+          "summary",
+          "status"
+        ],
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "education",
+        "task_type": "synthetic_status_summary"
+      },
+      "received_at": "2026-06-28T10:00:01Z",
+      "metadata": {
+        "channel_message_id": "msg-phase10-fake-001",
+        "session_id": "session-phase10-fake-001",
+        "raw_payload_ref": "fixture://phase10/source/request-001",
+        "input_hash_sha256": "f2a2dbd4d1ef8f4c445708f05e6a4a2a1bbfb248f37e1b4c0f08c92a7632e51a",
+        "sanitized_summary": "Non-sensitive fixture request summary."
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase10-fake-001",
+      "turn_id": "turn-phase10-fake-001",
+      "primary_skill": "synthetic_summary_skill",
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "confidence": 0.91,
+      "matched_rule": "synthetic_summary_request",
+      "reason": "Synthetic non-legal fixture maps to a neutral fake backend skill.",
+      "mode": "matched",
+      "route_mismatch": false,
+      "created_at": "2026-06-28T10:00:02Z",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "run_id": "run-phase10-fake-001",
+        "runtime_mode": "embedded",
+        "backend": "fake"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase10-fake-001",
+      "turn_id": "turn-phase10-fake-001",
+      "started_at": "2026-06-28T10:00:03Z",
+      "ended_at": "2026-06-28T10:00:08Z",
+      "active_skill_name": "synthetic_summary_skill",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-28T10:00:09Z",
+      "ingested_at": "2026-06-28T10:00:10Z",
+      "seq": 0,
+      "steps": [
+        {
+          "name": "fake_backend_prepare_summary",
+          "state": "succeeded",
+          "run_step_id": "step-phase10-fake-001",
+          "input_ref": "fixture://phase10/source/request-001",
+          "output_ref": "fixture://phase10/intermediate/summary-001"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-phase10-fake-summary-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-phase10-fake-001",
+        "turn_id": "turn-phase10-fake-001",
+        "primary_skill": "synthetic_summary_skill",
+        "confidence": 0.91,
+        "mode": "matched",
+        "created_at": "2026-06-28T10:00:02Z"
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "run_id": "run-phase10-fake-001",
+        "raw_payload_ref": "fixture://phase10/source/request-001",
+        "content_hash_sha256": "864b7746a7f6e1a548f6ebc002edbcd4364acfa22e13b5cb74cf118b44750f44"
+      }
+    },
+    "run": {
+      "run_id": "run-phase10-fake-001",
+      "tenant_id": "tenant-phase10-demo-001",
+      "workspace_id": "workspace-phase10-demo-001",
+      "solution_id": "solution-phase10-fake-001",
+      "backend_id": "backend-fake-phase10-001",
+      "session_id": "session-phase10-fake-001",
+      "channel_message_id": "msg-phase10-fake-001",
+      "turn_id": "turn-phase10-fake-001",
+      "status": "succeeded",
+      "requested_output": {
+        "format": "json",
+        "features": [
+          "summary",
+          "status"
+        ],
+        "language_register": "formal"
+      },
+      "created_at": "2026-06-28T10:00:02Z",
+      "updated_at": "2026-06-28T10:00:09Z",
+      "started_at": "2026-06-28T10:00:03Z",
+      "completed_at": "2026-06-28T10:00:09Z",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "runtime_mode": "embedded",
+        "backend": "fake",
+        "channels": [],
+        "server": "none",
+        "not_live_acceptance": true,
+        "route_decision_id": "route-phase10-fake-001",
+        "trace_id": "trace-phase10-fake-001",
+        "raw_payload_ref": "fixture://phase10/source/request-001",
+        "request_hash_sha256": "f2a2dbd4d1ef8f4c445708f05e6a4a2a1bbfb248f37e1b4c0f08c92a7632e51a"
+      }
+    },
+    "run_steps": [
+      {
+        "step_id": "step-phase10-fake-001",
+        "run_id": "run-phase10-fake-001",
+        "kind": "model",
+        "status": "succeeded",
+        "title": "Fake backend summary step",
+        "input_ref": "fixture://phase10/source/request-001",
+        "output_ref": "fixture://phase10/artifacts/summary-001",
+        "started_at": "2026-06-28T10:00:03Z",
+        "ended_at": "2026-06-28T10:00:08Z",
+        "metadata": {
+          "trace_id": "trace-phase10-fake-001",
+          "backend": "fake",
+          "input_hash_sha256": "f2a2dbd4d1ef8f4c445708f05e6a4a2a1bbfb248f37e1b4c0f08c92a7632e51a",
+          "output_hash_sha256": "864b7746a7f6e1a548f6ebc002edbcd4364acfa22e13b5cb74cf118b44750f44"
+        }
+      }
+    ],
+    "run_events": [
+      {
+        "event_id": "event-phase10-fake-000",
+        "run_id": "run-phase10-fake-001",
+        "event_type": "state_changed",
+        "status": "running",
+        "occurred_at": "2026-06-28T10:00:03Z",
+        "seq": 0,
+        "metadata": {
+          "from_status": "queued",
+          "append_only": true
+        }
+      },
+      {
+        "event_id": "event-phase10-fake-001",
+        "run_id": "run-phase10-fake-001",
+        "event_type": "step_completed",
+        "status": "running",
+        "step_id": "step-phase10-fake-001",
+        "occurred_at": "2026-06-28T10:00:08Z",
+        "seq": 1,
+        "metadata": {
+          "append_only": true,
+          "output_ref": "fixture://phase10/artifacts/summary-001"
+        }
+      },
+      {
+        "event_id": "event-phase10-fake-002",
+        "run_id": "run-phase10-fake-001",
+        "event_type": "message_delta",
+        "status": "running",
+        "message_delta": "Synthetic policy-safe progress delta.",
+        "occurred_at": "2026-06-28T10:00:08Z",
+        "seq": 2,
+        "metadata": {
+          "append_only": true,
+          "output_policy": {
+            "action": "allow",
+            "rule_id": "business_content",
+            "input_hash_prefix": "8b27f43c9a12",
+            "input_length": 39,
+            "privacy": "no_original_blocked_text_stored"
+          }
+        }
+      },
+      {
+        "event_id": "event-phase10-fake-003",
+        "run_id": "run-phase10-fake-001",
+        "event_type": "message_delta",
+        "status": "running",
+        "occurred_at": "2026-06-28T10:00:09Z",
+        "seq": 3,
+        "metadata": {
+          "append_only": true,
+          "output_policy": {
+            "action": "block",
+            "rule_id": "operator_control_notice",
+            "input_hash_prefix": "1d8f0a6bcb34",
+            "input_length": 51,
+            "privacy": "no_original_blocked_text_stored"
+          },
+          "visible_text_removed": true
+        }
+      },
+      {
+        "event_id": "event-phase10-fake-004",
+        "run_id": "run-phase10-fake-001",
+        "event_type": "artifact_created",
+        "status": "succeeded",
+        "step_id": "step-phase10-fake-001",
+        "artifact_id": "artifact-phase10-fake-summary-001",
+        "occurred_at": "2026-06-28T10:00:09Z",
+        "seq": 4,
+        "metadata": {
+          "append_only": true,
+          "artifact_ref": "fixture://phase10/artifacts/summary-001",
+          "content_hash_sha256": "864b7746a7f6e1a548f6ebc002edbcd4364acfa22e13b5cb74cf118b44750f44"
+        }
+      }
+    ],
+    "agent_result": {
+      "result_id": "result-phase10-fake-001",
+      "turn_id": "turn-phase10-fake-001",
+      "status": "success",
+      "reply_type": "markdown",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-phase10-fake-summary-001",
+          "kind": "json",
+          "name": "fake-runtime-summary.json",
+          "uri": "fixture://phase10/artifacts/summary-001",
+          "mime_type": "application/json",
+          "features": [
+            "summary",
+            "status"
+          ],
+          "source_refs": [
+            "fixture://phase10/source/request-001"
+          ],
+          "metadata": {
+            "synthetic": true,
+            "domain": "education",
+            "content_hash_sha256": "864b7746a7f6e1a548f6ebc002edbcd4364acfa22e13b5cb74cf118b44750f44"
+          }
+        }
+      ],
+      "feedback_target": "delivery-phase10-fake-001",
+      "route_mismatch": false,
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "trace_id": "trace-phase10-fake-001",
+        "route_decision_id": "route-phase10-fake-001",
+        "run_id": "run-phase10-fake-001",
+        "result_ref": "fixture://phase10/artifacts/summary-001",
+        "content_hash_sha256": "864b7746a7f6e1a548f6ebc002edbcd4364acfa22e13b5cb74cf118b44750f44"
+      }
+    },
+    "artifact_records": [
+      {
+        "artifact_id": "artifact-phase10-fake-summary-001",
+        "run_id": "run-phase10-fake-001",
+        "result_id": "result-phase10-fake-001",
+        "step_id": "step-phase10-fake-001",
+        "tenant_id": "tenant-phase10-demo-001",
+        "workspace_id": "workspace-phase10-demo-001",
+        "kind": "json",
+        "name": "fake-runtime-summary.json",
+        "uri": "fixture://phase10/artifacts/summary-001",
+        "mime_type": "application/json",
+        "checksum": "sha256:864b7746a7f6e1a548f6ebc002edbcd4364acfa22e13b5cb74cf118b44750f44",
+        "source_refs": [
+          "fixture://phase10/source/request-001"
+        ],
+        "created_at": "2026-06-28T10:00:09Z",
+        "metadata": {
+          "synthetic": true,
+          "domain": "education",
+          "raw_payload_ref": "fixture://phase10/source/request-001"
+        }
+      }
+    ],
+    "channel_delivery": {
+      "delivery_id": "delivery-phase10-fake-001",
+      "tenant_id": "tenant-phase10-demo-001",
+      "workspace_id": "workspace-phase10-demo-001",
+      "channel": "web",
+      "channel_conversation_id": "conv-phase10-fake-001",
+      "message_id": "msg-phase10-fake-001",
+      "run_id": "run-phase10-fake-001",
+      "result_id": "result-phase10-fake-001",
+      "status": "suppressed",
+      "reply_type": "markdown",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-phase10-fake-summary-001",
+          "run_id": "run-phase10-fake-001",
+          "result_id": "result-phase10-fake-001",
+          "step_id": "step-phase10-fake-001",
+          "tenant_id": "tenant-phase10-demo-001",
+          "workspace_id": "workspace-phase10-demo-001",
+          "kind": "json",
+          "name": "fake-runtime-summary.json",
+          "uri": "fixture://phase10/artifacts/summary-001",
+          "mime_type": "application/json",
+          "checksum": "sha256:864b7746a7f6e1a548f6ebc002edbcd4364acfa22e13b5cb74cf118b44750f44",
+          "source_refs": [
+            "fixture://phase10/source/request-001"
+          ],
+          "created_at": "2026-06-28T10:00:09Z",
+          "metadata": {
+            "synthetic": true,
+            "domain": "education",
+            "raw_payload_ref": "fixture://phase10/source/request-001"
+          }
+        }
+      ],
+      "created_at": "2026-06-28T10:00:09Z",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "feedback_target": "delivery-phase10-fake-001",
+        "suppressed_reason": "zero_channels_embedded_runtime",
+        "channels": [],
+        "server": "none",
+        "not_live_acceptance": true
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase10-fake-001",
+      "turn_id": "turn-phase10-fake-001",
+      "result_id": "result-phase10-fake-001",
+      "conversation_id": "conv-phase10-fake-001",
+      "user_id": "user-phase10-fake-001",
+      "source": "admin_annotation",
+      "event_type": "rating",
+      "rating": 1,
+      "action": "up",
+      "labels": [
+        "synthetic",
+        "fixture_only"
+      ],
+      "related_route_decision": "route-phase10-fake-001",
+      "feedback_target": "delivery-phase10-fake-001",
+      "status": "triaged",
+      "created_at": "2026-06-28T10:00:11Z",
+      "raw_payload_ref": "fixture://phase10/feedback/annotation-001",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "delivery_id": "delivery-phase10-fake-001",
+        "not_live_acceptance": true,
+        "feedback_hash_sha256": "402d5ead2b9a30f2d28a9be2b5efa766a01be321247a472f198f8c7bc2e6e6fe"
+      }
+    }
+  }
+}
