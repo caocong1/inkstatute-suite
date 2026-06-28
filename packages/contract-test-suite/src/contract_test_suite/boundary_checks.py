@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +44,120 @@ PLATFORM_FORBIDDEN_TEXT = (
     "feedback queue",
 )
 AUTO_MODIFY_TRUE_KEYS = {"auto_modify", "auto_apply", "auto_synthesize", "auto_modify_skill"}
+
+BACKEND_MODE_NAMES = {"hermes", "codex", "provider_model"}
+CHANNEL_NAMES = {"wecom", "qqbot", "web", "desktop"}
+CONCRETE_CONTEXT_NAMES = BACKEND_MODE_NAMES | CHANNEL_NAMES | {"lawfirm"}
+PRIVATE_HERMES_PATTERNS = (
+    re.compile(r"(?:~|/[^\s\"']*)/\.hermes(?:/profiles)?(?:/[A-Za-z0-9_.-]+)?"),
+    re.compile(r"\.hermes/profiles/[A-Za-z0-9_.-]+"),
+)
+WECOM_PAYLOAD_FIELD_NAMES = {
+    "ToUserName",
+    "FromUserName",
+    "CreateTime",
+    "MsgType",
+    "MsgId",
+    "AgentID",
+    "Event",
+    "EventKey",
+    "Encrypt",
+    "MediaId",
+    "PicUrl",
+    "Format",
+    "Recognition",
+}
+SECRET_PATTERNS = (
+    ("secret_value", re.compile(r"\bsk-[A-Za-z0-9]{20,}\b")),
+    ("aws_access_key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+    ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
+    (
+        "plaintext_secret_assignment",
+        re.compile(
+            r"\b(password|secret|token|api[_-]?key)\s*[:=]\s*['\"]?[A-Za-z0-9_./+\-]{12,}",
+            re.IGNORECASE,
+        ),
+    ),
+)
+RUNTIME_ARTIFACT_SUFFIXES = (".db", ".sqlite", ".sqlite3", ".log", ".mp4", ".mov", ".wav", ".mp3", ".docx")
+RUNTIME_PATH_PATTERNS = (
+    re.compile(r"\b(?:sessions|feedback|callbacks?)\.(?:db|sqlite|sqlite3|jsonl|log)\b", re.IGNORECASE),
+    re.compile(r"(?:^|[\"'\s])(?:runtime[-_/]logs?|logs?|media|uploads?)/", re.IGNORECASE),
+)
+
+
+@dataclass(frozen=True)
+class BoundaryAllowlistPolicy:
+    """Path-aware allowlist for neutral package boundary scans."""
+
+    neutral_source_roots: tuple[Path, ...] = field(
+        default_factory=lambda: (
+            Path("packages/platform-contract/src"),
+            Path("packages/platform-runtime/src"),
+        )
+    )
+    neutral_schema_roots: tuple[Path, ...] = field(
+        default_factory=lambda: (Path("packages/platform-contract/src/platform_contract/schemas"),)
+    )
+    neutral_data_roots: tuple[Path, ...] = field(
+        default_factory=lambda: (
+            Path("packages/platform-contract/fixtures"),
+            Path("packages/contract-test-suite/fixtures"),
+        )
+    )
+    architecture_doc_roots: tuple[Path, ...] = field(default_factory=lambda: (Path("docs/architecture"),))
+    concrete_package_roots: tuple[Path, ...] = field(
+        default_factory=lambda: (
+            Path("packages/channels"),
+            Path("packages/backends"),
+            Path("packages/solutions"),
+            Path("services/channels"),
+            Path("services/backends"),
+            Path("services/solutions"),
+        )
+    )
+
+    def iter_neutral_text_files(self, repo_root: Path) -> Iterable[Path]:
+        for root in self.neutral_source_roots + self.neutral_schema_roots:
+            yield from self._iter_text_files(repo_root / root)
+
+    def iter_neutral_data_files(self, repo_root: Path) -> Iterable[Path]:
+        for root in self.neutral_data_roots:
+            yield from self._iter_data_files(repo_root / root)
+
+    def is_concrete_name_allowed(self, path: Path, name: str, repo_root: Path) -> bool:
+        relative = _relative_path(path, repo_root)
+        if self._is_under(relative, self.architecture_doc_roots) or self._is_under(relative, self.concrete_package_roots):
+            return True
+        if name in BACKEND_MODE_NAMES and relative in {
+            Path("packages/platform-contract/src/platform_contract/agent_adapter.py"),
+            Path("packages/platform-contract/src/platform_contract/schemas/agent_adapter_manifest.schema.json"),
+        }:
+            return True
+        if name in CHANNEL_NAMES and relative in {
+            Path("packages/platform-contract/src/platform_contract/enums.py"),
+            Path("packages/platform-contract/src/platform_contract/schemas/common.schema.json"),
+        }:
+            return True
+        return False
+
+    def _iter_text_files(self, root: Path) -> Iterable[Path]:
+        if not root.exists():
+            return
+        for path in sorted(root.rglob("*")):
+            if path.is_file() and path.suffix in {".py", ".json", ".md"} and not _is_ignored_path(path):
+                yield path
+
+    def _iter_data_files(self, root: Path) -> Iterable[Path]:
+        if not root.exists():
+            return
+        for path in sorted(root.rglob("*")):
+            if path.is_file() and not _is_ignored_path(path):
+                yield path
+
+    @staticmethod
+    def _is_under(path: Path, roots: tuple[Path, ...]) -> bool:
+        return any(path == root or root in path.parents for root in roots)
 
 
 def assert_platform_contract_import_boundary(repo_root: str | Path = REPO_ROOT) -> None:
@@ -108,6 +223,31 @@ def assert_feedback_human_review_safety(fixtures: Iterable[str | Path | Mapping[
             if not isinstance(event, Mapping):
                 continue
             issues.extend(_feedback_event_safety_issues(event, path=path, event_key=event_key))
+    _raise_if_issues(issues)
+
+
+def assert_neutral_boundary_allowlist(
+    repo_root: str | Path = REPO_ROOT,
+    policy: BoundaryAllowlistPolicy | None = None,
+) -> None:
+    root = Path(repo_root)
+    active_policy = policy or BoundaryAllowlistPolicy()
+    issues: list[BoundaryIssue] = []
+
+    for path in active_policy.iter_neutral_text_files(root):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        issues.extend(_neutral_text_issues(path, text, repo_root=root, policy=active_policy))
+        if path.suffix == ".json":
+            issues.extend(_neutral_schema_file_issues(path, text))
+
+    for path in active_policy.iter_neutral_data_files(root):
+        issues.extend(_runtime_artifact_path_issues(path))
+        if path.suffix not in {".json", ".jsonl"}:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        issues.extend(_secret_and_runtime_text_issues(path, text))
+        issues.extend(_raw_payload_data_issues(path, text))
+
     _raise_if_issues(issues)
 
 
@@ -199,6 +339,147 @@ def _feedback_event_safety_issues(event: Mapping[str, Any], *, path: Path, event
     return issues
 
 
+def _neutral_text_issues(
+    path: Path,
+    text: str,
+    *,
+    repo_root: Path,
+    policy: BoundaryAllowlistPolicy,
+) -> list[BoundaryIssue]:
+    issues: list[BoundaryIssue] = []
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        issues.extend(_private_hermes_issues(path, line, line=line_number))
+        issues.extend(_wecom_payload_field_issues(path, line, line=line_number))
+        issues.extend(_secret_and_runtime_line_issues(path, line, line=line_number))
+        issues.extend(_concrete_name_issues(path, line, line=line_number, repo_root=repo_root, policy=policy))
+    return issues
+
+
+def _neutral_schema_file_issues(path: Path, text: str) -> list[BoundaryIssue]:
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(value, Mapping):
+        return []
+    return _schema_issues(value, path=path)
+
+
+def _private_hermes_issues(path: Path, line_text: str, *, line: int) -> list[BoundaryIssue]:
+    return [
+        BoundaryIssue(path, "private_hermes_path", "private Hermes runtime/profile path is forbidden", line=line)
+        for pattern in PRIVATE_HERMES_PATTERNS
+        if pattern.search(line_text)
+    ]
+
+
+def _wecom_payload_field_issues(path: Path, line_text: str, *, line: int) -> list[BoundaryIssue]:
+    issues: list[BoundaryIssue] = []
+    for field_name in WECOM_PAYLOAD_FIELD_NAMES:
+        if re.search(rf"\b{re.escape(field_name)}\b", line_text):
+            issues.append(
+                BoundaryIssue(
+                    path,
+                    "wecom_payload_internal",
+                    f"WeCom callback payload field {field_name!r} is forbidden in neutral packages",
+                    line=line,
+                )
+            )
+    return issues
+
+
+def _secret_and_runtime_text_issues(path: Path, text: str) -> list[BoundaryIssue]:
+    issues: list[BoundaryIssue] = []
+    for line_number, line_text in enumerate(text.splitlines(), start=1):
+        issues.extend(_secret_and_runtime_line_issues(path, line_text, line=line_number))
+    return issues
+
+
+def _secret_and_runtime_line_issues(path: Path, line_text: str, *, line: int) -> list[BoundaryIssue]:
+    issues: list[BoundaryIssue] = []
+    for code, pattern in SECRET_PATTERNS:
+        if pattern.search(line_text):
+            issues.append(BoundaryIssue(path, code, "plaintext secret-like value is forbidden", line=line))
+    for pattern in RUNTIME_PATH_PATTERNS:
+        if pattern.search(line_text):
+            issues.append(BoundaryIssue(path, "runtime_artifact_path", "runtime DB/log/media path is forbidden", line=line))
+    return issues
+
+
+def _concrete_name_issues(
+    path: Path,
+    line_text: str,
+    *,
+    line: int,
+    repo_root: Path,
+    policy: BoundaryAllowlistPolicy,
+) -> list[BoundaryIssue]:
+    issues: list[BoundaryIssue] = []
+    for name in CONCRETE_CONTEXT_NAMES:
+        if not re.search(rf"\b{re.escape(name)}\b", line_text, flags=re.IGNORECASE):
+            continue
+        if policy.is_concrete_name_allowed(path, name, repo_root):
+            continue
+        issues.append(
+            BoundaryIssue(
+                path,
+                "concrete_name_not_allowlisted",
+                f"concrete name {name!r} is not allowed in this neutral package context",
+                line=line,
+            )
+        )
+    return issues
+
+
+def _raw_payload_data_issues(path: Path, text: str) -> list[BoundaryIssue]:
+    issues: list[BoundaryIssue] = []
+    if path.suffix == ".json":
+        try:
+            value = json.loads(text)
+        except json.JSONDecodeError:
+            return issues
+        issues.extend(_raw_payload_value_issues(value, path=path))
+    elif path.suffix == ".jsonl":
+        for line_number, line_text in enumerate(text.splitlines(), start=1):
+            if not line_text.strip():
+                continue
+            try:
+                value = json.loads(line_text)
+            except json.JSONDecodeError:
+                continue
+            issues.extend(_raw_payload_value_issues(value, path=path, line=line_number))
+    return issues
+
+
+def _raw_payload_value_issues(value: Any, *, path: Path, line: int | None = None, key_path: str = "") -> list[BoundaryIssue]:
+    issues: list[BoundaryIssue] = []
+    if isinstance(value, Mapping):
+        for key, child in value.items():
+            child_path = f"{key_path}.{key}" if key_path else str(key)
+            if key == "raw_payload":
+                issues.append(
+                    BoundaryIssue(
+                        path,
+                        "raw_payload_field",
+                        f"exact raw_payload field is forbidden at {child_path}",
+                        line=line,
+                    )
+                )
+            issues.extend(_raw_payload_value_issues(child, path=path, line=line, key_path=child_path))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            child_path = f"{key_path}[{index}]"
+            issues.extend(_raw_payload_value_issues(child, path=path, line=line, key_path=child_path))
+    return issues
+
+
+def _runtime_artifact_path_issues(path: Path) -> list[BoundaryIssue]:
+    lowered = path.name.lower()
+    if lowered.endswith(RUNTIME_ARTIFACT_SUFFIXES):
+        return [BoundaryIssue(path, "runtime_artifact", "runtime DB/log/media artifact must not be committed")]
+    return []
+
+
 def _has_auto_modify_true(value: Any) -> bool:
     if isinstance(value, Mapping):
         for key, child in value.items():
@@ -235,11 +516,23 @@ def _raise_if_issues(issues: list[BoundaryIssue]) -> None:
         raise AssertionError(f"{len(issues)} boundary issue(s): {details}{remaining}")
 
 
+def _relative_path(path: Path, repo_root: Path) -> Path:
+    try:
+        return path.resolve().relative_to(repo_root.resolve())
+    except ValueError:
+        return path
+
+
+def _is_ignored_path(path: Path) -> bool:
+    return bool(set(path.parts) & {".git", "__pycache__", ".pytest_cache"}) or path.suffix in {".pyc", ".pyo"}
+
+
 __all__ = [
+    "BoundaryAllowlistPolicy",
     "BoundaryIssue",
     "assert_feedback_human_review_safety",
     "assert_industry_neutral_schemas",
+    "assert_neutral_boundary_allowlist",
     "assert_platform_contract_import_boundary",
     "assert_thin_layer_scope",
 ]
-
