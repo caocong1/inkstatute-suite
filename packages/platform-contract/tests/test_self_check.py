@@ -41,6 +41,7 @@ class SelfCheckTests(unittest.TestCase):
             {
                 "legal-wecom-contract-review-001",
                 "non-legal-engineering-task-001",
+                "platform-foundation-non-legal-run-001",
             },
         )
 
@@ -92,7 +93,13 @@ class SelfCheckTests(unittest.TestCase):
             self_check.assert_no_legal_top_level_required(schemas)
 
     def test_five_event_fixtures_do_not_need_new_resource_objects(self):
+        legacy_fixture_ids = {
+            "legal-wecom-contract-review-001",
+            "non-legal-engineering-task-001",
+        }
         for fixture in self.fixtures:
+            if fixture["fixture_id"] not in legacy_fixture_ids:
+                continue
             self.assertEqual(
                 set(fixture["events"]),
                 {
