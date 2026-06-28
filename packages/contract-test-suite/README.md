@@ -19,9 +19,16 @@ This suite validates:
 - schema validation for the five platform contract event types
 - Phase 1 platform-contract fixtures
 - fixture replay and relationship integrity across turn, route, trace, result, artifacts, and feedback
+- Phase 4 JSONL event-stream replay for partial Hermes shadow logs
 - synthetic composability for non-legal finance/tax, engineering, and education tasks
 - rejection of legal-only or sensitive top-level fields in platform events
 
 This package does not implement Hermes hooks, real Hermes adapters, WeCom loop validation, feedback-service processing, conversation read-view APIs, or `.github` CI workflows.
 
 Phase 7 owns CI enforcement for this command, including any `.github` workflow wiring and broader composability/privacy gates. Phase 3 and Phase 4 own real Hermes output replay and hook/adaptor work.
+
+## Phase 4 Event Streams
+
+Phase 4 hook-output fixtures are JSONL streams under `fixtures/phase4_*_event_stream.jsonl`. Each line is a writer envelope with `event_key`, `occurred_at`, `ingested_at`, `seq`, and a nested schema-valid `event` payload.
+
+Stream replay validates the available `AgentTurn`, `RouteDecision`, `ExecutionTrace`, and `AgentResult` relationships. It intentionally does not require or fabricate `FeedbackEvent`, because WeCom callback capture and feedback normalization belong to Phase 5/6. Full five-event bundle replay remains unchanged for standard fixture JSON files.
