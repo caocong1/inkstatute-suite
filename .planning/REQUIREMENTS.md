@@ -214,7 +214,7 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
   - A server, a Tauri sidecar, or an Electron child process are thin hosts of the same library.
   - Local desktop/mobile runtime is not implemented this milestone, only kept possible.
 
-- [ ] **REQ-runlane-output-boundary**: Every run event/delta path must pass through the assistant output boundary before ordinary-user delivery.
+- [x] **REQ-runlane-output-boundary**: Every run event/delta path must pass through the assistant output boundary before ordinary-user delivery.
   - Streamed tool/approval/gateway/meta/internal events never reach ordinary users.
   - Leak fixtures prove the boundary on the streaming lane.
   - The boundary does not semantically rewrite legal business conclusions.
