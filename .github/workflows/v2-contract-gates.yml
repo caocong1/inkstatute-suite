@@ -1,0 +1,21 @@
+name: V2 Contract Gates
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  v2-contract-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run local V2 gates
+        run: python scripts/run_v2_gates.py
+
