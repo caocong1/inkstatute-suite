@@ -9,6 +9,7 @@ from pathlib import Path
 from contract_test_suite.fixture_replay import (
     FixtureReplayError,
     ReplayReport,
+    assert_platform_foundation_relationships,
     assert_relationship_integrity,
     load_fixture_paths,
     load_fixtures_from_paths,
@@ -32,6 +33,7 @@ class FixtureReplayTests(unittest.TestCase):
             [
                 "legal_wecom_contract_review.json",
                 "non_legal_engineering_task.json",
+                "platform_foundation_non_legal_run.json",
             ],
         )
         self.assertTrue(all(path.parent == PLATFORM_FIXTURE_ROOT for path in paths))
@@ -43,7 +45,11 @@ class FixtureReplayTests(unittest.TestCase):
 
         self.assertEqual(
             [item.fixture["fixture_id"] for item in loaded],
-            ["legal-wecom-contract-review-001", "non-legal-engineering-task-001"],
+            [
+                "legal-wecom-contract-review-001",
+                "non-legal-engineering-task-001",
+                "platform-foundation-non-legal-run-001",
+            ],
         )
         self.assertEqual([item.path for item in loaded], paths)
 
@@ -51,7 +57,7 @@ class FixtureReplayTests(unittest.TestCase):
         report = replay_fixtures(schemas=self.schemas)
 
         self.assertIsInstance(report, ReplayReport)
-        self.assertEqual(report.fixture_count, 2)
+        self.assertEqual(report.fixture_count, 3)
         self.assertGreater(report.relationship_check_count, 0)
         self.assertEqual(report.broken_relationship_count, 0)
         self.assertEqual(report.breakage_rate, 0.0)
@@ -152,6 +158,27 @@ class FixtureReplayTests(unittest.TestCase):
                 assert_relationship_integrity([path], schemas=self.schemas)
 
             assert_relationship_integrity([path], max_breakage_rate=1.0, schemas=self.schemas)
+
+    def test_old_five_event_fixtures_replay_without_platform_extension_objects(self) -> None:
+        old_paths = [
+            path
+            for path in load_fixture_paths()
+            if path.name in {"legal_wecom_contract_review.json", "non_legal_engineering_task.json"}
+        ]
+
+        report = replay_fixtures(old_paths, schemas=self.schemas)
+
+        self.assertEqual(report.fixture_count, 2)
+        self.assertEqual(report.broken_relationship_count, 0)
+
+    def test_platform_foundation_relationship_helper_passes_for_fixture(self) -> None:
+        fixture = next(
+            fixture
+            for fixture in self.fixtures
+            if fixture["fixture_id"] == "platform-foundation-non-legal-run-001"
+        )
+
+        assert_platform_foundation_relationships(fixture)
 
     def _assert_single_fixture_integrity(self, fixture: dict) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

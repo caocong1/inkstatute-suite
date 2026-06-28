@@ -42,6 +42,7 @@ class SchemaValidationTests(unittest.TestCase):
                 "phase5-wecom-feedback-loop-001",
                 "phase55-wecom-service-agent-loop-001",
                 "phase6-read-feedback-apis-001",
+                "platform-foundation-non-legal-run-001",
             },
         )
 

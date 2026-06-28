@@ -23,6 +23,21 @@ EVENT_SCHEMA_BY_KEY = {
     "agent_result": "agent_result",
     "feedback_event": "feedback_event",
 }
+OPTIONAL_OBJECT_SCHEMA_BY_KEY = {
+    "channel_message": "channel_message",
+    "run": "run",
+    "channel_delivery": "channel_delivery",
+}
+OPTIONAL_ARRAY_SCHEMA_BY_KEY = {
+    "run_steps": "run_step",
+    "run_events": "run_event",
+    "artifact_records": "artifact_record",
+}
+KNOWN_FIXTURE_KEYS = (
+    set(EVENT_SCHEMA_BY_KEY)
+    | set(OPTIONAL_OBJECT_SCHEMA_BY_KEY)
+    | set(OPTIONAL_ARRAY_SCHEMA_BY_KEY)
+)
 
 FORBIDDEN_TOP_LEVEL_FIELDS = {
     "case_type",
@@ -106,7 +121,7 @@ def validate_event_bundle(
     if not isinstance(events, dict):
         raise ContractValidationError(f"{fixture_id}: events must be object")
 
-    extra_events = sorted(set(events) - set(EVENT_SCHEMA_BY_KEY))
+    extra_events = sorted(set(events) - KNOWN_FIXTURE_KEYS)
     if extra_events:
         raise ContractValidationError(f"{fixture_id}.{extra_events[0]}: unknown event key")
 
@@ -114,6 +129,31 @@ def validate_event_bundle(
         if event_key not in events:
             raise ContractValidationError(f"{fixture_id}.{event_key}: missing event")
         validate_event(event_key, events[event_key], loaded_schemas, fixture_id=fixture_id)
+
+    for event_key, schema_name in OPTIONAL_OBJECT_SCHEMA_BY_KEY.items():
+        if event_key in events:
+            _validate_schema(
+                loaded_schemas[schema_name],
+                events[event_key],
+                loaded_schemas,
+                path=(fixture_id, event_key),
+                is_event_top_level=True,
+            )
+
+    for event_key, schema_name in OPTIONAL_ARRAY_SCHEMA_BY_KEY.items():
+        if event_key not in events:
+            continue
+        values = events[event_key]
+        if not isinstance(values, list):
+            raise ContractValidationError(f"{fixture_id}.{event_key}: expected type array, got {_type_name(values)}")
+        for index, value in enumerate(values):
+            _validate_schema(
+                loaded_schemas[schema_name],
+                value,
+                loaded_schemas,
+                path=(fixture_id, f"{event_key}[{index}]"),
+                is_event_top_level=True,
+            )
 
 
 def _validate_schema(

@@ -19,6 +19,17 @@ EVENT_SCHEMA_BY_KEY = {
     "agent_result": "agent_result",
     "feedback_event": "feedback_event",
 }
+OPTIONAL_OBJECT_SCHEMA_BY_KEY = {
+    "channel_message": "channel_message",
+    "run": "run",
+    "channel_delivery": "channel_delivery",
+}
+OPTIONAL_ARRAY_SCHEMA_BY_KEY = {
+    "run_steps": "run_step",
+    "run_events": "run_event",
+    "artifact_records": "artifact_record",
+}
+PLATFORM_FOUNDATION_KEYS = set(OPTIONAL_OBJECT_SCHEMA_BY_KEY) | set(OPTIONAL_ARRAY_SCHEMA_BY_KEY)
 CORE_SCHEMA_NAMES = set(EVENT_SCHEMA_BY_KEY.values()) | {"common"}
 NEW_STANDALONE_SCHEMA_NAMES = {
     "approval",
@@ -111,6 +122,31 @@ def assert_fixture_required_fields(schemas, fixtures):
                 is_event_top_level=True,
             )
 
+        for event_key, schema_name in OPTIONAL_OBJECT_SCHEMA_BY_KEY.items():
+            if event_key in events:
+                _assert_required_and_enums(
+                    schemas[schema_name],
+                    events[event_key],
+                    schemas,
+                    f"{fixture['fixture_id']}.{event_key}",
+                    is_event_top_level=True,
+                )
+
+        for event_key, schema_name in OPTIONAL_ARRAY_SCHEMA_BY_KEY.items():
+            if event_key not in events:
+                continue
+            values = events[event_key]
+            if not isinstance(values, list):
+                raise AssertionError(f"{fixture['fixture_id']}.{event_key} must be an array")
+            for index, value in enumerate(values):
+                _assert_required_and_enums(
+                    schemas[schema_name],
+                    value,
+                    schemas,
+                    f"{fixture['fixture_id']}.{event_key}[{index}]",
+                    is_event_top_level=True,
+                )
+
 
 def assert_fixture_relationships(fixtures):
     for fixture in fixtures:
@@ -123,7 +159,8 @@ def assert_fixture_relationships(fixtures):
         feedback_event = events["feedback_event"]
 
         turn_id = agent_turn["turn_id"]
-        for name, event in events.items():
+        for name in EVENT_SCHEMA_BY_KEY:
+            event = events[name]
             _assert_equal(event.get("turn_id"), turn_id, f"{fixture_id}.{name}.turn_id")
 
         _assert_equal(
@@ -163,6 +200,76 @@ def assert_fixture_relationships(fixtures):
                 route_decision.get("route_decision_id"),
                 f"{fixture_id}.execution_trace.route_decision_id",
             )
+
+        if any(key in events for key in PLATFORM_FOUNDATION_KEYS):
+            _assert_platform_foundation_relationships(fixture)
+
+
+def _assert_platform_foundation_relationships(fixture):
+    fixture_id = fixture["fixture_id"]
+    events = fixture["events"]
+    missing = sorted(PLATFORM_FOUNDATION_KEYS - set(events))
+    if missing:
+        raise AssertionError(f"{fixture_id} missing platform foundation events: {missing}")
+
+    agent_turn = events["agent_turn"]
+    agent_result = events["agent_result"]
+    feedback_event = events["feedback_event"]
+    channel_message = events["channel_message"]
+    run = events["run"]
+    run_steps = events["run_steps"]
+    run_events = events["run_events"]
+    artifact_records = events["artifact_records"]
+    channel_delivery = events["channel_delivery"]
+
+    step_ids = {step["step_id"] for step in run_steps}
+    artifact_record_ids = {artifact["artifact_id"] for artifact in artifact_records}
+    nested_artifact_ids = {artifact["artifact_id"] for artifact in agent_result.get("artifacts", [])}
+
+    _assert_equal(
+        agent_turn.get("metadata", {}).get("channel_message_id"),
+        channel_message["message_id"],
+        f"{fixture_id}.agent_turn.metadata.channel_message_id",
+    )
+    _assert_equal(run.get("channel_message_id"), channel_message["message_id"], f"{fixture_id}.run.channel_message_id")
+    _assert_equal(run.get("turn_id"), agent_turn["turn_id"], f"{fixture_id}.run.turn_id")
+    _assert_equal(channel_message.get("run_id"), run["run_id"], f"{fixture_id}.channel_message.run_id")
+    _assert_equal(agent_result.get("metadata", {}).get("run_id"), run["run_id"], f"{fixture_id}.agent_result.metadata.run_id")
+    _assert_equal(channel_delivery.get("run_id"), run["run_id"], f"{fixture_id}.channel_delivery.run_id")
+    _assert_equal(channel_delivery.get("result_id"), agent_result["result_id"], f"{fixture_id}.channel_delivery.result_id")
+    _assert_equal(channel_delivery.get("message_id"), channel_message["message_id"], f"{fixture_id}.channel_delivery.message_id")
+    _assert_equal(feedback_event.get("feedback_target"), channel_delivery["delivery_id"], f"{fixture_id}.feedback_event.feedback_target")
+    _assert_equal(feedback_event.get("metadata", {}).get("delivery_id"), channel_delivery["delivery_id"], f"{fixture_id}.feedback_event.metadata.delivery_id")
+
+    for index, step in enumerate(run_steps):
+        _assert_equal(step.get("run_id"), run["run_id"], f"{fixture_id}.run_steps[{index}].run_id")
+
+    for index, event in enumerate(run_events):
+        _assert_equal(event.get("run_id"), run["run_id"], f"{fixture_id}.run_events[{index}].run_id")
+        if "step_id" in event and event["step_id"] not in step_ids:
+            raise AssertionError(f"{fixture_id}.run_events[{index}].step_id not found: {event['step_id']!r}")
+        if "artifact_id" in event and event["artifact_id"] not in artifact_record_ids | nested_artifact_ids:
+            raise AssertionError(f"{fixture_id}.run_events[{index}].artifact_id not found: {event['artifact_id']!r}")
+
+    for index, artifact in enumerate(artifact_records):
+        _assert_equal(artifact.get("run_id"), run["run_id"], f"{fixture_id}.artifact_records[{index}].run_id")
+        _assert_equal(
+            artifact.get("result_id"),
+            agent_result["result_id"],
+            f"{fixture_id}.artifact_records[{index}].result_id",
+        )
+        if artifact.get("artifact_id") not in nested_artifact_ids:
+            raise AssertionError(f"{fixture_id}.artifact_records[{index}].artifact_id missing from AgentResult")
+        if "step_id" in artifact and artifact["step_id"] not in step_ids:
+            raise AssertionError(f"{fixture_id}.artifact_records[{index}].step_id not found: {artifact['step_id']!r}")
+
+    for index, artifact in enumerate(agent_result.get("artifacts", [])):
+        if artifact.get("artifact_id") not in artifact_record_ids:
+            raise AssertionError(f"{fixture_id}.agent_result.artifacts[{index}].artifact_id missing ArtifactRecord")
+
+    for index, artifact in enumerate(channel_delivery.get("artifacts", [])):
+        if artifact.get("artifact_id") not in artifact_record_ids:
+            raise AssertionError(f"{fixture_id}.channel_delivery.artifacts[{index}].artifact_id missing ArtifactRecord")
 
 
 def assert_no_legal_top_level_required(schemas):
