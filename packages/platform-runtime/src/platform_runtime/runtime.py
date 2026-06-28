@@ -170,14 +170,14 @@ class DefaultRunRuntime:
             return replace(
                 event,
                 payload=_without_visible_text(event.payload),
-                metadata={**event.metadata, "output_boundary": policy_metadata},
+                metadata={**_without_visible_text(event.metadata), "output_boundary": policy_metadata},
             )
 
         if _boundary_action_value(decision.action) == BoundaryAction.REWRITE.value:
             return replace(
                 event,
                 payload=_replace_visible_text(event.payload, decision.visible_text),
-                metadata={**event.metadata, "output_boundary": policy_metadata},
+                metadata={**_without_visible_text(event.metadata), "output_boundary": policy_metadata},
             )
 
         return replace(

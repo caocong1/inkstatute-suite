@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
-from platform_contract.enums import Channel, MessageType
+from platform_contract.enums import Channel, MessageType, RunEventType
 from platform_contract.events import AgentTurn
-from platform_runtime import BoundaryAction, DefaultAssistantOutputBoundary
+from platform_runtime import BoundaryAction, DefaultAssistantOutputBoundary, RunEvent
 from platform_runtime import DefaultRunRuntime, RunRequest, RuntimeFeatureDisabledError, RuntimeFeatureFlags, SolutionBinding
 from platform_runtime.fakes import FakeBackendAdapter
 
@@ -176,6 +176,68 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(original, repr(streamed))
         self.assertNotIn("token=secret", repr(streamed))
         self.assertNotIn(original, repr(streamed.metadata["output_boundary"]))
+
+    async def test_stream_blocks_visible_metadata_without_preserving_original_text(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                streaming_lane_enabled=True,
+            ),
+        )
+        run = await runtime.create_run(make_run_request())
+        original = "ADMIN_NOTICE traceback token=secret"
+        backend.events[run.run_id].append(
+            RunEvent(
+                event_id="metadata-visible-001",
+                run_id=run.run_id,
+                event_type=RunEventType.MESSAGE_DELTA.value,
+                occurred_at=FIXED_NOW,
+                seq=len(backend.events[run.run_id]),
+                payload={"status": "running"},
+                metadata={"visible_text": original, "scripted": True},
+            )
+        )
+
+        events = [event async for event in runtime.stream(run.run_id)]
+        streamed = events[-1]
+
+        self.assertEqual(streamed.metadata["output_boundary"]["action"], BoundaryAction.BLOCK.value)
+        self.assertNotIn("visible_text", streamed.metadata)
+        self.assertNotIn(original, repr(streamed))
+        self.assertNotIn("token=secret", repr(streamed))
+
+    async def test_stream_rewrites_visible_metadata_without_preserving_backend_notice(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                streaming_lane_enabled=True,
+            ),
+        )
+        run = await runtime.create_run(make_run_request())
+        original = "Hermes gateway restarted"
+        backend.events[run.run_id].append(
+            RunEvent(
+                event_id="metadata-visible-002",
+                run_id=run.run_id,
+                event_type=RunEventType.MESSAGE_DELTA.value,
+                occurred_at=FIXED_NOW,
+                seq=len(backend.events[run.run_id]),
+                payload={"status": "running"},
+                metadata={"text": original, "scripted": True},
+            )
+        )
+
+        events = [event async for event in runtime.stream(run.run_id)]
+        streamed = events[-1]
+
+        self.assertEqual(streamed.metadata["output_boundary"]["action"], BoundaryAction.REWRITE.value)
+        self.assertIn("InkStatute", streamed.payload["message_delta"])
+        self.assertNotIn("text", streamed.metadata)
+        self.assertNotIn(original, repr(streamed))
 
     async def test_stream_policy_fixture_covers_allow_rewrite_progress_and_block_cases(self) -> None:
         backend = FakeBackendAdapter()
