@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any, Mapping
 from urllib.parse import parse_qs
 
+from .privacy import scrub_contract_payload
+
 
 def handle_get(
     path: str,
@@ -43,7 +45,7 @@ def handle_get(
                     "source_status": "unsupported_filter",
                 },
             }
-        items = [item for item in feedback_queue or [] if item.get("status") == "pending"]
+        items = [scrub_contract_payload(item) for item in feedback_queue or [] if item.get("status") == "pending"]
         return 200, {
             "items": items,
             "count": len(items),
@@ -101,4 +103,3 @@ __all__ = [
     "not_found_response",
     "parse_query_string",
 ]
-

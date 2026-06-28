@@ -53,6 +53,18 @@ class ReadViewApiTests(unittest.TestCase):
         self.assertGreaterEqual(body["count"], 1)
         self.assertTrue(all(item["status"] == "pending" for item in body["items"]))
 
+    def test_get_feedback_rejects_raw_payload_items(self) -> None:
+        unsafe_queue = [
+            {
+                "feedback_id": "unsafe-feedback",
+                "status": "pending",
+                "raw_payload": {"body": "blocked"},
+            }
+        ]
+
+        with self.assertRaises(ValueError):
+            handle_get("/feedback?status=pending", "", self.read_model, unsafe_queue)
+
     def test_unsupported_path_returns_404(self) -> None:
         status, body = handle_get("/unknown", "", self.read_model)
 
@@ -68,4 +80,3 @@ class ReadViewApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
