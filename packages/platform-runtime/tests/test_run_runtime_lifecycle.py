@@ -10,6 +10,7 @@ from platform_runtime import (
     DefaultRunRuntime,
     InMemoryContractLogStore,
     RunRequest,
+    RunRuntimeStateError,
     RuntimeFeatureDisabledError,
     RuntimeFeatureFlags,
     SolutionBinding,
@@ -135,6 +136,25 @@ class DefaultRunRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
         self.assertIn("content_sha256", entries[0].event)
 
+    async def test_create_run_with_contract_log_enabled_requires_store_before_backend_call(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                contract_log_enabled=True,
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            RunRuntimeStateError,
+            "contract_log_enabled requires contract_log_store",
+        ):
+            await runtime.create_run(make_run_request())
+
+        self.assertEqual(backend.submitted_requests, [])
+        self.assertEqual(backend.runs, {})
+
     async def test_zero_channel_runtime_creates_polls_and_streams_fake_run(self) -> None:
         backend = FakeBackendAdapter()
         runtime = DefaultRunRuntime(
@@ -182,6 +202,30 @@ class DefaultRunRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(entries[-1].event["status"], AsyncTaskState.CANCELLED.value)
         self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
 
+    async def test_cancel_with_contract_log_enabled_requires_store_before_backend_call(self) -> None:
+        backend = FakeBackendAdapter()
+        setup_runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(run_runtime_enabled=True),
+        )
+        run = await setup_runtime.create_run(make_run_request())
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                contract_log_enabled=True,
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            RunRuntimeStateError,
+            "contract_log_enabled requires contract_log_store",
+        ):
+            await runtime.cancel(run.run_id)
+
+        self.assertEqual(backend.cancelled_run_ids, [])
+        self.assertEqual(backend.runs[run.run_id].status, AsyncTaskState.SUCCEEDED)
+
     async def test_approve_updates_fake_backend_and_records_reference_first_state(self) -> None:
         clock = FakeRuntimeClock(start=FIXED_NOW)
         id_factory = FakeIdFactory()
@@ -225,6 +269,33 @@ class DefaultRunRuntimeTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertRegex(entries[0].event["content_sha256"], r"^[0-9a-f]{64}$")
         self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
+
+    async def test_approve_with_contract_log_enabled_requires_store_before_backend_call(self) -> None:
+        backend = FakeBackendAdapter()
+        setup_runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(run_runtime_enabled=True),
+        )
+        run = await setup_runtime.create_run(make_run_request())
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                approval_lane_enabled=True,
+                contract_log_enabled=True,
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            RunRuntimeStateError,
+            "contract_log_enabled requires contract_log_store",
+        ):
+            await runtime.approve(
+                run.run_id,
+                Approval(approval_id="approval-001", decision="approved"),
+            )
+
+        self.assertEqual(backend.submitted_approvals, [])
 
     async def test_approve_rejects_when_approval_lane_is_default_off(self) -> None:
         backend = FakeBackendAdapter()

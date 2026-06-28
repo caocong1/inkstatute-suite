@@ -43,6 +43,7 @@ class DefaultRunRuntime:
 
     async def create_run(self, req: RunRequest) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
+        self._require_contract_log_store_if_enabled()
         handle = await self.backend.submit_run(req)
         if self.feature_flags.contract_log_enabled:
             self._append_run_record(req, handle.run_id, handle.status, handle.backend_run_id)
@@ -69,6 +70,7 @@ class DefaultRunRuntime:
 
     async def cancel(self, run_id: str) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
+        self._require_contract_log_store_if_enabled()
         run = await self.backend.cancel_run(run_id)
         if self.feature_flags.contract_log_enabled:
             self._append_state_event(
@@ -83,6 +85,7 @@ class DefaultRunRuntime:
     async def approve(self, run_id: str, approval: Approval) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
         self.feature_flags.require_enabled("approval_lane_enabled")
+        self._require_contract_log_store_if_enabled()
         run = await self.backend.submit_approval(run_id, approval)
         if self.feature_flags.contract_log_enabled:
             self._append_state_event(
@@ -149,6 +152,10 @@ class DefaultRunRuntime:
         if self.contract_log_store is None:
             raise RunRuntimeStateError("contract_log_enabled requires contract_log_store")
         return self.contract_log_store
+
+    def _require_contract_log_store_if_enabled(self) -> None:
+        if self.feature_flags.contract_log_enabled:
+            self._contract_log()
 
     def _apply_output_boundary(self, event: RunEvent) -> RunEvent | None:
         visible_text = _event_visible_text(event)
