@@ -66,7 +66,10 @@ def load_contract_fixtures(
 
     fixtures: list[dict[str, Any]] = []
     for root in roots:
-        fixtures.extend(load_json(path) for path in sorted(root.glob("*.json")))
+        for path in sorted(root.glob("*.json")):
+            fixture = load_json(path)
+            if isinstance(fixture, dict) and isinstance(fixture.get("events"), dict):
+                fixtures.append(fixture)
     return fixtures
 
 
