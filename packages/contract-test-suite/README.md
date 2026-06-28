@@ -39,3 +39,9 @@ Stream replay validates the available `AgentTurn`, `RouteDecision`, `ExecutionTr
 Phase 5 WeCom result-to-feedback fixtures are under `fixtures/phase5_wecom_*`. They prove a sanitized fixture chain from WeCom `AgentTurn` through `AgentResult.feedback_target` to a normalized `FeedbackEvent.feedback_target`.
 
 This is fixture replay, not live validation. Live validation remains an operator-run Hermes lawfirm and WeCom check documented in `.planning/phases/05-wecom-shadow-loop-validation/05-WECOM-VALIDATION.md`; synthetic replay must not be reported as live WeCom acceptance.
+
+## Phase 5.5 WeCom Service and Adapter Replay
+
+Phase 5.5 fixtures are under `fixtures/phase55_*`. They prove the local contract path from InkStatute WeCom service callback normalization through Hermes adapter manifest selection, output-policy-filtered send envelope construction, and InkStatute feedback callback normalization.
+
+This fixture data cannot pass live acceptance. Live acceptance for Phase 5.5 requires operator evidence documented in `.planning/phases/05.5-inkstatute-wecom-service-and-hermes-agent-adapter/05.5-WECOM-LIVE-ACCEPTANCE.md`, including InkStatute-owned WeCom receive/send, Hermes used only for agent logic, output boundary evidence, and InkStatute feedback callback evidence.
