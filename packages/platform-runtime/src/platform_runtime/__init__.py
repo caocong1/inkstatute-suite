@@ -32,6 +32,7 @@ from .ports import (
     IdFactory,
     RuntimeClock,
 )
+from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
 
 __all__ = [
     "AckResponse",
@@ -58,6 +59,8 @@ __all__ = [
     "RunRequest",
     "RunRuntime",
     "RuntimeClock",
+    "RuntimeFeatureDisabledError",
+    "RuntimeFeatureFlags",
     "Solution",
     "SolutionBinding",
     "SolutionLoader",
