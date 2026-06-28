@@ -97,7 +97,8 @@ class BoundaryAllowlistTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             fixture = _fixture_path(root, "fixture.json")
-            fixture.write_text(json.dumps({"api_key": "sk-1234567890abcdefghijklmnop"}), encoding="utf-8")
+            secret_like_value = "sk-" + "1234567890abcdefghijklmnop"
+            fixture.write_text(json.dumps({"api_key": secret_like_value}), encoding="utf-8")
 
             with self.assertRaisesRegex(AssertionError, "secret_value"):
                 assert_neutral_boundary_allowlist(root)
