@@ -41,7 +41,78 @@ class AgentBackendManifest:
 def validate_agent_backend_manifest(manifest: AgentBackendManifest | JsonObject) -> list[JsonObject]:
     """Return structured validation issues for an adapter manifest."""
 
-    raise NotImplementedError
+    issues: list[JsonObject] = []
+    mode = _field(manifest, "mode")
+    backend_version = _field(manifest, "backend_version")
+    capabilities = _field(manifest, "capabilities")
+
+    if _blank(mode):
+        issues.append(_issue("missing_mode", "mode", "adapter manifest requires mode"))
+    elif _mode_value(mode) not in {item.value for item in AgentBackendMode}:
+        issues.append(_issue("unsupported_mode", "mode", f"unsupported adapter mode {_mode_value(mode)!r}"))
+
+    if _blank(backend_version):
+        issues.append(
+            _issue("missing_backend_version", "backend_version", "adapter manifest requires backend_version")
+        )
+
+    if capabilities is None:
+        issues.append(_issue("missing_capabilities", "capabilities", "adapter manifest requires capabilities"))
+        return issues
+
+    invocation_mode = _field(capabilities, "invocation_mode")
+    if _blank(invocation_mode):
+        issues.append(
+            _issue(
+                "missing_invocation_mode",
+                "capabilities.invocation_mode",
+                "adapter manifest requires invocation_mode",
+            )
+        )
+
+    no_channel_io = _field(capabilities, "no_channel_io", missing=None)
+    if no_channel_io is None:
+        issues.append(
+            _issue(
+                "missing_no_channel_io",
+                "capabilities.no_channel_io",
+                "adapter manifest requires no_channel_io",
+            )
+        )
+    elif not isinstance(no_channel_io, bool):
+        issues.append(
+            _issue(
+                "invalid_no_channel_io",
+                "capabilities.no_channel_io",
+                "no_channel_io must be a boolean",
+            )
+        )
+
+    return issues
+
+
+def _field(value: Any, name: str, *, missing: Any = None) -> Any:
+    if isinstance(value, dict):
+        return value.get(name, missing)
+    return getattr(value, name, missing)
+
+
+def _blank(value: Any) -> bool:
+    return value is None or (isinstance(value, str) and not value.strip())
+
+
+def _mode_value(value: Any) -> str:
+    if isinstance(value, AgentBackendMode):
+        return value.value
+    return str(value)
+
+
+def _issue(code: str, path: str, message: str) -> JsonObject:
+    return {
+        "code": code,
+        "path": path,
+        "message": message,
+    }
 
 
 __all__ = [

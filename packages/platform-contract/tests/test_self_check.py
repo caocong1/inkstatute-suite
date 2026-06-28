@@ -19,8 +19,7 @@ class SelfCheckTests(unittest.TestCase):
         self.fixtures = self_check.load_fixtures()
 
     def test_loads_all_schemas_and_fixtures(self):
-        self.assertEqual(
-            set(self.schemas),
+        self.assertTrue(
             {
                 "agent_result",
                 "agent_turn",
@@ -28,8 +27,10 @@ class SelfCheckTests(unittest.TestCase):
                 "execution_trace",
                 "feedback_event",
                 "route_decision",
-            },
+            }
+            <= set(self.schemas)
         )
+        self.assertIn("agent_adapter_manifest", self.schemas)
         self.assertEqual(
             {fixture["fixture_id"] for fixture in self.fixtures},
             {

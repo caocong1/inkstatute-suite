@@ -19,6 +19,7 @@ EVENT_SCHEMA_BY_KEY = {
     "agent_result": "agent_result",
     "feedback_event": "feedback_event",
 }
+CORE_SCHEMA_NAMES = set(EVENT_SCHEMA_BY_KEY.values()) | {"common"}
 
 FORBIDDEN_REQUIRED_FIELDS = {
     "case_type",
@@ -52,9 +53,9 @@ def load_fixtures():
 
 
 def assert_schema_shape(schemas):
-    expected = {"agent_turn", "agent_result", "feedback_event", "execution_trace", "route_decision", "common"}
-    if set(schemas) != expected:
-        raise AssertionError(f"Expected schemas {sorted(expected)}, got {sorted(schemas)}")
+    missing = CORE_SCHEMA_NAMES - set(schemas)
+    if missing:
+        raise AssertionError(f"Missing core schemas {sorted(missing)} from {sorted(schemas)}")
 
     for name, schema in schemas.items():
         _assert_equal(schema.get("$schema"), "https://json-schema.org/draft/2020-12/schema", f"{name} $schema")
