@@ -26,4 +26,6 @@ Assistant output boundary is an InkStatute WeCom service responsibility. Hermes 
 
 WeCom shadow loop validation is documented in [docs/wecom_shadow_loop_validation.md](docs/wecom_shadow_loop_validation.md). It separates fixture-backed checks from opt-in live Hermes validation and requires `INKSTATUTE_CONTRACT_LOG_PATH` to point outside this repo for live runs.
 
+Phase 5.5 Hermes adapter compatibility is documented in [docs/hermes_adapter_compatibility.md](docs/hermes_adapter_compatibility.md). The sanitized lawfirm profile bundle manifest lives at [bundles/lawfirm-profile-bundle.manifest.json](bundles/lawfirm-profile-bundle.manifest.json).
+
 repo tests never mutate `/home/sorawatcher/.hermes`; live hook deployment must be explicit and reversible.
