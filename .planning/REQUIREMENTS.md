@@ -175,6 +175,110 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Negative feedback has a recorded response action within 48 hours.
   - route_mismatch count is no more than 3, and each item has a structured skill_candidate or routing_rule_candidate.
 
+## Platform Foundation (v1.1) Requirements
+
+Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.planning/drafts/agent-platform-north-star.md`. Execution plan: `.planning/drafts/agent-platformization-plan-v5.md`. These are autonomous-buildable (code + tests + fixtures). Live cutover and the Phase 8 lawyer trial are human gates outside the autonomous path.
+
+### Platform Core Contracts
+
+- [x] **REQ-platform-north-star**: The platform must be designed to four backend-, channel-, and industry-neutral interface contracts so channels, agent backends, and solutions are independently swappable.
+  - Defines `ChannelAdapter`, `BackendAdapter`, `SolutionLoader`, and `RunRuntime` as the stable seams.
+  - The lawyer assistant is the first solution, Hermes the first backend, WeCom the first channel; none defines the platform core.
+  - Platform core must not depend on Hermes paths, WeCom protocol internals, or legal fields.
+  - The North Star architecture is recorded under `docs/architecture/` and is authoritative for platform shape.
+
+- [ ] **REQ-platform-contract-extension**: Extend `platform-contract` additively with new platform resources/events without breaking V2 schemas.
+  - Adds `ChannelMessage`, `ChannelDelivery`, `Run`, `RunEvent`, `RunStep`, `ToolCall`, `Approval`, `ArtifactRecord`, `Session`, `Tenant`, `Workspace`, `SolutionPackageManifest` (+ neutral skill/mcp descriptors), `BotInstance`, `ChannelBinding`.
+  - `Run.status` reuses the existing `AsyncTaskState` enum.
+  - `ArtifactRecord` is a top-level ref distinct from nested `AgentResult.artifacts`.
+  - `AdapterCapabilitySet` is extended backward-compatibly; `validate_agent_backend_manifest` stays valid.
+  - Relationship replay proves `ChannelMessage → AgentTurn → Run → RunEvent/RunStep → AgentResult/ArtifactRecord → ChannelDelivery → FeedbackEvent`.
+
+- [x] **REQ-boundary-scan-allowlist**: Boundary scans for neutral packages must use an allowlist policy, not a blanket word ban.
+  - Neutral packages forbid private Hermes paths, WeCom protocol payload fields, lawfirm-only/legal-only top-level required fields, raw payloads, and secret values.
+  - Backend-mode enum values `hermes`/`codex`/`provider_model` are allowed in adapter contracts.
+  - Concrete names are allowed inside concrete packages (`channels/wecom`, `backends/hermes`, `solutions/lawfirm`).
+  - A non-legal fixture must validate without lawfirm assumptions.
+
+### Platform Runtime
+
+- [ ] **REQ-platform-run-runtime**: Provide a Python-first `RunRuntime` that owns run lifecycle, session, output boundary, audit, and feature flags through injected ports.
+  - Implements create/poll/stream/cancel/approve.
+  - Speaks the `BackendAdapter` Protocol and never embeds backend-specific logic.
+  - Persists contract logs append-only and `raw_payload_ref`-first.
+  - All lanes are gated by default-OFF feature flags.
+
+- [ ] **REQ-runtime-embeddability**: `RunRuntime` must be an embeddable library with no hard dependency on a network server or any specific channel.
+  - Constructs with zero channels (embedded mode) and with no server.
+  - Dependencies (backend, loader, channels, storage, output boundary, secret resolver, flags) are injected.
+  - A server, a Tauri sidecar, or an Electron child process are thin hosts of the same library.
+  - Local desktop/mobile runtime is not implemented this milestone, only kept possible.
+
+- [ ] **REQ-runlane-output-boundary**: Every run event/delta path must pass through the assistant output boundary before ordinary-user delivery.
+  - Streamed tool/approval/gateway/meta/internal events never reach ordinary users.
+  - Leak fixtures prove the boundary on the streaming lane.
+  - The boundary does not semantically rewrite legal business conclusions.
+  - Blocked/rewritten events are recorded as sanitized summaries only.
+
+### Hermes Backend Adapter
+
+- [ ] **REQ-hermes-backend-adapter**: Implement Hermes as a `BackendAdapter`, defaulting to subprocess one-shot, with `/v1/runs` as an opt-in lane.
+  - Passes `BackendAdapter` Protocol conformance tests.
+  - One-shot declares reduced capabilities (no cancel/live-update/streaming/parallel).
+  - The `/v1/runs` lane is behind a default-OFF flag.
+  - Materializes the bound solution into a Hermes profile; the runtime never sees profile internals.
+
+- [ ] **REQ-adapter-capability-probe**: Provide a non-mutating startup capability probe for backends.
+  - Uses `/health`, `/v1/capabilities`, `/v1/models`; never `GET /v1/runs/{id}`.
+  - Returns a capability set mapped to `AdapterCapabilitySet`.
+  - Probe failure falls back to one-shot with a sanitized audit reason.
+  - Requires `no_channel_io=true` for ordinary-user backends.
+
+- [ ] **REQ-hermes-run-parity-spike**: Prove or refute that Hermes `/v1/runs` executes the lawfirm profile equivalently to one-shot before promotion.
+  - Compares routing, skill/gate behavior, MCP/tool trace, artifacts, final user text, output policy, and state transitions on fixtures.
+  - Covers legal Q&A, drafting+artifact, follow-up, route-mismatch, MCP task, and a non-legal task.
+  - Failure keeps one-shot as the default lane.
+  - Uses non-sensitive fixtures only.
+
+### Channels and Clients
+
+- [ ] **REQ-channel-adapter-interface**: Define and implement the `ChannelAdapter` interface and wrap the existing WeCom primitives behind it.
+  - The WeCom wrapper is behind a default-OFF flag and does not regress production behavior.
+  - Channel adapters submit through `RunRuntime` and never call backends directly.
+  - Inbound normalizes to `ChannelMessage`/`AgentTurn`/`FeedbackEvent`; outbound is `ChannelDelivery`.
+  - Secret refs are isolated per `BotInstance`/`ChannelBinding`.
+
+- [ ] **REQ-multichannel-fixture**: Prove a non-WeCom channel end-to-end to validate channel neutrality.
+  - Provides a Web API + SSE channel passing end-to-end against fakes.
+  - Per-channel delivery/feedback/idempotency/output-policy fixtures exist.
+  - No production-grade requirement beyond passing fixtures.
+
+- [ ] **REQ-client-embedding-surface**: Ship the platform API server, a TypeScript client SDK, and an embeddable web chat component.
+  - `apps/platform_api` hosts `RunRuntime` via HTTP + SSE/WebSocket.
+  - `packages/platform-sdk-ts` is generated deterministically from OpenAPI.
+  - `apps/web_chat` renders `RunEvent` streaming and is embeddable by Tauri/Electron/Flutter webview.
+  - Clients default to remote/thin; local runtime is reserved, not implemented.
+
+### Solutions
+
+- [ ] **REQ-solution-loader**: Provide a `SolutionLoader` that validates, loads, and materializes solution packages with no undeclared side effects.
+  - `validate`/`load`/`materialize_for` are the loader operations.
+  - `materialize_for("hermes")` produces/refreshes a sanitized profile bundle.
+  - The loader is enabled behind a default-OFF flag.
+
+- [ ] **REQ-solution-backend-portability**: Solutions must be described in a backend-neutral format and materialized per backend.
+  - Manifest holds `persona_ref`, neutral skill descriptors, MCP refs, output-policy overlay, eval fixtures, adapter config defaults, secret-name templates, and `industry_context` defaults.
+  - No Hermes-runtime-shaped fields at the contract level.
+  - The lawyer solution runs with zero new legal top-level fields in platform core.
+
+- [ ] **REQ-solution-privacy-gate**: A solution privacy scan must reject any sensitive content in solution bundles.
+  - Rejects secrets, logs, DBs, media, raw payloads, customer docs, and confidential artifacts.
+  - Bundles are distributable only when sanitized.
+
+- [ ] **REQ-nonlegal-solution-composability**: A non-legal demo solution must run through the same platform contracts with no platform-code change.
+  - `demo_non_legal` passes composability gates.
+  - Platform core stays industry-neutral; legal fields stay in `industry_context`.
+
 ## Deferred Beyond V2
 
 ### M2
@@ -237,13 +341,30 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-v2-thin-contract-layer | Phase 7 | Complete |
 | REQ-lawyer-trial-acceptance | Phase 8 | Pending |
 | REQ-v2-development-order | Phase 8 | Pending |
+| REQ-platform-north-star | Phase 09 | Planned |
+| REQ-platform-contract-extension | Phase 09 | Planned |
+| REQ-boundary-scan-allowlist | Phase 09 | Planned |
+| REQ-platform-run-runtime | Phase 10 | Planned |
+| REQ-runtime-embeddability | Phase 10 | Planned |
+| REQ-runlane-output-boundary | Phase 10 | Planned |
+| REQ-hermes-backend-adapter | Phase 11 | Planned |
+| REQ-adapter-capability-probe | Phase 11 | Planned |
+| REQ-hermes-run-parity-spike | Phase 11 | Planned |
+| REQ-channel-adapter-interface | Phase 12 | Planned |
+| REQ-multichannel-fixture | Phase 12 | Planned |
+| REQ-client-embedding-surface | Phase 12 | Planned |
+| REQ-solution-loader | Phase 13 | Planned |
+| REQ-solution-backend-portability | Phase 13 | Planned |
+| REQ-solution-privacy-gate | Phase 13 | Planned |
+| REQ-nonlegal-solution-composability | Phase 13 | Planned |
 
 **Coverage:**
 
-- Active V2 requirements: 18 total
-- Mapped to phases: 18
+- Active V2 requirements: 18 total (mapped to Phase 1–8)
+- Platform Foundation (v1.1) requirements: 16 total (mapped to Phase 09–13)
+- Total mapped: 34
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-28 after Phase 6 read and feedback service APIs completion*
+*Last updated: 2026-06-29 — added Platform Foundation (v1.1) milestone requirements for Phase 09–13*

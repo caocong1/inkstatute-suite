@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: human_needed
-stopped_at: 08-04 delivery-completion guard and runtime audit repair deployed; fresh live WeCom task-flow UAT pending
-last_updated: "2026-06-28T23:53:52+08:00"
-last_activity: 2026-06-28 -- fixed live bridge completed false positive, added runtime audit, V2 gates passed, live bridge restarted
+milestone: v1.1
+milestone_name: — Platform Foundation
+status: executing
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-06-28T18:38:21.005Z"
+last_activity: 2026-06-28 -- Phase 09 execution started
 progress:
-  total_phases: 9
-  completed_phases: 8
-  total_plans: 30
-  completed_plans: 30
-  percent: 89
+  total_phases: 14
+  completed_phases: 9
+  total_plans: 34
+  completed_plans: 31
+  percent: 64
 ---
 
 # Project State
@@ -21,16 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-28)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 08 — live task-flow UAT and lawyer trial acceptance evidence
+**Current focus:** Phase 09 — Architecture Contracts & Schema Foundation
 
 ## Current Position
 
-Phase: 08 (lawyer-trial-acceptance) — HUMAN_NEEDED
-Plan: 4 of 4
-Status: 08-04 delivery-completion guard/runtime audit repair deployed; fresh live WeCom task-flow UAT and five-workday lawyer trial evidence still required
-Last activity: 2026-06-28 -- fixed live bridge completed false positive, added runtime audit, V2 gates passed, live bridge restarted
+Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
+Phase: 09 (Architecture Contracts & Schema Foundation) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Next action: `$gsd-autonomous --from 9 --to 13` (hands-free) or `$gsd-progress --next --auto`
+Last activity: 2026-06-28 -- Phase 09 execution started
 
-Progress: [█████████░] 89% of roadmap phases
+Progress (v1.1): [░░░░░░░░░░] 0% of milestone phases (0/5)
+
+### Parallel Human Gate (v1.0)
+
+Phase: 08 (lawyer-trial-acceptance) — HUMAN_NEEDED (carried forward, NOT a dependency of Phase 09)
+Status: 08-04 delivery-completion guard/runtime audit repair deployed; fresh live WeCom task-flow UAT and five-workday lawyer trial evidence still required
+Note: live cutover of any new platform lane also remains a human gate after parity; autonomous Phase 09-13 work must never mark this complete or substitute fixtures for live evidence.
 
 ## Performance Metrics
 
@@ -84,6 +92,7 @@ Progress: [█████████░] 89% of roadmap phases
 | Phase 08 P08-02 | 4 min | 3 tasks | 3 files |
 | Phase 08 P08-03 | 3 min | 2 tasks | 1 files |
 | Phase 08 P08-04 | 35 min | 4 tasks | 13 files |
+| Phase 09 P09-01 | 6 min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -138,6 +147,9 @@ Recent decisions affecting current work:
 - [Phase 03 Verification]: Phase 4 may implement a separate recorder only if the hook directory sorts after response_filter; it must not use a canonical contract_result_recorder/ directory for after-filter recording.
 - [Phase 03 Verification]: Phase 4 must not claim full outbound response capture from the capped agent:end hook context without a full-response source.
 - [Phase 03 Verification]: Runtime-only callback fields, long-task signal sources, and raw payload retention/redaction enforcement remain downstream implementation gates, not hidden assumptions.
+- [Phase 09]: [Plan 09-01] Keep packages/platform-runtime signature-only in Phase 09; runtime orchestration, storage, service, channel, backend, and solution behavior are deferred. — Phase 09 is schema and contract foundation only; Phase 10 owns runtime behavior.
+- [Phase 09]: [Plan 09-01] Use allowlist-aware boundary rules so Hermes, WeCom, lawfirm, codex, and provider_model appear only in approved contexts. — ADR-0007 records allowed enum/example names separately from forbidden runtime/private/secret/legal coupling.
+- [Phase 09]: [Plan 09-01] Promote the North Star document as v1.1 architecture authority while keeping docs/requirements/V2-PRD.md as existing lawyer-bot non-regression source. — Plan 09-01 promoted the architecture doc and clarified source-of-truth boundaries.
 
 ### Pending Todos
 
@@ -163,6 +175,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T23:53:52+08:00
-Stopped at: 08-04 delivery-completion guard/runtime audit deployed and bridge restarted; awaiting fresh live WeCom task-flow UAT
-Resume file: None - continue from .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
+Last session: 2026-06-28T18:37:49.299Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
+Architecture basis: .planning/drafts/agent-platform-north-star.md
+Execution plan: .planning/drafts/agent-platformization-plan-v5.md
+Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
