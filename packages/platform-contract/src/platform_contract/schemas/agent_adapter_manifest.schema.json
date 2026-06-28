@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/agent_adapter_manifest.schema.json",
+  "title": "AgentAdapterManifest",
+  "description": "Backend-neutral manifest for agent adapter capabilities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "adapter_name",
+    "adapter_version",
+    "mode",
+    "backend_version",
+    "capabilities"
+  ],
+  "properties": {
+    "adapter_name": {
+      "type": "string"
+    },
+    "adapter_version": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "hermes",
+        "codex",
+        "provider_model"
+      ]
+    },
+    "backend_version": {
+      "type": "string"
+    },
+    "profile_name": {
+      "type": "string"
+    },
+    "bundle_id": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hook_event_support",
+        "invocation_mode",
+        "feedback_target_support",
+        "session_read_support",
+        "artifact_return_support",
+        "trace_support",
+        "no_channel_io"
+      ],
+      "properties": {
+        "hook_event_support": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "invocation_mode": {
+          "type": "string"
+        },
+        "feedback_target_support": {
+          "type": "string"
+        },
+        "session_read_support": {
+          "type": "boolean"
+        },
+        "artifact_return_support": {
+          "type": "boolean"
+        },
+        "trace_support": {
+          "type": "boolean"
+        },
+        "no_channel_io": {
+          "type": "boolean"
+        }
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

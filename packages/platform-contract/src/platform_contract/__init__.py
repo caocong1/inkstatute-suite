@@ -1,5 +1,11 @@
 """Public Python bindings for the InkStatute V2 platform contract."""
 
+from .agent_adapter import (
+    AdapterCapabilitySet,
+    AgentBackendManifest,
+    AgentBackendMode,
+    validate_agent_backend_manifest,
+)
 from .enums import (
     AgentResultStatus,
     ArtifactKind,
@@ -32,9 +38,12 @@ from .events import (
 )
 
 __all__ = [
+    "AdapterCapabilitySet",
     "AgentResult",
     "AgentResultStatus",
     "AgentTurn",
+    "AgentBackendManifest",
+    "AgentBackendMode",
     "Artifact",
     "ArtifactKind",
     "AsyncTaskState",
@@ -58,4 +67,5 @@ __all__ = [
     "RouteMode",
     "SkillCandidate",
     "SkillCandidateSource",
+    "validate_agent_backend_manifest",
 ]
