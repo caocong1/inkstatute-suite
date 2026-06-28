@@ -1,7 +1,11 @@
 # Feedback Service
 
-This package currently contains the Phase 5 minimal validation normalizer for sanitized WeCom feedback evidence.
+This package contains FeedbackEvent normalization, classification, dedupe, and derived pending queue helpers for InkStatute V2 validation.
 
-It converts sanitized `feedback.jsonl` and `pending_previews.jsonl` records into platform `FeedbackEvent` dictionaries for fixture replay. It does not own the live WeCom callback channel, Hermes template card shim, runtime storage, HTTP APIs, persistent queues, worker daemons, or pending review exports.
+It converts sanitized `feedback.jsonl` and `pending_previews.jsonl` records into platform `FeedbackEvent` dictionaries for fixture replay. Phase 6 also accepts InkStatute WeCom callback-normalized `FeedbackEvent` dictionaries and contract-log `FeedbackEvent` dictionaries as primary inputs.
 
-Phase 6 owns APIs, queues, broad classification, dedupe service behavior, and pending review exports. This Phase 5 package does not automatically modify legal skills and must not call skill optimization runners.
+The pending review output is a derived pending queue. It is rebuildable from feedback events and does not introduce a durable queue service, worker daemon, runtime database, or new feedback channel.
+
+Phase 6 owns APIs, queues, broad classification, dedupe service behavior, and pending review exports.
+
+Classification is deterministic and rule-based over event fields such as `event_type`, `action`, labels, message hints, route-mismatch flags, and skill-candidate metadata. Route-mismatch and skill-candidate feedback remain human-reviewed, carry `no_auto_modify` metadata where available, and this package does not automatically modify legal skills or call skill optimization runners.
