@@ -312,7 +312,7 @@ Milestone v1.1 (Platform Foundation) executes 09 -> 10 -> 11 -> 12 -> 13. Phase 
 | 7. CI, Composability, and Privacy Gates | 3/3 | Complete    | 2026-06-28 |
 | 8. Lawyer Trial Acceptance | 4/4 | Human Needed - Live UAT Pending | - |
 | --- Milestone v1.1 — Platform Foundation --- | | | |
-| 09. Architecture Contracts & Schema Foundation | 2/4 | In Progress|  |
+| 09. Architecture Contracts & Schema Foundation | 3/4 | In Progress|  |
 | 10. Embeddable RunRuntime + Fake Backend | 0/TBD | Planned | - |
 | 11. Hermes BackendAdapter + Parity Spike | 0/TBD | Planned | - |
 | 12. Channel Interface + WeCom Wrapper + Web/SSE + Client SDK | 0/TBD | Planned | - |
