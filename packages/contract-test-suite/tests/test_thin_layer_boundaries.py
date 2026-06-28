@@ -8,6 +8,7 @@ from pathlib import Path
 from contract_test_suite.boundary_checks import (
     assert_feedback_human_review_safety,
     assert_industry_neutral_schemas,
+    assert_neutral_boundary_allowlist,
     assert_platform_contract_import_boundary,
     assert_thin_layer_scope,
 )
@@ -52,6 +53,9 @@ class ThinLayerBoundaryTests(unittest.TestCase):
     def test_thin_layer_scope_passes_for_current_repo(self) -> None:
         assert_thin_layer_scope(REPO_ROOT)
 
+    def test_neutral_boundary_allowlist_passes_for_current_repo(self) -> None:
+        assert_neutral_boundary_allowlist(REPO_ROOT)
+
     def test_feedback_safety_fails_on_auto_modify_true(self) -> None:
         fixture = {
             "events": {
@@ -82,4 +86,3 @@ class ThinLayerBoundaryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
