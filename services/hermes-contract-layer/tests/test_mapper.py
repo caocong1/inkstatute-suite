@@ -127,9 +127,27 @@ class MapperTests(unittest.TestCase):
         self.assertEqual(trace["steps"][-1]["skipped_unrecognized_states"], ["timed_out"])
 
     def test_events_use_reference_first_payload_metadata(self) -> None:
-        events = map_agent_end_context(normal_context(), now=FIXED_NOW)
+        context = normal_context()
+        context["industry_context"] = {"domain": "lawfirm", "raw_payload": "forbidden"}
+        context["tool_calls"] = [{"name": "tool", "raw_payload": {"secret": "forbidden"}}]
+        context["gates"] = [{"name": "gate", "details": {"raw_payload": "forbidden"}}]
+        context["artifacts"] = [
+            {
+                "artifact_id": "artifact-privacy-001",
+                "kind": "markdown",
+                "name": "privacy.md",
+                "uri": "fixture://artifacts/privacy-001",
+                "metadata": {"raw_payload": "forbidden", "raw_payload_ref": "fixture://raw/artifact"},
+            }
+        ]
+        context["error"] = {
+            "category": "runtime_error",
+            "details": {"raw_payload": "forbidden", "raw_payload_ref": "fixture://raw/error"},
+        }
+        events = map_agent_end_context(context, now=FIXED_NOW)
 
         for event in events.values():
+            validate_event(next(key for key, value in events.items() if value is event), event, fixture_id="phase4-mapper-privacy")
             self.assert_no_raw_payload_key(event)
         self.assertTrue(events["agent_turn"]["metadata"]["raw_payload_ref"].startswith("hermes://"))
         self.assertTrue(events["agent_result"]["metadata"]["raw_payload_ref"].startswith("hermes://"))

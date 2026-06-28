@@ -60,7 +60,7 @@ def record_contract_result(
     if event_type != "agent:end":
         return HookRecordingResult(status="ignored")
 
-    resolved_log_path = log_path or os.environ.get(CONTRACT_LOG_PATH_ENV)
+    resolved_log_path = log_path or os.environ.get(CONTRACT_LOG_PATH_ENV) or None
     if writer is None and resolved_log_path is None:
         return HookRecordingResult(status="skipped")
 

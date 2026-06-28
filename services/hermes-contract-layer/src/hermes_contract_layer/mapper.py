@@ -297,7 +297,8 @@ def _raw_payload_ref(context: Mapping[str, Any], *, session_id: str) -> str:
 def _industry_context(context: Mapping[str, Any]) -> dict[str, Any]:
     supplied = context.get("industry_context")
     if isinstance(supplied, dict):
-        return {**supplied, "domain": supplied.get("domain", "lawfirm"), "profile": supplied.get("profile", "lawfirm")}
+        clean = _metadata_dict(supplied)
+        return {**clean, "domain": clean.get("domain", "lawfirm"), "profile": clean.get("profile", "lawfirm")}
     return {"domain": "lawfirm", "profile": "lawfirm"}
 
 
@@ -316,7 +317,7 @@ def _string_list(value: Any) -> list[str]:
 def _metadata_list(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
-    return [item for item in value if isinstance(item, dict)]
+    return [_metadata_dict(item) for item in value if isinstance(item, dict)]
 
 
 def _steps(context: Mapping[str, Any], *, status: str) -> list[dict[str, Any]]:
@@ -383,7 +384,7 @@ def _error_info(error: Mapping[str, Any], *, raw_payload_ref: str) -> dict[str, 
         info["retryable"] = error["retryable"]
     details = error.get("details")
     if isinstance(details, dict):
-        info["details"].update({key: value for key, value in details.items() if key != "raw_payload"})
+        info["details"].update(_metadata_dict(details))
     return info
 
 
@@ -415,7 +416,7 @@ def _artifacts(value: Any) -> list[dict[str, Any]]:
                 "kind": kind,
                 "name": _string(item.get("name"), artifact_id),
                 "uri": _string(item.get("uri"), f"hermes://artifact/{artifact_id}"),
-                "metadata": item.get("metadata") if isinstance(item.get("metadata"), dict) else {},
+                "metadata": _metadata_dict(item.get("metadata")) if isinstance(item.get("metadata"), dict) else {},
             }
         )
     return artifacts
@@ -432,3 +433,19 @@ def _skill_candidate(context: Mapping[str, Any]) -> dict[str, Any]:
         "evidence": ["Hermes hook context did not expose a matched registered skill."],
         "metadata": {"no_auto_modify": True},
     }
+
+
+def _metadata_dict(value: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        str(key): _metadata_value(child)
+        for key, child in value.items()
+        if str(key) != "raw_payload"
+    }
+
+
+def _metadata_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return _metadata_dict(value)
+    if isinstance(value, list):
+        return [_metadata_value(item) for item in value]
+    return value

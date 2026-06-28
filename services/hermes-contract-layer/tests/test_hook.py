@@ -111,7 +111,6 @@ class HookBoundaryTests(unittest.TestCase):
         before = copy.deepcopy(context)
 
         with patch.dict(os.environ, {hook.CONTRACT_LOG_PATH_ENV: ""}, clear=False):
-            os.environ.pop(hook.CONTRACT_LOG_PATH_ENV, None)
             result = hook.handle("agent:end", context)
 
         self.assertEqual(result.status, "skipped")
