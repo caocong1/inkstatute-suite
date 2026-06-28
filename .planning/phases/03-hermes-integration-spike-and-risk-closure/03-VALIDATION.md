@@ -1,9 +1,9 @@
 ---
 phase: 03
 slug: hermes-integration-spike-and-risk-closure
-status: draft
+status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-06-27
 ---
 
@@ -33,19 +33,19 @@ Per-phase validation contract for Hermes integration risk-closure planning and e
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | REQ-implementation-risk-resolution | T-03-01-I | Hermes source absence and evidence gaps are explicit, not hidden. | doc/probe | `rg -n "response_filter|template_card|wecom_template_card_shim|message_id|feedback|long_task|agent:end" -S .` | pending | pending |
-| 03-02-01 | 02 | 2 | REQ-implementation-risk-resolution | T-03-02-I | Hook order and AgentTurn strategy cannot leak admin/unfiltered payload assumptions into Phase 4. | blocking doc/probe gate | `python -c "from pathlib import Path; base=Path('.planning/phases/03-hermes-integration-spike-and-risk-closure'); evidence=(base/'03-HOOK-ORDER-EVIDENCE.md').read_text(); decisions=(base/'03-HOOK-AND-TURN-DECISIONS.md').read_text(); assert 'EVIDENCE_OUTCOME: source_confirmed' in evidence or 'EVIDENCE_OUTCOME: sanitized_probe_tested' in evidence; assert 'HOOK_ORDER_DECISION: can_run_after_response_filter' in evidence or 'HOOK_ORDER_DECISION: cannot_run_after_response_filter' in evidence; assert 'BLOCKING_VERIFICATION_GAP' not in evidence; assert '03-HOOK-ORDER-EVIDENCE.md' in decisions"` | pending | pending |
-| 03-03-01 | 03 | 3 | REQ-implementation-risk-resolution | T-03-03-T/R | Identifier, idempotency, async state, and raw payload rules are explicit and status-tagged. | doc review | `test -f .planning/phases/03-hermes-integration-spike-and-risk-closure/03-IDENTIFIER-STATE-PRIVACY-RULES.md` | pending | pending |
-| 03-04-01 | 04 | 4 | REQ-implementation-risk-resolution | T-03-04-I | Non-happy-path fixtures use references/minimized synthetic data and validate through the harness. | unit/fixture | `cd packages/contract-test-suite && PYTHONPATH=src:../platform-contract/src python scripts/run_contract_tests.py` | pending | pending |
+| 03-01-01 | 01 | 1 | REQ-implementation-risk-resolution | T-03-01-I | Hermes source absence and evidence gaps are explicit, not hidden. | doc/probe | `rg -n "response_filter|template_card|wecom_template_card_shim|message_id|feedback|long_task|agent:end" -S .` | yes | passed |
+| 03-02-01 | 02 | 2 | REQ-implementation-risk-resolution | T-03-02-I | Hook order and AgentTurn strategy cannot leak admin/unfiltered payload assumptions into Phase 4. | blocking doc/probe gate | `python -c "from pathlib import Path; base=Path('.planning/phases/03-hermes-integration-spike-and-risk-closure'); evidence=(base/'03-HOOK-ORDER-EVIDENCE.md').read_text(); decisions=(base/'03-HOOK-AND-TURN-DECISIONS.md').read_text(); assert 'EVIDENCE_OUTCOME: source_confirmed' in evidence or 'EVIDENCE_OUTCOME: sanitized_probe_tested' in evidence; assert 'HOOK_ORDER_DECISION: can_run_after_response_filter' in evidence or 'HOOK_ORDER_DECISION: cannot_run_after_response_filter' in evidence; assert 'BLOCKING_VERIFICATION_GAP' not in evidence; assert '03-HOOK-ORDER-EVIDENCE.md' in decisions"` | yes | passed |
+| 03-03-01 | 03 | 3 | REQ-implementation-risk-resolution | T-03-03-T/R | Identifier, idempotency, async state, and raw payload rules are explicit and status-tagged. | doc review | `test -f .planning/phases/03-hermes-integration-spike-and-risk-closure/03-IDENTIFIER-STATE-PRIVACY-RULES.md` | yes | passed |
+| 03-04-01 | 04 | 4 | REQ-implementation-risk-resolution | T-03-04-I | Non-happy-path fixtures use references/minimized synthetic data and validate through the harness. | unit/fixture | `cd packages/contract-test-suite && PYTHONPATH=src:../platform-contract/src python scripts/run_contract_tests.py` | yes | passed |
 
 ## Wave 0 Requirements
 
-- [ ] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-HERMES-SOURCE-INVENTORY.md` - source/runtime evidence ledger.
-- [ ] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-INTEGRATION-RISK-MATRIX.md` - PRD section 13 risk status matrix.
-- [ ] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-HOOK-ORDER-EVIDENCE.md` - blocking source/runtime or sanitized probe evidence for whether `contract_result_recorder` can run after `response_filter`.
-- [ ] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-HOOK-AND-TURN-DECISIONS.md` - hook ordering and AgentTurn input strategy.
-- [ ] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-IDENTIFIER-STATE-PRIVACY-RULES.md` - identifier, idempotency, async state, raw payload, retention, and redaction rules.
-- [ ] Non-happy-path fixtures/tests for route errors, long-task failures, repeated feedback clicks, and one non-legal task.
+- [x] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-HERMES-SOURCE-INVENTORY.md` - source/runtime evidence ledger.
+- [x] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-INTEGRATION-RISK-MATRIX.md` - PRD section 13 risk status matrix.
+- [x] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-HOOK-ORDER-EVIDENCE.md` - blocking source/runtime or sanitized probe evidence for whether `contract_result_recorder` can run after `response_filter`.
+- [x] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-HOOK-AND-TURN-DECISIONS.md` - hook ordering and AgentTurn input strategy.
+- [x] `.planning/phases/03-hermes-integration-spike-and-risk-closure/03-IDENTIFIER-STATE-PRIVACY-RULES.md` - identifier, idempotency, async state, raw payload, retention, and redaction rules.
+- [x] Non-happy-path fixtures/tests for route errors, long-task failures, repeated feedback clicks, and one non-legal task.
 
 ## Manual-Only Verifications
 

@@ -26,7 +26,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Step 7 completes contract CI and composability validation.
   - Step 8 runs the five-workday lawyer trial and metrics collection.
 
-- [ ] **REQ-implementation-risk-resolution**: Resolve V2 implementation risks that do not block PRD finalization but do block development completion.
+- [x] **REQ-implementation-risk-resolution**: Resolve V2 implementation risks that do not block PRD finalization but do block development completion.
   - Confirm Hermes hook execution order, especially `contract_result_recorder` after `response_filter`.
   - Confirm whether Hermes has an inbound hook point, or document `agent:end` reverse-inference limits for AgentTurn content.
   - Confirm message_id stability across response_filter, template cards, and feedback callbacks.
@@ -183,7 +183,7 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-platform-contract-package | Phase 1 | Complete |
 | REQ-contract-event-schemas | Phase 1 | Complete |
 | REQ-contract-test-suite | Phase 2 | Complete |
-| REQ-implementation-risk-resolution | Phase 3 | Pending |
+| REQ-implementation-risk-resolution | Phase 3 | Complete |
 | REQ-hermes-contract-layer | Phase 4 | Pending |
 | REQ-observability-and-replay | Phase 4 | Pending |
 | REQ-wecom-daily-test-loop | Phase 5 | Pending |
@@ -203,4 +203,4 @@ Explicitly excluded from V2 to prevent scope creep.
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-27 after roadmap traceability creation*
+*Last updated: 2026-06-28 after Phase 3 verification*

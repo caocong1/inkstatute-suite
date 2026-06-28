@@ -18,13 +18,14 @@ Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral
 - Existing WeCom, QQ Bot, and WeChat gateway connections exist, with WeCom as the V2 acceptance channel.
 - Existing Hermes feedback path is already present: `response_filter` preview, template card dispatch, callback shim, and `feedback.jsonl`.
 - Existing Hermes router, skills, gates, MCP tools, model gateway, and session storage remain the operational baseline.
+- Phase 3 Hermes integration spike is complete: hook ordering is source-confirmed, AgentTurn strategy is documented, identifier/state/privacy/safety rules are defined, and non-happy-path fixtures validate through the contract-test-suite.
 
 ### Active
 
 - [ ] Define the V2 platform contract package with five event schemas, async task states, error categories, JSON Schema, Python bindings, and fixtures.
 - [ ] Model AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision as platform events with traceable relationships.
 - [ ] Build a contract test suite before production Hermes hook work.
-- [ ] Resolve Hermes integration risks before production hook implementation.
+- [x] Resolve Hermes integration risks before production hook implementation.
 - [ ] Add a thin hook-based Hermes shadow contract layer that does not alter outbound behavior.
 - [ ] Preserve and validate the WeCom task-to-reply-to-card-to-feedback loop.
 - [ ] Normalize Hermes feedback into FeedbackEvent records with dedupe, classification, and human-reviewed skill candidates.
@@ -69,7 +70,7 @@ Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral
 | Implement V2 as a thin contract layer around Hermes lawfirm | Hermes already runs the lawyer assistant; platform value starts with contracts and acceptance | - Pending |
 | JSON Schema and Python bindings come before TypeScript | Current runtime priority is Python packages/services with schema as the cross-language contract | - Pending |
 | Contract test suite precedes production Hermes hook implementation | Hook output should be validated against stable schemas and fixtures from the start | - Pending |
-| Add an explicit Hermes integration spike before production hook work | PRD risks around hook order, message IDs, feedback targets, and redaction can block implementation | - Pending |
+| Add an explicit Hermes integration spike before production hook work | PRD risks around hook order, message IDs, feedback targets, and redaction can block implementation | Completed in Phase 3 verification on 2026-06-28 |
 | Lawyer trial acceptance remains a manual human gate | Five-workday legal trial metrics require real usage and legal/safety judgment | - Pending |
 
 ## Evolution
@@ -90,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-06-27 after initialization from V2 PRD ingest*
+*Last updated: 2026-06-28 after Phase 3 verification*

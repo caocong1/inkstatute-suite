@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: "All Phase 03 plans complete; ready for phase review and verification"
-last_updated: "2026-06-28T09:38:21+08:00"
-last_activity: "2026-06-28 - Completed Phase 03 Plan 04 with non-happy-path fixtures and contract-test-suite coverage; ready for Phase 03 review/verification."
+stopped_at: "Phase 03 verified complete; ready for Phase 04 Hermes Shadow Event Layer planning"
+last_updated: "2026-06-28T09:44:30+08:00"
+last_activity: "2026-06-28 - Completed Phase 03 verification; Hermes hook-order and risk-closure decisions are ready for Phase 04 planning."
 progress:
   total_phases: 8
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
   completed_plans: 10
   percent: 100
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-27)
 
 **Core value:** Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, and CI-verifiable without changing Hermes outbound behavior.
-**Current focus:** Phase 3 - Hermes Integration Spike and Risk Closure verification
+**Current focus:** Phase 4 - Hermes Shadow Event Layer
 
 ## Current Position
 
-Phase: 3 of 8 (hermes integration spike and risk closure)
-Plan: 4 of 4
-Status: All Phase 03 plans complete; ready for phase review and verification
-Last activity: 2026-06-28 - Completed Phase 03 Plan 04 with non-happy-path fixtures and contract-test-suite coverage; ready for Phase 03 review/verification.
+Phase: 4 of 8 (hermes shadow event layer)
+Plan: TBD
+Status: Ready to plan Phase 04 Hermes shadow event layer
+Last activity: 2026-06-28 - Completed Phase 03 verification; Hermes hook-order and risk-closure decisions are ready for Phase 04 planning.
 
-Progress: [██████████] 100%
+Progress: [██████████] 100% of currently planned work
 
 ## Performance Metrics
 
@@ -103,6 +103,9 @@ Recent decisions affecting current work:
 - [Phase 03]: [Phase 03 Plan 04]: Non-happy-path evidence lives in contract-test-suite fixtures and reuses validate_event_bundle plus assert_relationship_integrity.
 - [Phase 03]: [Phase 03 Plan 04]: Repeated feedback clicks are represented as one canonical FeedbackEvent with idempotency metadata and duplicate callback references.
 - [Phase 03]: [Phase 03 Plan 04]: Route mismatch fixtures require skill_candidate.requires_human_review and explicit no-auto-modify metadata.
+- [Phase 03 Verification]: Phase 4 may implement a separate recorder only if the hook directory sorts after response_filter; it must not use a canonical contract_result_recorder/ directory for after-filter recording.
+- [Phase 03 Verification]: Phase 4 must not claim full outbound response capture from the capped agent:end hook context without a full-response source.
+- [Phase 03 Verification]: Runtime-only callback fields, long-task signal sources, and raw payload retention/redaction enforcement remain downstream implementation gates, not hidden assumptions.
 
 ### Pending Todos
 
@@ -110,9 +113,9 @@ None yet.
 
 ### Blockers/Concerns
 
-- Known Hermes integration risks are assigned to Phase 3: hook order, inbound turn inference, message_id stability, long-task state mapping, feedback targets, idempotency, raw payload retention, and redaction.
 - Legal/safety concerns require human review when they affect high-risk legal conclusions or lawyer trial acceptance.
 - Phase 4 recorder implementation must encode the source-confirmed after-filter hook directory ordering rule and must not claim full outbound capture from the capped agent:end hook context.
+- Phase 4/6 runtime work must obtain sanitized evidence for callback fields, feedback rows, long-task state sources, and raw payload retention/redaction before claiming those details as source-confirmed.
 
 ## Deferred Items
 
@@ -125,5 +128,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-06-28T09:25:10+08:00
-Stopped at: Completed all Phase 03 plans; ready for phase review and verification
+Stopped at: Phase 03 verified complete; ready for Phase 04 planning
 Resume file: None
