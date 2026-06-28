@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: — Platform Foundation
 status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-06-28T19:44:23.331Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-06-28T19:53:44.021Z"
 last_activity: 2026-06-28 -- Phase 10 execution started
 progress:
   total_phases: 14
   completed_phases: 10
   total_plans: 38
-  completed_plans: 35
+  completed_plans: 36
   percent: 71
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-28)
 
 Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
 Phase: 10 (Embeddable RunRuntime + Fake Backend) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Next action: `$gsd-autonomous --from 9 --to 13` (hands-free) or `$gsd-progress --next --auto`
 Last activity: 2026-06-28 -- Phase 10 execution started
@@ -98,6 +98,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 09 P09-03 | 7m20s | 3 tasks | 9 files |
 | Phase 09 P09-04 | 6 min | 3 tasks | 4 files |
 | Phase 10 P10-01 | 4 min | 3 tasks | 6 files |
+| Phase 10 P10-02 | 5m31s | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -168,6 +169,10 @@ Recent decisions affecting current work:
 - [Phase 10]: [Phase 10 Plan 10-01] Keep platform-runtime support library-only: injected ports and in-memory support types only, with no server, channel, database, queue, backend construction, or background process behavior. — Preserves embeddability and keeps Phase 10 support code inside the active plan boundary.
 - [Phase 10]: [Phase 10 Plan 10-01] Default every Phase 10 runtime lane to False and require explicit opt-in through RuntimeFeatureFlags.require_enabled. — Prevents accidental activation of run runtime, streaming, channel delivery, approval, or contract-log lanes.
 - [Phase 10]: [Phase 10 Plan 10-01] Harden the contract log store beyond top-level raw_payload checks by rejecting nested raw_payload keys and obvious full-text payload field names while allowing raw_payload_ref and ID/hash/reference fields. — Meets the reference-first privacy requirement and the execution requirement to reject raw payload keys and sensitive full-text payload storage.
+- [Phase 10]: [Plan 10-02] Keep DefaultRunRuntime backend-neutral by depending only on BackendAdapter Protocol methods and injected support ports.
+- [Phase 10]: [Plan 10-02] Keep channels optional with channels=() by default and no server object on the runtime.
+- [Phase 10]: [Plan 10-02] Require explicit feature-flag opt-in for run runtime, streaming, approval, and contract-log behavior.
+- [Phase 10]: [Plan 10-02] Store run lifecycle evidence as IDs, statuses, raw_payload_ref, and content hashes rather than raw request text.
 
 ### Pending Todos
 
@@ -193,8 +198,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T19:43:49.895Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-06-28T19:53:44.016Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/drafts/agent-platformization-plan-v5.md
