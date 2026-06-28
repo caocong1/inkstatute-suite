@@ -46,6 +46,8 @@ class ContractLogReadModelTests(unittest.TestCase):
         )
 
         self.assertIn("build_read_model", conversation_read_view.__all__)
+        self.assertIn("handle_get", conversation_read_view.__all__)
+        self.assertIn("parse_query_string", conversation_read_view.__all__)
         self.assertIn("dependencies = []", pyproject)
 
     def test_phase5_stream_builds_conversation_view(self) -> None:
