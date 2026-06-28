@@ -1,7 +1,7 @@
 ---
 phase: 04
 slug: hermes-shadow-event-layer
-status: draft
+status: in_progress
 nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-28
@@ -32,13 +32,13 @@ Per-phase validation contract for Hermes shadow event layer planning and executi
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 04-01-01 | 01 | 1 | REQ-hermes-contract-layer | T-04-01-I/R | Hook artifact sorts after `response_filter` and handler does not alter outbound context. | unit/source | `PYTHONPATH=services/hermes-contract-layer/src:packages/platform-contract/src python -m unittest discover -s services/hermes-contract-layer/tests -p 'test_hook.py' -v` | pending | pending |
+| 04-01-01 | 01 | 1 | REQ-hermes-contract-layer | T-04-01-I/R | Hook artifact sorts after `response_filter` and handler does not alter outbound context. | unit/source | `PYTHONPATH=services/hermes-contract-layer/src:packages/platform-contract/src python -m unittest discover -s services/hermes-contract-layer/tests -p 'test_hook.py' -v` | yes | passed |
 | 04-02-01 | 02 | 2 | REQ-hermes-contract-layer, REQ-observability-and-replay | T-04-02-T/I/R | Mapper and writer produce schema-valid event payloads, monotonic log envelopes, and reference-first payload metadata. | unit/schema | `PYTHONPATH=services/hermes-contract-layer/src:packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s services/hermes-contract-layer/tests -v` | pending | pending |
 | 04-03-01 | 03 | 3 | REQ-observability-and-replay | T-04-03-T/I | Phase 4 hook-output streams replay through contract-test-suite without fake FeedbackEvent records or privacy leakage. | unit/fixture | `cd packages/contract-test-suite && PYTHONPATH=src:../platform-contract/src python scripts/run_contract_tests.py` | pending | pending |
 
 ## Wave 0 Requirements
 
-- [ ] `services/hermes-contract-layer/tests/` - service-local unittest suite exists before mapper/writer behavior is considered complete.
+- [x] `services/hermes-contract-layer/tests/` - service-local unittest suite exists before mapper/writer behavior is considered complete.
 - [ ] Contract-test-suite stream replay tests are added before Phase 4 claims hook-output replay support.
 - [ ] Phase 4 fixtures use `fixture://` or `raw_payload_ref` references only.
 

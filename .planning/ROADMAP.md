@@ -41,9 +41,9 @@ V2 moves from contract definitions to verified production shadow recording, then
 
 Plans:
 
-- [ ] 04-01-PLAN.md — Hook artifact and no-outbound-mutation package scaffold.
-- [ ] 04-02-PLAN.md — Hermes context mapper and JSONL contract event writer.
-- [ ] 04-03-PLAN.md — Phase 4 event-stream replay fixtures and contract-test-suite support.
+- [x] 01-01-PLAN.md — Platform contract package shell.
+- [x] 01-02-PLAN.md — JSON Schema event contracts.
+- [x] 01-03-PLAN.md — Fixtures and self-checks.
 
 ### Phase 2: Contract Test Suite Foundation
 
@@ -61,9 +61,9 @@ Plans:
 
 Plans:
 
-- [ ] 04-01-PLAN.md — Hook artifact and no-outbound-mutation package scaffold.
-- [ ] 04-02-PLAN.md — Hermes context mapper and JSONL contract event writer.
-- [ ] 04-03-PLAN.md — Phase 4 event-stream replay fixtures and contract-test-suite support.
+- [x] 02-01-PLAN.md — Contract test suite foundation.
+- [x] 02-02-PLAN.md — Fixture replay and relationship integrity.
+- [x] 02-03-PLAN.md — Local synthetic composability and runner.
 
 ### Phase 3: Hermes Integration Spike and Risk Closure
 
@@ -100,7 +100,13 @@ Plans:
   4. Replaying 3-5 Hermes task outputs through the contract-test-suite produces schema-valid standard events.
   5. Failed and long-running tasks expose failure stage or status through ExecutionTrace errors and AgentResult status.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+
+- [x] 04-01-PLAN.md — Hook artifact and no-outbound-mutation package scaffold.
+- [ ] 04-02-PLAN.md — Hermes context mapper and JSONL contract event writer.
+- [ ] 04-03-PLAN.md — Phase 4 event-stream replay fixtures and contract-test-suite support.
 
 ### Phase 5: WeCom Shadow Loop Validation
 
@@ -173,7 +179,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 | 1. Platform Contract Foundation | 3/3 | Complete    | 2026-06-27 |
 | 2. Contract Test Suite Foundation | 3/3 | Complete    | 2026-06-27 |
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
-| 4. Hermes Shadow Event Layer | 0/3 | Ready to Execute | - |
+| 4. Hermes Shadow Event Layer | 1/3 | In Progress | - |
 | 5. WeCom Shadow Loop Validation | 0/TBD | Not started | - |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
