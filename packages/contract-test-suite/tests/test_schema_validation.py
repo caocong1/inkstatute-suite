@@ -41,6 +41,7 @@ class SchemaValidationTests(unittest.TestCase):
                 "phase3-non-legal-wild-task-contract-001",
                 "phase5-wecom-feedback-loop-001",
                 "phase55-wecom-service-agent-loop-001",
+                "phase6-read-feedback-apis-001",
             },
         )
 

@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 import unittest
 from pathlib import Path
+import sys
 from typing import Any, Mapping
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT / "packages" / "platform-contract" / "src"))
 
 from contract_test_suite.schema_validation import _validate_schema, load_schemas
 from platform_contract.agent_adapter import validate_agent_backend_manifest

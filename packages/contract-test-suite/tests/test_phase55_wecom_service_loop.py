@@ -4,8 +4,16 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 import re
+import sys
 from typing import Any
 import unittest
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+for source_path in (
+    REPO_ROOT / "packages" / "platform-contract" / "src",
+    REPO_ROOT / "services" / "hermes-contract-layer" / "src",
+):
+    sys.path.insert(0, str(source_path))
 
 from contract_test_suite.fixture_replay import assert_relationship_integrity
 from contract_test_suite.paths import LOCAL_FIXTURE_ROOT

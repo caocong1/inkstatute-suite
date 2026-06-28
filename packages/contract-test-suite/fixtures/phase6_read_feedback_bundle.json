@@ -1,0 +1,173 @@
+{
+  "fixture_id": "phase6-read-feedback-apis-001",
+  "description": "Synthetic Phase 6 read API fixture connecting contract-log task lookup, trace lookup, result feedback target, and route-mismatch pending feedback.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase6-read-feedback-001",
+      "conversation_id": "phase6-conv-read-feedback-001",
+      "channel": "wecom",
+      "user_id": "phase6-lawyer-001",
+      "message_type": "text",
+      "content": "Synthetic construction contract retrieval request.",
+      "received_at": "2026-06-28T05:30:00Z",
+      "industry_context": {
+        "domain": "lawfirm",
+        "profile": "lawfirm"
+      },
+      "metadata": {
+        "task_id": "task-phase6-read-feedback-001",
+        "message_id": "phase6-msg-read-feedback-001",
+        "raw_payload_ref": "fixture://raw/phase6/read-feedback/input-001",
+        "source_status": "fixture_contract_log"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase6-read-feedback-001",
+      "turn_id": "turn-phase6-read-feedback-001",
+      "primary_skill": "lawfirm.general_qa",
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "confidence": 0.48,
+      "matched_rule": "hermes_active_skill:lawfirm.general_qa",
+      "reason": "Synthetic fixture intentionally records a route that later receives route-mismatch feedback.",
+      "mode": "matched",
+      "route_mismatch": true,
+      "created_at": "2026-06-28T05:30:02Z",
+      "industry_context": {
+        "domain": "lawfirm",
+        "profile": "lawfirm"
+      },
+      "metadata": {
+        "raw_payload_ref": "fixture://raw/phase6/read-feedback/input-001",
+        "router_output_source_status": "fixture"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase6-read-feedback-001",
+      "turn_id": "turn-phase6-read-feedback-001",
+      "started_at": "2026-06-28T05:30:01Z",
+      "ended_at": "2026-06-28T05:30:18Z",
+      "active_skill_name": "lawfirm.general_qa",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-28T05:30:19Z",
+      "ingested_at": "2026-06-28T05:30:19Z",
+      "seq": 2,
+      "steps": [
+        {
+          "name": "inkstatute_ack",
+          "state": "succeeded",
+          "status_ref": "fixture://ack/phase6/read-feedback-001"
+        },
+        {
+          "name": "general_qa_response",
+          "state": "succeeded"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [],
+      "route_decision": {
+        "route_decision_id": "route-phase6-read-feedback-001",
+        "turn_id": "turn-phase6-read-feedback-001",
+        "primary_skill": "lawfirm.general_qa",
+        "confidence": 0.48,
+        "mode": "matched",
+        "created_at": "2026-06-28T05:30:02Z"
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {
+        "domain": "lawfirm",
+        "profile": "lawfirm"
+      },
+      "metadata": {
+        "task_id": "task-phase6-read-feedback-001",
+        "raw_payload_ref": "fixture://raw/phase6/read-feedback/input-001"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase6-read-feedback-001",
+      "turn_id": "turn-phase6-read-feedback-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic answer that should have used construction contract retrieval.",
+      "artifacts": [],
+      "clarifying_questions": [],
+      "feedback_target": "phase6-msg-read-feedback-001",
+      "route_mismatch": true,
+      "skill_candidate": {
+        "detected": true,
+        "source": "route_mismatch",
+        "proposed_name": "lawfirm.construction_contract_retrieval",
+        "risk_level": "high",
+        "requires_human_review": true,
+        "evidence": [
+          "turn-phase6-read-feedback-001"
+        ],
+        "metadata": {
+          "no_auto_modify": true,
+          "source_status": "fixture_route_mismatch"
+        }
+      },
+      "industry_context": {
+        "domain": "lawfirm",
+        "profile": "lawfirm"
+      },
+      "metadata": {
+        "task_id": "task-phase6-read-feedback-001",
+        "trace_id": "trace-phase6-read-feedback-001",
+        "route_decision_id": "route-phase6-read-feedback-001",
+        "message_id": "phase6-msg-read-feedback-001",
+        "raw_payload_ref": "fixture://raw/phase6/read-feedback/result-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase6-route-mismatch-001",
+      "turn_id": "turn-phase6-read-feedback-001",
+      "conversation_id": "phase6-conv-read-feedback-001",
+      "user_id": "phase6-lawyer-001",
+      "source": "card_button",
+      "event_type": "route_mismatch",
+      "status": "pending",
+      "created_at": "2026-06-28T05:31:00Z",
+      "result_id": "result-phase6-read-feedback-001",
+      "feedback_target": "phase6-msg-read-feedback-001",
+      "action": "route_wrong",
+      "message": "Wrong route; should use construction contract retrieval.",
+      "route_mismatch": true,
+      "skill_candidate": {
+        "detected": true,
+        "source": "route_mismatch",
+        "proposed_name": "lawfirm.construction_contract_retrieval",
+        "risk_level": "high",
+        "requires_human_review": true,
+        "evidence": [
+          "feedback-phase6-route-mismatch-001",
+          "turn-phase6-read-feedback-001"
+        ],
+        "metadata": {
+          "no_auto_modify": true,
+          "source_status": "wecom_callback_sanitized"
+        }
+      },
+      "labels": [
+        "route_mismatch"
+      ],
+      "related_skill": "lawfirm.general_qa",
+      "related_route_decision": "route-phase6-read-feedback-001",
+      "raw_payload_ref": "fixture://wecom/phase6/read-feedback/callback-001",
+      "industry_context": {
+        "domain": "lawfirm",
+        "profile": "lawfirm"
+      },
+      "metadata": {
+        "idempotency_key": "phase6-msg-read-feedback-001:route_wrong:phase6-lawyer-001:2026-06-28T05:31Z",
+        "duplicate_count": 1,
+        "no_auto_modify": true,
+        "source_status": "inkstatute_wecom_service_callback"
+      }
+    }
+  }
+}
+
