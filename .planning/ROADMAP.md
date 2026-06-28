@@ -27,7 +27,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 
 > New milestone (planning label v1.1). Autonomous-buildable Phase 09–13. Architecture basis: `.planning/drafts/agent-platform-north-star.md`. Execution plan: `.planning/drafts/agent-platformization-plan-v5.md`. Phase 8 (v1.0 lawyer trial) remains a **parallel human gate** and is NOT a dependency of Phase 09. New runtime lanes are default-OFF; live cutover is a human gate outside the autonomous path.
 
-- [ ] **Phase 09: Architecture Contracts & Schema Foundation** - Lock the four North Star contracts, extend `platform-contract` with new schemas, write ADRs, add the boundary-scan allowlist. Non-runtime.
+- [x] **Phase 09: Architecture Contracts & Schema Foundation** - Lock the four North Star contracts, extend `platform-contract` with new schemas, write ADRs, add the boundary-scan allowlist. Non-runtime. (completed 2026-06-28)
 - [ ] **Phase 10: Embeddable RunRuntime + Fake Backend** - Implement `RunRuntime` as an injectable library with a fake backend and run-event output boundary. Default-OFF.
 - [ ] **Phase 11: Hermes BackendAdapter + Parity Spike** - Implement the Hermes backend adapter (one-shot first), a non-mutating capability probe, and a fixture `/v1/runs` parity spike. Default-OFF.
 - [ ] **Phase 12: Channel Interface + WeCom Wrapper + Web/SSE + Client SDK** - Make WeCom one `ChannelAdapter`; add a Web/SSE channel, platform API server, TS SDK, and embeddable chat component. Default-OFF.
@@ -312,7 +312,7 @@ Milestone v1.1 (Platform Foundation) executes 09 -> 10 -> 11 -> 12 -> 13. Phase 
 | 7. CI, Composability, and Privacy Gates | 3/3 | Complete    | 2026-06-28 |
 | 8. Lawyer Trial Acceptance | 4/4 | Human Needed - Live UAT Pending | - |
 | --- Milestone v1.1 — Platform Foundation --- | | | |
-| 09. Architecture Contracts & Schema Foundation | 3/4 | In Progress|  |
+| 09. Architecture Contracts & Schema Foundation | 4/4 | Complete   | 2026-06-28 |
 | 10. Embeddable RunRuntime + Fake Backend | 0/TBD | Planned | - |
 | 11. Hermes BackendAdapter + Parity Spike | 0/TBD | Planned | - |
 | 12. Channel Interface + WeCom Wrapper + Web/SSE + Client SDK | 0/TBD | Planned | - |

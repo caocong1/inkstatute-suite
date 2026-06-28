@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: — Platform Foundation
-status: executing
-stopped_at: Completed 09-03-PLAN.md
-last_updated: "2026-06-28T19:02:38.881Z"
+status: verifying
+stopped_at: Completed 09-04-PLAN.md
+last_updated: "2026-06-28T19:12:27.699Z"
 last_activity: 2026-06-28 -- Phase 09 execution started
 progress:
   total_phases: 14
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 34
-  completed_plans: 33
-  percent: 64
+  completed_plans: 34
+  percent: 71
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-28)
 Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
 Phase: 09 (Architecture Contracts & Schema Foundation) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Next action: `$gsd-autonomous --from 9 --to 13` (hands-free) or `$gsd-progress --next --auto`
 Last activity: 2026-06-28 -- Phase 09 execution started
 
@@ -95,6 +95,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 09 P09-01 | 6 min | 3 tasks | 14 files |
 | Phase 09 P09-02 | 8 min | 4 tasks | 23 files |
 | Phase 09 P09-03 | 7m20s | 3 tasks | 9 files |
+| Phase 09 P09-04 | 6 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -159,7 +160,9 @@ Recent decisions affecting current work:
 - [Phase 09]: [Plan 09-03] Model the platform-foundation fixture as a synthetic education-domain run with only fixture:// references and no legal-only top-level fields.
 - [Phase 09]: [Plan 09-03] Keep platform-foundation replay optional so existing five-event fixtures continue to validate unchanged.
 - [Phase 09]: [Plan 09-03] Use ChannelDelivery.delivery_id as the feedback target while preserving AgentResult.feedback_target for existing feedback relationship checks.
-
+- [Phase 09]: [Plan 09-04] Use BoundaryAllowlistPolicy for path-aware allowed contexts while keeping hard-deny privacy and coupling checks independent from the allowlist.
+- [Phase 09]: [Plan 09-04] Allow hermes, codex, provider_model, wecom, qqbot, web, and desktop only in intended enum/schema/docs/concrete-package contexts.
+- [Phase 09]: [Plan 09-04] Construct secret-like scanner samples at runtime so tests cover plaintext-secret rejection without committing complete token-shaped literals.
 ### Pending Todos
 
 None yet.
@@ -184,8 +187,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T19:02:38.876Z
-Stopped at: Completed 09-03-PLAN.md
+Last session: 2026-06-28T19:12:27.694Z
+Stopped at: Completed 09-04-PLAN.md
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/drafts/agent-platformization-plan-v5.md
