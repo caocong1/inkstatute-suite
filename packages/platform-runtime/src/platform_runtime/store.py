@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
@@ -48,7 +48,7 @@ class InMemoryContractLogStore:
         ingested_at: str | None = None,
     ) -> ContractLogEntry:
         _reject_forbidden_payload_storage(event)
-        now = _timestamp(self._clock() if self._clock else datetime.now(timezone.utc))
+        now = _timestamp(_clock_now(self._clock))
         stored = ContractLogEntry(
             event_key=event_key,
             occurred_at=occurred_at or now,
@@ -78,6 +78,17 @@ def _timestamp(value: datetime | str) -> str:
     if isinstance(value, str) and value.endswith("+00:00"):
         return value[:-6] + "Z"
     return str(value)
+
+
+def _clock_now(clock: Callable[[], datetime | str] | Any | None) -> datetime | str:
+    if clock is None:
+        return datetime.now(timezone.utc)
+    if callable(clock):
+        return clock()
+    now = getattr(clock, "now", None)
+    if callable(now):
+        return now()
+    raise TypeError("clock must be callable or provide now()")
 
 
 def _copy_entry(entry: ContractLogEntry) -> ContractLogEntry:

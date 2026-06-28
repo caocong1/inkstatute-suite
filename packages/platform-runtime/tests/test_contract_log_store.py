@@ -18,6 +18,18 @@ class InMemoryContractLogStoreTests(unittest.TestCase):
         self.assertEqual([first.seq, second.seq], [0, 1])
         self.assertEqual([entry.seq for entry in store.entries()], [0, 1])
 
+    def test_accepts_runtime_clock_port_shape(self) -> None:
+        class Clock:
+            def now(self) -> str:
+                return FIXED_NOW
+
+        store = InMemoryContractLogStore(clock=Clock())
+
+        entry = store.append("run", {"run_id": "run-001", "status": "queued"})
+
+        self.assertEqual(entry.occurred_at, FIXED_NOW)
+        self.assertEqual(entry.ingested_at, FIXED_NOW)
+
     def test_entries_are_copy_safe(self) -> None:
         store = InMemoryContractLogStore(clock=lambda: FIXED_NOW)
         store.append("run", {"run_id": "run-001", "metadata": {"safe_summary": "stored by ref"}})
