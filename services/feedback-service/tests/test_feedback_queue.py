@@ -7,6 +7,7 @@ import unittest
 from contract_test_suite.schema_validation import validate_event
 from feedback_service.classification import FEEDBACK_CATEGORIES, classify_feedback_event
 from feedback_service.queue import (
+    build_pending_feedback_queue,
     dedupe_feedback_events,
     load_jsonl_records,
     normalize_feedback_inputs,
@@ -85,6 +86,67 @@ class FeedbackNormalizationQueueTests(unittest.TestCase):
         dedupe_feedback_events([event, copy.deepcopy(event)])
 
         self.assertEqual(event, original)
+
+    def test_pending_queue_excludes_non_pending_feedback(self) -> None:
+        pending = _normalized_wecom_feedback_event("callback-pending")
+        resolved = _normalized_wecom_feedback_event("callback-resolved")
+        resolved["status"] = "resolved"
+
+        queue = build_pending_feedback_queue([resolved, pending], status="pending")
+
+        self.assertEqual([item["feedback_id"] for item in queue], [pending["feedback_id"]])
+
+    def test_route_mismatch_queue_item_is_human_review_only(self) -> None:
+        event = _normalized_wecom_feedback_event("callback-route", action="route_wrong")
+        event.update(
+            {
+                "event_type": "route_mismatch",
+                "route_mismatch": True,
+                "skill_candidate": {
+                    "detected": True,
+                    "source": "route_mismatch",
+                    "requires_human_review": True,
+                    "evidence": ["feedback-callback-route"],
+                    "metadata": {"no_auto_modify": True},
+                },
+            }
+        )
+        event["metadata"]["no_auto_modify"] = True
+
+        item = build_pending_feedback_queue([event])[0]
+
+        self.assertEqual(item["classification"]["category"], "route_mismatch")
+        self.assertTrue(item["requires_human_review"])
+        self.assertTrue(item["no_auto_modify"])
+        self.assertIsNotNone(item["skill_candidate"])
+
+    def test_queue_output_is_reference_first(self) -> None:
+        item = build_pending_feedback_queue([_normalized_wecom_feedback_event("callback-privacy")])[0]
+
+        self.assertEqual(item["raw_payload_ref"], "fixture://wecom/callback/callback-privacy")
+        self.assert_no_exact_raw_payload_key(item)
+
+    def test_pending_queue_sorts_by_created_at_then_input_order(self) -> None:
+        first = _normalized_wecom_feedback_event("callback-sort-first")
+        second = _normalized_wecom_feedback_event("callback-sort-second")
+        first["created_at"] = "2026-06-28T05:02:00Z"
+        second["created_at"] = "2026-06-28T05:02:00Z"
+
+        queue = build_pending_feedback_queue([first, second])
+
+        self.assertEqual(
+            [item["feedback_id"] for item in queue],
+            [first["feedback_id"], second["feedback_id"]],
+        )
+
+    def assert_no_exact_raw_payload_key(self, value: object) -> None:
+        if isinstance(value, dict):
+            self.assertNotIn("raw_payload", value)
+            for child in value.values():
+                self.assert_no_exact_raw_payload_key(child)
+        elif isinstance(value, list):
+            for child in value:
+                self.assert_no_exact_raw_payload_key(child)
 
 
 def _normalized_wecom_feedback_event(callback_id: str, *, action: str = "down") -> dict[str, object]:

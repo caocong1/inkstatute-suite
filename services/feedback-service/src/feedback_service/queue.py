@@ -2,13 +2,60 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from .classification import FeedbackClassification, classify_feedback_event
 from .wecom_normalizer import normalize_wecom_feedback_records
+
+
+@dataclass(frozen=True)
+class FeedbackQueueItem:
+    event: dict[str, Any]
+    classification: FeedbackClassification
+
+    def to_dict(self) -> dict[str, Any]:
+        metadata = self.event.get("metadata", {})
+        metadata = metadata if isinstance(metadata, Mapping) else {}
+        skill_candidate = self.event.get("skill_candidate")
+        skill_metadata = skill_candidate.get("metadata", {}) if isinstance(skill_candidate, Mapping) else {}
+        skill_metadata = skill_metadata if isinstance(skill_metadata, Mapping) else {}
+        requires_human_review = bool(
+            self.classification.requires_human_review
+            or (isinstance(skill_candidate, Mapping) and skill_candidate.get("requires_human_review"))
+        )
+        no_auto_modify = bool(
+            self.classification.no_auto_modify
+            or metadata.get("no_auto_modify")
+            or skill_metadata.get("no_auto_modify")
+        )
+        return {
+            "feedback_id": self.event.get("feedback_id"),
+            "turn_id": self.event.get("turn_id"),
+            "conversation_id": self.event.get("conversation_id"),
+            "user_id": self.event.get("user_id"),
+            "result_id": self.event.get("result_id"),
+            "feedback_target": self.event.get("feedback_target"),
+            "source": self.event.get("source"),
+            "event_type": self.event.get("event_type"),
+            "action": self.event.get("action"),
+            "status": self.event.get("status"),
+            "created_at": self.event.get("created_at"),
+            "classification": self.classification.to_dict(),
+            "raw_payload_ref": self.event.get("raw_payload_ref"),
+            "related_skill": self.event.get("related_skill"),
+            "related_route_decision": self.event.get("related_route_decision"),
+            "skill_candidate": skill_candidate,
+            "requires_human_review": requires_human_review,
+            "no_auto_modify": no_auto_modify,
+            "duplicate_count": metadata.get("duplicate_count", 1),
+            "idempotency_key": metadata.get("idempotency_key"),
+            "source_status": metadata.get("source_status"),
+        }
 
 
 def load_jsonl_records(path: str | Path) -> list[dict[str, Any]]:
@@ -54,6 +101,13 @@ def dedupe_feedback_events(events: Iterable[Mapping[str, Any]]) -> list[dict[str
         grouped.setdefault(key, []).append(cloned)
 
     return [_canonical_event(key, grouped[key]) for key in order]
+
+
+def build_pending_feedback_queue(events: Iterable[Mapping[str, Any]], status: str = "pending") -> list[dict[str, Any]]:
+    indexed_events = list(enumerate(dedupe_feedback_events(events)))
+    filtered = [(index, event) for index, event in indexed_events if event.get("status") == status]
+    filtered.sort(key=lambda item: (_string(item[1].get("created_at")) or "", _seq(item[1]), item[0]))
+    return [FeedbackQueueItem(event=event, classification=classify_feedback_event(event)).to_dict() for _, event in filtered]
 
 
 def _canonical_event(idempotency_key: str, events: list[dict[str, Any]]) -> dict[str, Any]:
@@ -130,6 +184,12 @@ def _duplicate_callback_refs(events: list[Mapping[str, Any]]) -> list[str]:
     return refs
 
 
+def _seq(event: Mapping[str, Any]) -> int:
+    metadata = event.get("metadata")
+    value = metadata.get("seq") if isinstance(metadata, Mapping) else event.get("seq")
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
 def _privacy_checked_clone(event: Mapping[str, Any]) -> dict[str, Any]:
     forbidden_path = _find_exact_key(event, "raw_payload")
     if forbidden_path is not None:
@@ -166,8 +226,9 @@ def _string(value: Any) -> str | None:
 
 
 __all__ = [
+    "FeedbackQueueItem",
+    "build_pending_feedback_queue",
     "dedupe_feedback_events",
     "load_jsonl_records",
     "normalize_feedback_inputs",
 ]
-
