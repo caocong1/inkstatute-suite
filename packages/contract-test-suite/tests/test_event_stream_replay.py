@@ -76,6 +76,21 @@ class EventStreamReplayTests(unittest.TestCase):
         self.assertEqual(len(artifact_issues), 2)
         self.assertTrue(all(issue.stream_path.name == "broken-artifact.jsonl" for issue in artifact_issues))
 
+    def test_out_of_order_sequence_reports_envelope_issue(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            broken = Path(tmp) / "out-of-order.jsonl"
+            records = _load_raw_records(PHASE4_STREAMS[0])
+            _write_raw_records(broken, [records[0], records[2], records[1], records[3]])
+
+            report = replay_event_streams([broken])
+            with self.assertRaises(AssertionError):
+                assert_event_stream_integrity([broken])
+
+        issue = next(issue for issue in report.issues if issue.relationship == "seq_monotonic")
+        self.assertEqual(issue.field_path, "envelope.seq")
+        self.assertEqual(issue.expected, [0, 1, 2, 3])
+        self.assertEqual(issue.actual, [0, 2, 1, 3])
+
     def test_phase4_stream_fixtures_are_reference_first_and_no_feedback_fabrication(self) -> None:
         secret_like = re.compile(r"(sk-[A-Za-z0-9]{10,}|AKIA[0-9A-Z]{16}|-----BEGIN|password\\s*[:=]|secret\\s*[:=]|token\\s*[:=])")
         for stream_path in PHASE4_STREAMS:
