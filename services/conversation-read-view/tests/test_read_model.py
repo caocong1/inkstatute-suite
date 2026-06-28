@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import unittest
 
+import conversation_read_view
 from conversation_read_view.privacy import (
     find_forbidden_raw_payload_path,
     scrub_contract_payload,
@@ -39,6 +40,14 @@ class PrivacyHelperTests(unittest.TestCase):
 
 
 class ContractLogReadModelTests(unittest.TestCase):
+    def test_package_imports_and_pyproject_has_no_runtime_dependencies(self) -> None:
+        pyproject = (REPO_ROOT / "services" / "conversation-read-view" / "pyproject.toml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("build_read_model", conversation_read_view.__all__)
+        self.assertIn("dependencies = []", pyproject)
+
     def test_phase5_stream_builds_conversation_view(self) -> None:
         model = build_read_model(load_records_from_jsonl(PHASE5_STREAM))
 
@@ -95,6 +104,46 @@ class ContractLogReadModelTests(unittest.TestCase):
         self.assertIsNotNone(fallback_alias)
         assert preferred is not None
         self.assertEqual(preferred["fallback_source"], "agent_turn.metadata.task_id")
+
+    def test_missing_associations_are_reported_without_fabrication(self) -> None:
+        records = [
+            {
+                "event_key": "agent_turn",
+                "occurred_at": "2026-06-28T05:00:00Z",
+                "ingested_at": "2026-06-28T05:00:01Z",
+                "seq": 0,
+                "event": {
+                    "turn_id": "turn-missing-links-001",
+                    "conversation_id": "conv-missing-links-001",
+                    "channel": "wecom",
+                    "user_id": "lawyer-missing-links-001",
+                    "message_type": "text",
+                    "received_at": "2026-06-28T05:00:00Z",
+                    "metadata": {"raw_payload_ref": "fixture://raw/missing-links-001"},
+                },
+            }
+        ]
+
+        task = build_read_model(records).get_task("turn-missing-links-001")
+
+        self.assertIsNotNone(task)
+        assert task is not None
+        self.assertEqual(task["status"], "unknown")
+        self.assertEqual(
+            task["missing_associations"],
+            ["route_decision", "execution_trace", "agent_result"],
+        )
+        self.assertIsNone(task["route_decision"])
+        self.assertIsNone(task["execution_trace"])
+        self.assertIsNone(task["agent_result"])
+
+    def test_readme_marks_sessions_db_as_non_required_fallback(self) -> None:
+        readme = (REPO_ROOT / "services" / "conversation-read-view" / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("conversation_id", readme)
+        self.assertIn("task id", readme)
+        self.assertIn("trace_id", readme)
+        self.assertIn("does not require Hermes `sessions.db`", readme)
 
 
 def _load_raw_records(path: Path) -> list[dict[str, object]]:

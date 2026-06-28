@@ -8,3 +8,10 @@ The package stores no raw legal payloads. Contract log readers must preserve ref
 
 Phase 6 starts with pure Python helpers so tests can call the read model directly without starting a server.
 
+Supported lookups:
+
+- `conversation_id` for conversation summaries and recent turn/result details.
+- `task id` for task views. The read model prefers `metadata.task_id` and falls back to `turn_id`.
+- `trace_id` for task lookup through execution trace metadata.
+
+The package does not require Hermes `sessions.db`; any future session fallback must be explicit, Hermes-specific, and marked as non-authoritative.
