@@ -33,7 +33,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Adapter input/output maps to AgentTurn, AgentResult, ExecutionTrace, RouteDecision, FeedbackEvent, and output-policy events without legal-only top-level fields.
   - Contract tests include non-Hermes synthetic fixtures to prevent platform core coupling to Hermes paths, hook names, profile layout, or WeCom-only fields.
 
-- [ ] **REQ-hermes-adapter-bootstrap**: Hermes mode must be reproducible on a new server through a low-coupling adapter bootstrap path.
+- [x] **REQ-hermes-adapter-bootstrap**: Hermes mode must be reproducible on a new server through a low-coupling adapter bootstrap path.
   - Supports reusing an existing Hermes install by detecting Hermes version, hook capability, agent invocation capability, profile path, and contract log path.
   - Supports new-server Hermes mode by installing or locating a supported Hermes version, applying a sanitized lawfirm profile bundle, linking hooks/agent adapter, restoring skills/MCP/scripts/SOUL config, and running health checks.
   - Maintains a Hermes compatibility matrix with verified versions, required hook/event/agent-invocation capabilities, config switches, and fallback behavior for version drift.
@@ -227,7 +227,7 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-observability-and-replay | Phase 4 | Complete |
 | REQ-inkstatute-wecom-service | Phase 5.5 | Complete |
 | REQ-agent-backend-adapter-contract | Phase 5.5 | Complete |
-| REQ-hermes-adapter-bootstrap | Phase 5.5 | Pending |
+| REQ-hermes-adapter-bootstrap | Phase 5.5 | Complete |
 | REQ-assistant-output-boundary | Phase 5.5 | Complete |
 | REQ-wecom-daily-test-loop | Phase 5 | Complete |
 | REQ-conversation-read-view | Phase 6 | Pending |
