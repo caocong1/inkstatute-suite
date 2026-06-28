@@ -16,7 +16,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 - [x] **Phase 1: Platform Contract Foundation** - Define the pure contract package, schemas, async states, errors, fixtures, and Python-first bindings. (completed 2026-06-27)
 - [x] **Phase 2: Contract Test Suite Foundation** - Establish schema validation, fixture replay, relationship checks, and CI-ready harness before Hermes hook work. (completed 2026-06-27)
 - [x] **Phase 3: Hermes Integration Spike and Risk Closure** - Resolve hook, message, long-task, feedback, idempotency, fixture, and privacy risks before production hooks. (completed 2026-06-28)
-- [ ] **Phase 4: Hermes Shadow Event Layer** - Add the non-invasive hook, mapper, and writer that record standard contract events without changing Hermes behavior.
+- [x] **Phase 4: Hermes Shadow Event Layer** - Add the non-invasive hook, mapper, and writer that record standard contract events without changing Hermes behavior. (completed 2026-06-28)
 - [ ] **Phase 5: WeCom Shadow Loop Validation** - Prove the existing WeCom daily loop still works while contract events and feedback are captured.
 - [ ] **Phase 6: Read and Feedback Service APIs** - Deliver read-only conversation/task/feedback APIs plus feedback normalization, dedupe, classification, and pending queues.
 - [ ] **Phase 7: CI, Composability, and Privacy Gates** - Enforce industry-neutral composability, coverage, relationship integrity, thin-layer boundaries, and safety baselines in CI.
@@ -179,8 +179,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 | 1. Platform Contract Foundation | 3/3 | Complete    | 2026-06-27 |
 | 2. Contract Test Suite Foundation | 3/3 | Complete    | 2026-06-27 |
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
-| 4. Hermes Shadow Event Layer | 3/3 | Ready for Verification | - |
-| 5. WeCom Shadow Loop Validation | 0/TBD | Not started | - |
+| 4. Hermes Shadow Event Layer | 3/3 | Complete | 2026-06-28 |
+| 5. WeCom Shadow Loop Validation | 0/TBD | Ready to Plan | - |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
 | 8. Lawyer Trial Acceptance | 0/TBD | Not started | - |

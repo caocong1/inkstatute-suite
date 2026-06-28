@@ -1,7 +1,7 @@
 ---
 phase: 04
 slug: hermes-shadow-event-layer
-status: implemented
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-06-28

@@ -66,7 +66,7 @@ Phase 4 now has contract-test-suite support for replaying partial Hermes shadow 
 ## Verification
 
 - PASS: `cd packages/contract-test-suite && PYTHONPATH=src:../platform-contract/src python -m unittest discover -s tests -p 'test_event_stream_replay.py' -v` ran 7 tests successfully.
-- PASS: Full Phase 4 verification command ran `compileall`, the package-local contract-test-suite runner with 35 tests, and all 18 service tests successfully.
+- PASS: Full Phase 4 verification command ran `compileall`, the package-local contract-test-suite runner with 36 tests, and all 18 service tests successfully.
 - PASS: Existing full-bundle fixture replay remains unchanged and green through the same package-local runner.
 - PASS: Phase 4 stream fixtures contain no `feedback_event` records and no exact `raw_payload` keys.
 - PASS: `git diff --check`.

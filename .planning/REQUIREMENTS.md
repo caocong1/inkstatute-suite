@@ -73,7 +73,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### Hermes Shadow Integration
 
-- [ ] **REQ-hermes-contract-layer**: Add a hook-based shadow contract layer to Hermes lawfirm that maps internal Hermes context and outputs into standard contract events without changing outbound behavior.
+- [x] **REQ-hermes-contract-layer**: Add a hook-based shadow contract layer to Hermes lawfirm that maps internal Hermes context and outputs into standard contract events without changing outbound behavior.
   - Provides a `contract_result_recorder` hook on `agent:end` after `response_filter`.
   - Maps final replies into AgentResult and writes contract logs.
   - Records occurred_at, ingested_at, and a monotonic sequence for every contract event.
@@ -82,7 +82,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Includes mapper and event log writer code under `services/hermes-contract-layer`.
   - Contract-test-suite can replay hook output into valid standard events.
 
-- [ ] **REQ-observability-and-replay**: Contract events must be observable, replayable, and auditable enough to diagnose task flow, failures, routing, tools, gates, artifacts, and feedback.
+- [x] **REQ-observability-and-replay**: Contract events must be observable, replayable, and auditable enough to diagnose task flow, failures, routing, tools, gates, artifacts, and feedback.
   - Every AgentResult includes or links to ExecutionTrace.
   - ExecutionTrace can connect messages, tasks, routes, tool calls, gates, artifacts, errors, and feedback.
   - Each contract event includes occurred_at, ingested_at, and seq.
@@ -184,8 +184,8 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-contract-event-schemas | Phase 1 | Complete |
 | REQ-contract-test-suite | Phase 2 | Complete |
 | REQ-implementation-risk-resolution | Phase 3 | Complete |
-| REQ-hermes-contract-layer | Phase 4 | Pending |
-| REQ-observability-and-replay | Phase 4 | Pending |
+| REQ-hermes-contract-layer | Phase 4 | Complete |
+| REQ-observability-and-replay | Phase 4 | Complete |
 | REQ-wecom-daily-test-loop | Phase 5 | Pending |
 | REQ-conversation-read-view | Phase 6 | Pending |
 | REQ-feedback-service | Phase 6 | Pending |
@@ -203,4 +203,4 @@ Explicitly excluded from V2 to prevent scope creep.
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-28 after Phase 3 verification*
+*Last updated: 2026-06-28 after Phase 4 verification*

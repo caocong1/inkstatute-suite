@@ -19,14 +19,15 @@ Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral
 - Existing Hermes feedback path is already present: `response_filter` preview, template card dispatch, callback shim, and `feedback.jsonl`.
 - Existing Hermes router, skills, gates, MCP tools, model gateway, and session storage remain the operational baseline.
 - Phase 3 Hermes integration spike is complete: hook ordering is source-confirmed, AgentTurn strategy is documented, identifier/state/privacy/safety rules are defined, and non-happy-path fixtures validate through the contract-test-suite.
+- Phase 4 Hermes shadow event layer is complete: repo-owned hook artifact, mapper, JSONL writer, and event-stream replay fixtures validate without live Hermes mutation.
 
 ### Active
 
-- [ ] Define the V2 platform contract package with five event schemas, async task states, error categories, JSON Schema, Python bindings, and fixtures.
-- [ ] Model AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision as platform events with traceable relationships.
-- [ ] Build a contract test suite before production Hermes hook work.
+- [x] Define the V2 platform contract package with five event schemas, async task states, error categories, JSON Schema, Python bindings, and fixtures.
+- [x] Model AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision as platform events with traceable relationships.
+- [x] Build a contract test suite before production Hermes hook work.
 - [x] Resolve Hermes integration risks before production hook implementation.
-- [ ] Add a thin hook-based Hermes shadow contract layer that does not alter outbound behavior.
+- [x] Add a thin hook-based Hermes shadow contract layer that does not alter outbound behavior.
 - [ ] Preserve and validate the WeCom task-to-reply-to-card-to-feedback loop.
 - [ ] Normalize Hermes feedback into FeedbackEvent records with dedupe, classification, and human-reviewed skill candidates.
 - [ ] Build read-only conversation/task/feedback APIs from contract logs.
@@ -91,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-06-28 after Phase 3 verification*
+*Last updated: 2026-06-28 after Phase 4 verification*

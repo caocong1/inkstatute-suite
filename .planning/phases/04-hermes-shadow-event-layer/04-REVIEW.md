@@ -29,10 +29,11 @@ No open findings.
 ## Verification
 
 - PASS: `python -m compileall services/hermes-contract-layer/src services/hermes-contract-layer/tests packages/contract-test-suite/src packages/contract-test-suite/tests`
-- PASS: `cd packages/contract-test-suite && PYTHONPATH=src:../platform-contract/src python scripts/run_contract_tests.py` ran 35 tests successfully.
+- PASS: `cd packages/contract-test-suite && PYTHONPATH=src:../platform-contract/src python scripts/run_contract_tests.py` ran 36 tests successfully.
 - PASS: `PYTHONPATH=services/hermes-contract-layer/src:packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s services/hermes-contract-layer/tests -v` ran 18 tests successfully.
 - PASS: Phase 4 JSONL fixtures contain exactly `agent_turn`, `route_decision`, `execution_trace`, and `agent_result`; no `feedback_event` records are fabricated.
 - PASS: Privacy scans assert no exact `raw_payload` keys and no secret-like strings in Phase 4 stream fixtures.
+- PASS: Event-stream replay reports out-of-order sequence records as envelope relationship issues.
 
 ## Residual Risk
 
