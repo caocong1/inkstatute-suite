@@ -33,6 +33,7 @@ from .ports import (
     RuntimeClock,
 )
 from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
+from .store import ContractLogEntry, ContractLogPrivacyError, InMemoryContractLogStore
 
 __all__ = [
     "AckResponse",
@@ -47,10 +48,13 @@ __all__ = [
     "ChannelCapabilitySet",
     "ChannelDelivery",
     "ComponentHealth",
+    "ContractLogEntry",
+    "ContractLogPrivacyError",
     "ContractLogStore",
     "DeliveryResult",
     "IdFactory",
     "InboundNormalized",
+    "InMemoryContractLogStore",
     "Issue",
     "RawInbound",
     "Run",
