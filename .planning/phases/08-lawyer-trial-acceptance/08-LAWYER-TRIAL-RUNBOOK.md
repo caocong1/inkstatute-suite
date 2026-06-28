@@ -20,9 +20,12 @@ The five-workday clock starts only after all of these live gates have evidence:
 - Hermes is used only as the agent backend in Hermes mode.
 - The Hermes adapter evidence shows `no_channel_io=true`.
 - The assistant output boundary is active before every ordinary-user WeCom send.
+- Long-running file/document tasks use InkStatute-owned task flow: quick ACK, service-owned progress, explicit final/timeout/failure state, and fast service response to follow-up user messages while the task is still running.
 - Ordinary users have not seen Hermes meta, gateway, update, command, help, debug, lifecycle, memory, tool-progress, stack-trace, internal path, or runtime-detail notices.
 
 Fixture data cannot count as live trial evidence. Fixtures and CI prove readiness only.
+
+Latest local status on 2026-06-28T22:48:44+08:00: 08-04 task-flow runtime code is implemented, focused tests and full V2 gates passed, and the live bridge was restarted for chat `155`. This is not trial evidence by itself; the operator still needs to run a fresh live document+instruction task and send a follow-up message while it is active before the trial clock can start.
 
 ## Allowed Evidence Kinds
 
@@ -46,8 +49,9 @@ For each of the 5 continuous workdays:
 3. Record one minimized task row per real lawyer task in the evidence template.
 4. Capture at least one stable external evidence ref for ACK/send/feedback or contract-log evidence.
 5. Mark whether the task was ordinary or long by duration. Long means end-to-end duration greater than 60 seconds.
-6. Record whether output-boundary monitoring saw any Hermes meta exposure.
-7. Stop counting new tasks immediately if a stop condition below is met.
+6. For long tasks, send at least one harmless follow-up message while the task is still running and record whether InkStatute responded quickly without waiting for final completion.
+7. Record whether output-boundary monitoring saw any Hermes meta exposure.
+8. Stop counting new tasks immediately if a stop condition below is met.
 
 ## Task Category Guidance
 
@@ -135,6 +139,8 @@ Stop counting and mark the report blocked if any condition occurs:
 - Hermes gateway becomes the ordinary-user channel boundary.
 - Hermes adapter no-channel-IO evidence is missing or false.
 - Output boundary evidence is missing for ordinary-user sends.
+- Long tasks block follow-up user input until completion instead of returning a fast service-owned response.
+- Mid-task user instructions are claimed as applied when the selected backend adapter did not actually accept a live task update.
 - A Hermes meta notice reaches an ordinary lawyer user.
 - Sensitive runtime material is accidentally placed in repo artifacts.
 - High-risk legal feedback would require automated legal conclusion changes.

@@ -199,8 +199,15 @@ Plans:
   3. Trial metrics show long-task success rate at least 80%, ordinary task success rate at least 85%, and feedback capture rate at least 60%.
   4. Positive feedback share is at least 60%, or a categorized repair plan exists; negative feedback has a response action within 48 hours.
   5. route_mismatch count is no more than 3, each mismatch has structured skill_candidate or routing_rule_candidate evidence, and phase history shows the V2 PRD order was followed before acceptance.
+  6. Long-running WeCom document/file tasks use InkStatute-owned task flow with quick ACK, recurring service-owned progress, explicit final/timeout/failure state, no empty-message file+text response, and fast service-owned handling for follow-up user messages while a task is still running.
 
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+
+- [x] 08-01-PLAN.md — Trial metrics model and acceptance checker.
+- [x] 08-02-PLAN.md — Trial runbook and evidence templates.
+- [x] 08-03-PLAN.md — Pending acceptance report and human gate.
+- [x] 08-04-PLAN.md — WeCom task flow and progress event runtime.
 
 ## Progress
 
@@ -217,4 +224,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
 | 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 4/4 | Complete    | 2026-06-28 |
 | 6. Read and Feedback Service APIs | 3/3 | Complete    | 2026-06-28 |
 | 7. CI, Composability, and Privacy Gates | 3/3 | Complete    | 2026-06-28 |
-| 8. Lawyer Trial Acceptance | 3/3 | Human Needed | - |
+| 8. Lawyer Trial Acceptance | 4/4 | Human Needed - Live UAT Pending | - |

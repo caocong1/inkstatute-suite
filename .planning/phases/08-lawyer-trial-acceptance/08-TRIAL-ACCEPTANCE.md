@@ -16,6 +16,8 @@ Automation artifacts are ready, local V2 gates pass, and the checker can evaluat
 
 fixture evidence cannot pass Phase 8 acceptance. Fixture and CI evidence only prove readiness tooling.
 
+Live UAT on 2026-06-28 found an additional readiness blocker: long-running WeCom document tasks need an InkStatute-owned task flow, and user messages sent while a task is still running must receive a fast service-owned response instead of waiting for the active task to finish. The local 08-04 repair is implemented, focused tests and full V2 gates passed, and the live bridge was restarted for chat `155` at 2026-06-28T22:47:35+08:00. The trial clock must not start until this is re-tested through live WeCom file+instruction UAT.
+
 ## Readiness Gates
 
 | Gate | Current Status | Evidence |
@@ -25,6 +27,7 @@ fixture evidence cannot pass Phase 8 acceptance. Fixture and CI evidence only pr
 | Hermes adapter runs as agent backend only | pending | external `no_channel_io` evidence ref required |
 | Output boundary protects ordinary-user sends | pending | external live output-boundary evidence ref required |
 | No Hermes meta exposure to ordinary users | pending | external operator confirmation ref required |
+| Long-task task flow and mid-task responsiveness | live_uat_pending | 08-04 local implementation, focused tests, full V2 gates, and bridge restart passed; live evidence must still show ACK, progress, final/timeout/failure state, file+text merge, and fast response to follow-up user input during an active task |
 
 The trial clock must not start until the pending live gates above are satisfied.
 
@@ -76,7 +79,16 @@ Before this report can move out of `human_needed`, attach sanitized external ref
 - negative-feedback response action refs;
 - route mismatch candidate refs;
 - output-boundary monitoring refs;
+- task-flow refs proving long-running file/document tasks send ACK/progress/final or timeout/failure states;
+- active-task router refs proving user follow-up messages during a running task receive a fast service-owned response and are classified as status/cancel/update/new-task according to backend capabilities;
 - operator confirmation that ordinary users did not see Hermes meta notices.
+
+Current 08-04 local readiness evidence:
+
+- `PYTHONPATH=services/wecom-service/src:packages/platform-contract/src python -m pytest services/wecom-service/tests/test_task_flow.py services/wecom-service/tests/test_active_task_router.py services/wecom-service/tests/test_output_policy.py -q` passed with 20 tests and 4 subtests.
+- `python -m py_compile scripts/inkstatute_wecom_live_bridge.py services/wecom-service/src/wecom_service/task_flow.py services/wecom-service/src/wecom_service/active_task_router.py` passed.
+- `python scripts/run_v2_gates.py --json-summary` passed all V2 gates.
+- `inkstatute-wecom-live-bridge.service` was restarted and active for chat `155`; committed evidence records only this sanitized status, not runtime logs or payloads.
 
 ## Negative Feedback Response Actions
 
@@ -109,6 +121,8 @@ No live output-boundary evidence has been supplied yet.
 
 The final acceptance package must prove ordinary WeCom output was sent by InkStatute WeCom service after output-policy handling. Any ordinary-user exposure to Hermes meta, gateway, update, command, help, debug, lifecycle, memory/tool-progress, internal path, token, or runtime-detail text blocks acceptance until repaired and re-tested.
 
+The final package must also prove long-running tasks did not monopolize the conversation: follow-up user messages during a running task must be acknowledged or answered quickly by InkStatute service-owned wording, and the service must not claim a mid-task instruction was applied unless the selected backend adapter accepted that live update.
+
 ## Privacy Review
 
 This committed report contains only status, thresholds, counts, and references. It must not include runtime callback payloads, media paths, runtime database paths, runtime logs, customer docs, complete identifiers, phone numbers, bank accounts, addresses, secrets, tokens, raw legal payloads, or confidential generated documents.
@@ -127,6 +141,7 @@ Use `raw_payload_ref`-style references for sensitive source material retained ou
 - [ ] Operator confirms every route mismatch has candidate evidence and human review.
 - [ ] Operator confirms no high-risk legal feedback caused automated legal conclusion modification.
 - [ ] Operator confirms no ordinary lawyer user saw Hermes meta notices.
+- [ ] Operator confirms long-task task flow and mid-task follow-up responsiveness passed live UAT.
 - [ ] Operator approves final report status change from `human_needed` to passed or passed_with_repair_plan.
 
 ## Final Verdict

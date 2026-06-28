@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: human_needed
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-06-28T09:46:13.511Z"
-last_activity: 2026-06-28 -- Phase 08 execution started
+stopped_at: 08-04 local task-flow repair complete; live WeCom task-flow UAT pending
+last_updated: "2026-06-28T22:48:44+08:00"
+last_activity: 2026-06-28 -- 08-04 task-flow runtime implemented, V2 gates passed, live bridge restarted
 progress:
   total_phases: 9
   completed_phases: 8
-  total_plans: 29
-  completed_plans: 29
+  total_plans: 30
+  completed_plans: 30
   percent: 89
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-28)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 08 — lawyer-trial-acceptance
+**Current focus:** Phase 08 — live task-flow UAT and lawyer trial acceptance evidence
 
 ## Current Position
 
 Phase: 08 (lawyer-trial-acceptance) — HUMAN_NEEDED
-Plan: 3 of 3
-Status: Plans complete; live lawyer trial evidence and human approval required
-Last activity: 2026-06-28 -- Phase 08 execution started
+Plan: 4 of 4
+Status: 08-04 local repair complete; live WeCom task-flow UAT and five-workday lawyer trial evidence still required
+Last activity: 2026-06-28 -- 08-04 task-flow runtime implemented, tests/gates passed, live bridge restarted for chat 155
 
 Progress: [█████████░] 89% of roadmap phases
 
@@ -36,7 +36,7 @@ Progress: [█████████░] 89% of roadmap phases
 
 **Velocity:**
 
-- Total plans completed: 29
+- Total plans completed: 30
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -83,6 +83,7 @@ Progress: [█████████░] 89% of roadmap phases
 | Phase 08 P08-01 | 6 min | 3 tasks | 2 files |
 | Phase 08 P08-02 | 4 min | 3 tasks | 3 files |
 | Phase 08 P08-03 | 3 min | 2 tasks | 1 files |
+| Phase 08 P08-04 | 35 min | 4 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,12 @@ Recent decisions affecting current work:
 - Hermes lawfirm is the first agent backend adapter, not the platform or channel boundary.
 - Ordinary WeCom users must not see Hermes gateway/update/self-update/command/help/status/credits/insights/memory/tool-progress/debug notices.
 - Raw lawfirm profile copying is not a deployable artifact; V2 needs a sanitized profile bundle plus external secrets/env.
+- Live WeCom long-document UAT showed the temporary Hermes one-shot bridge can time out and cannot provide meaningful backend-neutral task progress.
+- Long-running task execution must be separated from a fast conversation control plane: users who send another message while a task runs must receive an immediate service-owned response and be routed as status/cancel/update/new-task according to adapter capabilities.
+- Mid-task user instructions must not be claimed as applied unless the selected backend adapter supports and confirms live task update injection.
+- The task-flow and active-task router contract must be backend-neutral for Hermes, future Codex mode, and future InkStatute-owned agents.
+- 08-04 maps WeCom task-flow stages to platform AsyncTaskState where possible and records service-only stages as ExecutionTrace metadata.
+- Hermes one-shot currently declares no live update, cancel, streaming-progress, or parallel-task support; InkStatute control-plane notices must not claim those capabilities until an adapter supports and confirms them.
 - [Phase 01]: Keep platform_contract Python bindings standard-library-only with no runtime dependencies.
 - [Phase 01]: Use industry_context and metadata containers for legal/profile-specific extension data instead of legal-only top-level required fields.
 - [Phase 01]: Keep Phase 1 fixture validation as a package-local stdlib self-check rather than a Phase 2 contract-test-suite harness. — Plan 01-03 is scoped to package-local fixtures and self-checks; Phase 2 owns the contract-test-suite.
@@ -142,6 +149,7 @@ None yet.
 - Phase 4/6 runtime work must obtain sanitized evidence for callback fields, feedback rows, long-task state sources, and raw payload retention/redaction before claiming those details as source-confirmed.
 - Live WeCom acceptance is blocked until Phase 5.5 proves InkStatute WeCom service owns receive/send, Hermes is used only for agent logic, and ordinary users see InkStatute lawyer-assistant output rather than Hermes operator UI.
 - Hermes agent adapter work must account for version drift with capability probing and a compatibility matrix before relying on hook/event/invocation behavior.
+- Phase 8 trial clock is blocked until live WeCom UAT proves the 08-04 task-flow runtime: quick ACK, recurring service-owned progress, explicit final/timeout/failure state, file+text merge, no empty-message answer, no Hermes meta leak, and fast response to follow-up messages during active long tasks.
 
 ## Deferred Items
 
@@ -153,6 +161,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T09:46:13.332Z
-Stopped at: Completed 08-03-PLAN.md
-Resume file: None
+Last session: 2026-06-28T22:48:44+08:00
+Stopped at: 08-04 local implementation complete; awaiting live WeCom task-flow UAT
+Resume file: None - continue from .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
