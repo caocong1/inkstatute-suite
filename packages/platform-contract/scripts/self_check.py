@@ -1,4 +1,4 @@
-"""Stdlib self-checks for Phase 1 platform contract schemas and fixtures."""
+"""Stdlib self-checks for platform contract schemas, bindings, and fixtures."""
 
 from __future__ import annotations
 
@@ -20,6 +20,22 @@ EVENT_SCHEMA_BY_KEY = {
     "feedback_event": "feedback_event",
 }
 CORE_SCHEMA_NAMES = set(EVENT_SCHEMA_BY_KEY.values()) | {"common"}
+NEW_STANDALONE_SCHEMA_NAMES = {
+    "approval",
+    "artifact_record",
+    "bot_instance",
+    "channel_binding",
+    "channel_delivery",
+    "channel_message",
+    "run",
+    "run_event",
+    "run_step",
+    "session",
+    "solution_package_manifest",
+    "tenant",
+    "tool_call",
+    "workspace",
+}
 
 FORBIDDEN_REQUIRED_FIELDS = {
     "case_type",
@@ -181,6 +197,23 @@ def _assert_python_bindings_compile():
         platform_contract.ExecutionTrace,
         platform_contract.AgentResult,
         platform_contract.FeedbackEvent,
+        platform_contract.ChannelMessage,
+        platform_contract.ChannelDelivery,
+        platform_contract.Run,
+        platform_contract.RunEvent,
+        platform_contract.RunStep,
+        platform_contract.ToolCall,
+        platform_contract.Approval,
+        platform_contract.ArtifactRecord,
+        platform_contract.Session,
+        platform_contract.Tenant,
+        platform_contract.Workspace,
+        platform_contract.SolutionPackageManifest,
+        platform_contract.SolutionBinding,
+        platform_contract.NeutralSkillDescriptor,
+        platform_contract.McpServerDescriptor,
+        platform_contract.BotInstance,
+        platform_contract.ChannelBinding,
     ]
     for cls in expected_dataclasses:
         if not is_dataclass(cls):
@@ -198,6 +231,20 @@ def assert_python_binding_schema_parity(schemas):
         "feedback_event": platform_contract.FeedbackEvent,
         "execution_trace": platform_contract.ExecutionTrace,
         "route_decision": platform_contract.RouteDecision,
+        "channel_message": platform_contract.ChannelMessage,
+        "channel_delivery": platform_contract.ChannelDelivery,
+        "run": platform_contract.Run,
+        "run_event": platform_contract.RunEvent,
+        "run_step": platform_contract.RunStep,
+        "tool_call": platform_contract.ToolCall,
+        "approval": platform_contract.Approval,
+        "artifact_record": platform_contract.ArtifactRecord,
+        "session": platform_contract.Session,
+        "tenant": platform_contract.Tenant,
+        "workspace": platform_contract.Workspace,
+        "solution_package_manifest": platform_contract.SolutionPackageManifest,
+        "bot_instance": platform_contract.BotInstance,
+        "channel_binding": platform_contract.ChannelBinding,
     }
     common_pairs = {
         "attachment_ref": platform_contract.AttachmentRef,
@@ -205,6 +252,9 @@ def assert_python_binding_schema_parity(schemas):
         "artifact": platform_contract.Artifact,
         "skill_candidate": platform_contract.SkillCandidate,
         "error_info": platform_contract.ErrorInfo,
+        "solution_binding": platform_contract.SolutionBinding,
+        "neutral_skill_descriptor": platform_contract.NeutralSkillDescriptor,
+        "mcp_server_descriptor": platform_contract.McpServerDescriptor,
     }
 
     for schema_name, cls in event_pairs.items():

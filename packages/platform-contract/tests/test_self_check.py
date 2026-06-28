@@ -23,10 +23,15 @@ class SelfCheckTests(unittest.TestCase):
             {
                 "agent_result",
                 "agent_turn",
+                "artifact_record",
+                "channel_delivery",
+                "channel_message",
                 "common",
                 "execution_trace",
                 "feedback_event",
                 "route_decision",
+                "run",
+                "solution_package_manifest",
             }
             <= set(self.schemas)
         )
@@ -71,6 +76,35 @@ class SelfCheckTests(unittest.TestCase):
 
     def test_python_binding_schema_parity(self):
         self_check.assert_python_binding_schema_parity(self.schemas)
+
+    def test_new_schema_binding_parity_rejects_field_drift(self):
+        schemas = deepcopy(self.schemas)
+        del schemas["run"]["properties"]["metadata"]
+
+        with self.assertRaisesRegex(AssertionError, "run schema/binding mismatch"):
+            self_check.assert_python_binding_schema_parity(schemas)
+
+    def test_new_schema_rejects_forbidden_required_fields(self):
+        schemas = deepcopy(self.schemas)
+        schemas["run"]["required"].append("case_type")
+
+        with self.assertRaisesRegex(AssertionError, "forbidden top-level required fields"):
+            self_check.assert_no_legal_top_level_required(schemas)
+
+    def test_five_event_fixtures_do_not_need_new_resource_objects(self):
+        for fixture in self.fixtures:
+            self.assertEqual(
+                set(fixture["events"]),
+                {
+                    "agent_turn",
+                    "route_decision",
+                    "execution_trace",
+                    "agent_result",
+                    "feedback_event",
+                },
+            )
+
+        self_check.assert_fixture_required_fields(self.schemas, self.fixtures)
 
     def test_main_returns_zero(self):
         self.assertEqual(self_check.main(), 0)
