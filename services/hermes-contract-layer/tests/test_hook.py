@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import json
 import os
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
@@ -12,6 +14,7 @@ from hermes_contract_layer import hook
 
 BASE = Path(__file__).resolve().parents[1]
 HOOK_DIR = BASE / "hooks" / "response_filter_contract_result_recorder"
+FIXED_NOW = "2026-06-28T02:10:00Z"
 
 
 def sample_context() -> dict[str, object]:
@@ -118,23 +121,44 @@ class HookBoundaryTests(unittest.TestCase):
         context = sample_context()
         calls = []
 
-        def writer(event_type, writer_context, *, log_path, clock):
-            calls.append((event_type, writer_context, log_path, clock))
-            writer_context["response"] = "writer-local mutation"
-            return 1
+        def writer(events, *, log_path, clock):
+            calls.append((events, log_path, clock))
+            events["agent_result"]["content"] = "writer-local mutation"
+            return list(events)
 
         result = hook.record_contract_result(
             "agent:end",
             context,
             writer=writer,
             log_path="fixture://contract-log.jsonl",
+            clock=lambda: FIXED_NOW,
         )
 
         self.assertEqual(result.status, "recorded")
-        self.assertEqual(result.event_count, 1)
-        self.assertEqual(calls[0][0], "agent:end")
-        self.assertEqual(calls[0][2], "fixture://contract-log.jsonl")
+        self.assertEqual(result.event_count, 4)
+        self.assertEqual(tuple(calls[0][0]), ("agent_turn", "route_decision", "execution_trace", "agent_result"))
+        self.assertEqual(calls[0][1], "fixture://contract-log.jsonl")
         self.assertEqual(context["response"], "filtered answer preview")
+
+    def test_configured_hook_writes_four_jsonl_records_without_outbound_mutation(self) -> None:
+        context = sample_context()
+        before = {key: context[key] for key in hook.OUTBOUND_CONTEXT_KEYS}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "contract-log.jsonl"
+            result = hook.record_contract_result(
+                "agent:end",
+                context,
+                log_path=path,
+                clock=lambda: FIXED_NOW,
+            )
+
+            lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+        self.assertEqual(result.status, "recorded")
+        self.assertEqual(result.event_count, 4)
+        self.assertEqual([line["event_key"] for line in lines], ["agent_turn", "route_decision", "execution_trace", "agent_result"])
+        self.assertEqual({key: context[key] for key in hook.OUTBOUND_CONTEXT_KEYS}, before)
 
 
 if __name__ == "__main__":
