@@ -135,14 +135,14 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Ordinary WeCom users do not see Hermes gateway/update/self-update/command/help/credits/insights/memory/tool-progress/debug notices.
   - QQ Bot and WeChat remain non-V2 acceptance channels but are not broken.
 
-- [ ] **REQ-conversation-read-view**: Build a read-only conversation and task view from contract logs, using Hermes sessions only as a fallback read model rather than an authoritative new session store.
+- [x] **REQ-conversation-read-view**: Build a read-only conversation and task view from contract logs, using Hermes sessions only as a fallback read model rather than an authoritative new session store.
   - Reads contract event logs as the primary source.
   - Provides GET /conversations/{id}, GET /tasks/{id}, and GET /feedback?status=pending as the V2 minimum API set.
   - Supports lookup by conversation_id, task_id, and trace_id.
   - May use sessions.db only through an explicitly Hermes-specific adapter and only to fill gaps.
   - Does not create an independent authoritative conversation database.
 
-- [ ] **REQ-feedback-service**: Normalize InkStatute WeCom feedback callbacks and compatibility Hermes feedback.jsonl/preview data into FeedbackEvent records, classify feedback, dedupe repeated callbacks, and produce pending queues for human review.
+- [x] **REQ-feedback-service**: Normalize InkStatute WeCom feedback callbacks and compatibility Hermes feedback.jsonl/preview data into FeedbackEvent records, classify feedback, dedupe repeated callbacks, and produce pending queues for human review.
   - Reads InkStatute WeCom feedback callback records as the primary source.
   - Reads Hermes feedback.jsonl and pending_previews.jsonl only as compatibility/migration input references.
   - Produces FeedbackEvent records with source, event_type, action, status, raw_payload_ref, and association to turn/result/conversation where available.
@@ -230,8 +230,8 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-hermes-adapter-bootstrap | Phase 5.5 | Complete |
 | REQ-assistant-output-boundary | Phase 5.5 | Complete |
 | REQ-wecom-daily-test-loop | Phase 5 | Complete |
-| REQ-conversation-read-view | Phase 6 | Pending |
-| REQ-feedback-service | Phase 6 | Pending |
+| REQ-conversation-read-view | Phase 6 | Complete |
+| REQ-feedback-service | Phase 6 | Complete |
 | REQ-composability-validation | Phase 7 | Pending |
 | REQ-security-privacy-baseline | Phase 7 | Pending |
 | REQ-v2-thin-contract-layer | Phase 7 | Pending |
@@ -246,4 +246,4 @@ Explicitly excluded from V2 to prevent scope creep.
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-28 after InkStatute WeCom service and agent adapter requirement update*
+*Last updated: 2026-06-28 after Phase 6 read and feedback service APIs completion*
