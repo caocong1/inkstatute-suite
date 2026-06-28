@@ -37,7 +37,13 @@ V2 moves from contract definitions to verified production shadow recording, then
   4. Legal-specific data is accepted only through industry_context or extension containers, not top-level required platform fields.
   5. The package contains definitions, fixtures, and bindings only; no Hermes or service runtime logic is required to use it.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 04-01-PLAN.md — Hook artifact and no-outbound-mutation package scaffold.
+- [ ] 04-02-PLAN.md — Hermes context mapper and JSONL contract event writer.
+- [ ] 04-03-PLAN.md — Phase 4 event-stream replay fixtures and contract-test-suite support.
 
 ### Phase 2: Contract Test Suite Foundation
 
@@ -51,7 +57,13 @@ V2 moves from contract definitions to verified production shadow recording, then
   3. CI-ready checks fail when required fields are missing, schemas are inconsistent, relationships break beyond tolerance, or legal fields leak into top-level required fields.
   4. Non-legal synthetic examples for finance/tax, engineering, and education can be validated without legal-only fields.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 04-01-PLAN.md — Hook artifact and no-outbound-mutation package scaffold.
+- [ ] 04-02-PLAN.md — Hermes context mapper and JSONL contract event writer.
+- [ ] 04-03-PLAN.md — Phase 4 event-stream replay fixtures and contract-test-suite support.
 
 ### Phase 3: Hermes Integration Spike and Risk Closure
 
@@ -161,7 +173,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 | 1. Platform Contract Foundation | 3/3 | Complete    | 2026-06-27 |
 | 2. Contract Test Suite Foundation | 3/3 | Complete    | 2026-06-27 |
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
-| 4. Hermes Shadow Event Layer | 0/TBD | Not started | - |
+| 4. Hermes Shadow Event Layer | 0/3 | Ready to Execute | - |
 | 5. WeCom Shadow Loop Validation | 0/TBD | Not started | - |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |

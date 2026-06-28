@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 4 context gathered; ready for phase planning
-last_updated: "2026-06-28T01:49:57.919Z"
-last_activity: 2026-06-28 - Completed Phase 03 verification; Hermes hook-order and risk-closure decisions are ready for Phase 04 planning.
+status: in_progress
+stopped_at: Phase 04 planned with 3 executable plans; ready for execution
+last_updated: "2026-06-28T01:58:15.031Z"
+last_activity: 2026-06-28 - Planned Phase 04 Hermes Shadow Event Layer with 3 plans covering hook artifact, mapper/writer, and event stream replay.
 progress:
   total_phases: 8
   completed_phases: 3
-  total_plans: 10
+  total_plans: 13
   completed_plans: 10
-  percent: 38
+  percent: 77
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 4 of 8 (hermes shadow event layer)
-Plan: TBD
-Status: Ready to plan Phase 04 Hermes shadow event layer
-Last activity: 2026-06-28 - Completed Phase 03 verification; Hermes hook-order and risk-closure decisions are ready for Phase 04 planning.
+Plan: 1 of 3
+Status: Ready to execute 04-01 hook artifact and no-outbound-mutation package scaffold
+Last activity: 2026-06-28 - Planned Phase 04 Hermes Shadow Event Layer with 3 plans covering hook artifact, mapper/writer, and event stream replay.
 
-Progress: [██████████] 100% of currently planned work
+Progress: [███████░░░] 77% of currently planned work
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [██████████] 100% of currently planned work
 | 1 | 3 | - | - |
 | 2 | 3 | - | - |
 | 3 | 4 | - | - |
+| 4 | 3 | - | - |
 
 **Recent Trend:**
 
@@ -128,5 +129,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-06-28T01:49:57.915Z
-Stopped at: Phase 4 context gathered; ready for phase planning
-Resume file: .planning/phases/04-hermes-shadow-event-layer/04-CONTEXT.md
+Stopped at: Phase 04 planned with 3 executable plans; ready for execution
+Resume file: .planning/phases/04-hermes-shadow-event-layer/04-01-PLAN.md
