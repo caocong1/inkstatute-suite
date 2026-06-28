@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
-from typing import AsyncIterator, Iterable
+from typing import AsyncIterator, Iterable, Mapping
 
 from platform_contract.enums import AsyncTaskState, RunEventType
 
 from .feature_flags import RuntimeFeatureFlags
+from .output_boundary import BoundaryAction, DefaultAssistantOutputBoundary
 from .ports import AssistantOutputBoundary, ContractLogStore, IdFactory, RuntimeClock
 from .protocols import Approval, BackendAdapter, ChannelAdapter, Run, RunEvent, RunRequest
 
@@ -35,7 +37,7 @@ class DefaultRunRuntime:
         self.channels = tuple(channels)
         self.feature_flags = feature_flags or RuntimeFeatureFlags()
         self.contract_log_store = contract_log_store
-        self.output_boundary = output_boundary
+        self.output_boundary = output_boundary or DefaultAssistantOutputBoundary()
         self.clock = clock or _SystemRuntimeClock()
         self.id_factory = id_factory or _SequentialIdFactory()
 
@@ -61,7 +63,9 @@ class DefaultRunRuntime:
         self.feature_flags.require_enabled("run_runtime_enabled")
         self.feature_flags.require_enabled("streaming_lane_enabled")
         async for event in self.backend.stream_events(run_id):
-            yield event
+            bounded_event = self._apply_output_boundary(event)
+            if bounded_event is not None:
+                yield bounded_event
 
     async def cancel(self, run_id: str) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
@@ -146,6 +150,42 @@ class DefaultRunRuntime:
             raise RunRuntimeStateError("contract_log_enabled requires contract_log_store")
         return self.contract_log_store
 
+    def _apply_output_boundary(self, event: RunEvent) -> RunEvent | None:
+        visible_text = _event_visible_text(event)
+        if visible_text is None:
+            return event
+
+        decision = self.output_boundary.apply(
+            visibility_target="ordinary_user",
+            text=visible_text,
+            event_metadata=event.metadata,
+        )
+        policy_metadata = {
+            "action": _boundary_action_value(decision.action),
+            "reason": getattr(decision, "reason", None),
+            "audit": dict(decision.audit_metadata),
+        }
+
+        if _boundary_action_value(decision.action) == BoundaryAction.BLOCK.value:
+            return replace(
+                event,
+                payload=_without_visible_text(event.payload),
+                metadata={**event.metadata, "output_boundary": policy_metadata},
+            )
+
+        if _boundary_action_value(decision.action) == BoundaryAction.REWRITE.value:
+            return replace(
+                event,
+                payload=_replace_visible_text(event.payload, decision.visible_text),
+                metadata={**event.metadata, "output_boundary": policy_metadata},
+            )
+
+        return replace(
+            event,
+            payload=dict(event.payload),
+            metadata={**event.metadata, "output_boundary": policy_metadata},
+        )
+
 
 class _SystemRuntimeClock:
     def now(self) -> str:
@@ -177,6 +217,38 @@ def _status_value(status: AsyncTaskState | str) -> str:
     if isinstance(status, AsyncTaskState):
         return status.value
     return str(status)
+
+
+_VISIBLE_TEXT_KEYS = ("message_delta", "visible_text", "text", "content", "delta")
+
+
+def _event_visible_text(event: RunEvent) -> str | None:
+    for mapping in (event.payload, event.metadata):
+        for key in _VISIBLE_TEXT_KEYS:
+            value = mapping.get(key)
+            if isinstance(value, str):
+                return value
+    return None
+
+
+def _without_visible_text(mapping: Mapping[str, object]) -> dict[str, object]:
+    return {key: value for key, value in mapping.items() if key not in _VISIBLE_TEXT_KEYS}
+
+
+def _replace_visible_text(mapping: Mapping[str, object], value: str | None) -> dict[str, object]:
+    updated = dict(mapping)
+    for key in _VISIBLE_TEXT_KEYS:
+        if key in updated:
+            updated[key] = value
+            return updated
+    updated["message_delta"] = value
+    return updated
+
+
+def _boundary_action_value(action: object) -> str:
+    if isinstance(action, BoundaryAction):
+        return action.value
+    return str(action)
 
 
 __all__ = [
