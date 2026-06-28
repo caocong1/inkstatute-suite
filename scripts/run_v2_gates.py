@@ -82,6 +82,17 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (feedback_src, wecom_src, contract_src),
         ),
         Gate(
+            "phase7-privacy-boundary",
+            (
+                py,
+                "-m",
+                "unittest",
+                "packages/contract-test-suite/tests/test_privacy_gates.py",
+                "packages/contract-test-suite/tests/test_thin_layer_boundaries.py",
+            ),
+            (contract_src, platform_src),
+        ),
+        Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
             (contract_src, platform_src, wecom_src, hermes_src, read_view_src, feedback_src),
@@ -117,4 +128,3 @@ def _run_gate(repo_root: Path, gate: Gate) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
