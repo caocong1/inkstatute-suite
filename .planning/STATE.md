@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Requirements updated — plan Phase 5.5 before live WeCom acceptance
-stopped_at: Completed 05.5-04-PLAN.md; Phase 5.5 ready for verification
-last_updated: "2026-06-28T07:00:22.016Z"
-last_activity: 2026-06-28 -- InkStatute WeCom service and Hermes agent adapter requirements confirmed
+status: Phase 5.5 complete — Phase 6 ready to plan
+stopped_at: Completed Phase 5.5 verification; next phase is 6 read-and-feedback-service-apis
+last_updated: "2026-06-28T07:07:02.560Z"
+last_activity: 2026-06-28
 progress:
   total_phases: 9
   completed_phases: 6
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-28)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 5.5 — inkstatute-wecom-service-and-hermes-agent-adapter
+**Current focus:** Phase 6 — read-and-feedback-service-apis
 
 ## Current Position
 
-Phase: 5.5 (inkstatute-wecom-service-and-hermes-agent-adapter) — READY TO PLAN
-Plan: 0 of TBD
-Status: Requirements updated — plan Phase 5.5 before live WeCom acceptance
-Last activity: 2026-06-28 -- InkStatute WeCom service and Hermes agent adapter requirements confirmed
+Phase: 6
+Plan: Not started
+Status: Phase 5.5 complete — Phase 6 ready to plan
+Last activity: 2026-06-28
 
-Progress: [█████░░░░░] 56% of roadmap phases
+Progress: [██████░░░░] 67% of roadmap phases
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 17
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -48,6 +48,7 @@ Progress: [█████░░░░░] 56% of roadmap phases
 | 2 | 3 | - | - |
 | 3 | 4 | - | - |
 | 4 | 3 | - | - |
+| 05.5 | 4 | - | - |
 
 **Recent Trend:**
 

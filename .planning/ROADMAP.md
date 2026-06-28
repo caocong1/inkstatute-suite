@@ -208,7 +208,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
 | 4. Hermes Shadow Event Layer | 3/3 | Complete | 2026-06-28 |
 | 5. WeCom Shadow Loop Validation | 3/3 | Complete   | 2026-06-28 |
-| 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 4/4 | Complete   | 2026-06-28 |
+| 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 4/4 | Complete    | 2026-06-28 |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
 | 8. Lawyer Trial Acceptance | 0/TBD | Not started | - |
