@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: blocked
-stopped_at: "Blocked at 03-02-PLAN.md: hook order verification gap"
-last_updated: "2026-06-27T18:45:12.763Z"
-last_activity: "2026-06-27 - Blocked Phase 03 Plan 02 on missing Hermes hook-order source/runtime or sanitized probe evidence."
+status: in_progress
+stopped_at: "Ready for 03-04-PLAN.md: non-happy-path fixtures and contract-test-suite coverage"
+last_updated: "2026-06-28T09:25:10+08:00"
+last_activity: "2026-06-28 - Completed Phase 03 Plan 02 with source-confirmed Hermes hook-order evidence; ready for Plan 03-04."
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-27)
 ## Current Position
 
 Phase: 3 of 8 (hermes integration spike and risk closure)
-Plan: 2 of 4
-Status: Blocked at 03-02 hook-order evidence gate
-Last activity: 2026-06-27 - Blocked Phase 03 Plan 02 on missing Hermes hook-order source/runtime or sanitized probe evidence.
+Plan: 4 of 4
+Status: Ready to execute 03-04 non-happy-path fixtures and contract-test-suite coverage
+Last activity: 2026-06-28 - Completed Phase 03 Plan 02 with source-confirmed Hermes hook-order evidence; ready for Plan 03-04.
 
-Progress: [████████░░] 80%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -94,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 03]: [Phase 03 Plan 03]: Map async task states only to exact platform AsyncTaskState values and mark missing Hermes signals unavailable rather than approximating them.
 - [Phase 03]: [Phase 03 Plan 03]: Keep raw payloads reference-first with raw_payload_ref namespaces; storage location, retention owner, and redaction enforcement remain requires Hermes source/runtime.
 - [Phase 03]: [Phase 03 Plan 03]: Route mismatch and skill_candidate feedback require human review and must not auto-modify legal skills.
+- [Phase 03]: [Phase 03 Plan 02]: A separate recorder can run after response_filter only when its hook directory sorts after response_filter; the manifest name is not the ordering key.
+- [Phase 03]: [Phase 03 Plan 02]: A canonical contract_result_recorder/ directory would run before response_filter and is not valid for after-filter recording.
+- [Phase 03]: [Phase 03 Plan 02]: AgentTurn should prefer source-confirmed agent:start metadata while full input content, attachments, message type, and received_at remain source-dependent.
 
 ### Pending Todos
 
@@ -103,7 +106,7 @@ None yet.
 
 - Known Hermes integration risks are assigned to Phase 3: hook order, inbound turn inference, message_id stability, long-task state mapping, feedback targets, idempotency, raw payload retention, and redaction.
 - Legal/safety concerns require human review when they affect high-risk legal conclusions or lawyer trial acceptance.
-- Phase 03 Plan 03-02 blocked: Hermes hook-order evidence gap; no source/runtime evidence or sanitized tested hook-order probe exists in repo.
+- Phase 4 recorder implementation must encode the source-confirmed after-filter hook directory ordering rule and must not claim full outbound capture from the capped agent:end hook context.
 
 ## Deferred Items
 
@@ -115,6 +118,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-27T18:43:04.437Z
-Stopped at: Blocked at 03-02-PLAN.md: hook order verification gap
-Resume file: .planning/phases/03-hermes-integration-spike-and-risk-closure/.continue-here.md
+Last session: 2026-06-28T09:25:10+08:00
+Stopped at: Completed 03-02-PLAN.md; ready for 03-04-PLAN.md
+Resume file: None

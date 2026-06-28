@@ -71,7 +71,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 Plans:
 
 - [x] 03-01-PLAN.md — Source inventory and integration risk matrix.
-- [ ] 03-02-PLAN.md — Hook ordering and AgentTurn input decision spec.
+- [x] 03-02-PLAN.md — Hook ordering and AgentTurn input decision spec.
 - [x] 03-03-PLAN.md — Identifier, state, privacy, idempotency, and safety rules.
 - [ ] 03-04-PLAN.md — Non-happy-path fixtures and contract-test-suite coverage.
 
@@ -160,7 +160,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 |-------|----------------|--------|-----------|
 | 1. Platform Contract Foundation | 3/3 | Complete    | 2026-06-27 |
 | 2. Contract Test Suite Foundation | 3/3 | Complete    | 2026-06-27 |
-| 3. Hermes Integration Spike and Risk Closure | 2/4 | In Progress | - |
+| 3. Hermes Integration Spike and Risk Closure | 3/4 | In Progress | - |
 | 4. Hermes Shadow Event Layer | 0/TBD | Not started | - |
 | 5. WeCom Shadow Loop Validation | 0/TBD | Not started | - |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
