@@ -25,9 +25,18 @@ from .protocols import (
     SolutionLoader,
     SolutionPackageManifest,
 )
+from .ports import (
+    AssistantOutputBoundary,
+    AssistantOutputDecision,
+    ContractLogStore,
+    IdFactory,
+    RuntimeClock,
+)
 
 __all__ = [
     "AckResponse",
+    "AssistantOutputBoundary",
+    "AssistantOutputDecision",
     "Approval",
     "ArtifactRecord",
     "BackendAdapter",
@@ -37,7 +46,9 @@ __all__ = [
     "ChannelCapabilitySet",
     "ChannelDelivery",
     "ComponentHealth",
+    "ContractLogStore",
     "DeliveryResult",
+    "IdFactory",
     "InboundNormalized",
     "Issue",
     "RawInbound",
@@ -46,6 +57,7 @@ __all__ = [
     "RunHandle",
     "RunRequest",
     "RunRuntime",
+    "RuntimeClock",
     "Solution",
     "SolutionBinding",
     "SolutionLoader",
