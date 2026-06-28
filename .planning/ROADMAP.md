@@ -105,7 +105,7 @@ Plans:
 Plans:
 
 - [x] 04-01-PLAN.md — Hook artifact and no-outbound-mutation package scaffold.
-- [ ] 04-02-PLAN.md — Hermes context mapper and JSONL contract event writer.
+- [x] 04-02-PLAN.md — Hermes context mapper and JSONL contract event writer.
 - [ ] 04-03-PLAN.md — Phase 4 event-stream replay fixtures and contract-test-suite support.
 
 ### Phase 5: WeCom Shadow Loop Validation
@@ -179,7 +179,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 | 1. Platform Contract Foundation | 3/3 | Complete    | 2026-06-27 |
 | 2. Contract Test Suite Foundation | 3/3 | Complete    | 2026-06-27 |
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
-| 4. Hermes Shadow Event Layer | 1/3 | In Progress | - |
+| 4. Hermes Shadow Event Layer | 2/3 | In Progress | - |
 | 5. WeCom Shadow Loop Validation | 0/TBD | Not started | - |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
