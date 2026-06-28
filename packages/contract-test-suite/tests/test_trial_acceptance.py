@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import json
 import unittest
 
-from contract_test_suite.trial_acceptance import TrialTaskEvidence, evaluate_trial_acceptance
+from contract_test_suite.trial_acceptance import (
+    TrialTaskEvidence,
+    assert_trial_acceptance_ready,
+    evaluate_trial_acceptance,
+    format_trial_acceptance_summary,
+)
 
 
 class TrialAcceptanceTests(unittest.TestCase):
@@ -84,6 +90,30 @@ class TrialAcceptanceTests(unittest.TestCase):
 
         self.assertEqual(report.status, "failed")
         self.assertIn("route_mismatch_missing_candidate", _issue_codes(report))
+
+    def test_sanitized_summary_formatting_exposes_status_without_rows(self) -> None:
+        report = evaluate_trial_acceptance(_passing_trial_rows(), readiness_gates_passed=True)
+
+        assert_trial_acceptance_ready(report)
+        json_summary = format_trial_acceptance_summary(report, as_json=True)
+        text_summary = format_trial_acceptance_summary(report)
+        parsed = json.loads(json_summary)
+
+        self.assertEqual(parsed["status"], "passed")
+        self.assertIn('"status"', json_summary)
+        self.assertIn("trial_acceptance=passed", text_summary)
+        self.assertNotIn("Synthetic legal retrieval request", json_summary)
+        self.assertNotIn("trial-task-001", json_summary)
+
+    def test_assert_trial_acceptance_ready_rejects_failed_report(self) -> None:
+        rows = _passing_trial_rows()
+        rows[0]["success"] = False
+        rows[5]["success"] = False
+
+        report = evaluate_trial_acceptance(rows, readiness_gates_passed=True)
+
+        with self.assertRaisesRegex(AssertionError, "trial_acceptance=failed"):
+            assert_trial_acceptance_ready(report)
 
 
 def _trial_row(**overrides: object) -> dict[str, object]:

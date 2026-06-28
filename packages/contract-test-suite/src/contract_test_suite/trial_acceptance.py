@@ -7,6 +7,7 @@ behind reference fields.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Iterable, Mapping
@@ -344,6 +345,34 @@ def evaluate_trial_acceptance(
     )
 
 
+def assert_trial_acceptance_ready(report: TrialAcceptanceReport) -> TrialAcceptanceReport:
+    if report.status not in {"passed", "passed_with_repair_plan"}:
+        raise AssertionError(format_trial_acceptance_summary(report))
+    return report
+
+
+def format_trial_acceptance_summary(report: TrialAcceptanceReport, *, as_json: bool = False) -> str:
+    summary = report.to_dict()
+    if as_json:
+        return json.dumps(summary, indent=2, sort_keys=True)
+
+    issue_codes = ",".join(issue.code for issue in report.issues) or "none"
+    return (
+        "trial_acceptance="
+        f"{report.status} "
+        f"tasks={report.live_task_count} "
+        f"workdays={report.workday_count} "
+        f"categories={report.category_count} "
+        f"clear_outputs={report.clear_business_output_count} "
+        f"long_success={report.long_task_success_rate:.2%} "
+        f"ordinary_success={report.ordinary_task_success_rate:.2%} "
+        f"feedback_capture={report.feedback_capture_rate:.2%} "
+        f"positive_feedback={report.positive_feedback_share:.2%} "
+        f"route_mismatch={report.route_mismatch_count} "
+        f"issues={issue_codes}"
+    )
+
+
 def _reject_forbidden_payload_key(value: Any) -> None:
     if isinstance(value, Mapping):
         for key, nested in value.items():
@@ -477,5 +506,7 @@ __all__ = [
     "TrialAcceptanceIssue",
     "TrialAcceptanceReport",
     "TrialTaskEvidence",
+    "assert_trial_acceptance_ready",
     "evaluate_trial_acceptance",
+    "format_trial_acceptance_summary",
 ]
