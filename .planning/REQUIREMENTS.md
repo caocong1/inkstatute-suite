@@ -18,7 +18,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - V2 does not rebuild Hermes core, session storage, router, skill registry, MCP registry, or model gateway.
   - The V1 full-stack platform scope is not treated as an active requirement source.
 
-- [ ] **REQ-inkstatute-wecom-service**: V2 must own the WeCom receive/send service instead of using Hermes gateway as the ordinary user channel.
+- [x] **REQ-inkstatute-wecom-service**: V2 must own the WeCom receive/send service instead of using Hermes gateway as the ordinary user channel.
   - Receives WeCom callbacks/events/messages, verifies/decrypts where required, dedupes retries, and returns ACK within the channel timeout.
   - Normalizes text, file, image, voice, and button callback events into AgentTurn or FeedbackEvent inputs.
   - Sends legal assistant text, markdown-compatible text, files, images, template cards, and InkStatute-owned business status/service notices.
@@ -40,7 +40,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Runtime secrets, WeCom key/secret/token, model keys, databases, logs, feedback payloads, customer documents, and raw legal payloads are not committed and are injected through external env/secret management.
   - Copying the current live lawfirm profile is allowed only as a source for generating a sanitized bundle, not as a raw repository artifact.
 
-- [ ] **REQ-assistant-output-boundary**: InkStatute WeCom service must present a pure lawyer assistant bot to ordinary users by filtering all user-facing outbound messages through a platform-owned output boundary.
+- [x] **REQ-assistant-output-boundary**: InkStatute WeCom service must present a pure lawyer assistant bot to ordinary users by filtering all user-facing outbound messages through a platform-owned output boundary.
   - Blocks or rewrites Hermes/gateway lifecycle messages, update/self-update prompts, slash command/help/status/credits/insights notices, memory/tool progress, dangerous command approval, delivery failure debug text, ADMIN_NOTICE, stack traces, internal paths, commands, tokens, and profile/runtime details.
   - Allows legal business replies, clarifying questions, business-level progress messages, files/artifacts, feedback cards, and InkStatute-owned service maintenance notices.
   - Does not semantically rewrite legal conclusions, citations, factual assumptions, risk judgments, or user-provided case facts.
@@ -125,7 +125,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### WeCom Loop and Services
 
-- [ ] **REQ-wecom-daily-test-loop**: Preserve and validate the existing WeCom daily-use loop while shadow-recording contract events and normalized feedback.
+- [x] **REQ-wecom-daily-test-loop**: Preserve and validate the existing WeCom daily-use loop while shadow-recording contract events and normalized feedback.
   - WeCom remains the primary V2 acceptance channel.
   - InkStatute WeCom service receives incoming lawyer tasks and returns channel acknowledgment within the WeCom timeout window.
   - InkStatute WeCom service dispatches AgentTurn to Hermes agent adapter and sends legal business text, files, and template cards after assistant output boundary.
@@ -225,11 +225,11 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-implementation-risk-resolution | Phase 3 | Complete |
 | REQ-hermes-contract-layer | Phase 4 | Complete |
 | REQ-observability-and-replay | Phase 4 | Complete |
-| REQ-inkstatute-wecom-service | Phase 5.5 | Pending |
+| REQ-inkstatute-wecom-service | Phase 5.5 | Complete |
 | REQ-agent-backend-adapter-contract | Phase 5.5 | Pending |
 | REQ-hermes-adapter-bootstrap | Phase 5.5 | Pending |
-| REQ-assistant-output-boundary | Phase 5.5 | Pending |
-| REQ-wecom-daily-test-loop | Phase 5 | Pending |
+| REQ-assistant-output-boundary | Phase 5.5 | Complete |
+| REQ-wecom-daily-test-loop | Phase 5 | Complete |
 | REQ-conversation-read-view | Phase 6 | Pending |
 | REQ-feedback-service | Phase 6 | Pending |
 | REQ-composability-validation | Phase 7 | Pending |
