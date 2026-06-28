@@ -7,6 +7,8 @@ import hashlib
 import re
 from typing import Any
 
+from .owned_notices import build_owned_notice
+
 
 @dataclass(frozen=True)
 class OutputPolicyDecision:
@@ -34,7 +36,7 @@ def apply_output_policy(message: str) -> OutputPolicyDecision:
         return OutputPolicyDecision(
             action="rewrite",
             reason="backend_lifecycle_notice",
-            visible_text="服务正在维护，请稍后再试。",
+            visible_text=build_owned_notice("backend_lifecycle"),
             audit_metadata={
                 **_audit(text, rule="rewrite_backend_lifecycle"),
                 "replacement_owner": "inkstatute_wecom_service",

@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from wecom_service.output_policy import OutputPolicyDecision, apply_output_policy
+from wecom_service.owned_notices import OWNED_NOTICE_TEMPLATES, build_owned_notice
 from wecom_service.sender import (
     build_file_send_envelope,
     build_template_card_envelope,
@@ -58,9 +59,25 @@ class OutputPolicyTests(unittest.TestCase):
         decision = apply_output_policy("gateway online after restart")
 
         self.assertEqual(decision.action, "rewrite")
-        self.assertEqual(decision.visible_text, "服务正在维护，请稍后再试。")
+        self.assertIn(decision.visible_text, OWNED_NOTICE_TEMPLATES["backend_lifecycle"])
         self.assertEqual(decision.audit_metadata["replacement_owner"], "inkstatute_wecom_service")
         self.assertNotIn("gateway online", str(decision.audit_metadata))
+
+    def test_owned_notice_can_vary_without_backend_terms(self) -> None:
+        generated = {build_owned_notice("processing", seed=f"message-{index}") for index in range(20)}
+
+        self.assertGreater(len(generated), 1)
+        self.assertLessEqual(generated, set(OWNED_NOTICE_TEMPLATES["processing"]))
+        for notice in generated:
+            self.assertRegex(notice, r"^小律")
+            self.assertNotRegex(notice.lower(), r"hermes|gateway|系统|安全边界|管理员")
+
+    def test_owned_notice_seed_is_stable_for_replay(self) -> None:
+        first = build_owned_notice("failed", seed="message-1")
+        second = build_owned_notice("failed", seed="message-1")
+
+        self.assertEqual(first, second)
+        self.assertIn(first, OWNED_NOTICE_TEMPLATES["failed"])
 
     def test_allowed_file_and_card_envelopes_apply_policy(self) -> None:
         file_envelope = build_file_send_envelope(
