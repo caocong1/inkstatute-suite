@@ -18,7 +18,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 - [x] **Phase 3: Hermes Integration Spike and Risk Closure** - Resolve hook, message, long-task, feedback, idempotency, fixture, and privacy risks before production hooks. (completed 2026-06-28)
 - [x] **Phase 4: Hermes Shadow Event Layer** - Add the non-invasive hook, mapper, and writer that record standard contract events without changing Hermes legal/business behavior. (completed 2026-06-28)
 - [x] **Phase 5: WeCom Shadow Loop Validation** - Prove the existing WeCom daily loop still works while contract events and feedback are captured. (completed 2026-06-28)
-- [ ] **Phase 5.5: InkStatute WeCom Service and Hermes Agent Adapter** - Build the WeCom receive/send service, define the agent backend adapter contract, make Hermes mode reproducible, and enforce a pure lawyer-assistant WeCom boundary.
+- [x] **Phase 5.5: InkStatute WeCom Service and Hermes Agent Adapter** - Build the WeCom receive/send service, define the agent backend adapter contract, make Hermes mode reproducible, and enforce a pure lawyer-assistant WeCom boundary. (completed 2026-06-28)
 - [ ] **Phase 6: Read and Feedback Service APIs** - Deliver read-only conversation/task/feedback APIs plus feedback normalization, dedupe, classification, and pending queues.
 - [ ] **Phase 7: CI, Composability, and Privacy Gates** - Enforce industry-neutral composability, coverage, relationship integrity, thin-layer boundaries, and safety baselines in CI.
 - [ ] **Phase 8: Lawyer Trial Acceptance** - Run the five-workday lawyer trial and validate V2 acceptance metrics.
@@ -208,7 +208,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
 | 4. Hermes Shadow Event Layer | 3/3 | Complete | 2026-06-28 |
 | 5. WeCom Shadow Loop Validation | 3/3 | Complete   | 2026-06-28 |
-| 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 3/4 | In Progress|  |
+| 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 4/4 | Complete   | 2026-06-28 |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
 | 8. Lawyer Trial Acceptance | 0/TBD | Not started | - |
