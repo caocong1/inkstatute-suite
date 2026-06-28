@@ -10,7 +10,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### Platform Boundary and Sequencing
 
-- [ ] **REQ-v2-thin-contract-layer**: InkStatute V2 must be a thin platform contract, WeCom channel service, and agent adapter layer around enabled agent backends, with Hermes lawfirm as the first production agent backend and no platform-core dependency on Hermes internals.
+- [x] **REQ-v2-thin-contract-layer**: InkStatute V2 must be a thin platform contract, WeCom channel service, and agent adapter layer around enabled agent backends, with Hermes lawfirm as the first production agent backend and no platform-core dependency on Hermes internals.
   - InkStatute owns WeCom receive/send for ordinary users.
   - Hermes remains the first V2 agent backend adapter, not the permanent platform or channel boundary.
   - V2 adds contract schemas, hook-based normalization, contract logs, read views, feedback normalization, contract tests, and lawyer trial support.
@@ -96,7 +96,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - CI fails when schemas are inconsistent, required fields are missing, relationships break beyond tolerance, or legal fields leak into top-level required platform schema fields.
   - CI includes non-legal synthetic tasks for finance/tax, engineering, and education scenarios.
 
-- [ ] **REQ-composability-validation**: The platform contract layer must support arbitrary enabled skill, gate, MCP, tool, and output-constraint combinations without platform core changes or legal-field coupling.
+- [x] **REQ-composability-validation**: The platform contract layer must support arbitrary enabled skill, gate, MCP, tool, and output-constraint combinations without platform core changes or legal-field coupling.
   - Synthetic tasks include simple legal Q&A, contract review, legal retrieval, route mismatch, WeCom feedback, long-task failure, and non-legal tasks.
   - Each synthetic task produces schema-valid events with intact relationships.
   - Non-legal tasks do not require legal-specific fields.
@@ -154,7 +154,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### Safety and Acceptance
 
-- [ ] **REQ-security-privacy-baseline**: V2 must enforce minimum privacy, security, and legal-work-product safeguards without adding a complete M3 security platform.
+- [x] **REQ-security-privacy-baseline**: V2 must enforce minimum privacy, security, and legal-work-product safeguards without adding a complete M3 security platform.
   - Customer materials, case facts, and contract content are confidential by default.
   - Contract logs reference raw payloads using raw_payload_ref and avoid storing sensitive full text by default.
   - Logs avoid complete ID numbers, phone numbers, bank accounts, addresses, and other sensitive values.
@@ -232,9 +232,9 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-wecom-daily-test-loop | Phase 5 | Complete |
 | REQ-conversation-read-view | Phase 6 | Complete |
 | REQ-feedback-service | Phase 6 | Complete |
-| REQ-composability-validation | Phase 7 | Pending |
-| REQ-security-privacy-baseline | Phase 7 | Pending |
-| REQ-v2-thin-contract-layer | Phase 7 | Pending |
+| REQ-composability-validation | Phase 7 | Complete |
+| REQ-security-privacy-baseline | Phase 7 | Complete |
+| REQ-v2-thin-contract-layer | Phase 7 | Complete |
 | REQ-lawyer-trial-acceptance | Phase 8 | Pending |
 | REQ-v2-development-order | Phase 8 | Pending |
 
