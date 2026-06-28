@@ -1,0 +1,22 @@
+{
+  "adapter_name": "fixture-provider-model-adapter",
+  "adapter_version": "0.1.0",
+  "mode": "provider_model",
+  "backend_version": "fixture-provider-model-1",
+  "capabilities": {
+    "hook_event_support": [],
+    "invocation_mode": "async",
+    "feedback_target_support": "generated",
+    "session_read_support": false,
+    "artifact_return_support": true,
+    "trace_support": true,
+    "no_channel_io": true
+  },
+  "metadata": {
+    "fixture_id": "phase55-non-hermes-provider-model",
+    "production_ready": false,
+    "source_status": "synthetic_contract_fixture",
+    "no_hermes_profile_required": true,
+    "no_lawfirm_fields_required": true
+  }
+}
