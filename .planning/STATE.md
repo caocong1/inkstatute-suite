@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: — Platform Foundation
-status: verifying
-stopped_at: Completed 09-04-PLAN.md
-last_updated: "2026-06-28T19:26:48.444Z"
-last_activity: 2026-06-28
+status: executing
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-06-28T19:44:23.331Z"
+last_activity: 2026-06-28 -- Phase 10 execution started
 progress:
   total_phases: 14
   completed_phases: 10
-  total_plans: 34
-  completed_plans: 34
+  total_plans: 38
+  completed_plans: 35
   percent: 71
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-28)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 09 — Architecture Contracts & Schema Foundation
+**Current focus:** Phase 10 — Embeddable RunRuntime + Fake Backend
 
 ## Current Position
 
 Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
-Phase: 10
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 10 (Embeddable RunRuntime + Fake Backend) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
 Next action: `$gsd-autonomous --from 9 --to 13` (hands-free) or `$gsd-progress --next --auto`
-Last activity: 2026-06-28
+Last activity: 2026-06-28 -- Phase 10 execution started
 
 Progress (v1.1): [░░░░░░░░░░] 0% of milestone phases (0/5)
 
@@ -97,6 +97,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 09 P09-02 | 8 min | 4 tasks | 23 files |
 | Phase 09 P09-03 | 7m20s | 3 tasks | 9 files |
 | Phase 09 P09-04 | 6 min | 3 tasks | 4 files |
+| Phase 10 P10-01 | 4 min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -164,6 +165,9 @@ Recent decisions affecting current work:
 - [Phase 09]: [Plan 09-04] Use BoundaryAllowlistPolicy for path-aware allowed contexts while keeping hard-deny privacy and coupling checks independent from the allowlist.
 - [Phase 09]: [Plan 09-04] Allow hermes, codex, provider_model, wecom, qqbot, web, and desktop only in intended enum/schema/docs/concrete-package contexts.
 - [Phase 09]: [Plan 09-04] Construct secret-like scanner samples at runtime so tests cover plaintext-secret rejection without committing complete token-shaped literals.
+- [Phase 10]: [Phase 10 Plan 10-01] Keep platform-runtime support library-only: injected ports and in-memory support types only, with no server, channel, database, queue, backend construction, or background process behavior. — Preserves embeddability and keeps Phase 10 support code inside the active plan boundary.
+- [Phase 10]: [Phase 10 Plan 10-01] Default every Phase 10 runtime lane to False and require explicit opt-in through RuntimeFeatureFlags.require_enabled. — Prevents accidental activation of run runtime, streaming, channel delivery, approval, or contract-log lanes.
+- [Phase 10]: [Phase 10 Plan 10-01] Harden the contract log store beyond top-level raw_payload checks by rejecting nested raw_payload keys and obvious full-text payload field names while allowing raw_payload_ref and ID/hash/reference fields. — Meets the reference-first privacy requirement and the execution requirement to reject raw payload keys and sensitive full-text payload storage.
 
 ### Pending Todos
 
@@ -189,8 +193,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T19:12:27.694Z
-Stopped at: Completed 09-04-PLAN.md
+Last session: 2026-06-28T19:43:49.895Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/drafts/agent-platformization-plan-v5.md

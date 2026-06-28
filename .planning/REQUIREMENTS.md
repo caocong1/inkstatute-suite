@@ -202,13 +202,13 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
 
 ### Platform Runtime
 
-- [ ] **REQ-platform-run-runtime**: Provide a Python-first `RunRuntime` that owns run lifecycle, session, output boundary, audit, and feature flags through injected ports.
+- [x] **REQ-platform-run-runtime**: Provide a Python-first `RunRuntime` that owns run lifecycle, session, output boundary, audit, and feature flags through injected ports.
   - Implements create/poll/stream/cancel/approve.
   - Speaks the `BackendAdapter` Protocol and never embeds backend-specific logic.
   - Persists contract logs append-only and `raw_payload_ref`-first.
   - All lanes are gated by default-OFF feature flags.
 
-- [ ] **REQ-runtime-embeddability**: `RunRuntime` must be an embeddable library with no hard dependency on a network server or any specific channel.
+- [x] **REQ-runtime-embeddability**: `RunRuntime` must be an embeddable library with no hard dependency on a network server or any specific channel.
   - Constructs with zero channels (embedded mode) and with no server.
   - Dependencies (backend, loader, channels, storage, output boundary, secret resolver, flags) are injected.
   - A server, a Tauri sidecar, or an Electron child process are thin hosts of the same library.
