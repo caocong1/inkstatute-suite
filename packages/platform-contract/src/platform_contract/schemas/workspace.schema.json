@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/workspace.schema.json",
+  "title": "Workspace",
+  "description": "Neutral workspace identity record scoped to a tenant.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workspace_id",
+    "tenant_id",
+    "name",
+    "created_at"
+  ],
+  "properties": {
+    "workspace_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

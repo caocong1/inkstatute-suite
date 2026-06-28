@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/solution_package_manifest.schema.json",
+  "title": "SolutionPackageManifest",
+  "description": "Backend-neutral solution package manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "solution_id",
+    "version",
+    "name",
+    "skills",
+    "mcp_servers"
+  ],
+  "properties": {
+    "solution_id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "persona_ref": {
+      "type": "string"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/neutral_skill_descriptor"
+      }
+    },
+    "mcp_servers": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/mcp_server_descriptor"
+      }
+    },
+    "backend_bindings": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/solution_binding"
+      }
+    },
+    "output_policy_ref": {
+      "type": "string"
+    },
+    "secret_templates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evaluation_fixture_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "industry_context_defaults": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

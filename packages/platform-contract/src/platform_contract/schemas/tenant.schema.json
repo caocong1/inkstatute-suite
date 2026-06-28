@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/tenant.schema.json",
+  "title": "Tenant",
+  "description": "Neutral tenant identity record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tenant_id",
+    "name",
+    "created_at"
+  ],
+  "properties": {
+    "tenant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "default_workspace_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

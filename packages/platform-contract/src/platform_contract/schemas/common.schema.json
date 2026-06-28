@@ -35,6 +35,16 @@
         "channel_error"
       ]
     },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "approved",
+        "rejected",
+        "expired",
+        "cancelled"
+      ]
+    },
     "channel": {
       "type": "string",
       "enum": [
@@ -42,6 +52,16 @@
         "qqbot",
         "web",
         "desktop"
+      ]
+    },
+    "channel_delivery_status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "sent",
+        "delivered",
+        "failed",
+        "suppressed"
       ]
     },
     "message_type": {
@@ -85,6 +105,30 @@
         "markdown",
         "json",
         "other"
+      ]
+    },
+    "run_event_type": {
+      "type": "string",
+      "enum": [
+        "state_changed",
+        "step_started",
+        "step_completed",
+        "message_delta",
+        "tool_call_started",
+        "tool_call_completed",
+        "approval_requested",
+        "artifact_created",
+        "error"
+      ]
+    },
+    "run_step_kind": {
+      "type": "string",
+      "enum": [
+        "model",
+        "tool",
+        "approval",
+        "delivery",
+        "system"
       ]
     },
     "feedback_source": {
@@ -158,6 +202,105 @@
         "formal",
         "colloquial"
       ]
+    },
+    "secret_ref": {
+      "type": "string",
+      "description": "Reference to externally managed secret material. Plaintext secret values must not be stored in contract payloads.",
+      "minLength": 1
+    },
+    "solution_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "solution_id",
+        "backend_id"
+      ],
+      "properties": {
+        "solution_id": {
+          "type": "string"
+        },
+        "backend_id": {
+          "type": "string"
+        },
+        "manifest_ref": {
+          "type": "string"
+        },
+        "materialization_ref": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      }
+    },
+    "neutral_skill_descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skill_id",
+        "name"
+      ],
+      "properties": {
+        "skill_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_schema_ref": {
+          "type": "string"
+        },
+        "output_schema_ref": {
+          "type": "string"
+        },
+        "required_tool_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      }
+    },
+    "mcp_server_descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "server_id",
+        "name",
+        "transport"
+      ],
+      "properties": {
+        "server_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "transport": {
+          "type": "string"
+        },
+        "capability_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "secret_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/secret_ref"
+          }
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        }
+      }
     },
     "attachment_ref": {
       "type": "object",

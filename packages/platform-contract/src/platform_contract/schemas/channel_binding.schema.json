@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/channel_binding.schema.json",
+  "title": "ChannelBinding",
+  "description": "Neutral channel configuration binding that references external secrets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "channel_binding_id",
+    "tenant_id",
+    "workspace_id",
+    "channel",
+    "bot_instance_id",
+    "secret_ref",
+    "created_at"
+  ],
+  "properties": {
+    "channel_binding_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "common.schema.json#/$defs/channel"
+    },
+    "bot_instance_id": {
+      "type": "string"
+    },
+    "secret_ref": {
+      "$ref": "common.schema.json#/$defs/secret_ref"
+    },
+    "config_ref": {
+      "type": "string"
+    },
+    "webhook_url_ref": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/run_event.schema.json",
+  "title": "RunEvent",
+  "description": "Ordered neutral event emitted during a platform run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "run_id",
+    "event_type",
+    "occurred_at",
+    "seq"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "$ref": "common.schema.json#/$defs/run_event_type"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/async_task_state"
+    },
+    "step_id": {
+      "type": "string"
+    },
+    "tool_call_id": {
+      "type": "string"
+    },
+    "approval_id": {
+      "type": "string"
+    },
+    "artifact_id": {
+      "type": "string"
+    },
+    "message_delta": {
+      "type": "string"
+    },
+    "error": {
+      "$ref": "common.schema.json#/$defs/error_info"
+    },
+    "occurred_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

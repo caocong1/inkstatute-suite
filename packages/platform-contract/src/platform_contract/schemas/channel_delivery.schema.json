@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/channel_delivery.schema.json",
+  "title": "ChannelDelivery",
+  "description": "Neutral outbound delivery record for channel egress.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "delivery_id",
+    "tenant_id",
+    "workspace_id",
+    "channel",
+    "channel_conversation_id",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "delivery_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "common.schema.json#/$defs/channel"
+    },
+    "channel_conversation_id": {
+      "type": "string"
+    },
+    "message_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "result_id": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/channel_delivery_status"
+    },
+    "content": {
+      "type": "string"
+    },
+    "reply_type": {
+      "$ref": "common.schema.json#/$defs/reply_type"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "artifact_record.schema.json"
+      }
+    },
+    "card_ref": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "delivered_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "error": {
+      "$ref": "common.schema.json#/$defs/error_info"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/approval.schema.json",
+  "title": "Approval",
+  "description": "Neutral tool or run approval record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approval_id",
+    "run_id",
+    "status",
+    "requested_at",
+    "prompt"
+  ],
+  "properties": {
+    "approval_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "step_id": {
+      "type": "string"
+    },
+    "tool_call_id": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/approval_status"
+    },
+    "prompt": {
+      "type": "string"
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "resolved_by": {
+      "type": "string"
+    },
+    "requested_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "resolved_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "decision_reason": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

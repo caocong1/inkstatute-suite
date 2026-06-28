@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/bot_instance.schema.json",
+  "title": "BotInstance",
+  "description": "Neutral deployed bot instance binding a solution, backend, and channel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bot_instance_id",
+    "tenant_id",
+    "workspace_id",
+    "solution_id",
+    "backend_id",
+    "channel_binding_id",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "bot_instance_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "solution_id": {
+      "type": "string"
+    },
+    "backend_id": {
+      "type": "string"
+    },
+    "channel_binding_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "default_session_policy": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

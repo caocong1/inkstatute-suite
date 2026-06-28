@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/run.schema.json",
+  "title": "Run",
+  "description": "Neutral platform run lifecycle record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "tenant_id",
+    "workspace_id",
+    "solution_id",
+    "backend_id",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "solution_id": {
+      "type": "string"
+    },
+    "backend_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "channel_message_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "waiting_for_user",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "objective": {
+      "type": "string"
+    },
+    "requested_output": {
+      "$ref": "common.schema.json#/$defs/output_constraints"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "started_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "completed_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "error": {
+      "$ref": "common.schema.json#/$defs/error_info"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

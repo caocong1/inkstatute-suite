@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/tool_call.schema.json",
+  "title": "ToolCall",
+  "description": "Neutral record for an external tool or MCP call within a run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tool_call_id",
+    "run_id",
+    "tool_name",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "tool_call_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "step_id": {
+      "type": "string"
+    },
+    "tool_name": {
+      "type": "string"
+    },
+    "server_id": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/async_task_state"
+    },
+    "input_ref": {
+      "type": "string"
+    },
+    "output_ref": {
+      "type": "string"
+    },
+    "approval_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "completed_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "error": {
+      "$ref": "common.schema.json#/$defs/error_info"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/channel_message.schema.json",
+  "title": "ChannelMessage",
+  "description": "Neutral inbound channel message normalized before agent execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "tenant_id",
+    "workspace_id",
+    "channel",
+    "channel_conversation_id",
+    "sender_id",
+    "message_type",
+    "received_at"
+  ],
+  "properties": {
+    "message_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "common.schema.json#/$defs/channel"
+    },
+    "channel_conversation_id": {
+      "type": "string"
+    },
+    "sender_id": {
+      "type": "string"
+    },
+    "message_type": {
+      "$ref": "common.schema.json#/$defs/message_type"
+    },
+    "content": {
+      "type": "string"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "$ref": "common.schema.json#/$defs/attachment_ref"
+      }
+    },
+    "raw_payload_ref": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "received_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

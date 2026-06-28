@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/session.schema.json",
+  "title": "Session",
+  "description": "Neutral conversation session reference.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session_id",
+    "tenant_id",
+    "workspace_id",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "channel": {
+      "$ref": "common.schema.json#/$defs/channel"
+    },
+    "channel_conversation_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}
