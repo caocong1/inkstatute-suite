@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import json
 import unittest
+from pathlib import Path
 
 from contract_test_suite.trial_acceptance import (
     TrialTaskEvidence,
     assert_trial_acceptance_ready,
     evaluate_trial_acceptance,
     format_trial_acceptance_summary,
+)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+TRIAL_EVIDENCE_TEMPLATE = (
+    REPO_ROOT / ".planning" / "phases" / "08-lawyer-trial-acceptance" / "08-TRIAL-EVIDENCE-TEMPLATE.json"
 )
 
 
@@ -114,6 +121,19 @@ class TrialAcceptanceTests(unittest.TestCase):
 
         with self.assertRaisesRegex(AssertionError, "trial_acceptance=failed"):
             assert_trial_acceptance_ready(report)
+
+    def test_evidence_template_placeholder_rows_do_not_pass_live_acceptance(self) -> None:
+        template = json.loads(TRIAL_EVIDENCE_TEMPLATE.read_text(encoding="utf-8"))
+
+        report = evaluate_trial_acceptance(
+            template["trial_tasks"],
+            readiness_gates_passed=bool(template["readiness_gates"]["local_v2_gates_passed"]),
+            repair_plan_ref=template["repair_plan_ref"],
+        )
+
+        self.assertEqual(report.status, "blocked")
+        self.assertEqual(report.live_task_count, 1)
+        self.assertIn("readiness_gates_missing", _issue_codes(report))
 
 
 def _trial_row(**overrides: object) -> dict[str, object]:
