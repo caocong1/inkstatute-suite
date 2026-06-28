@@ -1,5 +1,10 @@
 """InkStatute-owned WeCom service primitives."""
 
+from .agent_backend import (
+    AgentBackendSelection,
+    AgentBackendSelectionError,
+    select_agent_backend,
+)
 from .idempotency import wecom_idempotency_key
 from .normalization import normalize_wecom_feedback_callback, normalize_wecom_turn
 from .output_policy import OutputPolicyDecision, apply_output_policy
@@ -16,6 +21,8 @@ from .sender import (
 )
 
 __all__ = [
+    "AgentBackendSelection",
+    "AgentBackendSelectionError",
     "OutputPolicyDecision",
     "RawPayloadForbiddenError",
     "ack_response",
@@ -26,6 +33,7 @@ __all__ = [
     "normalize_wecom_feedback_callback",
     "normalize_wecom_turn",
     "parse_callback_envelope",
+    "select_agent_backend",
     "verify_callback_signature",
     "wecom_idempotency_key",
 ]
