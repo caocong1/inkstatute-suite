@@ -1,0 +1,344 @@
+{
+  "fixture_id": "platform-foundation-non-legal-run-001",
+  "description": "Synthetic non-legal education run proving channel, agent, run, artifact, delivery, and feedback relationships.",
+  "events": {
+    "channel_message": {
+      "message_id": "msg-platform-education-001",
+      "tenant_id": "tenant-platform-demo-001",
+      "workspace_id": "workspace-platform-demo-001",
+      "channel": "web",
+      "channel_conversation_id": "conv-platform-education-001",
+      "sender_id": "user-platform-education-001",
+      "message_type": "text",
+      "content": "Create a release-readiness summary from the referenced classroom technology checklist.",
+      "raw_payload_ref": "fixture://source/platform-education-message-001",
+      "session_id": "session-platform-education-001",
+      "run_id": "run-platform-education-001",
+      "received_at": "2026-06-28T09:00:00Z",
+      "industry_context": {
+        "domain": "education",
+        "task_type": "release_readiness_summary"
+      },
+      "metadata": {
+        "synthetic": true,
+        "source_ref": "fixture://source/platform-education-message-001"
+      }
+    },
+    "agent_turn": {
+      "turn_id": "turn-platform-education-001",
+      "conversation_id": "conv-platform-education-001",
+      "channel": "web",
+      "user_id": "user-platform-education-001",
+      "message_type": "text",
+      "content": "Create a release-readiness summary from the referenced classroom technology checklist.",
+      "output_constraints": {
+        "format": "markdown",
+        "features": [
+          "summary",
+          "checklist"
+        ],
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "education",
+        "task_type": "release_readiness_summary",
+        "source_ref": "fixture://source/platform-education-message-001"
+      },
+      "received_at": "2026-06-28T09:00:01Z",
+      "metadata": {
+        "channel_message_id": "msg-platform-education-001",
+        "session_id": "session-platform-education-001",
+        "raw_payload_ref": "fixture://source/platform-education-message-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-platform-education-001",
+      "turn_id": "turn-platform-education-001",
+      "primary_skill": "readiness_summary_writer",
+      "supporting_skills": [
+        "checklist_normalizer"
+      ],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "confidence": 0.84,
+      "matched_rule": "education_readiness_summary",
+      "reason": "Synthetic education task maps to a neutral summary-writing skill.",
+      "mode": "matched",
+      "route_mismatch": false,
+      "created_at": "2026-06-28T09:00:02Z",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "run_id": "run-platform-education-001"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-platform-education-001",
+      "turn_id": "turn-platform-education-001",
+      "started_at": "2026-06-28T09:00:03Z",
+      "ended_at": "2026-06-28T09:00:19Z",
+      "active_skill_name": "readiness_summary_writer",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-28T09:00:20Z",
+      "ingested_at": "2026-06-28T09:00:21Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "normalize_checklist",
+          "state": "succeeded",
+          "run_step_id": "step-platform-education-001"
+        },
+        {
+          "name": "draft_readiness_summary",
+          "state": "succeeded",
+          "run_step_id": "step-platform-education-002"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-platform-education-summary-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-platform-education-001",
+        "turn_id": "turn-platform-education-001",
+        "primary_skill": "readiness_summary_writer",
+        "confidence": 0.84,
+        "mode": "matched",
+        "created_at": "2026-06-28T09:00:02Z"
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "run_id": "run-platform-education-001"
+      }
+    },
+    "run": {
+      "run_id": "run-platform-education-001",
+      "tenant_id": "tenant-platform-demo-001",
+      "workspace_id": "workspace-platform-demo-001",
+      "solution_id": "solution-education-demo-001",
+      "backend_id": "backend-neutral-demo-001",
+      "session_id": "session-platform-education-001",
+      "channel_message_id": "msg-platform-education-001",
+      "turn_id": "turn-platform-education-001",
+      "status": "succeeded",
+      "objective": "Create a concise release-readiness summary from referenced classroom technology checklist data.",
+      "requested_output": {
+        "format": "markdown",
+        "features": [
+          "summary",
+          "checklist"
+        ],
+        "language_register": "formal"
+      },
+      "created_at": "2026-06-28T09:00:02Z",
+      "updated_at": "2026-06-28T09:00:22Z",
+      "started_at": "2026-06-28T09:00:03Z",
+      "completed_at": "2026-06-28T09:00:22Z",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "route_decision_id": "route-platform-education-001",
+        "trace_id": "trace-platform-education-001"
+      }
+    },
+    "run_steps": [
+      {
+        "step_id": "step-platform-education-001",
+        "run_id": "run-platform-education-001",
+        "kind": "system",
+        "status": "succeeded",
+        "title": "Normalize referenced checklist",
+        "input_ref": "fixture://source/platform-education-message-001",
+        "output_ref": "fixture://intermediate/platform-education-normalized-checklist-001",
+        "started_at": "2026-06-28T09:00:03Z",
+        "ended_at": "2026-06-28T09:00:08Z",
+        "metadata": {
+          "trace_id": "trace-platform-education-001"
+        }
+      },
+      {
+        "step_id": "step-platform-education-002",
+        "run_id": "run-platform-education-001",
+        "kind": "model",
+        "status": "succeeded",
+        "title": "Draft readiness summary",
+        "input_ref": "fixture://intermediate/platform-education-normalized-checklist-001",
+        "output_ref": "fixture://artifacts/platform-education-summary-001",
+        "started_at": "2026-06-28T09:00:09Z",
+        "ended_at": "2026-06-28T09:00:19Z",
+        "metadata": {
+          "trace_id": "trace-platform-education-001"
+        }
+      }
+    ],
+    "run_events": [
+      {
+        "event_id": "event-platform-education-001",
+        "run_id": "run-platform-education-001",
+        "event_type": "state_changed",
+        "status": "running",
+        "occurred_at": "2026-06-28T09:00:03Z",
+        "seq": 1,
+        "metadata": {
+          "from_status": "queued"
+        }
+      },
+      {
+        "event_id": "event-platform-education-002",
+        "run_id": "run-platform-education-001",
+        "event_type": "step_completed",
+        "status": "running",
+        "step_id": "step-platform-education-001",
+        "occurred_at": "2026-06-28T09:00:08Z",
+        "seq": 2
+      },
+      {
+        "event_id": "event-platform-education-003",
+        "run_id": "run-platform-education-001",
+        "event_type": "artifact_created",
+        "status": "succeeded",
+        "step_id": "step-platform-education-002",
+        "artifact_id": "artifact-platform-education-summary-001",
+        "occurred_at": "2026-06-28T09:00:20Z",
+        "seq": 3
+      }
+    ],
+    "agent_result": {
+      "result_id": "result-platform-education-001",
+      "turn_id": "turn-platform-education-001",
+      "status": "success",
+      "reply_type": "markdown",
+      "content": "Synthetic readiness summary generated from referenced classroom technology checklist data.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-platform-education-summary-001",
+          "kind": "markdown",
+          "name": "classroom-readiness-summary.md",
+          "uri": "fixture://artifacts/platform-education-summary-001",
+          "mime_type": "text/markdown",
+          "features": [
+            "summary",
+            "checklist"
+          ],
+          "source_refs": [
+            "fixture://source/platform-education-message-001"
+          ],
+          "metadata": {
+            "synthetic": true,
+            "domain": "education"
+          }
+        }
+      ],
+      "feedback_target": "delivery-platform-education-001",
+      "route_mismatch": false,
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "trace_id": "trace-platform-education-001",
+        "route_decision_id": "route-platform-education-001",
+        "run_id": "run-platform-education-001"
+      }
+    },
+    "artifact_records": [
+      {
+        "artifact_id": "artifact-platform-education-summary-001",
+        "run_id": "run-platform-education-001",
+        "result_id": "result-platform-education-001",
+        "step_id": "step-platform-education-002",
+        "tenant_id": "tenant-platform-demo-001",
+        "workspace_id": "workspace-platform-demo-001",
+        "kind": "markdown",
+        "name": "classroom-readiness-summary.md",
+        "uri": "fixture://artifacts/platform-education-summary-001",
+        "mime_type": "text/markdown",
+        "source_refs": [
+          "fixture://source/platform-education-message-001"
+        ],
+        "created_at": "2026-06-28T09:00:20Z",
+        "metadata": {
+          "synthetic": true,
+          "domain": "education"
+        }
+      }
+    ],
+    "channel_delivery": {
+      "delivery_id": "delivery-platform-education-001",
+      "tenant_id": "tenant-platform-demo-001",
+      "workspace_id": "workspace-platform-demo-001",
+      "channel": "web",
+      "channel_conversation_id": "conv-platform-education-001",
+      "message_id": "msg-platform-education-001",
+      "run_id": "run-platform-education-001",
+      "result_id": "result-platform-education-001",
+      "status": "delivered",
+      "content": "Synthetic readiness summary generated from referenced classroom technology checklist data.",
+      "reply_type": "markdown",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-platform-education-summary-001",
+          "run_id": "run-platform-education-001",
+          "result_id": "result-platform-education-001",
+          "step_id": "step-platform-education-002",
+          "tenant_id": "tenant-platform-demo-001",
+          "workspace_id": "workspace-platform-demo-001",
+          "kind": "markdown",
+          "name": "classroom-readiness-summary.md",
+          "uri": "fixture://artifacts/platform-education-summary-001",
+          "mime_type": "text/markdown",
+          "source_refs": [
+            "fixture://source/platform-education-message-001"
+          ],
+          "created_at": "2026-06-28T09:00:20Z",
+          "metadata": {
+            "synthetic": true,
+            "domain": "education"
+          }
+        }
+      ],
+      "created_at": "2026-06-28T09:00:21Z",
+      "delivered_at": "2026-06-28T09:00:22Z",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "feedback_target": "delivery-platform-education-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-platform-education-001",
+      "turn_id": "turn-platform-education-001",
+      "result_id": "result-platform-education-001",
+      "conversation_id": "conv-platform-education-001",
+      "user_id": "user-platform-education-001",
+      "source": "web_form",
+      "event_type": "rating",
+      "rating": 5,
+      "action": "up",
+      "message": "Synthetic feedback confirms the readiness summary is useful.",
+      "route_mismatch": false,
+      "labels": [
+        "education",
+        "readiness"
+      ],
+      "related_route_decision": "route-platform-education-001",
+      "feedback_target": "delivery-platform-education-001",
+      "status": "triaged",
+      "created_at": "2026-06-28T09:01:00Z",
+      "raw_payload_ref": "fixture://source/platform-education-feedback-001",
+      "industry_context": {
+        "domain": "education"
+      },
+      "metadata": {
+        "delivery_id": "delivery-platform-education-001"
+      }
+    }
+  }
+}
