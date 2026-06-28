@@ -69,6 +69,16 @@ class AgentAdapterManifestTests(unittest.TestCase):
 
         self.assertIn("unsupported_mode", {issue["code"] for issue in issues})
 
+    def test_missing_adapter_identity_returns_structured_issues(self) -> None:
+        manifest = self.valid_manifest_dict()
+        del manifest["adapter_name"]
+        manifest["adapter_version"] = " "
+
+        issues = validate_agent_backend_manifest(manifest)
+
+        self.assertIn("missing_adapter_name", {issue["code"] for issue in issues})
+        self.assertIn("missing_adapter_version", {issue["code"] for issue in issues})
+
     def test_missing_or_non_boolean_no_channel_io_returns_issue(self) -> None:
         missing = self.valid_manifest_dict()
         del missing["capabilities"]["no_channel_io"]

@@ -31,7 +31,7 @@ def parse_callback_envelope(callback: Mapping[str, Any]) -> dict[str, Any]:
     """Parse a sanitized callback envelope into normalized scalar fields."""
 
     fields = _mapping_from_input(callback)
-    raw_payload_path = _find_exact_key(fields, "raw_payload")
+    raw_payload_path = _find_forbidden_raw_payload_key(fields)
     if raw_payload_path is not None:
         raise RawPayloadForbiddenError(
             f"WeCom callbacks must use raw_payload_ref, not raw_payload ({raw_payload_path})"
@@ -103,21 +103,25 @@ def _is_scalar(value: Any) -> bool:
     return isinstance(value, (str, int, float, bool))
 
 
-def _find_exact_key(value: Any, needle: str, path: str = "") -> str | None:
+def _find_forbidden_raw_payload_key(value: Any, path: str = "") -> str | None:
     if isinstance(value, Mapping):
         for key, child in value.items():
             child_path = f"{path}.{key}" if path else str(key)
-            if key == needle:
+            if _normal_key(key) == "rawpayload":
                 return child_path
-            found = _find_exact_key(child, needle, child_path)
+            found = _find_forbidden_raw_payload_key(child, child_path)
             if found is not None:
                 return found
     elif isinstance(value, list):
         for index, child in enumerate(value):
-            found = _find_exact_key(child, needle, f"{path}[{index}]")
+            found = _find_forbidden_raw_payload_key(child, f"{path}[{index}]")
             if found is not None:
                 return found
     return None
+
+
+def _normal_key(value: Any) -> str:
+    return "".join(ch for ch in str(value).lower() if ch.isalnum())
 
 
 __all__ = [

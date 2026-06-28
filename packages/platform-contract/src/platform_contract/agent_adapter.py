@@ -42,9 +42,17 @@ def validate_agent_backend_manifest(manifest: AgentBackendManifest | JsonObject)
     """Return structured validation issues for an adapter manifest."""
 
     issues: list[JsonObject] = []
+    adapter_name = _field(manifest, "adapter_name")
+    adapter_version = _field(manifest, "adapter_version")
     mode = _field(manifest, "mode")
     backend_version = _field(manifest, "backend_version")
     capabilities = _field(manifest, "capabilities")
+
+    if _blank(adapter_name):
+        issues.append(_issue("missing_adapter_name", "adapter_name", "adapter manifest requires adapter_name"))
+
+    if _blank(adapter_version):
+        issues.append(_issue("missing_adapter_version", "adapter_version", "adapter manifest requires adapter_version"))
 
     if _blank(mode):
         issues.append(_issue("missing_mode", "mode", "adapter manifest requires mode"))

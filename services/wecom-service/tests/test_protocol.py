@@ -64,6 +64,10 @@ class WeComProtocolTests(unittest.TestCase):
                     "raw_payload": "<xml>must-not-be-committed</xml>",
                 }
             )
+        with self.assertRaises(RawPayloadForbiddenError):
+            parse_callback_envelope(
+                "<xml><MsgId>msg-raw</MsgId><RawPayload>must-not-be-accepted</RawPayload></xml>"
+            )
 
     def test_idempotency_key_is_stable_for_duplicate_sanitized_callbacks(self) -> None:
         callback = {

@@ -35,6 +35,14 @@ class OutputPolicyTests(unittest.TestCase):
         self.assertEqual(decision, OutputPolicyDecision("allow", "business_output", answer, decision.audit_metadata))
         self.assertEqual(decision.visible_text, answer)
 
+    def test_allows_trade_secret_legal_answer_without_treating_secret_as_credential(self) -> None:
+        answer = "A trade secret claim usually turns on secrecy measures and improper acquisition."
+
+        decision = apply_output_policy(answer)
+
+        self.assertEqual(decision.action, "allow")
+        self.assertEqual(decision.visible_text, answer)
+
     def test_text_envelope_has_no_visible_text_when_policy_blocks(self) -> None:
         envelope = build_text_send_envelope(
             to_user="lawyer-1",
