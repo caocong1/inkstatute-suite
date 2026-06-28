@@ -2,7 +2,7 @@
 phase: 05-wecom-shadow-loop-validation
 fixture_status: passed
 live_wecom_status: blocked
-updated: 2026-06-28T03:24:00Z
+updated: 2026-06-28T05:36:29Z
 ---
 
 # Phase 05 WeCom Validation Evidence
@@ -34,13 +34,17 @@ Live WeCom status: blocked
 
 No live Hermes lawfirm profile and connected WeCom validation run was completed in this session. Fixture replay is not live acceptance and is not being claimed as such.
 
+After the 2026-06-28 InkStatute WeCom service requirement update, live WeCom acceptance requires InkStatute-owned WeCom receive/send evidence plus Hermes agent adapter evidence. A live run that proves Hermes gateway can send text/files/cards is not sufficient for V2 acceptance.
+
 Required live evidence before this can be marked `passed`:
 
-- One short WeCom legal retrieval task with ACK, text response, template-card delivery, and callback capture.
-- One long or document task with ACK, result push, file/text/card delivery, and callback capture.
+- One short WeCom legal retrieval task received by InkStatute WeCom service with ACK, Hermes agent processing, InkStatute text/card delivery, and InkStatute feedback callback capture.
+- One long or document task received by InkStatute WeCom service with ACK, Hermes agent processing, InkStatute result push, file/text/card delivery, and InkStatute feedback callback capture.
+- Active InkStatute WeCom service/output-boundary evidence showing gateway lifecycle, update/self-update, slash command/help/status/credits/insights, memory/tool-progress, delivery debug, ADMIN_NOTICE, stack traces, internal paths, commands, tokens, and profile/runtime details are blocked or rewritten before ordinary WeCom delivery.
+- Operator confirmation that ordinary lawyer users interact with InkStatute WeCom service only, while Hermes is used only for agent logic.
 - Sanitized `INKSTATUTE_CONTRACT_LOG_PATH` reference outside the repo.
-- Sanitized `feedback.jsonl` reference proving the template-card callback target matches `AgentResult.feedback_target`.
-- Operator confirmation that existing Hermes gateway, response filter, template-card dispatcher, and callback shim behavior did not regress.
+- Sanitized InkStatute feedback callback reference proving the template-card callback target matches `AgentResult.feedback_target`; Hermes `feedback.jsonl` can be included only as compatibility evidence.
+- Operator confirmation that Hermes gateway was not used as the ordinary user channel for V2 live acceptance.
 
 ## ACK timing
 
@@ -57,7 +61,7 @@ Live ACK timing: blocked until the live runbook is completed.
 
 Fixture evidence uses only sanitized replay records and does not mutate Hermes runtime files. It preserves the Phase 4 expectation that recorder failures are non-blocking and outbound Hermes fields are not changed by validation logic.
 
-Live outbound preservation is blocked pending operator-run WeCom validation. The live run must confirm text, file, and template-card delivery through the existing Hermes gateway path without changing QQ Bot or WeChat behavior.
+Live outbound preservation is blocked pending operator-run InkStatute WeCom service validation and Phase 5.5 output-boundary evidence. The live run must confirm legal business text, file, and template-card delivery through InkStatute WeCom service, while Hermes meta/gateway/update/command notices are blocked or rewritten before ordinary WeCom delivery and Hermes is used only for agent logic.
 
 ## Feedback normalization
 
@@ -87,7 +91,8 @@ Live privacy review remains blocked until live evidence is collected and sanitiz
 
 ## Blockers
 
-- Live Hermes lawfirm and connected WeCom runtime validation was not executed in this session.
-- No sanitized live `feedback.jsonl` callback reference is available.
+- Live InkStatute WeCom service and Hermes agent adapter validation was not executed in this session.
+- InkStatute WeCom service and assistant output boundary have not yet been planned or verified; live WeCom acceptance cannot pass until Phase 5.5 proves they are active.
+- No sanitized live InkStatute feedback callback reference is available.
 - No live long/document task evidence is available.
 - QQ Bot and WeChat non-regression status has not been operator-confirmed.

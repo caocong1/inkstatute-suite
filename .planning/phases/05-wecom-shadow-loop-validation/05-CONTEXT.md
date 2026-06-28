@@ -7,7 +7,7 @@
 <domain>
 ## Phase Boundary
 
-Phase 5 proves the existing Hermes lawfirm WeCom loop still works while V2 shadow records result and feedback evidence into standard contract events. It validates the path from lawyer WeCom task, gateway acknowledgment, Hermes execution, post-filter `contract_result_recorder` logging, existing text/file/card delivery, template-card callback capture, and FeedbackEvent-normalizable feedback.
+Phase 5 proves the existing Hermes lawfirm WeCom loop still works as legacy/migration evidence while V2 shadow records result and feedback evidence into standard contract events. It validates the historical path from lawyer WeCom task, gateway acknowledgment, Hermes execution, post-filter `contract_result_recorder` logging, existing text/file/card delivery, template-card callback capture, and FeedbackEvent-normalizable feedback. After the 2026-06-28 requirement update, this evidence is not sufficient for V2 live WeCom acceptance; Phase 5.5 must prove InkStatute-owned WeCom receive/send and Hermes agent-only invocation.
 
 This phase may add validation fixtures, replay support, runbooks, opt-in deployment/validation helpers, and minimal reference-first feedback normalization needed to prove the WeCom loop. It must not rebuild Hermes core, WeCom gateway, router, skill registry, MCP registry, model gateway, session storage, feedback card/shim channel, read-view APIs, databases, queues, or automatic legal skill modification.
 
@@ -19,7 +19,7 @@ This phase may add validation fixtures, replay support, runbooks, opt-in deploym
 ### WeCom Loop Validation Boundary
 
 - **D-01:** Treat WeCom as the only V2 acceptance channel for this phase. QQ Bot and WeChat may receive lightweight non-regression checks only; they are not Phase 5 acceptance channels.
-- **D-02:** Preserve the existing Hermes channel path: gateway ACK, Hermes lawfirm execution, `response_filter`, template card dispatch, and `wecom_template_card_shim` remain owned by Hermes. Phase 5 validates and observes them instead of replacing them.
+- **D-02:** Preserve the existing Hermes channel path only as legacy/migration evidence for this Phase 5 validation: gateway ACK, Hermes lawfirm execution, `response_filter`, template card dispatch, and `wecom_template_card_shim` remain owned by Hermes. Phase 5 validates and observes them instead of replacing them; Phase 5.5 replaces ordinary user WeCom receive/send with InkStatute WeCom service.
 - **D-03:** Use the Phase 4 hook artifact as the result-recording path. Deployment into a live Hermes profile must be explicit and reversible, preferably documented or guarded by an opt-in validation helper; repo tests must not mutate `/home/sorawatcher/.hermes`.
 - **D-04:** Do not fake live WeCom acceptance. If live Hermes/WeCom credentials, channel state, or sanitized task access are unavailable, plans must produce fixture-backed validation plus a clearly recorded live-validation blocker.
 
@@ -41,7 +41,7 @@ This phase may add validation fixtures, replay support, runbooks, opt-in deploym
 
 - **D-13:** Validation artifacts must use `raw_payload_ref`, synthetic fixtures, or sanitized references. Do not commit runtime logs, callback bodies, customer legal text, documents, tokens, databases, or plaintext secrets.
 - **D-14:** Contract logs and validation fixtures must avoid complete ID numbers, phone numbers, bank accounts, addresses, and raw legal payloads by default.
-- **D-15:** Recorder failures must remain non-blocking for Hermes outbound behavior. Phase 5 should reuse and extend the Phase 4 safety expectation that hook errors are swallowed and outbound context keys are restored.
+- **D-15:** Recorder failures must remain non-blocking for Hermes legal/business agent behavior. Phase 5 should reuse and extend the Phase 4 safety expectation that hook errors are swallowed and outbound context keys are restored. Phase 5.5 owns InkStatute WeCom receive/send and assistant output boundary for Hermes meta/gateway/update/command notices.
 
 ### the agent's Discretion
 

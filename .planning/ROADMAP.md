@@ -2,7 +2,7 @@
 
 ## Overview
 
-V2 moves from contract definitions to verified production shadow recording, then to services, CI gates, and real lawyer acceptance. The phase order follows the V2 PRD development order, with an explicit Hermes integration spike before production hook work so hook ordering, message identity, feedback targets, long-task states, idempotency, and redaction rules are resolved before implementation.
+V2 moves from contract definitions to verified production shadow recording, then to InkStatute-owned WeCom service plus agent-adapter hardening, services, CI gates, and real lawyer acceptance. The phase order follows the V2 PRD development order, with an explicit Hermes integration spike before production hook work and a Phase 5.5 insertion so WeCom ingress/egress belongs to InkStatute, Hermes remains a low-coupling agent backend, and ordinary WeCom users never see Hermes meta/gateway/update/command notices.
 
 **Granularity:** fine - chosen to preserve the V2 PRD development order and the required spike, CI, and trial acceptance boundaries.
 
@@ -16,8 +16,9 @@ V2 moves from contract definitions to verified production shadow recording, then
 - [x] **Phase 1: Platform Contract Foundation** - Define the pure contract package, schemas, async states, errors, fixtures, and Python-first bindings. (completed 2026-06-27)
 - [x] **Phase 2: Contract Test Suite Foundation** - Establish schema validation, fixture replay, relationship checks, and CI-ready harness before Hermes hook work. (completed 2026-06-27)
 - [x] **Phase 3: Hermes Integration Spike and Risk Closure** - Resolve hook, message, long-task, feedback, idempotency, fixture, and privacy risks before production hooks. (completed 2026-06-28)
-- [x] **Phase 4: Hermes Shadow Event Layer** - Add the non-invasive hook, mapper, and writer that record standard contract events without changing Hermes behavior. (completed 2026-06-28)
+- [x] **Phase 4: Hermes Shadow Event Layer** - Add the non-invasive hook, mapper, and writer that record standard contract events without changing Hermes legal/business behavior. (completed 2026-06-28)
 - [x] **Phase 5: WeCom Shadow Loop Validation** - Prove the existing WeCom daily loop still works while contract events and feedback are captured. (completed 2026-06-28)
+- [ ] **Phase 5.5: InkStatute WeCom Service and Hermes Agent Adapter** - Build the WeCom receive/send service, define the agent backend adapter contract, make Hermes mode reproducible, and enforce a pure lawyer-assistant WeCom boundary.
 - [ ] **Phase 6: Read and Feedback Service APIs** - Deliver read-only conversation/task/feedback APIs plus feedback normalization, dedupe, classification, and pending queues.
 - [ ] **Phase 7: CI, Composability, and Privacy Gates** - Enforce industry-neutral composability, coverage, relationship integrity, thin-layer boundaries, and safety baselines in CI.
 - [ ] **Phase 8: Lawyer Trial Acceptance** - Run the five-workday lawyer trial and validate V2 acceptance metrics.
@@ -89,12 +90,12 @@ Plans:
 
 ### Phase 4: Hermes Shadow Event Layer
 
-**Goal**: Hermes lawfirm produces standard V2 contract logs through a shadow hook layer while preserving all existing outbound behavior.
+**Goal**: Hermes lawfirm produces standard V2 contract logs through a shadow hook layer while preserving existing legal/business outbound behavior.
 **Depends on**: Phase 3
 **Requirements**: REQ-hermes-contract-layer, REQ-observability-and-replay
 **Success Criteria** (what must be TRUE):
 
-  1. Lawyer-facing Hermes replies, files, cards, gateway behavior, router behavior, skills, MCP behavior, and model configuration are unchanged.
+  1. Lawyer-facing Hermes legal/business replies, files, cards, gateway business behavior, router behavior, skills, MCP behavior, and model configuration are unchanged by the shadow recorder.
   2. contract_result_recorder records AgentResult after Hermes prepares the response and writes occurred_at, ingested_at, and seq on contract events.
   3. AgentTurn, RouteDecision, ExecutionTrace, and AgentResult relationships can be inferred or recorded for real Hermes tasks.
   4. Replaying 3-5 Hermes task outputs through the contract-test-suite produces schema-valid standard events.
@@ -116,7 +117,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
   1. Lawyer sends an incoming WeCom task and receives channel acknowledgment within the WeCom timeout window.
-  2. Hermes still sends text, files, and template cards through the existing gateway path.
+  2. Local replay proves legal business text, files, cards, and feedback can be represented as contract events; live acceptance moves to InkStatute WeCom service in Phase 5.5.
   3. contract_result_recorder records the AgentResult after Hermes prepares the response.
   4. Template card feedback is captured by the existing shim and can be normalized into FeedbackEvent.
   5. Existing Hermes lawfirm WeCom feedback behavior does not regress, and QQ Bot/WeChat remain unbroken non-acceptance channels.
@@ -129,12 +130,30 @@ Plans:
 - [x] 05-02-PLAN.md — Minimal FeedbackEvent normalization for WeCom callbacks.
 - [x] 05-03-PLAN.md — End-to-end WeCom loop replay and live evidence gate.
 
-**Verification**: Local fixture verification passed; live WeCom validation is blocked pending operator-run evidence. See `05-VERIFICATION.md` and `05-WECOM-VALIDATION.md`.
+**Verification**: Local fixture verification passed; live WeCom validation is blocked pending InkStatute WeCom service + Hermes agent adapter evidence. See `05-VERIFICATION.md` and `05-WECOM-VALIDATION.md`.
+
+### Phase 5.5: InkStatute WeCom Service and Hermes Agent Adapter
+
+**Goal**: InkStatute owns WeCom receive/send while running Hermes only as a low-coupling agent backend, presenting a pure lawyer-assistant WeCom bot that does not leak Hermes system/gateway/update/command notices.
+**Depends on**: Phase 5
+**Requirements**: REQ-inkstatute-wecom-service, REQ-agent-backend-adapter-contract, REQ-hermes-adapter-bootstrap, REQ-assistant-output-boundary, REQ-wecom-daily-test-loop
+**Success Criteria** (what must be TRUE):
+
+  1. InkStatute WeCom service can receive WeCom callbacks, verify/decrypt where required, dedupe retries, normalize messages/files/buttons into AgentTurn or FeedbackEvent, and return ACK within the WeCom timeout window.
+  2. InkStatute WeCom service can send lawyer-assistant text, files, and template cards, receive feedback callbacks directly, and preserve idempotency for repeated callbacks or send retries.
+  3. Developer can select `agent_backend.mode=hermes` and inspect an agent adapter manifest that declares Hermes version, profile, hook/event support, invocation mode, feedback target support, artifact return support, and no-channel-io capability.
+  4. Operator can run Hermes bootstrap check on this machine without exposing secrets, verifying lawfirm profile location, hook links, MCP/scripts/skills references, agent invocation, and contract log path.
+  5. A sanitized lawfirm profile bundle or bundle manifest exists with SOUL/profile structure, hooks, skill/MCP/script references, agent adapter config, and required external secret/env names, while excluding WeCom secrets, keys, tokens, DBs, logs, customer files, feedback payloads, and raw legal payloads.
+  6. Hermes version compatibility matrix documents verified Hermes source/version, required hook and agent-invocation capabilities, config switches, known gateway direct-send paths to avoid, and fallback behavior for version drift.
+  7. Assistant output boundary inside InkStatute WeCom service blocks or rewrites Hermes gateway lifecycle, update/self-update, slash command/help/status/credits/insights, memory/tool progress, dangerous command approval, delivery failure debug, ADMIN_NOTICE, stack traces, internal paths, commands, tokens, and profile/runtime details before ordinary WeCom delivery.
+  8. Live WeCom acceptance can proceed only after evidence shows ordinary users receive messages from InkStatute WeCom service and Hermes is used only for agent logic, not ordinary user channel IO.
+
+**Plans**: TBD
 
 ### Phase 6: Read and Feedback Service APIs
 
 **Goal**: Operators can inspect conversations, tasks, and pending feedback from contract logs without creating a new authoritative session store.
-**Depends on**: Phase 5
+**Depends on**: Phase 5.5
 **Requirements**: REQ-conversation-read-view, REQ-feedback-service
 **Success Criteria** (what must be TRUE):
 
@@ -149,7 +168,7 @@ Plans:
 
 ### Phase 7: CI, Composability, and Privacy Gates
 
-**Goal**: V2 is enforced as an industry-neutral, privacy-aware thin contract layer through CI and contract evidence.
+**Goal**: V2 is enforced as an industry-neutral, privacy-aware thin contract and adapter layer through CI and contract evidence.
 **Depends on**: Phase 6
 **Requirements**: REQ-composability-validation, REQ-security-privacy-baseline, REQ-v2-thin-contract-layer
 **Success Criteria** (what must be TRUE):
@@ -158,7 +177,7 @@ Plans:
   2. Synthetic legal and non-legal tasks produce schema-valid events with intact relationships and no platform core changes.
   3. Contract logs reference raw payloads with raw_payload_ref and avoid sensitive full text, complete ID numbers, phone numbers, bank accounts, addresses, and plaintext secrets by default.
   4. Coverage reports show at least 95% paired AgentTurn and AgentResult coverage for real tasks and relationship breakage no greater than 5%.
-  5. Reviewer can verify V2 added contracts, hooks, logs, read APIs, feedback normalization, tests, and trial support without rebuilding Hermes core systems.
+  5. Reviewer can verify V2 added contracts, adapter manifests, output-boundary tests, hooks, logs, read APIs, feedback normalization, tests, and trial support without rebuilding Hermes core systems.
 
 **Plans**: TBD
 
@@ -180,7 +199,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -189,6 +208,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8.
 | 3. Hermes Integration Spike and Risk Closure | 4/4 | Complete    | 2026-06-28 |
 | 4. Hermes Shadow Event Layer | 3/3 | Complete | 2026-06-28 |
 | 5. WeCom Shadow Loop Validation | 3/3 | Complete   | 2026-06-28 |
+| 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 0/TBD | Not started | - |
 | 6. Read and Feedback Service APIs | 0/TBD | Not started | - |
 | 7. CI, Composability, and Privacy Gates | 0/TBD | Not started | - |
 | 8. Lawyer Trial Acceptance | 0/TBD | Not started | - |

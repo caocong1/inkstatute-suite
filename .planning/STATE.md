@@ -2,35 +2,35 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 05 local verification passed; live WeCom validation blocked pending operator-run evidence
-last_updated: "2026-06-28T03:27:37.870Z"
-last_activity: 2026-06-28 -- Phase 05 execution started
+status: planning
+stopped_at: Requirements updated; next phase is 5.5 InkStatute WeCom service and Hermes agent adapter before live WeCom acceptance
+last_updated: "2026-06-28T05:36:29Z"
+last_activity: 2026-06-28 -- InkStatute WeCom service and Hermes agent adapter requirements confirmed
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 5
   total_plans: 16
   completed_plans: 16
-  percent: 63
+  percent: 56
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-27)
+See: .planning/PROJECT.md (updated 2026-06-28)
 
-**Core value:** Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, and CI-verifiable without changing Hermes outbound behavior.
-**Current focus:** Phase 05 — wecom-shadow-loop-validation
+**Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
+**Current focus:** Phase 5.5 — inkstatute-wecom-service-and-hermes-agent-adapter
 
 ## Current Position
 
-Phase: 05 (wecom-shadow-loop-validation) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — local verification passed; live WeCom validation blocked
-Last activity: 2026-06-28 -- Phase 05 execution started
+Phase: 5.5 (inkstatute-wecom-service-and-hermes-agent-adapter) — READY TO PLAN
+Plan: 0 of TBD
+Status: Requirements updated — plan Phase 5.5 before live WeCom acceptance
+Last activity: 2026-06-28 -- InkStatute WeCom service and Hermes agent adapter requirements confirmed
 
-Progress: [█████░░░░░] 50% of roadmap phases
+Progress: [█████░░░░░] 56% of roadmap phases
 
 ## Performance Metrics
 
@@ -79,11 +79,15 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 - V2 PRD is the active product specification; retired V1 is not an active requirement source.
-- V2 is a thin contract layer around Hermes lawfirm, not a Hermes rebuild.
+- V2 is an InkStatute-owned WeCom service plus backend-neutral contract and agent adapter layer; Hermes lawfirm is the first production agent backend, not a Hermes rebuild.
 - JSON Schema and Python bindings come before TypeScript.
 - Contract-test-suite precedes production Hermes hook implementation.
 - Hermes integration risks are isolated into Phase 3 before production hook work.
 - Lawyer trial acceptance remains a manual human gate.
+- InkStatute owns ordinary user WeCom receive/send; Hermes gateway is not the V2 channel boundary.
+- Hermes lawfirm is the first agent backend adapter, not the platform or channel boundary.
+- Ordinary WeCom users must not see Hermes gateway/update/self-update/command/help/status/credits/insights/memory/tool-progress/debug notices.
+- Raw lawfirm profile copying is not a deployable artifact; V2 needs a sanitized profile bundle plus external secrets/env.
 - [Phase 01]: Keep platform_contract Python bindings standard-library-only with no runtime dependencies.
 - [Phase 01]: Use industry_context and metadata containers for legal/profile-specific extension data instead of legal-only top-level required fields.
 - [Phase 01]: Keep Phase 1 fixture validation as a package-local stdlib self-check rather than a Phase 2 contract-test-suite harness. — Plan 01-03 is scoped to package-local fixtures and self-checks; Phase 2 owns the contract-test-suite.
@@ -123,6 +127,8 @@ None yet.
 - Legal/safety concerns require human review when they affect high-risk legal conclusions or lawyer trial acceptance.
 - Phase 4 recorder implementation must encode the source-confirmed after-filter hook directory ordering rule and must not claim full outbound capture from the capped agent:end hook context.
 - Phase 4/6 runtime work must obtain sanitized evidence for callback fields, feedback rows, long-task state sources, and raw payload retention/redaction before claiming those details as source-confirmed.
+- Live WeCom acceptance is blocked until Phase 5.5 proves InkStatute WeCom service owns receive/send, Hermes is used only for agent logic, and ordinary users see InkStatute lawyer-assistant output rather than Hermes operator UI.
+- Hermes agent adapter work must account for version drift with capability probing and a compatibility matrix before relying on hook/event/invocation behavior.
 
 ## Deferred Items
 
@@ -134,6 +140,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-28T03:27:37.865Z
-Stopped at: Phase 05 local verification passed; live WeCom validation blocked pending operator-run evidence
-Resume file: .planning/phases/05-wecom-shadow-loop-validation/05-WECOM-VALIDATION.md
+Last session: 2026-06-28T05:36:29Z
+Stopped at: Requirements updated; Phase 5.5 should be planned before live WeCom acceptance
+Resume file: .planning/ROADMAP.md

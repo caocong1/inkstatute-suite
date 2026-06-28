@@ -15,6 +15,8 @@ decision_coverage:
 **Verified:** 2026-06-28T03:23:46Z
 **Status:** human_needed
 
+**Post-verification requirement update:** On 2026-06-28, V2 added Phase 5.5 for InkStatute WeCom service and Hermes agent adapter. Phase 5 local fixture verification remains valid, but live WeCom acceptance now requires evidence that InkStatute receives/sends WeCom directly, Hermes is used only for agent logic, and ordinary users do not see Hermes gateway/update/command/meta notices.
+
 ## Goal Achievement
 
 ### Observable Truths
@@ -22,7 +24,7 @@ decision_coverage:
 | # | Truth | Status | Evidence |
 |---|---|---|---|
 | 1 | Lawyer sends an incoming WeCom task and receives channel acknowledgment within the WeCom timeout window. | UNCERTAIN - LIVE NEEDED | Fixture ACK timing validates 4 seconds in `05-WECOM-VALIDATION.md`; no live WeCom ACK evidence was collected. |
-| 2 | Hermes still sends text, files, and template cards through the existing gateway path. | UNCERTAIN - LIVE NEEDED | Runbook and evidence report preserve the existing gateway path, but no live outbound text/file/card run was performed. |
+| 2 | InkStatute WeCom service sends legal business text, files, and template cards while Hermes provides only agent logic. | UNCERTAIN - PHASE 5.5 NEEDED | Phase 5 fixtures preserve the message/result/feedback relationship, but InkStatute WeCom receive/send service and Hermes agent adapter have not yet been implemented or live-verified. |
 | 3 | `contract_result_recorder` records the AgentResult after Hermes prepares the response. | VERIFIED | Phase 4 hook tests still pass; Phase 5 stream fixture replays `agent_result.feedback_target` and validates through `validate_wecom_shadow_evidence`. |
 | 4 | Template card feedback is captured by the existing shim and can be normalized into FeedbackEvent. | PARTIAL - LIVE NEEDED | Sanitized callback fixtures normalize into schema-valid `FeedbackEvent` records; live shim capture into `feedback.jsonl` was not collected. |
 | 5 | Existing Hermes lawfirm WeCom feedback behavior does not regress, and QQ Bot/WeChat remain unbroken non-acceptance channels. | UNCERTAIN - LIVE NEEDED | Evidence report records QQ Bot/WeChat status as blocked pending operator confirmation. |
@@ -59,7 +61,7 @@ decision_coverage:
 
 | Requirement | Status | Blocking Issue |
 |---|---|---|
-| `REQ-wecom-daily-test-loop`: Preserve and validate the existing WeCom daily-use loop while shadow-recording contract events and normalized feedback. | HUMAN NEEDED | Local fixture replay and normalization are verified, but live Hermes/WeCom ACK, outbound delivery, callback capture, and QQ/WeChat non-regression are blocked pending operator-run evidence. |
+| `REQ-wecom-daily-test-loop`: Preserve and validate the existing WeCom daily-use loop while shadow-recording contract events and normalized feedback. | PHASE 5.5 NEEDED | Local fixture replay and normalization are verified, but InkStatute WeCom service, Hermes agent adapter invocation, assistant-output-boundary evidence, outbound delivery, and callback capture are blocked pending Phase 5.5. |
 
 **Coverage:** 0/1 requirements fully satisfied for live acceptance; 1/1 locally fixture-validated.
 
@@ -73,14 +75,16 @@ decision_coverage:
 
 ### 1. Live WeCom Short Legal Retrieval
 
-**Test:** Follow `services/hermes-contract-layer/docs/wecom_shadow_loop_validation.md` for one short WeCom legal retrieval task.
-**Expected:** ACK within timeout, text response, template card delivery, contract JSONL result record, and sanitized feedback callback reference.
-**Why human:** Requires live Hermes lawfirm profile, connected WeCom channel, and sanitized runtime evidence.
+**Test:** Follow the updated Phase 5.5 runbook for one short WeCom legal retrieval task through InkStatute WeCom service.
+**Expected:** InkStatute ACK within timeout, Hermes agent processing, InkStatute text/card delivery, contract JSONL result record, and sanitized InkStatute feedback callback reference.
+**Additional output-boundary expectation:** The user-visible text must not include Hermes/gateway/update/self-update/command/help/status/credits/insights/memory/tool-progress/debug notices.
+**Why human:** Requires live InkStatute WeCom service, Hermes lawfirm agent adapter, connected WeCom channel, and sanitized runtime evidence.
 
 ### 2. Live WeCom Long/Document Task
 
-**Test:** Run one long or document task through WeCom with the opt-in recorder configured.
-**Expected:** ACK, completion push, text/file/card delivery, AgentResult record after response preparation, and feedback target continuity.
+**Test:** Run one long or document task through InkStatute WeCom service with Hermes agent adapter configured.
+**Expected:** InkStatute ACK, Hermes agent processing, InkStatute completion push, text/file/card delivery, AgentResult record after response preparation, and feedback target continuity.
+**Additional output-boundary expectation:** Any service-maintenance or failure notice is InkStatute-owned wording, not Hermes/gateway/operator wording.
 **Why human:** Requires live runtime and a safe document/test payload outside the repo.
 
 ### 3. QQ Bot and WeChat Non-Acceptance Non-Regression
@@ -93,16 +97,21 @@ decision_coverage:
 
 No code gaps found. Automated fixture validation, schema validation, replay relationships, privacy scanning, and service-local tests pass.
 
-Critical live gate:
+Critical live gates:
 
 1. **Live WeCom validation evidence missing**
-   - Missing: live ACK timing, outbound text/file/card evidence, callback `feedback.jsonl` reference, and QQ Bot/WeChat non-regression confirmation.
+   - Missing: InkStatute WeCom ACK timing, outbound text/file/card evidence, InkStatute callback reference, and Hermes agent adapter invocation evidence.
    - Impact: Phase 5 cannot claim live WeCom acceptance.
    - Fix: Complete the opt-in runbook and update `05-WECOM-VALIDATION.md` with sanitized evidence references.
 
+2. **Assistant output boundary evidence missing**
+   - Missing: proof that InkStatute WeCom service owns delivery and Hermes gateway/update/self-update/command/help/status/credits/insights/memory/tool-progress/debug notices cannot reach ordinary WeCom users.
+   - Impact: Live WeCom acceptance cannot pass under the updated V2 PRD until Phase 5.5 is completed.
+   - Fix: Plan and execute Phase 5.5 before claiming live acceptance.
+
 ## Recommended Fix Plans
 
-No code fix plan is recommended. The remaining work is operator validation, not implementation. Do not proceed as if live acceptance passed until `live_wecom_status` is updated from `blocked` to `passed` with evidence references.
+No Phase 5 code fix plan is recommended. The remaining work is operator validation plus the newly inserted Phase 5.5 implementation. Do not proceed as if live acceptance passed until Phase 5.5 output-boundary evidence exists and `live_wecom_status` is updated from `blocked` to `passed` with evidence references.
 
 ## Behavioral Verification
 

@@ -2,6 +2,8 @@
 
 This runbook validates Phase 5 WeCom evidence for the existing Hermes `lawfirm` profile. It separates fixture validation from live WeCom validation so synthetic evidence is never claimed as live acceptance.
 
+Update 2026-06-28: live WeCom acceptance now depends on Phase 5.5 InkStatute WeCom service evidence. This runbook's Phase 5 recorder checks remain valid as legacy/fixture evidence, but a V2 live pass must prove InkStatute receives/sends WeCom directly, Hermes is used only for agent logic, and ordinary users do not see Hermes gateway/update/self-update/command/help/status/credits/insights/memory/tool-progress/debug notices.
+
 ## Fixture validation status
 
 Fixture validation uses sanitized contract JSONL streams and repo-local tests only.
@@ -27,8 +29,8 @@ Fixture validation does not prove live Hermes or live WeCom behavior.
 
 Record live status as exactly one of:
 
-- `passed`: live Hermes/WeCom was exercised with sanitized evidence references.
-- `blocked`: live Hermes/WeCom could not be exercised, or required evidence was unavailable.
+- `passed`: InkStatute WeCom service and Hermes agent adapter were exercised with sanitized evidence references.
+- `blocked`: InkStatute WeCom service, Hermes agent adapter, or required evidence was unavailable.
 
 Do not mark live status as `passed` from fixture data. If live runtime credentials, channel state, callback samples, or sanitized task access are unavailable, record `blocked` with the blocker details described below.
 
@@ -46,18 +48,18 @@ Before live validation:
 services/hermes-contract-layer/hooks/response_filter_contract_result_recorder/
 ```
 
-The hook manifest name is `contract_result_recorder`, and the directory is intended to load after Hermes `response_filter`. The hook must remain a shadow recorder: it observes the `agent:end` context and must not alter outbound text, files, cards, gateway ACK behavior, routing, skills, MCP tools, model configuration, or feedback shim behavior.
+The hook manifest name is `contract_result_recorder`, and the directory is intended to load after Hermes `response_filter`. The hook must remain a shadow recorder: it observes the `agent:end` context and must not alter legal/business agent output, routing, skills, MCP tools, model configuration, or feedback shim behavior. Ordinary WeCom ACK/send/card/callback behavior is owned by InkStatute WeCom service in the updated V2 architecture.
 
 ## Runtime evidence to collect
 
 Collect sanitized references, not raw runtime files. Minimum live evidence:
 
-- One short WeCom legal retrieval task that returns text with citations and a template card.
-- One long or document task that returns the expected text/file result and a template card.
-- Gateway ACK start and completion timestamps showing the ACK completed within the expected timeout.
+- One short WeCom legal retrieval task received by InkStatute WeCom service that returns text with citations and a template card through InkStatute send.
+- One long or document task received by InkStatute WeCom service that returns the expected text/file result and a template card through InkStatute send.
+- InkStatute WeCom service ACK start and completion timestamps showing the ACK completed within the expected timeout.
 - A contract JSONL stream at `INKSTATUTE_CONTRACT_LOG_PATH` containing the four core result-side events.
 - The `AgentResult.feedback_target` value and a sanitized reference proving it matches the template-card callback target.
-- A sanitized `feedback.jsonl` reference showing callback capture through `wecom_template_card_shim`.
+- A sanitized feedback callback reference showing capture through InkStatute WeCom service; Hermes `feedback.jsonl` is compatibility evidence only.
 - Confirmation that QQ Bot and WeChat were not changed as part of validation.
 
 When a feedback callback is available, preserve only the minimum fields needed to normalize into `FeedbackEvent`: stable feedback id or idempotency key, conversation/user references, target/result reference, feedback source/type/action/status, timestamp, and sanitized metadata.
@@ -69,9 +71,9 @@ Rollback must be available before deployment:
 1. Remove the `contract_result_recorder` hook artifact from the live Hermes `lawfirm` hooks directory, or revert the explicit symlink/copy operation used for validation.
 2. Unset `INKSTATUTE_CONTRACT_LOG_PATH` or point it to a disabled runtime location.
 3. Restart or reload Hermes only through the existing operator procedure for that profile.
-4. Re-run a normal WeCom message and template-card feedback check to confirm the existing gateway, response filter, dispatcher, and callback shim still behave as before.
+4. Re-run a normal WeCom message and template-card feedback check through InkStatute WeCom service. Existing Hermes gateway/card/shim can be checked separately as migration evidence if needed.
 
-Recorder failures must remain non-blocking for Hermes outbound behavior.
+Recorder failures must remain non-blocking for Hermes legal/business agent behavior. InkStatute WeCom service failures are separate: if receive/send/output policy cannot be proven active, live WeCom acceptance remains blocked.
 
 ## Privacy rules
 
@@ -101,4 +103,4 @@ Next unblock action:
 Privacy review:
 ```
 
-Common blockers include missing WeCom access, unavailable Hermes runtime, missing callback sample, unstable `message_id` to feedback target mapping, missing ACK timestamps, unavailable long-task state source, or inability to sanitize evidence safely.
+Common blockers include missing WeCom access, unavailable InkStatute WeCom service, unavailable Hermes runtime/agent adapter, missing callback sample, unstable `message_id` to feedback target mapping, missing ACK timestamps, unavailable long-task state source, missing assistant output boundary evidence, or inability to sanitize evidence safely.

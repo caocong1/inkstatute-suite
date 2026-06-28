@@ -2,7 +2,7 @@
 
 **Defined:** 2026-06-27  
 **Source of Truth:** `docs/requirements/V2-PRD.md`  
-**Core Value:** Hermes lawfirm can be used by lawyers in WeCom while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, and CI-verifiable without changing Hermes outbound behavior.
+**Core Value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
 ## Active V2 Requirements
 
@@ -10,21 +10,53 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### Platform Boundary and Sequencing
 
-- [ ] **REQ-v2-thin-contract-layer**: InkStatute V2 must be a thin platform contract layer around the existing Hermes lawfirm profile, preserving Hermes as the backend and contract-normalizing observable behavior instead of rebuilding core runtime systems.
-  - Hermes remains the V2 backend.
+- [ ] **REQ-v2-thin-contract-layer**: InkStatute V2 must be a thin platform contract, WeCom channel service, and agent adapter layer around enabled agent backends, with Hermes lawfirm as the first production agent backend and no platform-core dependency on Hermes internals.
+  - InkStatute owns WeCom receive/send for ordinary users.
+  - Hermes remains the first V2 agent backend adapter, not the permanent platform or channel boundary.
   - V2 adds contract schemas, hook-based normalization, contract logs, read views, feedback normalization, contract tests, and lawyer trial support.
-  - V2 does not rebuild Hermes core, session storage, router, skill registry, MCP registry, model gateway, WeCom gateway, or the feedback card/jsonl channel.
+  - V2 adds WeCom service, agent adapter contracts, Hermes bootstrap/version boundaries, and assistant output policy before live WeCom acceptance.
+  - V2 does not rebuild Hermes core, session storage, router, skill registry, MCP registry, or model gateway.
   - The V1 full-stack platform scope is not treated as an active requirement source.
+
+- [ ] **REQ-inkstatute-wecom-service**: V2 must own the WeCom receive/send service instead of using Hermes gateway as the ordinary user channel.
+  - Receives WeCom callbacks/events/messages, verifies/decrypts where required, dedupes retries, and returns ACK within the channel timeout.
+  - Normalizes text, file, image, voice, and button callback events into AgentTurn or FeedbackEvent inputs.
+  - Sends legal assistant text, markdown-compatible text, files, images, template cards, and InkStatute-owned business status/service notices.
+  - Handles WeCom access token refresh, media download/upload references, send retries, delivery errors, and idempotency without committing secrets or raw payloads.
+  - Receives feedback callbacks directly and creates FeedbackEvent records; Hermes feedback.jsonl remains a compatibility/migration input only.
+  - Does not perform agent reasoning; it dispatches AgentTurn to the selected agent backend adapter.
+
+- [ ] **REQ-agent-backend-adapter-contract**: V2 must define a backend-neutral agent adapter contract and runtime mode selector so Hermes, future Codex, and future direct provider-model backends can attach through the same platform contract.
+  - Defines `agent_backend.mode` values: `hermes`, `codex`, and `provider_model`.
+  - V2 production scope requires Hermes mode only; Codex/provider-model modes are contract-compatible future modes and must not be blocked by schema or config assumptions.
+  - Adapter manifests include adapter name/version, backend version, hook/event support, invocation mode, feedback target support, session read support, artifact return support, and no-channel-io capability.
+  - Adapter input/output maps to AgentTurn, AgentResult, ExecutionTrace, RouteDecision, FeedbackEvent, and output-policy events without legal-only top-level fields.
+  - Contract tests include non-Hermes synthetic fixtures to prevent platform core coupling to Hermes paths, hook names, profile layout, or WeCom-only fields.
+
+- [ ] **REQ-hermes-adapter-bootstrap**: Hermes mode must be reproducible on a new server through a low-coupling adapter bootstrap path.
+  - Supports reusing an existing Hermes install by detecting Hermes version, hook capability, agent invocation capability, profile path, and contract log path.
+  - Supports new-server Hermes mode by installing or locating a supported Hermes version, applying a sanitized lawfirm profile bundle, linking hooks/agent adapter, restoring skills/MCP/scripts/SOUL config, and running health checks.
+  - Maintains a Hermes compatibility matrix with verified versions, required hook/event/agent-invocation capabilities, config switches, and fallback behavior for version drift.
+  - Runtime secrets, WeCom key/secret/token, model keys, databases, logs, feedback payloads, customer documents, and raw legal payloads are not committed and are injected through external env/secret management.
+  - Copying the current live lawfirm profile is allowed only as a source for generating a sanitized bundle, not as a raw repository artifact.
+
+- [ ] **REQ-assistant-output-boundary**: InkStatute WeCom service must present a pure lawyer assistant bot to ordinary users by filtering all user-facing outbound messages through a platform-owned output boundary.
+  - Blocks or rewrites Hermes/gateway lifecycle messages, update/self-update prompts, slash command/help/status/credits/insights notices, memory/tool progress, dangerous command approval, delivery failure debug text, ADMIN_NOTICE, stack traces, internal paths, commands, tokens, and profile/runtime details.
+  - Allows legal business replies, clarifying questions, business-level progress messages, files/artifacts, feedback cards, and InkStatute-owned service maintenance notices.
+  - Does not semantically rewrite legal conclusions, citations, factual assumptions, risk judgments, or user-provided case facts.
+  - Must operate at InkStatute WeCom service send boundary; Hermes agent adapter must not send directly to ordinary WeCom users.
+  - Produces privacy-safe audit evidence for blocked/rewritten output-policy events.
 
 - [ ] **REQ-v2-development-order**: Implement V2 in the PRD order: schemas first, then testing, then Hermes shadow recording, then WeCom feedback loop, then read/feedback services, then acceptance validation.
   - Step 1 delivers platform-contract schemas, async state machine, error codes, JSON Schema/Python bindings, and fixtures.
   - Step 2 delivers contract-test-suite framework, golden examples, synthetic task runner, and CI job.
   - Step 3 delivers hermes-contract-layer minimum hook, mapper, and event writer.
-  - Step 4 deploys hook and confirms WeCom task-to-reply-to-card-to-feedback-to-FeedbackEvent loop.
-  - Step 5 delivers conversation-read-view minimum API.
-  - Step 6 delivers feedback-service normalization, dedupe, classification, and skill_candidate generation.
-  - Step 7 completes contract CI and composability validation.
-  - Step 8 runs the five-workday lawyer trial and metrics collection.
+  - Step 4 delivers InkStatute WeCom service, agent backend adapter contract, Hermes bootstrap/version matrix, and assistant output boundary.
+  - Step 5 deploys WeCom service + Hermes agent adapter and confirms WeCom task-to-agent-to-reply-to-card-to-feedback-to-FeedbackEvent loop.
+  - Step 6 delivers conversation-read-view minimum API.
+  - Step 7 delivers feedback-service normalization, dedupe, classification, and skill_candidate generation.
+  - Step 8 completes contract CI and composability validation.
+  - Step 9 runs the five-workday lawyer trial and metrics collection.
 
 - [x] **REQ-implementation-risk-resolution**: Resolve V2 implementation risks that do not block PRD finalization but do block development completion.
   - Confirm Hermes hook execution order, especially `contract_result_recorder` after `response_filter`.
@@ -73,12 +105,13 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### Hermes Shadow Integration
 
-- [x] **REQ-hermes-contract-layer**: Add a hook-based shadow contract layer to Hermes lawfirm that maps internal Hermes context and outputs into standard contract events without changing outbound behavior.
+- [x] **REQ-hermes-contract-layer**: Add a hook-based shadow contract layer to Hermes lawfirm that maps internal Hermes context and outputs into standard contract events without changing legal/business outbound behavior.
   - Provides a `contract_result_recorder` hook on `agent:end` after `response_filter`.
   - Maps final replies into AgentResult and writes contract logs.
   - Records occurred_at, ingested_at, and a monotonic sequence for every contract event.
   - Uses agent:end context and session context to infer AgentTurn where no agent:start event exists.
-  - Does not alter Hermes outbound text, gateway behavior, router behavior, skill execution, MCP behavior, or model configuration.
+  - Does not alter Hermes legal/business reply content, router behavior, skill execution, MCP behavior, or model configuration.
+  - Coexists with the separate InkStatute WeCom service and assistant output boundary, which may block or rewrite backend meta/gateway/update/command notices before ordinary WeCom delivery.
   - Includes mapper and event log writer code under `services/hermes-contract-layer`.
   - Contract-test-suite can replay hook output into valid standard events.
 
@@ -94,11 +127,12 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 - [ ] **REQ-wecom-daily-test-loop**: Preserve and validate the existing WeCom daily-use loop while shadow-recording contract events and normalized feedback.
   - WeCom remains the primary V2 acceptance channel.
-  - Incoming lawyer tasks receive a channel acknowledgment within the WeCom timeout window.
-  - Hermes continues to send text, files, and template cards through the existing gateway path.
+  - InkStatute WeCom service receives incoming lawyer tasks and returns channel acknowledgment within the WeCom timeout window.
+  - InkStatute WeCom service dispatches AgentTurn to Hermes agent adapter and sends legal business text, files, and template cards after assistant output boundary.
   - contract_result_recorder records AgentResult events after Hermes prepares the response.
-  - Template card feedback is captured by the existing shim and normalized into FeedbackEvent.
-  - Existing Hermes lawfirm WeCom template-card feedback behavior does not regress.
+  - Template card feedback is captured by InkStatute WeCom service and normalized into FeedbackEvent.
+  - Existing Hermes lawfirm WeCom template-card feedback behavior is used as migration evidence, but not as the target ordinary user channel.
+  - Ordinary WeCom users do not see Hermes gateway/update/self-update/command/help/credits/insights/memory/tool-progress/debug notices.
   - QQ Bot and WeChat remain non-V2 acceptance channels but are not broken.
 
 - [ ] **REQ-conversation-read-view**: Build a read-only conversation and task view from contract logs, using Hermes sessions only as a fallback read model rather than an authoritative new session store.
@@ -108,8 +142,9 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - May use sessions.db only through an explicitly Hermes-specific adapter and only to fill gaps.
   - Does not create an independent authoritative conversation database.
 
-- [ ] **REQ-feedback-service**: Normalize Hermes feedback.jsonl and preview data into FeedbackEvent records, classify feedback, dedupe repeated callbacks, and produce pending queues for human review.
-  - Reads Hermes feedback.jsonl and pending_previews.jsonl as input references.
+- [ ] **REQ-feedback-service**: Normalize InkStatute WeCom feedback callbacks and compatibility Hermes feedback.jsonl/preview data into FeedbackEvent records, classify feedback, dedupe repeated callbacks, and produce pending queues for human review.
+  - Reads InkStatute WeCom feedback callback records as the primary source.
+  - Reads Hermes feedback.jsonl and pending_previews.jsonl only as compatibility/migration input references.
   - Produces FeedbackEvent records with source, event_type, action, status, raw_payload_ref, and association to turn/result/conversation where available.
   - Dedupes repeated button clicks, network retries, and repeated shim writes using an idempotency key.
   - Classifies feedback into rating, correction, fact_missing, citation_error, route_mismatch, format_issue, compliance_issue, and skill_candidate categories.
@@ -124,7 +159,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
   - Contract logs reference raw payloads using raw_payload_ref and avoid storing sensitive full text by default.
   - Logs avoid complete ID numbers, phone numbers, bank accounts, addresses, and other sensitive values.
   - Secrets are referenced through Hermes existing secret management or environment variables, not stored in plaintext.
-  - Admin-only notices are not exposed to ordinary users.
+  - Admin-only notices and backend/gateway/system/update/command notices are not exposed to ordinary users.
   - Legal outputs preserve the working-draft-for-lawyer-review principle.
   - High-risk feedback does not automatically alter legal conclusions, statute references, cause-of-action judgments, jurisdiction judgments, or liability conclusions.
   - skill_candidate.requires_human_review is true for V2 skill-candidate flows.
@@ -144,6 +179,8 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### M2
 
+- Codex adapter prototype.
+- Direct provider-model adapter prototype.
 - Independent Router Service normalization upgrade.
 - Skill Registry reading and conversation-read-view completion.
 - Admin Console API read-only surface.
@@ -151,7 +188,7 @@ Requirements for the current V2 milestone. Retired product V1 is not an active r
 
 ### M3
 
-- Multi Agent Runtime Adapter.
+- Multi Agent Runtime Adapter productization.
 - MCP Connector Registry and Model Provider Gateway.
 - Web frontend.
 - Complete security platform: encryption, tenancy, RBAC, retention/destruction, WORM audit logs, key rotation.
@@ -169,9 +206,11 @@ Explicitly excluded from V2 to prevent scope creep.
 | Feature | Reason |
 |---------|--------|
 | Retired V1 platform scope | V2 PRD replaces V1 as the active requirement source. |
-| Rebuilding Hermes core/runtime systems | V2 is a thin contract layer around the existing Hermes lawfirm backend. |
+| Rebuilding Hermes core/runtime systems | V2 is an agent adapter layer around the existing Hermes lawfirm backend, not a Hermes fork. |
+| Production Codex/provider-model adapters | V2 defines the agent backend adapter contract and mode shape; production implementation is deferred beyond V2. |
 | Independent authoritative conversation database | V2 read APIs derive from contract logs; Hermes sessions are fallback only. |
-| New WeCom gateway or feedback card channel | Existing Hermes gateway/card/jsonl flow remains the channel. |
+| Full multi-channel gateway | V2 builds the minimum InkStatute WeCom service only. |
+| Hermes gateway as ordinary user WeCom channel | V2 owns WeCom receive/send; Hermes gateway is migration evidence or non-user-facing operator tooling only. |
 | Full Web UI or Tauri desktop | Deferred beyond V2; WeCom is the V2 acceptance channel. |
 | Automatic legal skill modification | High-risk legal feedback must remain human-reviewed. |
 | Raw legal payload storage in contract logs by default | Contract logs must prefer references and minimize sensitive content. |
@@ -186,6 +225,10 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-implementation-risk-resolution | Phase 3 | Complete |
 | REQ-hermes-contract-layer | Phase 4 | Complete |
 | REQ-observability-and-replay | Phase 4 | Complete |
+| REQ-inkstatute-wecom-service | Phase 5.5 | Pending |
+| REQ-agent-backend-adapter-contract | Phase 5.5 | Pending |
+| REQ-hermes-adapter-bootstrap | Phase 5.5 | Pending |
+| REQ-assistant-output-boundary | Phase 5.5 | Pending |
 | REQ-wecom-daily-test-loop | Phase 5 | Pending |
 | REQ-conversation-read-view | Phase 6 | Pending |
 | REQ-feedback-service | Phase 6 | Pending |
@@ -197,10 +240,10 @@ Explicitly excluded from V2 to prevent scope creep.
 
 **Coverage:**
 
-- Active V2 requirements: 14 total
-- Mapped to phases: 14
+- Active V2 requirements: 18 total
+- Mapped to phases: 18
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-27*
-*Last updated: 2026-06-28 after Phase 4 verification*
+*Last updated: 2026-06-28 after InkStatute WeCom service and agent adapter requirement update*

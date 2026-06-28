@@ -40,6 +40,8 @@ The exact layout is planner/executor discretion, but keep validation and normali
 
 ## Data Flow
 
+Legacy Phase 5 fixture/migration flow:
+
 ```text
 WeCom lawyer task
   -> Hermes gateway ACK and lawfirm execution
@@ -48,6 +50,17 @@ WeCom lawyer task
   -> existing template card path writes feedback.jsonl
   -> minimal normalizer emits FeedbackEvent
   -> contract-test-suite validates message -> result -> feedback relationships
+```
+
+Updated V2 live-acceptance target:
+
+```text
+WeCom lawyer task
+  -> InkStatute WeCom service ACK / normalize AgentTurn
+  -> Hermes agent adapter invokes lawfirm agent logic
+  -> Hermes agent adapter returns AgentResult / artifacts / ExecutionTrace
+  -> InkStatute WeCom service output policy and send
+  -> InkStatute feedback callback emits FeedbackEvent
 ```
 
 ## Normalizer Conventions

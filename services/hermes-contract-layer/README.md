@@ -1,8 +1,8 @@
 # Hermes Contract Layer
 
-This package is the InkStatute V2 shadow contract layer for the existing Hermes `lawfirm` profile.
+This package is the InkStatute V2 Hermes agent adapter surface for the existing Hermes `lawfirm` profile. Its current implementation is the shadow contract recorder; Phase 5.5 adds the agent adapter manifest/bootstrap used by InkStatute's own WeCom service.
 
-It is a thin hook artifact and Python library that can record standard platform contract events from Hermes hook context. It is not a Hermes runtime replacement and does not own Hermes routing, sessions, skills, MCP configuration, model gateway behavior, WeCom gateway behavior, or feedback-channel normalization.
+It is a thin hook artifact and Python library that can record standard platform contract events from Hermes hook context. It is not a Hermes runtime replacement and does not own Hermes routing, sessions, skills, MCP configuration, model gateway behavior, InkStatute WeCom service, or feedback-channel normalization.
 
 ## Hook Artifact
 
@@ -18,7 +18,9 @@ Do not deploy or copy this artifact into `/home/sorawatcher/.hermes` as part of 
 
 ## Runtime Boundary
 
-The hook handler must return without changing outbound Hermes values such as `response`, `message_id`, `platform`, `user_id`, `chat_id`, `session_id`, or `message`. Contract logging failures must not propagate back into Hermes.
+The recorder hook handler must return without changing outbound Hermes values such as `response`, `message_id`, `platform`, `user_id`, `chat_id`, `session_id`, or `message`. Contract logging failures must not propagate back into Hermes.
+
+Assistant output boundary is an InkStatute WeCom service responsibility. Hermes agent adapter returns agent results/artifacts/traces and must not send directly to ordinary WeCom users.
 
 ## Phase 5 Validation
 

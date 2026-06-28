@@ -2,7 +2,9 @@
 
 ## Research Complete
 
-Phase 5 should validate the smallest end-to-end WeCom shadow loop that proves Phase 4 result logging and existing Hermes feedback capture can connect to standard V2 contract events without changing Hermes outbound behavior.
+Phase 5 should validate the smallest end-to-end WeCom shadow loop that proves Phase 4 result logging and existing Hermes feedback capture can connect to standard V2 contract events without changing Hermes legal/business outbound behavior.
+
+Update 2026-06-28: this Phase 5 research predates the InkStatute WeCom service requirement change. The local fixture validation remains valid, but live WeCom acceptance now depends on Phase 5.5 proving InkStatute-owned WeCom receive/send, Hermes agent-only invocation, and assistant output boundary behavior for Hermes gateway/update/command/meta messages.
 
 ## Phase Inputs
 
@@ -67,9 +69,10 @@ Live WeCom validation is manual or operator-assisted:
 
 1. Deploy/symlink/copy the repo-owned hook artifact into the Hermes lawfirm profile only after explicit operator action.
 2. Configure `INKSTATUTE_CONTRACT_LOG_PATH` to a non-repo runtime path.
-3. Send one short legal retrieval task and one long/document task through WeCom.
-4. Confirm gateway ACK timing, text/file/template card delivery, contract JSONL result records, callback capture into `feedback.jsonl`, and FeedbackEvent-normalizable sanitized evidence.
-5. Record live status in a Phase 5 evidence document. If unavailable, record the blocker instead of claiming acceptance.
+3. For legacy migration evidence, send one short legal retrieval task and one long/document task through the existing Hermes-connected WeCom path.
+4. For V2 live acceptance, send the same tasks through InkStatute WeCom service so ACK, outbound text/file/template card delivery, and feedback callback capture are owned by InkStatute while Hermes is used only for agent logic.
+5. Confirm contract JSONL result records and FeedbackEvent-normalizable sanitized evidence.
+6. Record live status in a Phase 5 evidence document. If InkStatute WeCom service is unavailable, record the blocker instead of claiming V2 acceptance.
 
 ## Planning Recommendation
 

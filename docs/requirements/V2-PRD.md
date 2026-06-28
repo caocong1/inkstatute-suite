@@ -7,6 +7,8 @@
 英文名：InkStatute  
 前置文档：V1 草案已删除归档，V2 取代其作为当前规格
 
+本次需求更新：2026-06-28，确认 InkStatute 自有 WeCom 收发服务、agent backend adapter 低耦合边界，以及 Hermes 只做 agent 逻辑处理
+
 ## 0. V1 → V2 变更摘要
 
 V1 定位"全栈 Agent 平台 + 9 个子系统 + 律师助手行业包"，范围过大、未锁定后端、无法快速验证。
@@ -15,17 +17,18 @@ V2 基于 Sisyphus 与 Codex 五轮架构讨论达成的共识，做以下根本
 
 | 维度 | V1 | V2 |
 |---|---|---|
-| 平台形态 | 新建独立后端 + 9 子系统 | Hermes 就是后端，V2 只加薄契约层 |
-| V1 范围 | 9 个子系统全部并列 | 保留 6 个模块，砍掉 11 个推到 M2–M4 |
+| 平台形态 | 新建独立后端 + 9 子系统 | 自有 WeCom 服务 + agent 后端可插拔契约 + Hermes `lawfirm` 首个 agent adapter |
+| V1 范围 | 9 个子系统全部并列 | 保留最小契约/adapter/服务模块，砍掉完整平台子系统推到 M2–M4 |
 | 会话存储 | 独立 Conversation API + 数据库 | 不建，从 Hermes sessions 映射只读视图 |
-| 反馈通道 | 重新设计反馈闭环 | 沿用 Hermes 现有 hook/卡片/jsonl 链路，只标准化 |
+| 反馈通道 | 重新设计反馈闭环 | InkStatute WeCom service 接收反馈回调并标准化；Hermes 反馈文件仅作为迁移/兼容输入 |
+| 用户出口 | 未定义 | InkStatute 拥有 WeCom 接收和发送边界；Hermes 不直接面对普通用户 |
 | 长任务 | 未定义同步/异步 | 异步契约，WeCom 5s ACK + 完成后主动推送 |
 | 自迭代 | 提及但未落地 | 契约层预留 `execution_trace` / `route_mismatch` / `skill_candidate`，V2 只记录不合成 |
 | 可组合性 | 口头原则 | 硬验收，进 CI，合成非法律任务跑契约层 |
 | 验收 | 文档完整性检查 | 律师 5 工作日 / 15 任务 / 契约覆盖率 95% / 长任务成功率 80% |
 | 关键旅程 | 无 | 3 条抽样旅程，显式声明"仅验收抽样，非能力边界" |
 
-V2 的核心判断：**平台化的第一步是契约和验收，不是重造 Hermes。** 先让律师能用、能用好用、能日常依赖，再深度迭代平台化。
+V2 的核心判断：**平台化的第一步是自有通道边界、agent adapter 边界、契约和验收，不是重造 Hermes，也不是把 WeCom 用户入口交给 Hermes。** 先让律师能用、能用好用、能日常依赖，再把 Hermes 作为可替换 agent 后端之一收束到平台契约内。
 
 ## 1. 背景与目标
 
@@ -34,7 +37,7 @@ V2 的核心判断：**平台化的第一步是契约和验收，不是重造 He
 Hermes `lawfirm` profile 已经是一套可运行的律师助手系统，且**当前正在被律师日常使用**：
 
 - 人格：`SOUL.md` 定义"小律"身份、合规边界、工作底稿原则。
-- 通道：gateway 运行中，企业微信 WeCom（id=155 私聊）、QQ Bot、微信三通道 connected。
+- 通道现状：Hermes gateway 运行中，企业微信 WeCom（id=155 私聊）、QQ Bot、微信三通道 connected。这是当前可验证运行实例和迁移输入，不是 V2 的最终用户通道边界。
 - 模型：`custom:ollama-cloud`，glm-5.2，base_url `https://ollama.com/v1`。
 - Skills：101 个顶层目录，通过 symlink/copy 同步约 312 个 skill，涵盖合同审查、判决书分析、法律检索、文书起草、法院短信、OPC 常法顾问等。
 - Router：`scripts/router.py` 纯规则路由（正则匹配，无 LLM 调用），输出 `RouteDecision(primary_skill, supporting_skills, gate_before, gate_after, confidence, reason, matched_rule)`。
@@ -44,37 +47,45 @@ Hermes `lawfirm` profile 已经是一套可运行的律师助手系统，且**�
 - 自迭代：`skillopt-runner` + down 反馈累计触发人工确认的 skill 优化流程。
 - 合同审查：`contract_review_trackchanges.py` 已能产出带 Word track changes 的 docx。
 - Hook 机制：`HOOK.yaml` 定义 name/description/events，`handler.py` 实现；现有事件 `agent:end`、`gateway:startup`；`agent:end` context 含 `response/platform/user_id/chat_id/session_id/active_skill_name`，hook 可回写 context。
+- 现有 `response_filter` 只能处理 `agent:end` 最终回复文本；Hermes gateway 仍有重启通知、更新提示、命令提示、delivery failure、memory/tool progress 等绕过 `agent:end` 的发送路径。因此，V2 不能让 Hermes gateway 直接作为普通用户 WeCom 收发边界。Hermes 在 V2 中只提供 agent 逻辑处理。
 
 ### 1.2 V2 目标
 
-把 Hermes 已跑通的律师助手**契约化、可观测、可组合验证**，让律师能持续日常使用，同时为未来平台化（多后端、多前端、多行业）锁定契约边界不锁实现。
+把已跑通的律师助手能力**契约化、可观测、可组合验证、可替换 agent 后端化**，让律师能持续日常使用，同时为未来平台化（多后端、多前端、多行业）锁定契约边界不锁实现。InkStatute 拥有 WeCom 收发服务；Hermes 是 V2 首个可运行 agent backend adapter，不是通道边界，也不是平台核心边界。
 
 V2 不做：
 
-- 不重建后端。
-- 不重造会话存储、路由、skill 执行、MCP 管理、模型网关、反馈通道。
+- 不重建 Hermes agent 后端，也不把平台核心绑定到 Hermes 内部目录、hook、gateway 或 profile 格式。
+- 不重造 Hermes 路由、skill 执行、MCP 管理、模型网关。
+- 不让 Hermes gateway 作为普通律师用户的 WeCom 收发服务。
 - 不实现自动 Skill 合成。
 - 不做 Web/Tauri/QQBot 完整闭环。
+- 不把 Hermes 自身的系统提示、更新提示、网关提示、命令帮助暴露给普通律师用户。
 
 V2 要做：
 
 - 定义平台标准契约（5 个 schema）。
-- 在 Hermes 侧加 hook-based 薄契约层，把内部状态归一化成契约事件。
+- 建设 InkStatute 自有 WeCom service：接收回调、验签/解密、5s ACK、消息/附件归一化、发送文本/文件/卡片、接收反馈回调、幂等和重试。
+- 定义 agent backend adapter contract 和运行模式选择：`hermes`、未来 `codex`、未来 direct `provider_model` 都必须通过同一平台契约接入。
+- 在 Hermes 侧加低耦合 agent adapter：调用 lawfirm agent 逻辑、版本/能力探测、可复现 lawfirm profile bundle/bootstrap。
+- 增加 assistant output boundary：所有普通律师 WeCom 可见消息由 InkStatute WeCom service 发出，过滤或改写后端 meta/gateway/update/command 噪声。
 - 异步任务契约，解决长任务 + WeCom 超时。
 - 契约测试 + 可组合性合成任务进 CI。
 - 反馈标准化为 `FeedbackEvent`，沿用现有卡片链路。
 - 只读会话视图，从契约日志构建。
 - 律师 5 工作日真实试运行验收。
 
-### 1.3 长期方向（不在 V2 实现）
+### 1.3 长期方向与 V2 留口
 
-InkStatute 长期是可复用全栈 Agent 平台，支持财税、医疗、工程、政务、教育等行业。V2 通过"契约不锁实现"为这条路留口：未来换非 Hermes 后端，只需新后端实现同一契约层；未来接新行业，只需换 profile/skills/MCP/输出约束配置。平台核心不依赖法律字段、不依赖 WeCom 字段、不依赖 Hermes 内部目录结构。
+InkStatute 长期是可复用全栈 Agent 平台，支持财税、医疗、工程、政务、教育等行业。V2 必须落地这条路的第一层：InkStatute-owned channel service、agent backend adapter contract、Hermes agent adapter/bootstrap、assistant output boundary。
+
+V2 不要求交付生产可用的 Codex adapter 或 direct provider-model adapter，但契约、配置、测试不得阻碍它们后续接入。未来换非 Hermes 后端，只需新后端实现同一 agent adapter contract；未来接新行业，只需换 profile/skills/MCP/输出约束配置。平台核心不依赖法律字段、不依赖 Hermes 内部目录结构；WeCom 只是 V2 首个通道 service。
 
 ## 2. 产品定位
 
 InkStatute 是面向专业服务场景的全栈 Agent 平台。
 
-V2 阶段产品形态：**基于 Hermes lawfirm profile 的律师助手 + 平台契约层**。
+V2 阶段产品形态：**InkStatute WeCom service + backend-neutral 平台契约层 + Hermes lawfirm agent adapter + 纯律师助手用户体验**。
 
 第一阶段服务对象：
 
@@ -90,7 +101,8 @@ V2 阶段产品形态：**基于 Hermes lawfirm profile 的律师助手 + 平台
 
 核心价值（V2 交付的部分）：
 
-- 把 Hermes 已有能力契约化，使其对外可观测、可反馈、可回放、可替换。
+- 把 Hermes 已有 agent 能力作为首个 agent adapter 契约化，使其对外可观测、可反馈、可回放、可替换。
+- 在 WeCom 上呈现 InkStatute 自己收发和控制的纯律师助手 bot，而不是 Hermes gateway 的原生操作界面。
 - 用异步契约解决长任务 + 通道超时。
 - 用可组合性 CI 防止平台核心偷偷绑定行业字段。
 - 用 `execution_trace` / `route_mismatch` / `skill_candidate` 为未来自迭代留可审计入口。
@@ -119,24 +131,29 @@ V2 阶段产品形态：**基于 Hermes lawfirm profile 的律师助手 + 平台
 
 ### 3.6 模型供应商与 Agent 接入
 
-Hermes 使用 `custom:ollama-cloud / glm-5.2`，预留 fallback。V2 不建 Model Provider Gateway，沿用 Hermes 配置。`ExecutionTrace.model_usage`（V2 尽量有）记录模型/token/耗时。
+Hermes 使用 `custom:ollama-cloud / glm-5.2`，预留 fallback。Hermes agent 模式下 V2 不建 Model Provider Gateway，沿用 Hermes agent 配置。`ExecutionTrace.model_usage`（V2 尽量有）记录模型/token/耗时。
+
+平台契约不得假设模型一定由 Hermes 提供。V2 的 agent backend adapter contract 必须能表达未来 direct `provider_model` 模式：用户指定 provider/model/key 后，由非 Hermes agent adapter 接同一 `AgentTurn` / `AgentResult` / `ExecutionTrace` 契约。该 direct 模式不是 V2 验收主路径，但 V2 schema、配置和测试不得把它排除。
 
 ### 3.7 前端与通道
 
-WeCom（id=155）、QQ Bot、微信。V2 主通道是 WeCom，QQ Bot/微信不作为 V2 验收通道但保持运行不破坏。V2 不建独立 Channel Adapter，Hermes gateway 继续直接收通道回调，契约层在 hook 内归一化。
+WeCom（id=155）、QQ Bot、微信当前都由 Hermes gateway 连接。V2 主通道是 WeCom，QQ Bot/微信不作为 V2 验收通道。目标架构中，InkStatute WeCom service 自己接收 WeCom 回调、返回 ACK、发送文本/文件/卡片、接收反馈回调；Hermes gateway 不再作为普通律师用户 WeCom 收发路径。
+
+因此 V2 必须有 assistant output boundary：在 InkStatute WeCom service 发送前统一过滤、改写或阻断后端 meta/system/gateway/update/command/help 类消息。单纯 Hermes `agent:end` 的 `response_filter` 只能处理 agent 最终文本，不足以作为通道边界。
 
 ### 3.8 反馈与自迭代
 
-已跑通闭环：`response_filter` → `pending_previews.jsonl` → `template_card_dispatcher` → 模板卡片 → 用户点按钮 → `wecom_template_card_shim` 拦截 → `feedback.jsonl`。`skillopt-runner` 做 down 反馈累计 → 人工确认 → 修订。
+现有 Hermes 闭环已跑通：`response_filter` → `pending_previews.jsonl` → `template_card_dispatcher` → 模板卡片 → 用户点按钮 → `wecom_template_card_shim` 拦截 → `feedback.jsonl`。`skillopt-runner` 做 down 反馈累计 → 人工确认 → 修订。
 
-V2 不重造这条链路，只做两件事：
+V2 需要把普通用户 WeCom 收发迁移到 InkStatute WeCom service。这条现有 Hermes 链路作为迁移参考、兼容输入和回放证据，不再是目标通道边界。V2 做三件事：
 
-1. 把 `feedback.jsonl` 标准化成 `FeedbackEvent` 契约事件。
-2. 在 `FeedbackEvent` 和 `ExecutionTrace` 里预留 `route_mismatch` / `skill_candidate` 字段，为未来自迭代留可审计入口。
+1. InkStatute WeCom service 直接接收模板卡/按钮/文本反馈回调并标准化成 `FeedbackEvent`。
+2. 兼容读取历史或迁移期的 `feedback.jsonl` 作为 `FeedbackEvent` 输入参考。
+3. 在 `FeedbackEvent` 和 `ExecutionTrace` 里预留 `route_mismatch` / `skill_candidate` 字段，为未来自迭代留可审计入口。
 
 ## 4. V2 功能范围
 
-V2 保留 6 个模块。原 V1 的 9 个子系统中，4.1 统一会话 API / 4.2 多 Agent Runtime Adapter / 4.3 独立 Skill Registry / 4.4 独立 Router Service / 4.5 MCP Connector Registry / 4.6 Model Provider Gateway / 4.7 Document Pipeline / 4.9 Admin Console API 全部砍出 V2，推到 M2–M4（见第 11 节）。
+V2 保留并新增一组最小模块。原 V1 的 9 个子系统中，4.1 统一会话 API / 完整多 Agent Runtime Adapter / 4.3 独立 Skill Registry / 4.4 独立 Router Service / 4.5 MCP Connector Registry / 完整 Model Provider Gateway / 4.7 Document Pipeline / 4.9 Admin Console API 全部砍出 V2，推到 M2–M4（见第 11 节）。但 V2 必须交付 InkStatute-owned WeCom service、agent backend adapter contract 的最小可替换边界，以及 Hermes agent 模式的后端边界和 InkStatute 用户出口边界。
 
 ### 4.0 关键用户旅程（验收抽样，非能力边界）
 
@@ -144,7 +161,7 @@ V2 保留 6 个模块。原 V1 的 9 个子系统中，4.1 统一会话 API / 4.
 
 **旅程 1：合同审查（长任务 + 文档产出 + 反馈）**
 
-律师在 WeCom 发送合同 docx + "审查这份合同" → Hermes 5s 内 ACK → 路由到 `commercial-contract-review` skill → `ask-user-enforcement` 闸门可能追问 → 律师补充 → `cn-law-research-gate` 检索 → 生成审查意见 → 若要求 track changes 则产出 `trackchanges_docx` Artifact → 通过 WeCom 推送文件 + 文本摘要 + 模板卡片 → 律师点卡片反馈 → 写入 `FeedbackEvent`。
+律师在 WeCom 发送合同 docx + "审查这份合同" → InkStatute WeCom service 5s 内 ACK、归一化为 `AgentTurn` → Hermes agent adapter 调用 `lawfirm` agent 逻辑并路由到 `commercial-contract-review` skill → `ask-user-enforcement` 闸门可能追问 → 律师补充 → `cn-law-research-gate` 检索 → 生成审查意见 → 若要求 track changes 则产出 `trackchanges_docx` Artifact → InkStatute WeCom service 推送文件 + 文本摘要 + 模板卡片 → 律师点卡片反馈 → 写入 `FeedbackEvent`。
 
 **旅程 2：法律检索问答（短任务 + 引用）**
 
@@ -152,24 +169,85 @@ V2 保留 6 个模块。原 V1 的 9 个子系统中，4.1 统一会话 API / 4.
 
 **旅程 3：野生任务（未命中已注册 skill，自迭代预留）**
 
-律师发"把这个法律 PPT 按另一个 PPT 模板套用生成新 PPT" → 路由零匹配或弱匹配 → Hermes 仍执行（用 LLM + 工具组合完成）→ `ExecutionTrace.matched_registered_skill=false` → 律师反馈"路由不对"或"应该有专门 skill" → `FeedbackEvent.route_mismatch=true` + `skill_candidate` 记录 → 进入待审候选队列（V2 不自动合成）。
+律师发"把这个法律 PPT 按另一个 PPT 模板套用生成新 PPT" → 路由零匹配或弱匹配 → Hermes agent 后端仍执行（用 LLM + 工具组合完成）→ `ExecutionTrace.matched_registered_skill=false` → 律师反馈"路由不对"或"应该有专门 skill" → `FeedbackEvent.route_mismatch=true` + `skill_candidate` 记录 → 进入待审候选队列（V2 不自动合成）。
 
 这三条旅程覆盖短任务/长任务/野生任务、文本/文件/卡片输出、正向/负向反馈、路由命中/未命中。验收时全部跑通，但系统不得只优化这三条路径。
 
 ### 4.1 V2 最小闭环与模块边界
 
-V2 的 6 个模块：
+V2 的最小模块：
 
 | 模块 | 物理位置 | 职责 | 不做的事 |
 |---|---|---|---|
 | `platform-contract` | `packages/platform-contract/` | 定义 5 个契约 schema + 异步任务状态机 + 错误码 | 无运行时逻辑，纯定义 |
+| WeCom service | `services/wecom-service/` | WeCom 回调验签/解密、5s ACK、消息/附件归一化、发送文本/文件/卡片、反馈回调、幂等、重试、输出策略 | 不做 agent 推理，不实现多通道平台 |
+| agent backend adapter contract | `platform-contract` + adapter manifests | 定义 agent backend mode、capability/version manifest、turn/result/feedback/output envelope | 不实现完整多后端运行时 |
 | `contract-test-suite` | `packages/contract-test-suite/` | schema 校验 + 合成任务回放 + 可组合性测试 + CI job | 不测 Hermes 内部行为 |
-| `hermes-contract-layer` | `services/hermes-contract-layer/` | Hermes hook 适配，把内部状态归一化成契约事件 | 不改 Hermes 核心，不接管 runtime |
+| Hermes agent adapter/bootstrap | `services/hermes-contract-layer/` + lawfirm profile bundle | 低耦合调用 Hermes lawfirm agent 逻辑、探测版本能力、复现 lawfirm profile | 不 fork Hermes core，不使用 Hermes gateway 面向普通用户 |
+| assistant output boundary | `services/wecom-service/` 出站边界 | 统一处理普通 WeCom 用户可见消息，阻断后端 meta/system/gateway/update/command 噪声 | 不重写法律业务结论，不代替人工法律审查 |
+| `hermes-contract-layer` | `services/hermes-contract-layer/` | Hermes hook/agent 适配，把内部状态归一化成契约事件 | 不改 Hermes 核心，不接管 Hermes 内部执行 |
 | `conversation-read-view` | `services/conversation-read-view/` | 从契约日志构建会话/任务只读视图 | 不建独立会话存储，不直读 sessions.db 作为权威源 |
-| `feedback-service` | `services/feedback-service/` | 读 `feedback.jsonl`，标准化为 `FeedbackEvent`，分类/去重/导出待审队列 | 不改反馈通道，不自动修订 skill |
-| WeCom bot 日常测试闭环 | 部署在 Hermes lawfirm profile | 律师通过 WeCom 日常使用，契约层 shadow 记录 | 不改 WeCom 配置，不引入新进程 |
+| `feedback-service` | `services/feedback-service/` | 读 InkStatute WeCom 反馈事件和兼容 `feedback.jsonl`，标准化为 `FeedbackEvent`，分类/去重/导出待审队列 | 不自动修订 skill |
+| WeCom bot 日常测试闭环 | 部署在 InkStatute WeCom service + Hermes agent adapter | 律师通过 WeCom 日常使用，契约层记录，用户只看到律师助手语义 | 不暴露 Hermes 操作界面，不依赖 Hermes gateway 收发 |
 
-**唯一耦合点**：平台标准契约 `AgentTurn → AgentResult`（详见第 6 节）。WeCom 不知道 Hermes，Hermes 不知道 WeCom，二者只通过契约连接。
+**唯一稳定耦合点**：平台标准契约 `AgentTurn → AgentResult → FeedbackEvent`、WeCom channel contract、agent backend adapter contract。WeCom 用户不需要知道 Hermes；InkStatute 平台也不能依赖 Hermes gateway、私有目录或消息文案作为长期契约。
+
+### 4.1.1 WeCom Service Contract
+
+V2 必须自建最小 WeCom service，至少包括：
+
+- `receive_callback`: 接收 WeCom 消息/事件/卡片反馈回调，完成验签、解密、去重、ACK。
+- `normalize_turn`: 把 WeCom 文本、文件、图片、语音、按钮回调标准化为 `AgentTurn` 或 `FeedbackEvent`。
+- `dispatch_agent`: 根据配置选择 agent backend adapter，把 `AgentTurn` 交给 Hermes/Codex/provider-model 等后端。
+- `send_message`: 发送文本、markdown、文件、图片、模板卡片或业务化状态提示。
+- `feedback_callback`: 直接接收模板卡/按钮反馈并产生 `FeedbackEvent`，兼容历史 `feedback.jsonl` 输入。
+- `output_policy`: 普通用户出站消息必须先通过 assistant output boundary。
+- `idempotency`: 对 WeCom 重试、重复 callback、重复按钮点击建立幂等键。
+
+WeCom service 是 V2 用户通道权威边界。Hermes gateway 可以在迁移期用于对照验证或非普通用户运维，但不得作为 V2 普通律师用户的收发路径。
+
+### 4.1.2 Agent Backend Adapter Contract
+
+V2 必须定义最小 agent backend adapter contract，至少包括：
+
+- `agent_backend.mode`: `hermes`、`codex`、`provider_model`。V2 只要求 `hermes` 生产可用，其他模式作为契约留口和配置枚举存在。
+- `capability_manifest`: adapter 名称、adapter 版本、后端版本、支持的 hook/事件、是否支持 synchronous/async invocation、session read、tool/artifact trace、file artifact return、feedback target generation。
+- `bootstrap`: 在新服务器上安装或定位 backend、安装 profile bundle、注入 secrets/env、验证 hooks/MCP/scripts/skills、启动健康检查。
+- `receive_turn` / `emit_result` / `emit_feedback_ref` / `emit_execution_trace`: 后端输入输出必须映射到第 6 节契约对象。
+- `no_channel_io`: agent adapter 不得直接向普通 WeCom 用户发送消息；所有出站必须返回给 InkStatute WeCom service。
+
+Hermes agent adapter 的 bootstrap 需要支持两条路径：
+
+1. 复用现有 Hermes 安装：探测 Hermes 版本、hook 能力、agent 调用能力、profile 路径，把 repo 内 hook/agent adapter 链接到指定 profile。
+2. 新服务器安装：安装指定 Hermes 兼容版本，安装或复制 sanitized `lawfirm` profile bundle，恢复 skills/MCP/scripts/SOUL/agent 配置，外部注入模型 key 和 agent 所需 secrets，执行健康检查。
+
+`lawfirm` profile 可以从当前可运行 profile 生成 bundle，但必须脱敏：不得提交 WeCom key/secret/token/AES key、模型 key、runtime DB、日志、客户文档、反馈原文或 raw legal payload。bundle 只保存结构、prompt、scripts、skill 引用/同步方式、MCP server 配置模板、hooks、agent 配置和示例 env 清单。WeCom secrets 属于 InkStatute WeCom service。
+
+Hermes 版本漂移必须显式管理：adapter 维护兼容矩阵，记录已验证 Hermes 版本、必须具备的 hook/event/agent invocation 能力、可用配置开关、fallback 策略。若未来 Hermes 新版提供官方 agent API，adapter 优先使用官方 API；若只能通过 Hermes gateway 才能运行普通用户 WeCom 流程，则该版本不得通过 V2 live WeCom 验收。
+
+### 4.1.3 Assistant Output Boundary
+
+普通律师用户在 WeCom 中使用的是 InkStatute 设计的律师助手 bot，不是 Hermes 操作终端。所有用户可见消息必须由 InkStatute WeCom service 发出并经过 assistant output boundary。
+
+必须阻断或改写的消息类型：
+
+- 后端/gateway 生命周期：gateway online/restarted/shutting down/disconnected/reconnected。
+- 后端 update/self-update：update finished/failed/timed out/update needs input。
+- Slash command/操作提示：`/help`、`/status`、`/approve`、`/deny`、available commands、credits、insights、first-time tip。
+- 内部运行提示：memory updated、tool progress、dangerous command approval、delivery failure debug、ADMIN_NOTICE、router/debug/internal stack trace。
+- 任何暴露 Hermes 名称、profile 路径、进程、命令、token/env、文件系统细节的普通用户消息。
+
+允许的普通用户出站类型：
+
+- 法律业务回复、澄清问题、任务进度的业务化表达、文档/文件产物、反馈卡片、必要的服务维护提示。
+- 服务维护提示必须由 InkStatute 文案表达，例如"服务正在维护，请稍后再试"，不得出现 Hermes/gateway/update/command 语义。
+
+实现约束：
+
+- `response_filter` 只能作为 Hermes agent 最终文本过滤的一个输入，不是通道边界。
+- V2 在 InkStatute WeCom service 的 send boundary 执行 output policy。Hermes agent adapter 不允许绕过 WeCom service 直接向普通用户发送。
+- output boundary 只处理平台/后端 meta 文案和传输层通知，不得语义改写法律结论、引用、风险判断或用户事实。
+- contract logs 应记录被阻断/改写的 output policy event 摘要，但不得记录敏感原文或 secrets。
 
 ### 4.2 platform-contract
 
@@ -201,20 +279,26 @@ CI 接入：PR 必跑，schema 不一致 / 字段缺失 / 关联断裂 / 法律�
 
 ### 4.4 hermes-contract-layer
 
-物理形态：一组新 hook + mapper + 事件日志 writer，部署时 symlink 或 copy 进 `~/.hermes/profiles/lawfirm/hooks/`。不改 Hermes 核心代码。
+物理形态：一组新 hook + mapper + 事件日志 writer + Hermes agent adapter 边界配置，部署时 symlink 或 copy 进 `~/.hermes/profiles/lawfirm/hooks/`，并由 InkStatute WeCom service 调用 Hermes agent adapter。默认不改 Hermes core 代码；如 Hermes 版本缺少必要 agent invocation 能力，必须在兼容矩阵里标注 fallback，不能让 Hermes gateway 重新成为普通用户通道边界。
 
 新增 hook：
 
 | hook | 挂载事件 | 职责 |
 |---|---|---|
 | `contract_result_recorder` | `agent:end`（在 `response_filter` 之后） | 把最终回复格式化为 `AgentResult`，写契约日志，不改出站文本 |
-| `contract_feedback_normalizer` | 离线/定时（不是 hook） | 读 `feedback.jsonl` + `pending_previews.jsonl`，标准化为 `FeedbackEvent` |
+| `contract_feedback_normalizer` | 离线/定时（不是 hook） | 兼容读取历史/迁移期 `feedback.jsonl` + `pending_previews.jsonl`，标准化为 `FeedbackEvent` |
+
+Hermes agent adapter 额外交付：
+
+- `adapter_manifest`: 记录 Hermes 版本、profile 名称、hook 能力、agent invocation 能力、反馈 target 能力、已启用 MCP/skills/scripts 引用。
+- `bootstrap_check`: 检查 profile bundle、secrets/env、hooks、MCP server、agent invocation、contract log path 是否齐备。
+- `no_channel_io_check`: 确认普通用户 WeCom 收发由 InkStatute WeCom service 负责，Hermes gateway 不作为 V2 普通用户通道。
 
 **关键限制**：Hermes 当前只暴露 `agent:end` 和 `gateway:startup` 事件，没有 `agent:start`。V2 接受这个限制：
 
 - `AgentTurn` 的用户原始输入字段，V2 通过 `agent:end` 时从 session 上下文反推（次优但可接受）。
 - 真正的 inbound 拦截要等 Hermes 暴露更多事件（列进第 13 节遗留风险）。
-- V2 的契约层是 **shadow contract**：Hermes 照常跑，平台侧形成标准事件日志，不接管流量。
+- V2 的契约层对 agent 业务执行仍是 **shadow contract**：Hermes agent 逻辑照常跑，平台侧形成标准事件日志，不接管路由/skill/MCP/model 执行。但 WeCom 收发由 InkStatute service 接管。
 
 **事件排序**：每个契约事件必须带 `occurred_at` + `ingested_at` + 单调序号。`contract-test-suite` 加乱序回放测试。
 
@@ -236,41 +320,43 @@ CI 接入：PR 必跑，schema 不一致 / 字段缺失 / 关联断裂 / 法律�
 
 ### 4.6 feedback-service
 
-读 `feedback.jsonl`，标准化为 `FeedbackEvent`：
+读 InkStatute WeCom feedback callbacks，并兼容读取迁移期或历史 `feedback.jsonl`，标准化为 `FeedbackEvent`：
 
 - 去重：按钮重复点击、网络重试、shim 多次写入时用幂等键。
 - 分类：评分、纠错、事实缺失、引用错误、路由错误、格式问题、合规问题。
 - 路由错误 → 标记 `route_mismatch=true` + 生成 `skill_candidate` 记录（V2 只记录不合成）。
 - 导出待处理反馈队列，供 `skillopt-runner` 人工确认流程消费。
 
-不改反馈通道，不重造卡片链路，不自动修订高风险 skill。
+不自动修订高风险 skill。V2 目标反馈通道在 InkStatute WeCom service；Hermes `feedback.jsonl` 是兼容输入。
 
 ### 4.7 WeCom bot 日常测试闭环
 
-V2 主验收通道。不需要新建代码，是 4.4 + 4.6 + Hermes 现有链路的端到端串通：
+V2 主验收通道。目标链路由 InkStatute WeCom service 拥有接收和发送，Hermes 只处理 agent 逻辑：
 
 ```
-律师 WeCom 发消息
-  → Hermes gateway 接收（5s 内 ACK）
-  → Hermes lawfirm session 执行（router + skill + gate + MCP）
-  → response_filter hook 处理出站
-  → contract_result_recorder hook 记录 AgentResult（shadow）
-  → Hermes 原通道发送 WeCom 消息 + 模板卡片
+律师 WeCom 发消息/文件/按钮
+  → InkStatute WeCom service 验签/解密/去重/5s ACK
+  → 标准化为 AgentTurn 或 FeedbackEvent
+  → Hermes agent adapter 调用 lawfirm agent 逻辑（router + skill + gate + MCP + model）
+  → Hermes agent adapter 返回 AgentResult / artifacts / ExecutionTrace
+  → InkStatute assistant output boundary 过滤/改写/阻断后端 meta/system/gateway/update/command 噪声
+  → InkStatute WeCom service 发送律师助手文本/文件/模板卡片
   → 律师点卡片按钮
-  → wecom_template_card_shim 拦截 → feedback.jsonl
-  → contract_feedback_normalizer 标准化为 FeedbackEvent
+  → InkStatute WeCom service 接收反馈回调
+  → feedback-service 标准化/去重/分类为 FeedbackEvent
 ```
 
-第 4.4 节的 `contract_result_recorder` hook 部署完成后，这条链路即可跑通，律师可以开始日常测试。`conversation-read-view` 和 `feedback-service` 可以在测试期间并行补强。
+第 4.4 节的 `contract_result_recorder` hook 只证明 Hermes agent shadow recording。律师日常测试必须在 InkStatute WeCom service、Hermes agent adapter/bootstrap 和 assistant output boundary 验证通过后开始或继续计入 V2 live acceptance。`conversation-read-view` 和 `feedback-service` 可以在测试期间并行补强。
 
 ## 5. V2 非目标
 
 V2 不做：
 
-- 不重建后端，Hermes 就是 V2 后端。
+- 不重建 Hermes 后端；Hermes 是首个 agent backend adapter，不是平台核心。
 - 不建独立会话存储。
-- 不建独立 Router Service / Skill Registry / MCP Registry / Model Gateway。
-- 不重造反馈通道，沿用 Hermes hook/卡片/jsonl 链路。
+- 不建完整多后端 runtime、独立 Router Service / Skill Registry / MCP Registry / Model Gateway。
+- 不建完整多通道 gateway；V2 只建设 WeCom service。
+- 不沿用 Hermes gateway 作为普通用户 WeCom 收发边界；历史 Hermes hook/卡片/jsonl 链路只作为迁移/兼容输入。
 - 不实现完整 Web UI。
 - 不实现 Tauri 桌面端。
 - 不实现 QQBot 完整闭环（保持运行不破坏即可）。
@@ -279,7 +365,7 @@ V2 不做：
 - 不自动合成新 skill（只在契约层记录 `skill_candidate`）。
 - 不承诺完全替代律师判断。
 - 不把律师行业写死进平台核心（由可组合性 CI 验证）。
-- 不改 Hermes 核心代码，契约层只通过 hook 机制接入。
+- 不改 Hermes 核心执行逻辑；Hermes 模式优先通过 hook、配置、agent adapter 接入。若某 Hermes 版本必须通过 Hermes gateway 才能完成普通用户 WeCom 流程，该版本不得作为默认支持版本，除非后续 phase 明确批准。
 
 ## 6. 数据对象与契约 Schema
 
@@ -363,7 +449,7 @@ V2 用 5 个契约事件 schema 取代 V1 的 7 个数据库表设计。这些�
 
 ### 6.3 FeedbackEvent
 
-从 Hermes `feedback.jsonl` 标准化生成。
+从 InkStatute WeCom service 反馈回调标准化生成；迁移期可兼容 Hermes `feedback.jsonl`。
 
 | 字段 | type | required | 说明 |
 |---|---|---|---|
@@ -461,8 +547,9 @@ V2 不做完整安全体系（推到 M3），但必须遵守底线：
 - 客户材料、案件事实、合同内容默认保密。
 - 默认不把用户原文、文档、日志发送到未授权第三方。
 - 密钥只通过环境变量或密钥管理系统引用，V2 沿用 Hermes 现有密钥管理，不新增明文密钥存储。
+- WeCom token、encoding AES key、secret、access token、media 文件、回调原文、用户消息原文不得提交到仓库。
 - 契约日志只引用原始 payload（`raw_payload_ref`），不存敏感全文。日志中避免记录完整身份证号、手机号、银行账号、住址。
-- 管理员内部标记不能暴露给普通用户（沿用 Hermes `response_filter` 的 `ADMIN_NOTICE` 剥离机制）。
+- 管理员内部标记、Hermes/gateway/update/command/system notices 不能暴露给普通用户。`response_filter` 的 `ADMIN_NOTICE` 剥离只是最后回复文本的一部分防线，普通用户出口必须由 assistant output boundary 兜底。
 - 法律文书、检索结论、案件评估必须体现"供律师审核的工作底稿"原则。
 - 高风险反馈不得自动修改法律结论、法条引用、案由判断、管辖判断、责任承担等内容。V2 始终 `skill_candidate.requires_human_review=true`。
 
@@ -474,24 +561,27 @@ V2 不覆盖但 M3 必须补：数据落地与跨境、at-rest/in-transit 加密
 - **可组合性（硬性）**：任意 skill / gate / MCP / 工具 / 输出约束的组合，只要各自 enabled 且依赖满足，必须能端到端执行，无需平台核心代码变更。由可组合性 CI 验证（见 10.3）。
 - **可恢复性**：长任务失败后能查看失败阶段（`ExecutionTrace.errors` + `AgentResult.status=failed`）。
 - **可扩展性**：新增行业包不需要改平台核心（由合成任务 CI 验证）。
-- **可替换性**：未来换非 Hermes 后端，只需新后端实现同一契约层。V2 不验证多后端，但契约设计为此留口。
+- **通道所有权**：WeCom 收发由 InkStatute WeCom service 拥有；Hermes 不直接面对普通用户。
+- **可替换性**：agent 后端通过 adapter contract 接入。V2 生产支持 Hermes agent adapter，同时定义 `codex` 和 `provider_model` 模式留口；平台核心不得依赖 Hermes 私有结构。
+- **用户出口纯净性**：普通 WeCom 用户只看到律师助手业务输出、澄清、业务化进度、文件、反馈卡片或 InkStatute 服务提示；不得看到 Hermes/gateway/update/command/meta 文案。
 - **可审计性**：契约事件带 `occurred_at` + `ingested_at` + `seq`，可乱序回放。
-- **可部署性**：V2 是 Hermes 侧 hook + 仓库内契约包，本地开发即可，不需要独立服务器。
+- **可部署性**：V2 可在新服务器选择 `agent_backend.mode=hermes`，通过版本能力探测、sanitized lawfirm profile bundle、外部 secrets/env 和健康检查复现律师助手能力。
 - **零破坏**：Hermes 非 lawfirm profile 行为不受影响；Hermes lawfirm profile 现有 WeCom 模板卡反馈链路不回退。
 
 ## 9. 首个行业包：lawfirm
 
-lawfirm 行业包 V2 就是 Hermes lawfirm profile 本身，加上契约层 hook：
+lawfirm 行业包 V2 由三部分组成：InkStatute WeCom service 配置、sanitized lawfirm profile bundle、Hermes agent adapter 部署/能力清单。当前机器上的 Hermes lawfirm profile 是首个 agent 运行实例，但不能作为唯一不可复现依赖。
 
 - 小律人格与合规策略（`SOUL.md`）。
 - 法律文书工作底稿输出规范。
 - 合同审查、案件初始化、判决书分析、法院短信、OPC 常法顾问等主工作流。
 - 法律检索和裁判文书检索 MCP。
 - 强制问询、法律检索、去 AI 化等闸门。
-- WeCom 模板卡片反馈链路。
+- InkStatute WeCom 模板卡片反馈链路；Hermes 现有模板卡片反馈链路作为迁移参考。
 - `skillopt-runner` 自迭代流程。
+- Hermes agent adapter manifest、兼容版本矩阵、bootstrap checklist、assistant output policy。
 
-平台核心（`platform-contract` + `contract-test-suite`）不得依赖"小律"或法律专用字段。法律能力作为 Hermes lawfirm profile 挂载，契约层只归一化记录。
+平台核心（`platform-contract` + `contract-test-suite` + agent backend adapter contract）不得依赖"小律"或法律专用字段。法律能力作为 lawfirm profile bundle 挂载，契约层只归一化记录。
 
 ## 10. 验收标准
 
@@ -505,10 +595,12 @@ lawfirm 行业包 V2 就是 Hermes lawfirm profile 本身，加上契约层 hook
 ### 10.2 契约 CI 验收
 
 - `contract-test-suite` 在 CI 主分支保持通过。
+- WeCom service contract tests cover callback verification/decryption fixtures, ACK behavior, inbound normalization, outbound policy, send envelope construction, feedback callback idempotency, and no-secret logging.
 - schema validation：5 个 schema 字段校验、枚举校验、required 校验全过。
 - fixture replay：黄金样例能从 Hermes hook 输出转成标准事件。
 - 关联完整性：`message → task → route → response → feedback` 链路不断裂，断裂率 ≤ 5%。
 - 契约日志覆盖率 ≥ 95%：真实任务必须同时具备 `AgentTurn` 和 `AgentResult`。
+- Output boundary fixture：后端 gateway/update/command/meta 样例必须被阻断或改写为 InkStatute 服务提示，且不进入普通用户可见 WeCom 文案。
 
 ### 10.3 可组合性合成任务验收
 
@@ -536,15 +628,18 @@ lawfirm 行业包 V2 就是 Hermes lawfirm profile 本身，加上契约层 hook
 - 负面反馈 48 小时内有响应动作记录。
 - `route_mismatch` 不超过 3 条；每条必须生成结构化 `skill_candidate` 或 `routing_rule_candidate`。
 - Hermes lawfirm profile 现有 WeCom 模板卡反馈链路不回退。
+- V2 live acceptance 使用 InkStatute WeCom service 完成接收、ACK、发送文本/文件/卡片和反馈回调，不使用 Hermes gateway 作为普通用户通道。
+- 普通律师用户在 WeCom 中不得看到 Hermes/gateway/update/self-update/command/help/credits/insights/memory/tool-progress/debug 类提示。
+- Hermes agent mode bootstrap evidence 能证明当前部署使用受支持 Hermes 版本、已加载 lawfirm profile bundle、agent adapter 可被 InkStatute 调用，且 secrets 未进入仓库。
 - Hermes 非 lawfirm profile 行为不受影响。
 
 ## 11. 后续里程碑建议
 
 | 里程碑 | 内容 | 依赖 |
 |---|---|---|
-| **V2（本文档）** | 契约层 + Hermes hook 适配 + WeCom 闭环 + 律师试运行 | 无 |
-| M2 | 独立 Router Service 归一化升级 / Skill Registry 读取 / conversation-read-view 完整化 / Admin Console API 只读 / QQBot 完整闭环 | V2 验收通过 |
-| M3 | 多 Agent Runtime Adapter（Codex/Claude/OpenCode）/ MCP Connector Registry / Model Provider Gateway / Web 端 / 安全合规体系（数据落地、加密、多租户、RBAC、留存销毁） | M2 |
+| **V2（本文档）** | InkStatute WeCom service + 契约层 + agent backend adapter contract + Hermes agent adapter/bootstrap + assistant output boundary + WeCom 闭环 + 律师试运行 | 无 |
+| M2 | Codex adapter 原型 / direct provider_model adapter 原型 / 独立 Router Service 归一化升级 / Skill Registry 读取 / conversation-read-view 完整化 / Admin Console API 只读 / QQBot 完整闭环 | V2 验收通过 |
+| M3 | 多 Agent Runtime Adapter 产品化 / MCP Connector Registry / Model Provider Gateway / Web 端 / 安全合规体系（数据落地、加密、多租户、RBAC、留存销毁） | M2 |
 | M4 | Document Pipeline（完整 Office 编辑、模板继承、样式迁移）/ Tauri 桌面端 / 自动 Skill 合成 | M3 |
 
 ## 12. V2 开发顺序与依赖图
@@ -556,13 +651,14 @@ lawfirm 行业包 V2 就是 Hermes lawfirm profile 本身，加上契约层 hook
 | 1 | `platform-contract` | 5 个契约 schema + 异步状态机 + 错误码 + JSON Schema/Python 类型 + fixture | schema lint + fixture 校验通过 | 2-3 人天 |
 | 2 | `contract-test-suite` | 测试框架 + 黄金样例 + 合成任务 runner + CI job | 本地 + CI 能验证 schema、样例、可组合性 | 2-3 人天 |
 | 3 | `hermes-contract-layer` 最小版 | `contract_result_recorder` hook + mapper + 事件日志 writer | 跑 3-5 个真实律师任务后能产出标准事件 | 3-5 人天 |
-| 4 | **WeCom 可用闭环加固** | 部署 hook + 确认模板卡片链路 + `feedback.jsonl` 标准化 | WeCom 端到端：发任务 → 回复 → 卡片 → 反馈 → FeedbackEvent | 1-2 人天 |
-| 5 | `conversation-read-view` | 契约日志只读视图 + 最小 API | 按 conversation_id/task_id/trace_id 查询 | 2-4 人天 |
-| 6 | `feedback-service` | feedback.jsonl 标准化 + 去重 + 分类 + skill_candidate 生成 | 真实反馈变 FeedbackEvent 并关联 message/task/skill/route | 2-3 人天 |
-| 7 | 契约 CI + 可组合性验收 | 合成任务集 + 回放测试 + 覆盖率统计 + PR 阻断 | CI 契约测试必跑 + 可组合性验证 | 1-2 人天 |
-| 8 | 律师 5 工作日试运行 | 试运行脚本 + 问题记录模板 + 指标统计 | 15 真实任务，达 10.4 指标 | 5 工作日观察期 |
+| 4 | **InkStatute WeCom service + Hermes agent adapter** | WeCom service、agent adapter contract、Hermes version/capability manifest、lawfirm profile bundle/bootstrap、assistant output policy | 新服务器由 InkStatute 接收/发送 WeCom；选择 `agent_backend.mode=hermes` 可调用 lawfirm agent；普通用户看不到 Hermes meta/gateway/update/command 噪声 | 3-6 人天 |
+| 5 | **WeCom 可用闭环加固** | 部署 InkStatute WeCom service + Hermes agent adapter + 确认模板卡片/反馈链路 | WeCom 端到端：发任务 → InkStatute ACK → Hermes agent 处理 → 纯律师助手回复/文件/卡片 → 反馈 → FeedbackEvent | 2-4 人天 |
+| 6 | `conversation-read-view` | 契约日志只读视图 + 最小 API | 按 conversation_id/task_id/trace_id 查询 | 2-4 人天 |
+| 7 | `feedback-service` | InkStatute WeCom 反馈回调 + 兼容 `feedback.jsonl` 标准化、去重、分类、skill_candidate 生成 | 真实反馈变 FeedbackEvent 并关联 message/task/skill/route | 2-3 人天 |
+| 8 | 契约 CI + 可组合性验收 | 合成任务集 + 回放测试 + 覆盖率统计 + PR 阻断 | CI 契约测试必跑 + 可组合性验证 | 1-2 人天 |
+| 9 | 律师 5 工作日试运行 | 试运行脚本 + 问题记录模板 + 指标统计 | 15 真实任务，达 10.4 指标 | 5 工作日观察期 |
 
-**第 4 步完成后 WeCom bot 可用，律师可开始日常测试。** 第 5/6/7 步在测试期间并行补强。
+**第 5 步完成后 WeCom bot 可计入 V2 live acceptance。** 第 6/7/8 步在测试期间并行补强。若第 4 步 WeCom service 或 output boundary 未通过，律师真实使用可以继续作为产品试用，但不能计入 V2 验收指标。
 
 ### 12.2 依赖图
 
@@ -570,23 +666,24 @@ lawfirm 行业包 V2 就是 Hermes lawfirm profile 本身，加上契约层 hook
 platform-contract (1)
   ├─→ contract-test-suite (2)
   └─→ hermes-contract-layer (3)
-        ├─→ WeCom 闭环 (4) ← 律师可开始测试
-        ├─→ conversation-read-view (5) ┐
-        └─→ feedback-service (6)       ├─→ 律师试运行指标统计 (8)
+        └─→ InkStatute WeCom service + Hermes agent adapter (4)
+              ├─→ WeCom 闭环 (5) ← 律师可开始计入验收测试
+              ├─→ conversation-read-view (6) ┐
+              └─→ feedback-service (7)       ├─→ 律师试运行指标统计 (9)
                                         │
-        contract-test-suite (2) ───────┴─→ 契约 CI 验收 (7)
+        contract-test-suite (2) ───────┴─→ 契约 CI 验收 (8)
 ```
 
 可并行：
 
 - 步骤 2 可在步骤 1 schema 初稿稳定后并行。
-- 步骤 5 和 6 可在步骤 3 事件格式稳定后并行。
-- 律师开始测试后，步骤 5/6/7 可继续并行补强。
+- 步骤 6 和 7 可在步骤 3 事件格式稳定、步骤 4 WeCom service/agent adapter contract 稳定后并行。
+- 律师开始验收测试后，步骤 6/7/8 可继续并行补强。
 - 合成任务 fixture 可和 `hermes-contract-layer` 同步积累。
 
 ### 12.3 关键路径
 
-步骤 1 → 3 → 4 是关键路径（6-10 人天），完成后律师可开始测试。其余在测试期间并行完成。
+步骤 1 → 3 → 4 → 5 是关键路径（8-14 人天），完成后律师使用可计入 V2 live acceptance。其余在测试期间并行完成。
 
 ## 13. 遗留风险与未决问题
 
@@ -605,6 +702,10 @@ V2 实现期必须解决，不阻塞 PRD 定稿但阻塞开发：
 11. **Skill 合成边界**：V2 只记录 `skill_candidate`，不得自动修改高风险法律 skill。实现期要确保 `feedback-service` 不会误触发 `skillopt-runner` 的自动修订。
 12. **律师试运行样本偏小**：5 工作日 / 15 任务足够做 V2 闭环验收，但不代表法律质量长期指标。M2 要规划持续评测。
 13. **多 hook 同事件执行顺序**：`agent:end` 上已有 `admin_notice` 和 `response_filter` 两个 hook，再加 `contract_result_recorder` 是第三个。Hermes hook 的事件内排序机制需确认，否则可能记录到未过滤的 response。退路是把记录逻辑合并进 `response_filter`（增加耦合但保证顺序）。
+14. **Hermes gateway 不应作为用户通道边界**：Hermes 更新、重启、delivery failure、memory/tool progress、slash command 等通知可能直接调用 gateway send，不经过 `response_filter`。V2 必须由 InkStatute WeCom service 负责普通用户收发，不能把 `agent:end` hook 或 Hermes gateway 当完整出口。
+15. **Hermes 版本漂移**：未来 Hermes 新版本可能改变 hook、adapter、gateway、配置字段或官方 API。Hermes agent adapter 必须维护兼容矩阵和 capability probe；不满足 agent invocation/no-channel-io 能力的版本不得通过 live WeCom 验收。
+16. **Profile bundle 可复现性**：直接复制当前 `lawfirm` profile 容易带入 secrets、runtime DB、日志、客户文件或机器绝对路径。V2 必须生成 sanitized profile bundle + 外部 secrets/env 清单，并用 bootstrap check 验证新服务器可复现。
+17. **WeCom service 协议风险**：WeCom 回调验签/解密、5s ACK、access token 刷新、媒体下载/上传、模板卡片、重复回调和发送重试都必须由 InkStatute 负责。实现期必须用 fixture 和 live evidence 证明协议处理正确，且 secrets 不落库/不进日志/不进仓库。
 
 ## 14. V1 原章节去向对照
 
@@ -613,13 +714,13 @@ V2 实现期必须解决，不阻塞 PRD 定稿但阻塞开发：
 | 1. 背景与目标 | 改写（1.1 现状 + 1.2 V2 目标 + 1.3 长期方向） |
 | 2. 产品定位 | 改写（收敛到 V2 形态） |
 | 3. 现有 lawfirm profile 能力盘点 | 保留 + 补充反馈 hook 已跑通事实 |
-| 4. V1 功能范围（9 子系统） | 重写为 6 模块（4.1-4.7） |
+| 4. V1 功能范围（9 子系统） | 重写为最小契约、adapter、服务和 WeCom 验收闭环（4.1-4.7） |
 | 4.1 统一会话 API | 降级为 `AgentTurn` 契约 schema（6.1） |
-| 4.2 Agent Runtime Adapter | 砍出 V2，推 M3 |
+| 4.2 Agent Runtime Adapter | 完整多后端 runtime 砍出 V2；最小 agent backend adapter contract + Hermes agent adapter 留在 V2 |
 | 4.3 Skill Registry | 降级为读取 Hermes skill index（3.2） |
 | 4.4 Router Service | 降级为 `RouteDecision` 标准化（6.5） |
 | 4.5 MCP Connector Registry | 降级为 `ExecutionTrace.tool_calls`（6.4） |
-| 4.6 Model Provider Gateway | 砍出 V2，推 M3 |
+| 4.6 Model Provider Gateway | 完整网关砍出 V2，direct `provider_model` 只作为 adapter contract 留口 |
 | 4.7 Document Pipeline | 砍出 V2，推 M4 |
 | 4.8 Feedback Loop | 保留为 `feedback-service`（4.6）+ `FeedbackEvent`（6.3） |
 | 4.9 Admin Console API | 降级为只读 view，推 M2 |
@@ -627,10 +728,11 @@ V2 实现期必须解决，不阻塞 PRD 定稿但阻塞开发：
 | 6. 数据对象草案（7 表） | 重写为 5 个契约事件 schema |
 | 7. 安全、合规与隐私 | 收敛为 V2 底线 + M3 待补清单 |
 | 8. 非功能需求 | 增加 可组合性（硬性）+ 契约覆盖率 + 零破坏 |
-| 9. 首个行业包：lawfirm | 改写为"Hermes lawfirm profile + 契约层 hook" |
+| 9. 首个行业包：lawfirm | 改写为"InkStatute WeCom service + sanitized lawfirm profile bundle + Hermes agent adapter + output policy" |
 | 10. 验收标准 | 重写为 10.1-10.4（文档 + 契约 CI + 可组合性 + 律师试运行） |
 | 11. 后续里程碑建议 | 重排 M2-M4 |
 | — | 新增 4.0 关键用户旅程（防路径依赖） |
+| — | 新增 InkStatute WeCom service、agent backend adapter contract 与 assistant output boundary |
 | — | 新增 12. V2 开发顺序与依赖图 |
 | — | 新增 13. 遗留风险与未决问题 |
 | — | 新增 14. V1 原章节去向对照 |
