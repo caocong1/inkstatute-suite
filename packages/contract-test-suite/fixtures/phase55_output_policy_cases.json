@@ -1,0 +1,20 @@
+{
+  "fixture_id": "phase55-output-policy-cases-001",
+  "cases": [
+    {
+      "id": "allow-legal-answer",
+      "input": "根据《民法典》第五百六十三条，若对方根本违约，可以主张解除合同。",
+      "expected_action": "allow"
+    },
+    {
+      "id": "rewrite-gateway-lifecycle",
+      "input": "gateway online after restart",
+      "expected_action": "rewrite"
+    },
+    {
+      "id": "block-command-debug-stack",
+      "input": "ADMIN_NOTICE /help delivery debug stack trace at /home/runtime access_token redacted",
+      "expected_action": "block"
+    }
+  ]
+}
