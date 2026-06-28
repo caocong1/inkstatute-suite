@@ -1,0 +1,144 @@
+{
+  "fixture_id": "phase3-non-legal-wild-task-contract-001",
+  "description": "Synthetic non-legal wild task showing zero-match/simple-QA behavior without lawfirm-only platform fields.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase3-non-legal-wild-001",
+      "conversation_id": "conv-phase3-non-legal-wild-001",
+      "channel": "web",
+      "user_id": "user-phase3-ops-001",
+      "message_type": "text",
+      "content": "Turn the referenced product launch checklist into a concise release-risk table.",
+      "output_constraints": {
+        "format": "markdown",
+        "features": [
+          "risk_table",
+          "checklist"
+        ],
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "product_ops",
+        "task_type": "release_risk_summary",
+        "source_ref": "fixture://raw/phase3-non-legal-wild-input-001"
+      },
+      "received_at": "2026-06-28T02:30:00Z",
+      "metadata": {
+        "profile": "product-ops-demo",
+        "raw_payload_ref": "fixture://raw/phase3-non-legal-wild-input-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase3-non-legal-wild-001",
+      "turn_id": "turn-phase3-non-legal-wild-001",
+      "primary_skill": null,
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "confidence": 0.42,
+      "matched_rule": "non_legal_wild_task_simple_qa",
+      "reason": "Synthetic product operations request has no registered skill and is handled by a simple platform response path.",
+      "mode": "simple_qa",
+      "route_mismatch": false,
+      "created_at": "2026-06-28T02:30:02Z",
+      "industry_context": {
+        "domain": "product_ops"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase3-non-legal-wild-001",
+      "turn_id": "turn-phase3-non-legal-wild-001",
+      "started_at": "2026-06-28T02:30:03Z",
+      "ended_at": "2026-06-28T02:30:20Z",
+      "active_skill_name": null,
+      "matched_registered_skill": false,
+      "occurred_at": "2026-06-28T02:30:21Z",
+      "ingested_at": "2026-06-28T02:30:22Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "simple_qa_fallback",
+          "state": "succeeded"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-phase3-non-legal-wild-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-phase3-non-legal-wild-001",
+        "turn_id": "turn-phase3-non-legal-wild-001",
+        "primary_skill": null,
+        "confidence": 0.42,
+        "mode": "simple_qa",
+        "created_at": "2026-06-28T02:30:02Z"
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {
+        "domain": "product_ops"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase3-non-legal-wild-001",
+      "turn_id": "turn-phase3-non-legal-wild-001",
+      "status": "success",
+      "reply_type": "markdown",
+      "content": "Synthetic product operations release-risk table generated from a referenced checklist.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-phase3-non-legal-wild-001",
+          "kind": "markdown",
+          "name": "release-risk-table.md",
+          "uri": "fixture://artifacts/phase3-non-legal-wild-001",
+          "mime_type": "text/markdown",
+          "features": [
+            "risk_table"
+          ],
+          "source_refs": [
+            "fixture://raw/phase3-non-legal-wild-input-001"
+          ],
+          "metadata": {
+            "synthetic": true,
+            "domain": "product_ops"
+          }
+        }
+      ],
+      "feedback_target": "feedback-target-phase3-non-legal-wild-001",
+      "route_mismatch": false,
+      "industry_context": {
+        "domain": "product_ops"
+      },
+      "metadata": {
+        "trace_id": "trace-phase3-non-legal-wild-001",
+        "route_decision_id": "route-phase3-non-legal-wild-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase3-non-legal-wild-001",
+      "turn_id": "turn-phase3-non-legal-wild-001",
+      "result_id": "result-phase3-non-legal-wild-001",
+      "conversation_id": "conv-phase3-non-legal-wild-001",
+      "user_id": "user-phase3-ops-001",
+      "source": "web_form",
+      "event_type": "rating",
+      "rating": 4,
+      "action": "up",
+      "message": "Synthetic feedback confirms the non-legal summary is useful.",
+      "route_mismatch": false,
+      "labels": [
+        "product_ops",
+        "simple_qa"
+      ],
+      "related_route_decision": "route-phase3-non-legal-wild-001",
+      "feedback_target": "feedback-target-phase3-non-legal-wild-001",
+      "status": "triaged",
+      "created_at": "2026-06-28T02:31:00Z",
+      "raw_payload_ref": "fixture://raw/phase3-non-legal-wild-feedback-001",
+      "industry_context": {
+        "domain": "product_ops"
+      }
+    }
+  }
+}

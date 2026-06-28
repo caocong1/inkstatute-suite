@@ -1,0 +1,181 @@
+{
+  "fixture_id": "phase3-long-task-failure-contract-001",
+  "description": "Synthetic long-task failure fixture with queued, running, and failed states mapped to the platform async vocabulary.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase3-long-task-001",
+      "conversation_id": "conv-phase3-long-task-001",
+      "channel": "wecom",
+      "user_id": "user-phase3-lawyer-002",
+      "message_type": "file",
+      "attachments": [
+        {
+          "attachment_id": "attachment-phase3-long-task-001",
+          "kind": "docx",
+          "uri": "fixture://inputs/phase3-long-task-doc-001",
+          "name": "synthetic-long-task-source.docx",
+          "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "metadata": {
+            "synthetic": true
+          }
+        }
+      ],
+      "output_constraints": {
+        "format": "docx",
+        "features": [
+          "track_changes",
+          "status_updates"
+        ],
+        "template_ref": "fixture://templates/phase3-long-task-template-001",
+        "language_register": "formal"
+      },
+      "industry_context": {
+        "domain": "lawfirm",
+        "matter_type": "contract_review",
+        "source_ref": "fixture://raw/phase3-long-task-input-001"
+      },
+      "received_at": "2026-06-28T02:10:00Z",
+      "metadata": {
+        "profile": "lawfirm",
+        "raw_payload_ref": "fixture://raw/phase3-long-task-input-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase3-long-task-001",
+      "turn_id": "turn-phase3-long-task-001",
+      "primary_skill": "lawfirm.contract_review",
+      "supporting_skills": [
+        "lawfirm.document_redline"
+      ],
+      "gates_before": [
+        "attachment_available"
+      ],
+      "gates_after": [],
+      "required_tools": [
+        "document_renderer"
+      ],
+      "confidence": 0.87,
+      "matched_rule": "lawfirm_long_contract_review",
+      "reason": "Synthetic long task starts successfully but fails during artifact generation.",
+      "mode": "matched",
+      "route_mismatch": false,
+      "created_at": "2026-06-28T02:10:02Z",
+      "industry_context": {
+        "domain": "lawfirm"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase3-long-task-001",
+      "turn_id": "turn-phase3-long-task-001",
+      "started_at": "2026-06-28T02:10:03Z",
+      "ended_at": "2026-06-28T02:12:30Z",
+      "active_skill_name": "lawfirm.contract_review",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-28T02:12:31Z",
+      "ingested_at": "2026-06-28T02:12:32Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "gateway_acknowledged",
+          "state": "queued",
+          "raw_payload_ref": "fixture://raw/phase3-long-task-queue-001"
+        },
+        {
+          "name": "skill_execution_started",
+          "state": "running"
+        },
+        {
+          "name": "document_renderer_failed",
+          "state": "failed",
+          "error_code": "DOCUMENT_RENDERER_TIMEOUT"
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "document_renderer",
+          "status": "failed",
+          "input_ref": "fixture://raw/phase3-long-task-render-input-001"
+        }
+      ],
+      "artifacts_written": [],
+      "route_decision": {
+        "route_decision_id": "route-phase3-long-task-001",
+        "turn_id": "turn-phase3-long-task-001",
+        "primary_skill": "lawfirm.contract_review",
+        "confidence": 0.87,
+        "mode": "matched",
+        "created_at": "2026-06-28T02:10:02Z"
+      },
+      "gates": [],
+      "errors": [
+        {
+          "category": "runtime_error",
+          "code": "DOCUMENT_RENDERER_TIMEOUT",
+          "message": "Synthetic renderer timeout while creating a referenced artifact.",
+          "stage": "artifact_generation",
+          "retryable": true,
+          "details": {
+            "raw_payload_ref": "fixture://raw/phase3-long-task-error-001"
+          }
+        }
+      ],
+      "industry_context": {
+        "domain": "lawfirm"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase3-long-task-001",
+      "turn_id": "turn-phase3-long-task-001",
+      "status": "failed",
+      "reply_type": "status_update",
+      "content": "Synthetic long task failed during artifact generation; no raw document content is stored in the contract fixture.",
+      "artifacts": [],
+      "feedback_target": "feedback-target-phase3-long-task-001",
+      "route_mismatch": false,
+      "error": {
+        "category": "runtime_error",
+        "code": "DOCUMENT_RENDERER_TIMEOUT",
+        "message": "Synthetic renderer timeout while creating a referenced artifact.",
+        "stage": "artifact_generation",
+        "retryable": true,
+        "details": {
+          "raw_payload_ref": "fixture://raw/phase3-long-task-error-001"
+        }
+      },
+      "industry_context": {
+        "domain": "lawfirm"
+      },
+      "metadata": {
+        "trace_id": "trace-phase3-long-task-001",
+        "route_decision_id": "route-phase3-long-task-001",
+        "terminal_async_state": "failed"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase3-long-task-001",
+      "turn_id": "turn-phase3-long-task-001",
+      "result_id": "result-phase3-long-task-001",
+      "conversation_id": "conv-phase3-long-task-001",
+      "user_id": "user-phase3-lawyer-002",
+      "source": "text_command",
+      "event_type": "compliance_issue",
+      "rating": 1,
+      "action": "needs_fix",
+      "message": "Synthetic feedback records that the long task failure needs operator review.",
+      "route_mismatch": false,
+      "labels": [
+        "long_task",
+        "failure"
+      ],
+      "related_skill": "lawfirm.contract_review",
+      "related_route_decision": "route-phase3-long-task-001",
+      "feedback_target": "feedback-target-phase3-long-task-001",
+      "status": "pending",
+      "created_at": "2026-06-28T02:13:00Z",
+      "raw_payload_ref": "fixture://raw/phase3-long-task-feedback-001",
+      "industry_context": {
+        "domain": "lawfirm"
+      }
+    }
+  }
+}

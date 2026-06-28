@@ -1,0 +1,163 @@
+{
+  "fixture_id": "phase3-repeated-feedback-clicks-contract-001",
+  "description": "Synthetic repeated feedback click fixture with one canonical FeedbackEvent and idempotency metadata.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase3-feedback-dedupe-001",
+      "conversation_id": "conv-phase3-feedback-dedupe-001",
+      "channel": "wecom",
+      "user_id": "user-phase3-lawyer-003",
+      "message_type": "text",
+      "content": "Please summarize the referenced materials and provide a concise lawyer review note.",
+      "output_constraints": {
+        "format": "markdown",
+        "features": [
+          "summary",
+          "review_note"
+        ],
+        "language_register": "formal",
+        "metadata": {
+          "raw_payload_ref": "fixture://raw/phase3-feedback-dedupe-input-001"
+        }
+      },
+      "industry_context": {
+        "domain": "lawfirm",
+        "matter_type": "review_note"
+      },
+      "received_at": "2026-06-28T02:20:00Z",
+      "metadata": {
+        "profile": "lawfirm",
+        "raw_payload_ref": "fixture://raw/phase3-feedback-dedupe-input-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase3-feedback-dedupe-001",
+      "turn_id": "turn-phase3-feedback-dedupe-001",
+      "primary_skill": "lawfirm.review_note",
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "confidence": 0.82,
+      "matched_rule": "lawfirm_review_note",
+      "reason": "Synthetic feedback dedupe scenario uses a normal matched lawfirm response.",
+      "mode": "matched",
+      "route_mismatch": false,
+      "created_at": "2026-06-28T02:20:02Z",
+      "industry_context": {
+        "domain": "lawfirm"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase3-feedback-dedupe-001",
+      "turn_id": "turn-phase3-feedback-dedupe-001",
+      "started_at": "2026-06-28T02:20:03Z",
+      "ended_at": "2026-06-28T02:20:35Z",
+      "active_skill_name": "lawfirm.review_note",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-28T02:20:36Z",
+      "ingested_at": "2026-06-28T02:20:37Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "draft_review_note",
+          "state": "succeeded"
+        },
+        {
+          "name": "prepare_feedback_card",
+          "state": "succeeded",
+          "feedback_target": "feedback-target-phase3-feedback-dedupe-001"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-phase3-feedback-dedupe-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-phase3-feedback-dedupe-001",
+        "turn_id": "turn-phase3-feedback-dedupe-001",
+        "primary_skill": "lawfirm.review_note",
+        "confidence": 0.82,
+        "mode": "matched",
+        "created_at": "2026-06-28T02:20:02Z"
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {
+        "domain": "lawfirm"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase3-feedback-dedupe-001",
+      "turn_id": "turn-phase3-feedback-dedupe-001",
+      "status": "success",
+      "reply_type": "markdown",
+      "content": "Synthetic review note generated from referenced materials.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-phase3-feedback-dedupe-001",
+          "kind": "markdown",
+          "name": "synthetic-review-note.md",
+          "uri": "fixture://artifacts/phase3-feedback-dedupe-001",
+          "mime_type": "text/markdown",
+          "features": [
+            "review_note"
+          ],
+          "source_refs": [
+            "fixture://raw/phase3-feedback-dedupe-input-001"
+          ],
+          "metadata": {
+            "synthetic": true
+          }
+        }
+      ],
+      "feedback_target": "feedback-target-phase3-feedback-dedupe-001",
+      "route_mismatch": false,
+      "industry_context": {
+        "domain": "lawfirm"
+      },
+      "metadata": {
+        "trace_id": "trace-phase3-feedback-dedupe-001",
+        "route_decision_id": "route-phase3-feedback-dedupe-001",
+        "message_id": "MSG-PHASE3-DEDUPE-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase3-feedback-dedupe-001",
+      "turn_id": "turn-phase3-feedback-dedupe-001",
+      "result_id": "result-phase3-feedback-dedupe-001",
+      "conversation_id": "conv-phase3-feedback-dedupe-001",
+      "user_id": "user-phase3-lawyer-003",
+      "source": "card_button",
+      "event_type": "rating",
+      "rating": 5,
+      "action": "up",
+      "message": "Synthetic canonical positive feedback after repeated card clicks.",
+      "route_mismatch": false,
+      "labels": [
+        "deduped",
+        "positive"
+      ],
+      "related_skill": "lawfirm.review_note",
+      "related_route_decision": "route-phase3-feedback-dedupe-001",
+      "feedback_target": "feedback-target-phase3-feedback-dedupe-001",
+      "status": "triaged",
+      "created_at": "2026-06-28T02:21:00Z",
+      "raw_payload_ref": "fixture://raw/phase3-feedback-dedupe-canonical-001",
+      "industry_context": {
+        "domain": "lawfirm"
+      },
+      "metadata": {
+        "idempotency_key": "feedback-target-phase3-feedback-dedupe-001:up:user-phase3-lawyer-003:2026-06-28T02:21Z",
+        "dedupe_strategy": "feedback_target + action + user_id + created_at_bucket",
+        "canonical_event": true,
+        "duplicate_callback_refs": [
+          "fixture://raw/phase3-feedback-dedupe-click-001",
+          "fixture://raw/phase3-feedback-dedupe-click-002",
+          "fixture://raw/phase3-feedback-dedupe-click-003"
+        ],
+        "duplicate_count": 3
+      }
+    }
+  }
+}

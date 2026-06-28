@@ -1,0 +1,179 @@
+{
+  "fixture_id": "phase3-route-error-contract-001",
+  "description": "Synthetic route mismatch fixture where a lawfirm task is not matched to a registered skill and creates a human-reviewed skill candidate.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase3-route-error-001",
+      "conversation_id": "conv-phase3-route-error-001",
+      "channel": "wecom",
+      "user_id": "user-phase3-lawyer-001",
+      "message_type": "text",
+      "content": "Please handle the referenced legal workflow that did not match an existing registered skill.",
+      "output_constraints": {
+        "format": "markdown",
+        "features": [
+          "routing_explanation"
+        ],
+        "language_register": "formal",
+        "metadata": {
+          "raw_payload_ref": "fixture://raw/phase3-route-error-input-001"
+        }
+      },
+      "industry_context": {
+        "domain": "lawfirm",
+        "matter_type": "unknown_workflow",
+        "source_ref": "fixture://raw/phase3-route-error-input-001"
+      },
+      "received_at": "2026-06-28T02:00:00Z",
+      "metadata": {
+        "profile": "lawfirm",
+        "raw_payload_ref": "fixture://raw/phase3-route-error-input-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase3-route-error-001",
+      "turn_id": "turn-phase3-route-error-001",
+      "primary_skill": null,
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [
+        "human_review_required"
+      ],
+      "required_tools": [],
+      "confidence": 0.18,
+      "matched_rule": "zero_match_unknown_lawfirm_workflow",
+      "reason": "Synthetic route probe intentionally leaves the request unmatched so route_mismatch feedback can create a reviewed candidate.",
+      "mode": "zero_match",
+      "route_mismatch": true,
+      "created_at": "2026-06-28T02:00:02Z",
+      "industry_context": {
+        "domain": "lawfirm"
+      },
+      "metadata": {
+        "raw_payload_ref": "fixture://raw/phase3-route-error-route-001"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase3-route-error-001",
+      "turn_id": "turn-phase3-route-error-001",
+      "started_at": "2026-06-28T02:00:03Z",
+      "ended_at": "2026-06-28T02:00:18Z",
+      "active_skill_name": null,
+      "matched_registered_skill": false,
+      "occurred_at": "2026-06-28T02:00:19Z",
+      "ingested_at": "2026-06-28T02:00:20Z",
+      "seq": 1,
+      "steps": [
+        {
+          "name": "route_lookup",
+          "state": "succeeded"
+        },
+        {
+          "name": "zero_match_fallback",
+          "state": "succeeded"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [],
+      "route_decision": {
+        "route_decision_id": "route-phase3-route-error-001",
+        "turn_id": "turn-phase3-route-error-001",
+        "primary_skill": null,
+        "confidence": 0.18,
+        "mode": "zero_match",
+        "created_at": "2026-06-28T02:00:02Z"
+      },
+      "gates": [
+        {
+          "name": "human_review_required",
+          "outcome": "recorded"
+        }
+      ],
+      "errors": [],
+      "industry_context": {
+        "domain": "lawfirm"
+      },
+      "metadata": {
+        "raw_payload_ref": "fixture://raw/phase3-route-error-trace-001"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase3-route-error-001",
+      "turn_id": "turn-phase3-route-error-001",
+      "status": "partial",
+      "reply_type": "markdown",
+      "content": "Synthetic fallback response explains that the request needs human routing review.",
+      "artifacts": [],
+      "feedback_target": "feedback-target-phase3-route-error-001",
+      "route_mismatch": true,
+      "skill_candidate": {
+        "detected": true,
+        "source": "route_mismatch",
+        "proposed_name": "lawfirm.unknown_workflow_candidate",
+        "risk_level": "high",
+        "requires_human_review": true,
+        "evidence": [
+          "turn-phase3-route-error-001",
+          "feedback-target-phase3-route-error-001",
+          "fixture://raw/phase3-route-error-input-001"
+        ],
+        "metadata": {
+          "auto_modify_skill": false
+        }
+      },
+      "industry_context": {
+        "domain": "lawfirm",
+        "candidate_queue": "human_review"
+      },
+      "metadata": {
+        "trace_id": "trace-phase3-route-error-001",
+        "route_decision_id": "route-phase3-route-error-001",
+        "raw_payload_ref": "fixture://raw/phase3-route-error-result-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase3-route-error-001",
+      "turn_id": "turn-phase3-route-error-001",
+      "result_id": "result-phase3-route-error-001",
+      "conversation_id": "conv-phase3-route-error-001",
+      "user_id": "user-phase3-lawyer-001",
+      "source": "card_button",
+      "event_type": "route_mismatch",
+      "rating": 1,
+      "action": "route_wrong",
+      "message": "Synthetic feedback says the task should have a specialized reviewed workflow.",
+      "route_mismatch": true,
+      "skill_candidate": {
+        "detected": true,
+        "source": "route_mismatch",
+        "proposed_name": "lawfirm.unknown_workflow_candidate",
+        "risk_level": "high",
+        "requires_human_review": true,
+        "evidence": [
+          "feedback-phase3-route-error-001",
+          "turn-phase3-route-error-001",
+          "result-phase3-route-error-001"
+        ],
+        "metadata": {
+          "auto_modify_skill": false
+        }
+      },
+      "labels": [
+        "route_mismatch",
+        "human_review"
+      ],
+      "related_route_decision": "route-phase3-route-error-001",
+      "feedback_target": "feedback-target-phase3-route-error-001",
+      "status": "pending",
+      "created_at": "2026-06-28T02:01:00Z",
+      "raw_payload_ref": "fixture://raw/phase3-route-error-feedback-001",
+      "industry_context": {
+        "domain": "lawfirm"
+      },
+      "metadata": {
+        "requires_human_review": true,
+        "auto_modify_skill": false
+      }
+    }
+  }
+}
