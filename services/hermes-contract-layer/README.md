@@ -19,3 +19,9 @@ Do not deploy or copy this artifact into `/home/sorawatcher/.hermes` as part of 
 ## Runtime Boundary
 
 The hook handler must return without changing outbound Hermes values such as `response`, `message_id`, `platform`, `user_id`, `chat_id`, `session_id`, or `message`. Contract logging failures must not propagate back into Hermes.
+
+## Phase 5 Validation
+
+WeCom shadow loop validation is documented in [docs/wecom_shadow_loop_validation.md](docs/wecom_shadow_loop_validation.md). It separates fixture-backed checks from opt-in live Hermes validation and requires `INKSTATUTE_CONTRACT_LOG_PATH` to point outside this repo for live runs.
+
+repo tests never mutate `/home/sorawatcher/.hermes`; live hook deployment must be explicit and reversible.
