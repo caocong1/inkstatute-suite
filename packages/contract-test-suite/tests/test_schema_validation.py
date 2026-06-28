@@ -35,6 +35,10 @@ class SchemaValidationTests(unittest.TestCase):
                 "non-legal-engineering-task-001",
                 "non-legal-finance-tax-task-001",
                 "non-legal-education-task-001",
+                "phase3-route-error-contract-001",
+                "phase3-long-task-failure-contract-001",
+                "phase3-repeated-feedback-clicks-contract-001",
+                "phase3-non-legal-wild-task-contract-001",
             },
         )
 
