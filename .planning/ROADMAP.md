@@ -29,7 +29,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 
 - [x] **Phase 09: Architecture Contracts & Schema Foundation** - Lock the four North Star contracts, extend `platform-contract` with new schemas, write ADRs, add the boundary-scan allowlist. Non-runtime. (completed 2026-06-28)
 - [x] **Phase 10: Embeddable RunRuntime + Fake Backend** - Implement `RunRuntime` as an injectable library with a fake backend and run-event output boundary. Default-OFF. (completed 2026-06-28)
-- [ ] **Phase 11: Hermes BackendAdapter + Parity Spike** - Implement the Hermes backend adapter (one-shot first), a non-mutating capability probe, and a fixture `/v1/runs` parity spike. Default-OFF.
+- [x] **Phase 11: Hermes BackendAdapter + Parity Spike** - Implement the Hermes backend adapter (one-shot first), a non-mutating capability probe, and a fixture `/v1/runs` parity spike. Default-OFF. (completed 2026-06-29)
 - [ ] **Phase 12: Channel Interface + WeCom Wrapper + Web/SSE + Client SDK** - Make WeCom one `ChannelAdapter`; add a Web/SSE channel, platform API server, TS SDK, and embeddable chat component. Default-OFF.
 - [ ] **Phase 13: SolutionLoader + Lawyer & Non-Legal Solutions** - Backend-portable solution loader; lawyer solution materialized to a Hermes profile; non-legal demo; composability/privacy gates.
 
@@ -314,6 +314,6 @@ Milestone v1.1 (Platform Foundation) executes 09 -> 10 -> 11 -> 12 -> 13. Phase 
 | --- Milestone v1.1 — Platform Foundation --- | | | |
 | 09. Architecture Contracts & Schema Foundation | 4/4 | Complete    | 2026-06-28 |
 | 10. Embeddable RunRuntime + Fake Backend | 4/4 | Complete    | 2026-06-28 |
-| 11. Hermes BackendAdapter + Parity Spike | 3/4 | In Progress|  |
+| 11. Hermes BackendAdapter + Parity Spike | 4/4 | Complete   | 2026-06-29 |
 | 12. Channel Interface + WeCom Wrapper + Web/SSE + Client SDK | 0/TBD | Planned | - |
 | 13. SolutionLoader + Lawyer & Non-Legal Solutions | 0/TBD | Planned | - |
