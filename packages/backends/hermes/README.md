@@ -6,6 +6,8 @@ The Hermes backend package implements the concrete `BackendAdapter` for the firs
 
 One-shot remains default because it is the proven lawfirm path. The adapter uses an injected one-shot runner and returns platform `Run`, `RunHandle`, `RunEvent`, and `ArtifactRecord` objects without performing ordinary-user channel I/O.
 
+Operator shorthand: one-shot remains default.
+
 ## Capability Probe
 
 Startup capability probing is non-mutating. The safe probe endpoint set is:

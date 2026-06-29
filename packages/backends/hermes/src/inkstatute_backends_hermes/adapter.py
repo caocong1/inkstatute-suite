@@ -52,12 +52,14 @@ class HermesBackendAdapter:
         runner: HermesOneShotRunner | None = None,
         runs_client: HermesRunsClient | None = None,
         invocation_mode: str = "oneshot",
+        api_approval_support: bool = False,
         clock: Any | None = None,
     ) -> None:
         self.config = config or HermesBackendConfig()
         self._runner = runner
         self._runs_client = runs_client
         self._invocation_mode = invocation_mode
+        self._api_approval_support = api_approval_support
         self._clock = clock or _SystemClock()
         self._next_run = 1
         self._next_event = 1
@@ -181,12 +183,14 @@ class HermesBackendAdapter:
             )
             self._runs[run_id] = updated
             return updated
-        if self._is_api_run(run_id) and self._runs_client is not None:
+        if self._is_api_run(run_id) and self._runs_client is not None and self._api_approval_support:
             backend_run_id = self._api_backend_run_ids[run_id]
             response = self._runs_client.submit_approval(backend_run_id, approval)
             updated = self._api_run_from_response(run_id, response, existing=run)
             self._runs[run_id] = updated
             return updated
+        if self._is_api_run(run_id):
+            reason = "approval_unsupported_by_runs_api"
         updated = replace(
             run,
             metadata={

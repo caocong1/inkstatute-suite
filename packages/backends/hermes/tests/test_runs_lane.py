@@ -209,6 +209,24 @@ class HermesRunsAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(run.metadata["approval_decision_recorded"])
         self.assertNotIn(RAW_APPROVAL_PROMPT, repr(run.metadata))
 
+    async def test_non_high_risk_approval_with_api_mode_requires_explicit_support(self) -> None:
+        transport = FakeRunsTransport()
+        config = HermesBackendConfig(api_runs_enabled=True)
+        adapter = HermesBackendAdapter(
+            config=config,
+            runner=FakeOneShotRunner(),
+            runs_client=HermesRunsClient(transport, config),
+            invocation_mode="runs_api",
+        )
+        handle = await adapter.submit_run(make_request())
+        transport.calls.clear()
+
+        run = await adapter.submit_approval(handle.run_id, Approval("approval-low-risk", "approved"))
+
+        self.assertEqual(transport.calls, [])
+        self.assertEqual(run.metadata["reason"], "approval_unsupported_by_runs_api")
+        self.assertFalse(run.metadata["approval_decision_recorded"])
+
     async def test_non_high_risk_approval_with_oneshot_default_remains_unsupported(self) -> None:
         adapter = HermesBackendAdapter(runner=FakeOneShotRunner())
         handle = await adapter.submit_run(make_request())
@@ -220,4 +238,3 @@ class HermesRunsAdapterTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
