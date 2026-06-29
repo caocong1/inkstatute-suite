@@ -133,6 +133,15 @@ None — no new security-relevant surface introduced beyond what Plan 13-02's `L
 - `solutions/demo_non_legal/` is ready to be picked up by `scripts/run_v2_gates.py`'s composability check (the gate already references `solutions/demo_non_legal/` in its discovery list).
 - No blockers.
 
+## Self-Check: PASSED
+
+- All 5 `key-files.created` exist on disk: FOUND.
+- Both commits exist in git log: FOUND (`00fd503` feat, `3775456` docs).
+- 10/10 tests pass via `python -m unittest discover -s solutions/demo_non_legal/tests`.
+- `solutions/demo_non_legal/manifest.json` validates through `DefaultSolutionLoader.validate()` with zero Issues.
+- No file deletions in either commit.
+- No untracked artifacts left in `solutions/demo_non_legal/` (`__pycache__/` is gitignored).
+
 ---
 *Phase: 13-solutionloader-lawyer-non-legal-solutions*
 *Completed: 2026-06-30*
