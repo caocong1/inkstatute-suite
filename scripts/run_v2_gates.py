@@ -54,6 +54,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     hermes_src = repo_root / "services" / "hermes-contract-layer" / "src"
     feedback_src = repo_root / "services" / "feedback-service" / "src"
     read_view_src = repo_root / "services" / "conversation-read-view" / "src"
+    hermes_backend_src = repo_root / "packages" / "backends" / "hermes" / "src"
+    platform_runtime_src = repo_root / "packages" / "platform-runtime" / "src"
+    solution_loader_src = repo_root / "packages" / "solution-loader" / "src"
+    lawfirm_solution_src = repo_root / "solutions" / "lawfirm" / "src"
+    demo_non_legal_solution_src = repo_root / "solutions" / "demo_non_legal" / "src"
 
     return (
         Gate(
@@ -95,7 +100,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, wecom_src, hermes_src, read_view_src, feedback_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src),
         ),
         Gate(
             "compileall",

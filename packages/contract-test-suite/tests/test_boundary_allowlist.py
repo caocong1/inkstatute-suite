@@ -54,6 +54,31 @@ class BoundaryAllowlistTests(unittest.TestCase):
             )
         )
 
+    def test_allows_phase13_solution_and_loader_package_paths(self) -> None:
+        policy = BoundaryAllowlistPolicy()
+
+        # Phase 13 introduces concrete solution packs and the solution-loader
+        # library. These are NOT neutral platform code, so they get explicit
+        # concrete_package_roots entries and are allowed to mention concrete
+        # names like ``lawfirm``/``hermes``/``demo_non_legal``.
+        for path, name in (
+            (REPO_ROOT / "solutions/lawfirm/manifest.json", "lawfirm"),
+            (REPO_ROOT / "solutions/lawfirm/src/inkstatute_solutions_lawfirm/hermes_materializer.py", "hermes"),
+            (REPO_ROOT / "solutions/demo_non_legal/manifest.json", "demo_non_legal"),
+            (REPO_ROOT / "solutions/demo_non_legal/src/inkstatute_solutions_demo_non_legal/hermes_materializer.py", "hermes"),
+            (REPO_ROOT / "packages/solution-loader/src/inkstatute_solution_loader/loader.py", "hermes"),
+            (REPO_ROOT / "packages/solution-loader/README.md", "lawfirm"),
+        ):
+            with self.subTest(path=str(path), name=name):
+                self.assertTrue(
+                    policy.is_concrete_name_allowed(path, name, REPO_ROOT),
+                    f"{name!r} should be allowed under {path}",
+                )
+
+        # The full neutral boundary scan must still pass repo-wide with the
+        # new allowlist entries.
+        assert_neutral_boundary_allowlist(REPO_ROOT)
+
     def test_rejects_non_allowlisted_concrete_names_in_neutral_source(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

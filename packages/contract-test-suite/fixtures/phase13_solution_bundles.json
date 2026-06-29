@@ -1,0 +1,62 @@
+{
+  "phase": 13,
+  "phase_name": "SolutionLoader + Lawyer & Non-Legal Solutions",
+  "plans": ["13-01", "13-02", "13-03", "13-04"],
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "solutions": ["lawfirm", "demo_non_legal"],
+  "expected_clean_bundles": {
+    "lawfirm": {
+      "file_count": 4,
+      "files": [
+        "SANITIZATION_REPORT.md",
+        "SAMPLE_PERSONA.md",
+        "SKILL.md.template",
+        "tools.json"
+      ],
+      "side_effect_kinds": ["write_dir"],
+      "declared_output_dir_relative": "profiles/<solution_id>",
+      "scan_bundle_dir_issues": 0
+    },
+    "demo_non_legal": {
+      "file_count": 4,
+      "files": [
+        "SANITIZATION_REPORT.md",
+        "SAMPLE_PERSONA.md",
+        "SKILL.md.template",
+        "tools.json"
+      ],
+      "side_effect_kinds": ["write_dir"],
+      "declared_output_dir_relative": "profiles/<solution_id>",
+      "scan_bundle_dir_issues": 0
+    }
+  },
+  "expected_refusal_samples": {
+    "secret_marker": "this contains <REDACTED-skr2-style marker> of length 26",
+    "raw_payload_key": "{\"raw_payload\": \"blocked\"}",
+    "log_file_extension": "app.log",
+    "db_file_extension": "profile.db",
+    "media_file_extension": "cover.png",
+    "customer_doc_filename": "case_12345.docx",
+    "confidential_artifact_string": "see confidential_artifact for details"
+  },
+  "manifest_neutrality_assertions": {
+    "lawfirm": {
+      "industry_context_key": "legal_domain",
+      "must_contain_no_legal_only_top_level_keys": true,
+      "must_validate_with_zero_issues": true
+    },
+    "demo_non_legal": {
+      "industry_context_key": "education_domain",
+      "must_contain_no_legal_only_keys_at_any_level": true,
+      "must_validate_with_zero_issues": true,
+      "output_policy_allow_legal_conclusions_must_be_false": true
+    }
+  },
+  "composability_assertions": {
+    "shared_loader_handles_both_solutions": true,
+    "shared_materializer_registry_holds_both_materializers": true,
+    "zero_new_top_level_platform_fields_introduced": true
+  }
+}

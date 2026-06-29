@@ -111,9 +111,11 @@ class BoundaryAllowlistPolicy:
             Path("packages/channels"),
             Path("packages/backends"),
             Path("packages/solutions"),
+            Path("packages/solution-loader"),
             Path("services/channels"),
             Path("services/backends"),
             Path("services/solutions"),
+            Path("solutions"),
         )
     )
 
