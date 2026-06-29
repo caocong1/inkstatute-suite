@@ -1,0 +1,64 @@
+{
+  "solution_id": "lawfirm",
+  "version": "1.0.0",
+  "manifest_ref": "solutions/lawfirm/manifest.json",
+  "metadata": {
+    "materialize_targets": ["hermes"],
+    "compatibility": "lawyer_pack_v1",
+    "not_live_acceptance": true,
+    "privacy_profile": "reference_first_only"
+  },
+  "persona_ref": "personas/lawfirm_persona.md",
+  "skills": [
+    {
+      "name": "case_qa",
+      "description": "Answer factual legal questions with citations.",
+      "intent": "factual_qa",
+      "required_tools": ["law_search"],
+      "risk_level": "medium"
+    },
+    {
+      "name": "contract_draft",
+      "description": "Draft contract clauses with citation hooks.",
+      "intent": "drafting",
+      "required_tools": ["docx_writer"],
+      "risk_level": "high"
+    },
+    {
+      "name": "litigation_summary",
+      "description": "Summarize case materials for litigation strategy.",
+      "intent": "analysis",
+      "required_tools": ["law_search"],
+      "risk_level": "high"
+    },
+    {
+      "name": "compliance_review",
+      "description": "Review contract or policy for compliance issues.",
+      "intent": "review",
+      "required_tools": ["law_search"],
+      "risk_level": "medium"
+    }
+  ],
+  "mcp": [
+    {"name": "law_search", "transport": "stdio", "secret_ref": "LAW_SEARCH_TOKEN"}
+  ],
+  "output_policy": {
+    "allow_legal_conclusions": true,
+    "require_citation": true,
+    "redact_pii": true,
+    "block_meta_leak": true
+  },
+  "eval": ["fixtures/case_qa_eval.json"],
+  "default_adapter_config": {
+    "backend_id": "hermes",
+    "run_invocation_mode": "oneshot"
+  },
+  "secret_templates": ["HERMES_API_KEY", "LAW_SEARCH_TOKEN", "LAW_PAYMENT_TOKEN"],
+  "industry_context": {
+    "legal_domain": {
+      "jurisdiction_scope": "CN",
+      "high_risk_topics": ["criminal_defense", "litigation_strategy", "regulatory_sanctions"],
+      "human_review_required_for": ["criminal_defense", "litigation_strategy"]
+    }
+  }
+}
