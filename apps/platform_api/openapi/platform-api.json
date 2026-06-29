@@ -1,0 +1,876 @@
+{
+  "components": {
+    "schemas": {
+      "AgentTurn": {
+        "additionalProperties": false,
+        "properties": {
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/AttachmentRef"
+            },
+            "type": "array"
+          },
+          "channel": {
+            "enum": [
+              "wecom",
+              "qqbot",
+              "web",
+              "desktop"
+            ],
+            "type": "string"
+          },
+          "content": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "conversation_id": {
+            "type": "string"
+          },
+          "industry_context": {
+            "type": "object"
+          },
+          "message_type": {
+            "enum": [
+              "text",
+              "file",
+              "image",
+              "voice",
+              "button_callback"
+            ],
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "output_constraints": {
+            "$ref": "#/components/schemas/OutputConstraints"
+          },
+          "received_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "turn_id": {
+            "description": "Unique turn id.",
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "turn_id",
+          "conversation_id",
+          "channel",
+          "user_id",
+          "message_type",
+          "received_at"
+        ],
+        "type": "object"
+      },
+      "Approval": {
+        "additionalProperties": false,
+        "properties": {
+          "approval_id": {
+            "type": "string"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decided_by": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "decision": {
+            "enum": [
+              "approved",
+              "rejected",
+              "cancelled",
+              "expired"
+            ],
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "approval_id",
+          "decision"
+        ],
+        "type": "object"
+      },
+      "AttachmentRef": {
+        "additionalProperties": false,
+        "properties": {
+          "attachment_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "mime_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "uri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "attachment_id",
+          "kind",
+          "uri"
+        ],
+        "type": "object"
+      },
+      "CreateRunRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "bot_instance_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "session_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "solution": {
+            "$ref": "#/components/schemas/SolutionBinding"
+          },
+          "tenant_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "turn": {
+            "$ref": "#/components/schemas/AgentTurn"
+          },
+          "workspace_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "turn",
+          "solution"
+        ],
+        "type": "object"
+      },
+      "Error": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "OutputConstraints": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_style": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "format": {
+            "enum": [
+              "docx",
+              "pptx",
+              "xlsx",
+              "pdf",
+              "markdown",
+              "text",
+              "json",
+              "card",
+              "other",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "language_register": {
+            "enum": [
+              "formal",
+              "colloquial",
+              null
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "must_cite": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "template_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "Run": {
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "type": "object"
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "solution_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "waiting_for_user",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "turn_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "status",
+          "turn_id",
+          "solution_id"
+        ],
+        "type": "object"
+      },
+      "RunEventFrame": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "description": "Deterministic JSON payload.",
+            "type": "string"
+          },
+          "event": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "event",
+          "id",
+          "data"
+        ],
+        "type": "object"
+      },
+      "SolutionBinding": {
+        "additionalProperties": false,
+        "properties": {
+          "backend_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "config_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "solution_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "solution_id"
+        ],
+        "type": "object"
+      },
+      "SubmitApprovalRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "approval": {
+            "$ref": "#/components/schemas/Approval"
+          }
+        },
+        "required": [
+          "approval"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "PlatformApiSecret": {
+        "description": "Reference token resolved by the host deployment. The OpenAPI document does not store secret values.",
+        "in": "header",
+        "name": "X-InkStatute-Token",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Default-off thin host surface for the InkStatute RunRuntime. The host exposes remote/thin endpoints only and never embeds a local runtime, queue, or database. All examples and schema references are sanitized; no live WeCom, Hermes, or runtime payloads are accepted.",
+    "title": "InkStatute Platform API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/v1/runs": {
+      "post": {
+        "description": "Submits a run to the injected RunRuntime. The body must include a validated AgentTurn shape and a SolutionBinding reference. The host does not perform network I/O, queueing, or storage beyond the injected runtime and contract log.",
+        "operationId": "createRun",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "sanitized": {
+                  "summary": "Sanitized create run request",
+                  "value": {
+                    "metadata": {
+                      "request_id": "request-example-001"
+                    },
+                    "session_id": "session-example",
+                    "solution": {
+                      "backend_id": "fake-backend",
+                      "config_ref": "fixture://solutions/lawyer-v1",
+                      "solution_id": "lawyer-v1"
+                    },
+                    "tenant_id": "tenant-example",
+                    "turn": {
+                      "channel": "web",
+                      "content": "fixture://turns/turn-example-001/content_ref",
+                      "conversation_id": "conv-example-001",
+                      "message_type": "text",
+                      "metadata": {
+                        "raw_payload_ref": "fixture://turns/turn-example-001/raw"
+                      },
+                      "received_at": "2026-06-29T00:00:00Z",
+                      "turn_id": "turn-example-001",
+                      "user_id": "user-example"
+                    },
+                    "workspace_id": "workspace-example"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/CreateRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Sanitized run response",
+                    "value": {
+                      "metadata": {
+                        "backend_id": "fake-backend",
+                        "backend_run_id": "backend-run-example-001"
+                      },
+                      "result": null,
+                      "run_id": "run-example-001",
+                      "solution_id": "lawyer-v1",
+                      "status": "succeeded",
+                      "turn_id": "turn-example-001"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "invalid_request",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: invalid_request"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "platform_api_disabled",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: platform_api_disabled"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Create a run from an AgentTurn and a SolutionBinding.",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/v1/runs/{run_id}": {
+      "delete": {
+        "operationId": "cancelRun",
+        "parameters": [
+          {
+            "description": "Identifier returned by createRun.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Sanitized run response",
+                    "value": {
+                      "metadata": {
+                        "backend_id": "fake-backend",
+                        "backend_run_id": "backend-run-example-001"
+                      },
+                      "result": null,
+                      "run_id": "run-example-001",
+                      "solution_id": "lawyer-v1",
+                      "status": "succeeded",
+                      "turn_id": "turn-example-001"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "invalid_request",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: invalid_request"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "platform_api_disabled",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: platform_api_disabled"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Cancel a run by id.",
+        "tags": [
+          "runs"
+        ]
+      },
+      "get": {
+        "operationId": "pollRun",
+        "parameters": [
+          {
+            "description": "Identifier returned by createRun.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Sanitized run response",
+                    "value": {
+                      "metadata": {
+                        "backend_id": "fake-backend",
+                        "backend_run_id": "backend-run-example-001"
+                      },
+                      "result": null,
+                      "run_id": "run-example-001",
+                      "solution_id": "lawyer-v1",
+                      "status": "succeeded",
+                      "turn_id": "turn-example-001"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "invalid_request",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: invalid_request"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "platform_api_disabled",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: platform_api_disabled"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Poll a run by id.",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/v1/runs/{run_id}/approvals": {
+      "post": {
+        "operationId": "submitApproval",
+        "parameters": [
+          {
+            "description": "Identifier returned by createRun.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "sanitized": {
+                  "summary": "Sanitized approval request",
+                  "value": {
+                    "approval": {
+                      "approval_id": "approval-example-001",
+                      "decided_at": "2026-06-29T00:00:00Z",
+                      "decided_by": "user-example",
+                      "decision": "approved"
+                    }
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/SubmitApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Sanitized run response",
+                    "value": {
+                      "metadata": {
+                        "backend_id": "fake-backend",
+                        "backend_run_id": "backend-run-example-001"
+                      },
+                      "result": null,
+                      "run_id": "run-example-001",
+                      "solution_id": "lawyer-v1",
+                      "status": "succeeded",
+                      "turn_id": "turn-example-001"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "invalid_request",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: invalid_request"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "platform_api_disabled",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: platform_api_disabled"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Submit an approval decision for a run.",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/v1/runs/{run_id}/events": {
+      "get": {
+        "operationId": "streamRun",
+        "parameters": [
+          {
+            "description": "Identifier returned by createRun.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEventFrame"
+                }
+              }
+            },
+            "description": "SSE stream of sanitized RunEvent frames. Each frame contains an event id, an event name, and a JSON data payload. The stream ends with a run_completed frame."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "invalid_request",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: invalid_request"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "platform_api_disabled",
+                    "details": {
+                      "request_id": "request-example-001"
+                    },
+                    "message": "Example error code: platform_api_disabled"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Stream run events as Server-Sent Events frames.",
+        "tags": [
+          "stream"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Platform API host",
+      "url": "/v1"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Run lifecycle endpoints",
+      "name": "runs"
+    },
+    {
+      "description": "SSE stream endpoints",
+      "name": "stream"
+    }
+  ]
+}

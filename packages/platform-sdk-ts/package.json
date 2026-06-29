@@ -1,0 +1,17 @@
+{
+  "name": "@inkstatute/platform-sdk-ts",
+  "version": "0.1.0",
+  "description": "Remote/thin TypeScript SDK generated from the InkStatute platform API OpenAPI document.",
+  "license": "Proprietary",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "generate": "python scripts/generate_sdk.py --openapi ../../apps/platform_api/openapi/platform-api.json --out src/index.ts"
+  },
+  "files": [
+    "src",
+    "scripts",
+    "README.md"
+  ]
+}
