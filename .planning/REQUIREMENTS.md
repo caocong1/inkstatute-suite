@@ -261,7 +261,7 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
 
 ### Solutions
 
-- [ ] **REQ-solution-loader**: Provide a `SolutionLoader` that validates, loads, and materializes solution packages with no undeclared side effects.
+- [x] **REQ-solution-loader**: Provide a `SolutionLoader` that validates, loads, and materializes solution packages with no undeclared side effects.
   - `validate`/`load`/`materialize_for` are the loader operations.
   - `materialize_for("hermes")` produces/refreshes a sanitized profile bundle.
   - The loader is enabled behind a default-OFF flag.

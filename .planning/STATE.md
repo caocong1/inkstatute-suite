@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: — Platform Foundation
 status: executing
-stopped_at: Completed 12-03-PLAN.md
-last_updated: "2026-06-29T04:25:00.000Z"
-last_activity: 2026-06-29 -- Completed 12-03 Platform API host + OpenAPI + TypeScript SDK; ready to execute 12-04
+stopped_at: context exhaustion at 83% (2026-06-29)
+last_updated: "2026-06-29T16:40:00.065Z"
+last_activity: 2026-06-29 -- Phase 13 execution started
 progress:
   total_phases: 14
-  completed_phases: 12
-  total_plans: 46
-  completed_plans: 45
-  percent: 89
+  completed_phases: 13
+  total_plans: 50
+  completed_plans: 47
+  percent: 93
 ---
 
 # Project State
@@ -21,18 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 12 — Channel Interface + WeCom Wrapper + Web/SSE + Client SDK
+**Current focus:** Phase 13 — solutionloader-lawyer-non-legal-solutions
 
 ## Current Position
 
 Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
-Phase: 12 (Channel Interface + WeCom Wrapper + Web/SSE + Client SDK) — EXECUTING
-Plan: 3 of 4
-Status: 12-03 complete; ready to execute 12-04
-Next action: `$gsd-execute-phase 12` or `$gsd-progress --next --auto`
-Last activity: 2026-06-29 -- Completed 12-03 Platform API host + OpenAPI + TypeScript SDK; ready to execute 12-04
+Phase: 13 (solutionloader-lawyer-non-legal-solutions) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Next action: `$gsd-plan-phase 13` or `$gsd-progress --next --auto`
+Last activity: 2026-06-29 -- Phase 13 execution started
 
-Progress (v1.1): [██████░░░░] 60% of milestone phases (3/5)
+Progress (v1.1): [████████░░] 80% of milestone phases (4/5)
 
 ### Parallel Human Gate (v1.0)
 
@@ -109,6 +109,8 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 11 P04 | 5min | 4 tasks | 7 files |
 | Phase 12 P01 | 10 min | 4 tasks | 5 files |
 | Phase 12 P03 | 25 min | 4 tasks | 13 files |
+| Phase 12 P04 | 20 min | 4 tasks | 10 files |
+| Phase 13 P13-01 | 4min | 8 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -189,6 +191,11 @@ Recent decisions affecting current work:
 - [Phase 10]: [Plan 10-04] Keep output-policy leak evidence hash-only. — Leak evidence stores action, rule_id, input_hash_prefix, input_length, and privacy marker without original blocked text.
 - [Phase 10]: [Plan 10-04] Register the Phase 10 fixture in existing schema-validation package verification. — The package runner discovers local fixtures, so the fixture ID expectation must include phase10-runruntime-fake-backend-001.
 - [Phase 10]: [Plan 10-04] Represent Phase 10 fake runtime evidence as sanitized fixture data only, with zero-channel/no-server metadata and not-live-acceptance markers. — The fixture must prove embedded fake backend behavior without creating live acceptance or raw payload claims.
+- [Phase ?]: [Phase 13 Plan 13-01] SolutionLoader lives in packages/solution-loader (concrete package, NOT in platform-runtime), mirroring channels/, backends/, solutions/ layout.
+- [Phase ?]: [Phase 13 Plan 13-01] manifest_validator rejects top-level legal-only and raw_payload/secret-named keys BEFORE industry_context is consulted.
+- [Phase ?]: [Phase 13 Plan 13-01] Materializer registry: unknown backend returns 'no_materializer_registered' Issue rather than raising (caller decides policy).
+- [Phase ?]: [Phase 13 Plan 13-01] MaterializerSideEffects frozen dataclass; side_effect_kinds subset of {write_dir, read_dir, subprocess, network}; callers assert no undeclared side effects.
+- [Phase ?]: [Phase 13 Plan 13-01] INKSTATUTE_SOLUTION_LOADER_ENABLED default-off flag follows Phase 12 pattern; require_enabled() returns False by default; malformed values resolve to False.
 
 ### Pending Todos
 
@@ -214,8 +221,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T00:41:13.072Z
-Stopped at: Completed 12-02-PLAN.md
+Last session: 2026-06-29T16:38:37.851Z
+Stopped at: context exhaustion at 83% (2026-06-29)
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/drafts/agent-platformization-plan-v5.md
