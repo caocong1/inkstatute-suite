@@ -70,6 +70,8 @@ class DefaultSolutionLoader:
 
         fn = self._registry.get(backend_id, solution.solution_id)
         if fn is None:
+            if self._config.allow_unknown_backends:
+                return [], None
             return (
                 [
                     Issue(

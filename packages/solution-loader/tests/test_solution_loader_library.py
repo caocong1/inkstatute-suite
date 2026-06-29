@@ -266,6 +266,16 @@ class TestDefaultSolutionLoader(unittest.TestCase):
         self.assertTrue(any(i.code == "no_materializer_registered" for i in issues))
         self.assertIsNone(bundle)
 
+    def test_allow_unknown_backends_returns_empty_issues_and_none(self) -> None:
+        # WR-05: when allow_unknown_backends=True, unknown backend returns
+        # empty issues + None instead of a no_materializer_registered Issue.
+        config = DefaultSolutionLoaderConfig(allow_unknown_backends=True)
+        loader = DefaultSolutionLoader(config=config, registry=self.reg)
+        sol = loader.load(self.m)
+        issues, bundle = loader.materialize_for(sol, "codex", output_dir=Path("/tmp/anywhere"))
+        self.assertEqual(issues, [])
+        self.assertIsNone(bundle)
+
     def test_classify_side_effects(self) -> None:
         se = self.loader.classify_side_effects("hermes", "lawfirm")
         self.assertIsNotNone(se)
