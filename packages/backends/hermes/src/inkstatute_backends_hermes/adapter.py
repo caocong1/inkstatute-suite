@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field, replace
-from typing import Any, AsyncIterator, Protocol
+from typing import Any, AsyncIterator, Mapping, Protocol
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
-from platform_contract.enums import AgentResultStatus, AsyncTaskState
+from platform_contract.enums import AgentResultStatus, AsyncTaskState, RunEventType
 from platform_contract.events import AgentResult, JsonObject, ReplyType
 from platform_runtime import (
     Approval,
@@ -21,6 +21,7 @@ from platform_runtime import (
 
 from .config import HermesBackendConfig
 from .manifest import build_hermes_oneshot_manifest
+from .runs_api import HermesRunsClient, map_hermes_run_status
 
 
 class HermesOneShotRunner(Protocol):
@@ -49,13 +50,19 @@ class HermesBackendAdapter:
         *,
         config: HermesBackendConfig | None = None,
         runner: HermesOneShotRunner | None = None,
+        runs_client: HermesRunsClient | None = None,
+        invocation_mode: str = "oneshot",
         clock: Any | None = None,
     ) -> None:
         self.config = config or HermesBackendConfig()
         self._runner = runner
+        self._runs_client = runs_client
+        self._invocation_mode = invocation_mode
         self._clock = clock or _SystemClock()
         self._next_run = 1
+        self._next_event = 1
         self._runs: dict[str, Run] = {}
+        self._api_backend_run_ids: dict[str, str] = {}
         self._artifacts: dict[str, list[ArtifactRecord]] = {}
         self._runner_calls = 0
 
@@ -85,6 +92,8 @@ class HermesBackendAdapter:
         )
 
     async def submit_run(self, req: RunRequest) -> RunHandle:
+        if self._use_runs_api():
+            return self._submit_api_run(req)
         if self._runner is None:
             raise RuntimeError("Hermes one-shot runner is not configured")
 
@@ -127,15 +136,31 @@ class HermesBackendAdapter:
         )
 
     async def get_run(self, run_id: str) -> Run:
+        if self._is_api_run(run_id):
+            backend_run_id = self._api_backend_run_ids[run_id]
+            response = self._runs_client.get_run(backend_run_id) if self._runs_client else {}
+            updated = self._api_run_from_response(run_id, response, existing=self._runs[run_id])
+            self._runs[run_id] = updated
         return self._require_run(run_id)
 
     async def stream_events(self, run_id: str) -> AsyncIterator[RunEvent]:
         self._require_run(run_id)
+        if self._is_api_run(run_id) and self._runs_client is not None:
+            backend_run_id = self._api_backend_run_ids[run_id]
+            for item in self._runs_client.stream_events(backend_run_id):
+                yield self._event_from_api_payload(run_id, item)
+            return
         if False:
             yield
 
     async def cancel_run(self, run_id: str) -> Run:
         run = self._require_run(run_id)
+        if self._is_api_run(run_id) and self._runs_client is not None:
+            backend_run_id = self._api_backend_run_ids[run_id]
+            response = self._runs_client.cancel_run(backend_run_id)
+            updated = self._api_run_from_response(run_id, response, existing=run)
+            self._runs[run_id] = updated
+            return updated
         updated = replace(run, metadata={**run.metadata, "reason": "unsupported_by_oneshot"})
         self._runs[run_id] = updated
         return updated
@@ -143,8 +168,25 @@ class HermesBackendAdapter:
     async def submit_approval(self, run_id: str, approval: Approval) -> Run:
         run = self._require_run(run_id)
         reason = "approval_unsupported_by_oneshot"
-        if _is_high_risk_legal_approval(approval):
-            reason = "high_risk_legal_approval_requires_human_review"
+        if is_high_risk_legal_approval(approval):
+            updated = replace(
+                run,
+                metadata={
+                    **run.metadata,
+                    "reason": "high_risk_legal_approval_requires_human_review",
+                    "approval_rejected": "high_risk_legal_human_review_required",
+                    "approval_id": approval.approval_id,
+                    "approval_decision_recorded": False,
+                },
+            )
+            self._runs[run_id] = updated
+            return updated
+        if self._is_api_run(run_id) and self._runs_client is not None:
+            backend_run_id = self._api_backend_run_ids[run_id]
+            response = self._runs_client.submit_approval(backend_run_id, approval)
+            updated = self._api_run_from_response(run_id, response, existing=run)
+            self._runs[run_id] = updated
+            return updated
         updated = replace(
             run,
             metadata={
@@ -171,6 +213,85 @@ class HermesBackendAdapter:
             return self._runs[run_id]
         except KeyError as exc:
             raise KeyError(f"unknown Hermes run: {run_id}") from exc
+
+    def _use_runs_api(self) -> bool:
+        return (
+            self._invocation_mode == "runs_api"
+            and self.config.api_runs_enabled
+            and self._runs_client is not None
+        )
+
+    def _is_api_run(self, run_id: str) -> bool:
+        return run_id in self._api_backend_run_ids
+
+    def _submit_api_run(self, req: RunRequest) -> RunHandle:
+        assert self._runs_client is not None
+        response = self._runs_client.submit_run(req)
+        run_id = self._new_run_id()
+        backend_run_id = str(response.get("run_id") or response.get("id") or run_id)
+        status_mapping = map_hermes_run_status(response.get("status", AsyncTaskState.QUEUED.value))
+        raw_payload_ref = response.get("raw_payload_ref") or _raw_payload_ref(req)
+        run = Run(
+            run_id=run_id,
+            status=status_mapping.status,
+            turn_id=req.turn.turn_id,
+            solution_id=req.solution.solution_id,
+            result=None,
+            metadata={
+                "backend_id": self.config.backend_id,
+                "backend_run_id": backend_run_id,
+                "invocation_mode": "runs_api",
+                "raw_payload_ref": raw_payload_ref,
+                "request_content_sha256": _content_sha256(req.turn.content),
+                **status_mapping.metadata,
+            },
+        )
+        self._runs[run_id] = run
+        self._api_backend_run_ids[run_id] = backend_run_id
+        self._artifacts[run_id] = []
+        return RunHandle(
+            run_id=run_id,
+            backend_run_id=backend_run_id,
+            status=status_mapping.status,
+            metadata={
+                "backend_id": self.config.backend_id,
+                "invocation_mode": "runs_api",
+                "raw_payload_ref": raw_payload_ref,
+                **status_mapping.metadata,
+            },
+        )
+
+    def _api_run_from_response(self, run_id: str, response: Mapping[str, object], *, existing: Run) -> Run:
+        status_mapping = map_hermes_run_status(response.get("status", existing.status))
+        metadata = {
+            **existing.metadata,
+            "raw_payload_ref": response.get("raw_payload_ref") or existing.metadata.get("raw_payload_ref"),
+            **status_mapping.metadata,
+        }
+        return replace(existing, status=status_mapping.status, metadata=metadata)
+
+    def _event_from_api_payload(self, run_id: str, payload: Mapping[str, object]) -> RunEvent:
+        status_mapping = map_hermes_run_status(payload.get("status", AsyncTaskState.RUNNING.value))
+        seq = int(payload.get("seq", self._next_event))
+        self._next_event = max(self._next_event + 1, seq + 1)
+        safe_payload: JsonObject = {
+            "status": status_mapping.status,
+            "raw_payload_ref": payload.get("raw_payload_ref"),
+        }
+        event_type = str(payload.get("event_type") or RunEventType.STATE_CHANGED.value)
+        return RunEvent(
+            event_id=str(payload.get("event_id") or f"hermes-event-{seq:03d}"),
+            run_id=run_id,
+            event_type=event_type,
+            occurred_at=str(payload.get("occurred_at") or self._clock.now()),
+            seq=seq,
+            payload=safe_payload,
+            metadata={
+                "backend_id": self.config.backend_id,
+                "invocation_mode": "runs_api",
+                **status_mapping.metadata,
+            },
+        )
 
 
 class _SystemClock:
@@ -246,7 +367,18 @@ def _sanitize_value(value: Any) -> Any:
     return value
 
 
-def _is_high_risk_legal_approval(approval: Approval) -> bool:
+def is_high_risk_legal_approval(approval: Approval) -> bool:
+    high_risk_keys = {
+        "high_risk_legal_conclusion",
+        "legal_conclusion",
+        "skill_candidate",
+        "auto_modify_legal_skill",
+        "requires_human_review",
+        "legal_advice_approval",
+    }
+    for key in high_risk_keys:
+        if approval.metadata.get(key):
+            return True
     text = " ".join(
         str(value).lower()
         for value in (
@@ -269,5 +401,9 @@ def _is_high_risk_legal_approval(approval: Approval) -> bool:
     )
 
 
-__all__ = ["HermesBackendAdapter", "HermesOneShotResult", "HermesOneShotRunner"]
-
+__all__ = [
+    "HermesBackendAdapter",
+    "HermesOneShotResult",
+    "HermesOneShotRunner",
+    "is_high_risk_legal_approval",
+]
