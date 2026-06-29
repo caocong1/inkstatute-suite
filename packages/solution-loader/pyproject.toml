@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-solution-loader"
+version = "0.1.0"
+description = "Default-off SolutionLoader implementing platform_runtime.protocols.SolutionLoader."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.inkstatute]
+subsystem = "solution-loader"
+default_off_flag = "INKSTATUTE_SOLUTION_LOADER_ENABLED"
