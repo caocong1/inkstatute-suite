@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: — Platform Foundation
-status: verifying
-stopped_at: Completed 11-04-PLAN.md
-last_updated: "2026-06-29T00:21:51.482Z"
-last_activity: 2026-06-29 -- Phase 11 execution started
+status: ready_to_plan
+stopped_at: Phase 11 verified and security-reviewed; ready to plan Phase 12
+last_updated: "2026-06-29T00:30:00Z"
+last_activity: 2026-06-29 -- Phase 11 verified and security-reviewed; ready to plan Phase 12
 progress:
   total_phases: 14
   completed_phases: 12
@@ -21,18 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-29)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 11 — hermes-backendadapter-parity-spike
+**Current focus:** Phase 12 — Channel Interface + WeCom Wrapper + Web/SSE + Client SDK
 
 ## Current Position
 
 Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
-Phase: 11 (hermes-backendadapter-parity-spike) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Next action: `$gsd-plan-phase 11` (context exists) or `$gsd-progress --next --auto`
-Last activity: 2026-06-29 -- Phase 11 execution started
+Phase: 12 (Channel Interface + WeCom Wrapper + Web/SSE + Client SDK) — READY_TO_PLAN
+Plan: Not started
+Status: Phase 11 complete; ready to plan Phase 12
+Next action: `$gsd-plan-phase 12` or `$gsd-progress --next --auto`
+Last activity: 2026-06-29 -- Phase 11 verified and security-reviewed; ready to plan Phase 12
 
-Progress (v1.1): [████░░░░░░] 40% of milestone phases (2/5)
+Progress (v1.1): [██████░░░░] 60% of milestone phases (3/5)
 
 ### Parallel Human Gate (v1.0)
 
@@ -44,7 +44,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 
 **Velocity:**
 
-- Total plans completed: 38
+- Total plans completed: 42
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -61,6 +61,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | 7 | 3 | - | - |
 | 09 | 4 | - | - |
 | 10 | 4 | - | - |
+| 11 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -211,8 +212,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T00:21:36.853Z
-Stopped at: Completed 11-04-PLAN.md
+Last session: 2026-06-29T08:30:00+08:00
+Stopped at: Phase 11 verified and security-reviewed; ready to plan Phase 12
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/drafts/agent-platformization-plan-v5.md

@@ -222,19 +222,19 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
 
 ### Hermes Backend Adapter
 
-- [ ] **REQ-hermes-backend-adapter**: Implement Hermes as a `BackendAdapter`, defaulting to subprocess one-shot, with `/v1/runs` as an opt-in lane.
+- [x] **REQ-hermes-backend-adapter**: Implement Hermes as a `BackendAdapter`, defaulting to subprocess one-shot, with `/v1/runs` as an opt-in lane.
   - Passes `BackendAdapter` Protocol conformance tests.
   - One-shot declares reduced capabilities (no cancel/live-update/streaming/parallel).
   - The `/v1/runs` lane is behind a default-OFF flag.
   - Materializes the bound solution into a Hermes profile; the runtime never sees profile internals.
 
-- [ ] **REQ-adapter-capability-probe**: Provide a non-mutating startup capability probe for backends.
+- [x] **REQ-adapter-capability-probe**: Provide a non-mutating startup capability probe for backends.
   - Uses `/health`, `/v1/capabilities`, `/v1/models`; never `GET /v1/runs/{id}`.
   - Returns a capability set mapped to `AdapterCapabilitySet`.
   - Probe failure falls back to one-shot with a sanitized audit reason.
   - Requires `no_channel_io=true` for ordinary-user backends.
 
-- [ ] **REQ-hermes-run-parity-spike**: Prove or refute that Hermes `/v1/runs` executes the lawfirm profile equivalently to one-shot before promotion.
+- [x] **REQ-hermes-run-parity-spike**: Prove or refute that Hermes `/v1/runs` executes the lawfirm profile equivalently to one-shot before promotion.
   - Compares routing, skill/gate behavior, MCP/tool trace, artifacts, final user text, output policy, and state transitions on fixtures.
   - Covers legal Q&A, drafting+artifact, follow-up, route-mismatch, MCP task, and a non-legal task.
   - Failure keeps one-shot as the default lane.
