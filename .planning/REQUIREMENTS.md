@@ -242,7 +242,7 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
 
 ### Channels and Clients
 
-- [ ] **REQ-channel-adapter-interface**: Define and implement the `ChannelAdapter` interface and wrap the existing WeCom primitives behind it.
+- [x] **REQ-channel-adapter-interface**: Define and implement the `ChannelAdapter` interface and wrap the existing WeCom primitives behind it.
   - The WeCom wrapper is behind a default-OFF flag and does not regress production behavior.
   - Channel adapters submit through `RunRuntime` and never call backends directly.
   - Inbound normalizes to `ChannelMessage`/`AgentTurn`/`FeedbackEvent`; outbound is `ChannelDelivery`.

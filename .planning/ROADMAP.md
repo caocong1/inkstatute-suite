@@ -315,5 +315,5 @@ Milestone v1.1 (Platform Foundation) executes 09 -> 10 -> 11 -> 12 -> 13. Phase 
 | 09. Architecture Contracts & Schema Foundation | 4/4 | Complete    | 2026-06-28 |
 | 10. Embeddable RunRuntime + Fake Backend | 4/4 | Complete    | 2026-06-28 |
 | 11. Hermes BackendAdapter + Parity Spike | 4/4 | Complete    | 2026-06-29 |
-| 12. Channel Interface + WeCom Wrapper + Web/SSE + Client SDK | 0/TBD | Planned | - |
+| 12. Channel Interface + WeCom Wrapper + Web/SSE + Client SDK | 1/4 | In Progress|  |
 | 13. SolutionLoader + Lawyer & Non-Legal Solutions | 0/TBD | Planned | - |
