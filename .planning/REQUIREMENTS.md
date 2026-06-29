@@ -275,7 +275,7 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
   - Rejects secrets, logs, DBs, media, raw payloads, customer docs, and confidential artifacts.
   - Bundles are distributable only when sanitized.
 
-- [ ] **REQ-nonlegal-solution-composability**: A non-legal demo solution must run through the same platform contracts with no platform-code change.
+- [x] **REQ-nonlegal-solution-composability**: A non-legal demo solution must run through the same platform contracts with no platform-code change.
   - `demo_non_legal` passes composability gates.
   - Platform core stays industry-neutral; legal fields stay in `industry_context`.
 

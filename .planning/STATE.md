@@ -4,13 +4,13 @@ milestone: v1.1
 milestone_name: — Platform Foundation
 status: executing
 stopped_at: context exhaustion at 83% (2026-06-29)
-last_updated: "2026-06-29T16:40:00.065Z"
+last_updated: "2026-06-29T17:02:24.464Z"
 last_activity: 2026-06-29 -- Phase 13 execution started
 progress:
   total_phases: 14
   completed_phases: 13
   total_plans: 50
-  completed_plans: 47
+  completed_plans: 49
   percent: 93
 ---
 
@@ -111,6 +111,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 12 P03 | 25 min | 4 tasks | 13 files |
 | Phase 12 P04 | 20 min | 4 tasks | 10 files |
 | Phase 13 P13-01 | 4min | 8 tasks | 9 files |
+| Phase 13 P13-03 | 1min | 5 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -196,6 +197,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 13 Plan 13-01] Materializer registry: unknown backend returns 'no_materializer_registered' Issue rather than raising (caller decides policy).
 - [Phase ?]: [Phase 13 Plan 13-01] MaterializerSideEffects frozen dataclass; side_effect_kinds subset of {write_dir, read_dir, subprocess, network}; callers assert no undeclared side effects.
 - [Phase ?]: [Phase 13 Plan 13-01] INKSTATUTE_SOLUTION_LOADER_ENABLED default-off flag follows Phase 12 pattern; require_enabled() returns False by default; malformed values resolve to False.
+- [Phase ?]: [Phase 13 Plan 13-03] demo_non_legal pack reuses inkstatute_solutions_lawfirm.sanitize by import (single source of truth for refusal patterns); both packs register against backend_id='hermes' and share one DefaultSolutionLoader instance — zero platform-code change.
+- [Phase ?]: [Phase 13 Plan 13-03] manifest.output_policy.allow_legal_conclusions is explicitly false in the demo pack — first manifest to claim non-legal output scope, proving output_policy is an overlay (not a hardcoded legal gate).
 
 ### Pending Todos
 
@@ -221,7 +224,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-29T16:38:37.851Z
+Last session: 2026-06-29T17:02:18.885Z
 Stopped at: context exhaustion at 83% (2026-06-29)
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
