@@ -11,12 +11,14 @@ Walks a materialized solution bundle directory and emits Issues for any of:
 - confidential_artifact references in any text file
 
 Reuses ``inkstatute_solutions_lawfirm.sanitize.scan_text`` for content scanning
-so refusal patterns live in one place. Falls back to name-only scan if the
-sanitize module is not importable.
+so refusal patterns live in one place. Falls back to an inline minimal pattern
+set if the sanitize module is not importable, so that secret markers and
+raw_payload keys in text files are never silently skipped (WR-06).
 """
 
 from __future__ import annotations
 
+import re
 from importlib import import_module
 from pathlib import Path
 
@@ -29,6 +31,19 @@ TEXT_EXTENSIONS: frozenset[str] = frozenset(
 BINARY_REFUSE_EXTENSIONS: frozenset[str] = frozenset(
     {".log", ".db", ".sqlite", ".sqlite3", ".png", ".jpg", ".jpeg", ".gif", ".mp3", ".mp4", ".wav", ".pdf", ".docx", ".doc"}
 )
+
+# WR-06: minimal inline refusal patterns used when the lawfirm sanitize
+# module is not importable. This is a deliberately small subset of
+# sanitize.SANITIZE_REFUSE_PATTERNS covering the highest-risk classes
+# (secret markers, raw payload keys, confidential artifacts) so that text
+# content scanning is never silently skipped.
+_FALLBACK_REFUSE_PATTERNS: dict[str, re.Pattern[str]] = {
+    "secret_marker": re.compile(r"(sk-|bearer\s+[A-Za-z0-9_-]{16,})", re.IGNORECASE),
+    "raw_payload_key": re.compile(
+        r"\b(raw_payload|raw_body|callback_body)\b", re.IGNORECASE
+    ),
+    "confidential_artifact": re.compile(r"\bconfidential[_-]artifact\b", re.IGNORECASE),
+}
 
 
 _lawfirm_sanitize = None
@@ -48,6 +63,16 @@ def _get_lawfirm_sanitize():
     return _lawfirm_sanitize or None
 
 
+def _fallback_scan_text(text: str) -> list[str]:
+    """Minimal inline scan used when the lawfirm sanitize module is unavailable."""
+
+    hits: set[str] = set()
+    for code, pattern in _FALLBACK_REFUSE_PATTERNS.items():
+        if pattern.search(text):
+            hits.add(code)
+    return sorted(hits)
+
+
 def scan_bundle_dir(bundle_dir: Path) -> list[Issue]:
     """Walk a bundle directory and return a sorted list of privacy Issues."""
 
@@ -63,6 +88,7 @@ def scan_bundle_dir(bundle_dir: Path) -> list[Issue]:
         ]
 
     sanitize = _get_lawfirm_sanitize()
+    scan_fn = sanitize.scan_text if sanitize is not None else _fallback_scan_text
 
     for path in sorted(bundle_dir.rglob("*")):
         if not path.is_file():
@@ -92,16 +118,15 @@ def scan_bundle_dir(bundle_dir: Path) -> list[Issue]:
         except OSError:
             continue
 
-        if sanitize is not None:
-            for rule in sanitize.scan_text(text):
-                issues.append(
-                    Issue(
-                        code=rule,
-                        path=rel,
-                        message=f"text matches refusal pattern: {rule}",
-                        severity="error",
-                    )
+        for rule in scan_fn(text):
+            issues.append(
+                Issue(
+                    code=rule,
+                    path=rel,
+                    message=f"text matches refusal pattern: {rule}",
+                    severity="error",
                 )
+            )
 
     return issues
 

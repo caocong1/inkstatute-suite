@@ -239,6 +239,33 @@ class TestSolutionPrivacyGate(unittest.TestCase):
             codes = [i.code for i in issues]
             self.assertIn("confidential_artifact", codes)
 
+    def test_fallback_scan_catches_secret_marker_without_sanitize_module(self) -> None:
+        # WR-06: when the lawfirm sanitize module is unavailable, the inline
+        # fallback patterns must still catch secret markers and raw_payload
+        # keys in text files.
+        from inkstatute_solution_loader import privacy_scan as ps
+
+        original = ps._lawfirm_sanitize
+        try:
+            ps._lawfirm_sanitize = False  # force fallback path
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                (root / "leak.md").write_text(
+                    "token sk-abcdef1234567890abcdef22", encoding="utf-8"
+                )
+                issues = scan_bundle_dir(root)
+                codes = [i.code for i in issues]
+                self.assertIn("secret_marker", codes)
+
+                (root / "data.json").write_text(
+                    '{"raw_payload": "blocked"}', encoding="utf-8"
+                )
+                issues = scan_bundle_dir(root)
+                codes = [i.code for i in issues]
+                self.assertIn("raw_payload_key", codes)
+        finally:
+            ps._lawfirm_sanitize = original
+
 
 class TestComposability(unittest.TestCase):
     def test_shared_loader_handles_both_solutions(self) -> None:
