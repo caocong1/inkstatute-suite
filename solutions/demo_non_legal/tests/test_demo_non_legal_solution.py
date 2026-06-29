@@ -41,8 +41,10 @@ def _build_loader() -> tuple[DefaultSolutionLoader, MaterializerRegistry]:
     reg = MaterializerRegistry()
     law = LawfirmHermesMaterializer()
     demo = DemoNonLegalHermesMaterializer()
-    reg.register("hermes", law.materialize, law.side_effects())
-    reg.register("hermes", demo.materialize, demo.side_effects())  # demo overrides (same backend_id, different solution_id is dispatched at solution level)
+    reg.register("hermes", law.materialize, law.side_effects(), solution_id="lawfirm")
+    reg.register(
+        "hermes", demo.materialize, demo.side_effects(), solution_id="demo_non_legal"
+    )
     return DefaultSolutionLoader(registry=reg), reg
 
 
@@ -134,17 +136,12 @@ class TestComposabilityWithLawfirm(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
-            # The demo materializer was registered last for "hermes", so both
-            # solutions route to the demo materializer; the demo's materialize
-            # function writes the bundle under output_dir/profiles/<solution_id>,
-            # so both solution_ids produce distinct bundle directories.
             issues_law, bundle_law = loader.materialize_for(law_sol, "hermes", output_dir=out)
             issues_demo, bundle_demo = loader.materialize_for(demo_sol, "hermes", output_dir=out)
             self.assertEqual(issues_law, [])
             self.assertEqual(issues_demo, [])
             self.assertTrue(bundle_law.bundle_ref.endswith("lawfirm"))
             self.assertTrue(bundle_demo.bundle_ref.endswith("demo_non_legal"))
-            # Both bundles present and distinct
             self.assertTrue(Path(bundle_law.bundle_ref).exists())
             self.assertTrue(Path(bundle_demo.bundle_ref).exists())
 

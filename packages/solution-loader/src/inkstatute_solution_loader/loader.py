@@ -68,22 +68,41 @@ class DefaultSolutionLoader:
         that an explicit output_dir is required.
         """
 
-        fn = self._registry.get(backend_id)
+        fn = self._registry.get(backend_id, solution.solution_id)
         if fn is None:
             return (
                 [
                     Issue(
-                        path=f"materialize_for({backend_id})",
+                        path=f"materialize_for({backend_id}, {solution.solution_id})",
                         code="no_materializer_registered",
-                        message=f"no materializer registered for backend_id={backend_id!r}",
+                        message=(
+                            f"no materializer registered for "
+                            f"backend_id={backend_id!r}, solution_id={solution.solution_id!r}"
+                        ),
                         severity="error",
                     )
                 ],
                 None,
             )
 
-        side_effects = self._registry.side_effects_for(backend_id)
-        assert side_effects is not None  # invariant: get() and side_effects_for() share state
+        side_effects = self._registry.side_effects_for(backend_id, solution.solution_id)
+        # pragma: no cover - invariant: get() and side_effects_for() share state
+        if side_effects is None:
+            return (
+                [
+                    Issue(
+                        path=f"materialize_for({backend_id}, {solution.solution_id})",
+                        code="no_materializer_registered",
+                        message=(
+                            f"materializer registered for "
+                            f"backend_id={backend_id!r}, solution_id={solution.solution_id!r} "
+                            "but side-effects entry is missing (registry invariant broken)"
+                        ),
+                        severity="error",
+                    )
+                ],
+                None,
+            )
 
         if "write_dir" in side_effects.side_effect_kinds:
             if output_dir is None:
@@ -108,8 +127,7 @@ class DefaultSolutionLoader:
         if output_dir is not None:
             issues, bundle = fn(solution, output_dir)
         else:
-            # Pass output_dir=None and let the materializer decide.
-            issues, bundle = fn(solution, None)  # type: ignore[arg-type]
+            issues, bundle = fn(solution, None)
 
         if bundle is None:
             return issues, None
@@ -152,6 +170,20 @@ class DefaultSolutionLoader:
 
         return issues, bundle
 
-    def classify_side_effects(self, backend_id: str) -> MaterializerSideEffects | None:
-        """Return the declared side-effects for a given backend_id, or ``None``."""
-        return self._registry.side_effects_for(backend_id)
+    def classify_side_effects(
+        self, backend_id: str, solution_id: str | None = None
+    ) -> MaterializerSideEffects | None:
+        """Return the declared side-effects for a given (backend_id, solution_id), or ``None``.
+
+        When ``solution_id`` is ``None`` and exactly one materializer is
+        registered for ``backend_id``, return its side-effects. This keeps
+        the single-pack path ergonomic while the tuple-keyed registry
+        supports multi-pack composability.
+        """
+
+        if solution_id is not None:
+            return self._registry.side_effects_for(backend_id, solution_id)
+        solutions = self._registry.known_solutions(backend_id)
+        if len(solutions) == 1:
+            return self._registry.side_effects_for(backend_id, solutions[0])
+        return None

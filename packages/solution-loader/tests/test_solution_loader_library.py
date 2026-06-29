@@ -122,6 +122,37 @@ class TestManifestValidator(unittest.TestCase):
         issues = loader.validate(m)
         self.assertTrue(any(i.code == "undeclared_materialize_target" for i in issues))
 
+    def test_secret_marker_in_metadata_description_rejected(self) -> None:
+        # CR-02: secret markers in metadata string values must be rejected.
+        m = _manifest(
+            metadata={
+                "materialize_targets": ["hermes"],
+                "description": "leaked token sk-12345678901234567890",
+            }
+        )
+        loader = DefaultSolutionLoader()
+        issues = loader.validate(m)
+        self.assertTrue(any(i.code == "secret_marker_in_field" for i in issues))
+
+    def test_secret_marker_in_nested_metadata_rejected(self) -> None:
+        # CR-02: recursive scan over nested dicts/lists in metadata.
+        m = _manifest(
+            metadata={
+                "materialize_targets": ["hermes"],
+                "persona_ref": {"notes": "bearer abcdef1234567890abcdef12"},
+            }
+        )
+        loader = DefaultSolutionLoader()
+        issues = loader.validate(m)
+        self.assertTrue(any(i.code == "secret_marker_in_field" for i in issues))
+
+    def test_empty_solution_id_rejected(self) -> None:
+        # WR-07: empty solution_id must be rejected (falsy short-circuit fix).
+        m = _manifest(solution_id="")
+        loader = DefaultSolutionLoader()
+        issues = loader.validate(m)
+        self.assertTrue(any(i.code == "solution_id_invalid_format" for i in issues))
+
     def test_neutral_dict_validator(self) -> None:
         from inkstatute_solution_loader.manifest_validator import validate_manifest_dict
 
@@ -144,26 +175,47 @@ class TestMaterializerRegistry(unittest.TestCase):
         )
 
     def test_register_get_roundtrip(self) -> None:
-        self.reg.register("hermes", _stub_materializer, self.se)
-        self.assertIs(self.reg.get("hermes"), _stub_materializer)
+        self.reg.register("hermes", _stub_materializer, self.se, solution_id="lawfirm")
+        self.assertIs(self.reg.get("hermes", "lawfirm"), _stub_materializer)
 
     def test_get_unknown_returns_none(self) -> None:
-        self.assertIsNone(self.reg.get("codex"))
+        self.assertIsNone(self.reg.get("codex", "lawfirm"))
 
     def test_side_effects_for_returns_declared(self) -> None:
-        self.reg.register("hermes", _stub_materializer, self.se)
-        self.assertEqual(self.reg.side_effects_for("hermes"), self.se)
+        self.reg.register("hermes", _stub_materializer, self.se, solution_id="lawfirm")
+        self.assertEqual(self.reg.side_effects_for("hermes", "lawfirm"), self.se)
 
     def test_known_backends_sorted(self) -> None:
-        self.reg.register("hermes", _stub_materializer, self.se)
+        self.reg.register("hermes", _stub_materializer, self.se, solution_id="lawfirm")
         self.reg.register(
             "codex",
             _stub_materializer,
             MaterializerSideEffects(
                 backend_id="codex", declared_output_dir_relative=None, side_effect_kinds=()
             ),
+            solution_id="lawfirm",
         )
         self.assertEqual(self.reg.known_backends(), ("codex", "hermes"))
+
+    def test_two_solutions_same_backend_both_retrievable(self) -> None:
+        # CR-01: both materializers must be retrievable from the same registry
+        # when they share backend_id but differ by solution_id.
+        def lawfirm_mat(solution, output_dir):
+            return [], BackendSolutionBundle(
+                backend_id="hermes", solution_id="lawfirm", bundle_ref="/tmp/law"
+            )
+
+        def demo_mat(solution, output_dir):
+            return [], BackendSolutionBundle(
+                backend_id="hermes", solution_id="demo_non_legal", bundle_ref="/tmp/demo"
+            )
+
+        self.reg.register("hermes", lawfirm_mat, self.se, solution_id="lawfirm")
+        self.reg.register("hermes", demo_mat, self.se, solution_id="demo_non_legal")
+        self.assertIs(self.reg.get("hermes", "lawfirm"), lawfirm_mat)
+        self.assertIs(self.reg.get("hermes", "demo_non_legal"), demo_mat)
+        self.assertEqual(self.reg.known_solutions("hermes"), ("demo_non_legal", "lawfirm"))
+        self.assertEqual(self.reg.known_backends(), ("hermes",))
 
     def test_invalid_side_effect_kind_rejected(self) -> None:
         with self.assertRaises(ValueError):
@@ -185,6 +237,7 @@ class TestDefaultSolutionLoader(unittest.TestCase):
                 declared_output_dir_relative="profiles/<solution_id>",
                 side_effect_kinds=("write_dir",),
             ),
+            solution_id="lawfirm",
         )
         self.loader = DefaultSolutionLoader(registry=self.reg)
         self.m = _manifest()
@@ -214,13 +267,12 @@ class TestDefaultSolutionLoader(unittest.TestCase):
         self.assertIsNone(bundle)
 
     def test_classify_side_effects(self) -> None:
-        se = self.loader.classify_side_effects("hermes")
+        se = self.loader.classify_side_effects("hermes", "lawfirm")
         self.assertIsNotNone(se)
         self.assertEqual(se.backend_id, "hermes")
-        self.assertIsNone(self.loader.classify_side_effects("codex"))
+        self.assertIsNone(self.loader.classify_side_effects("codex", "lawfirm"))
 
     def test_path_traversal_guard(self) -> None:
-        # Register a malicious materializer that returns a bundle_ref outside output_dir.
         def bad_materializer(solution, output_dir):
             return [], BackendSolutionBundle(
                 backend_id="hermes",
@@ -228,9 +280,16 @@ class TestDefaultSolutionLoader(unittest.TestCase):
                 bundle_ref="/etc/passwd",
             )
 
-        self.reg.register("hermes", bad_materializer, MaterializerSideEffects(
-            backend_id="hermes", declared_output_dir_relative=None, side_effect_kinds=("write_dir",)
-        ))
+        self.reg.register(
+            "hermes",
+            bad_materializer,
+            MaterializerSideEffects(
+                backend_id="hermes",
+                declared_output_dir_relative=None,
+                side_effect_kinds=("write_dir",),
+            ),
+            solution_id="lawfirm",
+        )
         sol = self.loader.load(self.m)
         with self._tmpdir() as out:
             issues, bundle = self.loader.materialize_for(sol, "hermes", output_dir=Path(out))

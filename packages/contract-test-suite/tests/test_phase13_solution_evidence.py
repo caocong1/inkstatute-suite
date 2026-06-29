@@ -260,6 +260,14 @@ class TestComposability(unittest.TestCase):
         reg = _build_registry()
         self.assertIn("hermes", reg.known_backends())
 
+    def test_both_materializers_retrievable_from_same_registry(self) -> None:
+        # CR-01: both lawfirm and demo materializers must be retrievable from
+        # the same registry under (hermes, lawfirm) and (hermes, demo_non_legal).
+        reg = _build_registry()
+        self.assertIsNotNone(reg.get("hermes", "lawfirm"))
+        self.assertIsNotNone(reg.get("hermes", "demo_non_legal"))
+        self.assertEqual(reg.known_solutions("hermes"), ("demo_non_legal", "lawfirm"))
+
     def test_lawfirm_and_demo_solution_ids_distinguish_packs(self) -> None:
         self.assertNotEqual("lawfirm", "demo_non_legal")
 

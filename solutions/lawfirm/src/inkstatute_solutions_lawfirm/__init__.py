@@ -38,7 +38,9 @@ def register_into(
 
     del output_dir_anchor
     mat = LawfirmHermesMaterializer()
-    registry.register(backend_id, mat.materialize, mat.side_effects())
+    registry.register(
+        backend_id, mat.materialize, mat.side_effects(), solution_id=LAWFIRM_SOLUTION_ID
+    )
 
 
 __all__ = [

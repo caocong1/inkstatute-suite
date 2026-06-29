@@ -119,7 +119,12 @@ class TestHermesMaterializer(unittest.TestCase):
     def setUp(self) -> None:
         self.reg = MaterializerRegistry()
         self.materializer = LawfirmHermesMaterializer()
-        self.reg.register("hermes", self.materializer.materialize, self.materializer.side_effects())
+        self.reg.register(
+            "hermes",
+            self.materializer.materialize,
+            self.materializer.side_effects(),
+            solution_id=LAWFIRM_SOLUTION_ID,
+        )
         self.loader = DefaultSolutionLoader(registry=self.reg)
         self.solution = self.loader.load(_manifest_from_json())
 
@@ -171,7 +176,7 @@ class TestHermesMaterializer(unittest.TestCase):
         self.assertNotIn("hermes", fresh_reg.known_backends())
         register_into(fresh_reg)
         self.assertIn("hermes", fresh_reg.known_backends())
-        se = fresh_reg.side_effects_for("hermes")
+        se = fresh_reg.side_effects_for("hermes", LAWFIRM_SOLUTION_ID)
         self.assertIsNotNone(se)
         self.assertEqual(se.backend_id, "hermes")
         self.assertIn("write_dir", se.side_effect_kinds)
