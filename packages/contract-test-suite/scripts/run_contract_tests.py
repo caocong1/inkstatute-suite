@@ -15,6 +15,7 @@ def main() -> int:
         package_root / "src",
         repo_root / "packages" / "platform-contract" / "src",
         repo_root / "packages" / "platform-runtime" / "src",
+        repo_root / "packages" / "backends" / "hermes" / "src",
         repo_root / "services" / "wecom-service" / "src",
     )
     for source_path in reversed(source_paths):
