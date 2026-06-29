@@ -5,7 +5,7 @@ import unittest
 
 from platform_contract.enums import Channel, MessageType, RunEventType
 from platform_contract.events import AgentTurn
-from platform_runtime import BoundaryAction, DefaultAssistantOutputBoundary, RunEvent
+from platform_runtime import BoundaryAction, BoundaryDecision, DefaultAssistantOutputBoundary, RunEvent
 from platform_runtime import DefaultRunRuntime, RunRequest, RuntimeFeatureDisabledError, RuntimeFeatureFlags, SolutionBinding
 from platform_runtime.fakes import FakeBackendAdapter
 
@@ -132,6 +132,40 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(backend_event.payload["message_delta"], text)
         self.assertNotIn("output_boundary", backend_event.metadata)
         self.assertIsNot(streamed, backend_event)
+
+    async def test_stream_applies_boundary_to_every_yielded_event(self) -> None:
+        class CountingBoundary(DefaultAssistantOutputBoundary):
+            def __init__(self) -> None:
+                self.calls: list[str | None] = []
+
+            def apply(self, visibility_target: str, text: str | None = None, event_metadata=None) -> BoundaryDecision:
+                self.calls.append(text)
+                return super().apply(visibility_target, text=text, event_metadata=event_metadata)
+
+        backend = FakeBackendAdapter()
+        boundary = CountingBoundary()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            output_boundary=boundary,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                streaming_lane_enabled=True,
+            ),
+        )
+        run = await runtime.create_run(make_run_request())
+        text = "The service agreement permits a cure notice before termination."
+        backend.append_message_delta(run.run_id, text, metadata={"scripted": True})
+
+        events = [event async for event in runtime.stream(run.run_id)]
+
+        self.assertEqual(len(events), 4)
+        self.assertEqual(boundary.calls, [None, None, None, text])
+        self.assertTrue(all("output_boundary" in event.metadata for event in events))
+        self.assertEqual(
+            [event.metadata["output_boundary"]["action"] for event in events],
+            [BoundaryAction.ALLOW.value] * 4,
+        )
+        self.assertTrue(all("output_boundary" not in event.metadata for event in backend.events[run.run_id]))
 
     async def test_stream_rewrites_lifecycle_delta_with_owned_service_wording(self) -> None:
         backend = FakeBackendAdapter()

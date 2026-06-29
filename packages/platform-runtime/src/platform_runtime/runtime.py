@@ -159,9 +159,6 @@ class DefaultRunRuntime:
 
     def _apply_output_boundary(self, event: RunEvent) -> RunEvent | None:
         visible_text = _event_visible_text(event)
-        if visible_text is None:
-            return event
-
         decision = self.output_boundary.apply(
             visibility_target="ordinary_user",
             text=visible_text,
