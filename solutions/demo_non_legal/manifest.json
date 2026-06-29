@@ -1,0 +1,66 @@
+{
+  "solution_id": "demo_non_legal",
+  "version": "1.0.0",
+  "manifest_ref": "solutions/demo_non_legal/manifest.json",
+  "metadata": {
+    "materialize_targets": ["hermes"],
+    "compatibility": "education_pack_v1",
+    "not_live_acceptance": true,
+    "privacy_profile": "reference_first_only",
+    "is_non_legal_demo": true
+  },
+  "persona_ref": "personas/demo_non_legal_persona.md",
+  "skills": [
+    {
+      "name": "lesson_qa",
+      "description": "Answer student questions about lesson material with citations.",
+      "intent": "factual_qa",
+      "required_tools": ["curriculum_db"],
+      "risk_level": "low"
+    },
+    {
+      "name": "homework_review",
+      "description": "Review student homework and explain where reasoning went astray.",
+      "intent": "review",
+      "required_tools": [],
+      "risk_level": "low"
+    },
+    {
+      "name": "syllabus_lookup",
+      "description": "Look up syllabus topics and prerequisites for a course.",
+      "intent": "lookup",
+      "required_tools": ["curriculum_db"],
+      "risk_level": "low"
+    },
+    {
+      "name": "quiz_generator",
+      "description": "Generate practice quiz questions from a topic and difficulty.",
+      "intent": "generation",
+      "required_tools": [],
+      "risk_level": "medium"
+    }
+  ],
+  "mcp": [
+    {"name": "curriculum_db", "transport": "http", "secret_ref": "CURRICULUM_DB_TOKEN"},
+    {"name": "grading_service", "transport": "http", "secret_ref": "GRADING_SERVICE_TOKEN"}
+  ],
+  "output_policy": {
+    "allow_legal_conclusions": false,
+    "require_citation": true,
+    "redact_pii": true,
+    "block_meta_leak": true
+  },
+  "eval": ["fixtures/lesson_qa_eval.json"],
+  "default_adapter_config": {
+    "backend_id": "hermes",
+    "run_invocation_mode": "oneshot"
+  },
+  "secret_templates": ["HERMES_API_KEY", "CURRICULUM_DB_TOKEN", "GRADING_SERVICE_TOKEN"],
+  "industry_context": {
+    "education_domain": {
+      "level_scope": "K-12 and adult_learning",
+      "high_risk_topics": ["academic_integrity", "student_privacy"],
+      "human_review_required_for": ["academic_integrity"]
+    }
+  }
+}
