@@ -1,0 +1,201 @@
+{
+  "fixture_id": "phase12-multichannel-web-sse-001",
+  "description": "Sanitized Phase 12 fixture evidence: Web/SSE ChannelAdapter end-to-end against the platform runtime fakes. Covers Web inbound normalization, FakeBackendAdapter run lifecycle, RunEvent -> SSE frame encoding, Web delivery envelope, and Web form feedback callback.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "tenant": {
+    "tenant_id": "tenant-phase12-demo-001",
+    "workspace_id": "workspace-phase12-demo-001",
+    "channel_id": "web",
+    "session_id": "session-phase12-web-001"
+  },
+  "web_inbound": {
+    "channel_id": "web",
+    "payload_ref": "fixture://web/phase12/inbound/message-001",
+    "received_at": "2026-06-29T00:00:00Z",
+    "idempotency_key": "web-idem-001",
+    "metadata": {
+      "payload": {
+        "type": "message",
+        "conversation_id": "conv-phase12-web-001",
+        "user_id": "user-phase12-web-001",
+        "message_type": "text",
+        "turn_id": "turn-phase12-web-001",
+        "content_ref": "fixture://web/phase12/content/message-001",
+        "content_hash": "9b1f2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+        "industry_context": {
+          "domain": "education",
+          "task_type": "synthetic_status_summary"
+        }
+      }
+    }
+  },
+  "agent_turn": {
+    "turn_id": "turn-phase12-web-001",
+    "conversation_id": "conv-phase12-web-001",
+    "channel": "web",
+    "user_id": "user-phase12-web-001",
+    "message_type": "text",
+    "received_at": "2026-06-29T00:00:00Z",
+    "industry_context": {
+      "domain": "education",
+      "task_type": "synthetic_status_summary"
+    },
+    "metadata": {
+      "payload_ref": "fixture://web/phase12/inbound/message-001",
+      "idempotency_key": "web-idem-001",
+      "content_ref": "fixture://web/phase12/content/message-001",
+      "content_hash": "9b1f2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+      "content_source_status": "reference_only",
+      "source_event": "web_sse_fixture",
+      "source_status": "sanitized_fixture",
+      "fixture_only": true
+    }
+  },
+  "run_lifecycle": {
+    "backend_adapter": "FakeBackendAdapter",
+    "submit_statuses": ["queued", "running", "succeeded"],
+    "run": {
+      "run_id": "run-phase12-web-001",
+      "status": "succeeded",
+      "turn_id": "turn-phase12-web-001",
+      "solution_id": "lawfirm.synthetic",
+      "metadata": {
+        "backend_run_id": "backend-run-phase12-web-001",
+        "backend_id": "fake-backend",
+        "tenant_id": "tenant-phase12-demo-001",
+        "workspace_id": "workspace-phase12-demo-001",
+        "session_id": "session-phase12-web-001",
+        "raw_payload_ref": "fixture://web/phase12/inbound/message-001"
+      }
+    },
+    "events": [
+      {
+        "event_id": "event-phase12-web-001",
+        "run_id": "run-phase12-web-001",
+        "event_type": "state_changed",
+        "occurred_at": "2026-06-29T00:00:00Z",
+        "seq": 0,
+        "payload": {
+          "status": "queued",
+          "raw_payload_ref": "fixture://runs/run-phase12-web-001/events/0"
+        },
+        "metadata": {
+          "backend_id": "fake-backend"
+        }
+      },
+      {
+        "event_id": "event-phase12-web-002",
+        "run_id": "run-phase12-web-001",
+        "event_type": "state_changed",
+        "occurred_at": "2026-06-29T00:00:01Z",
+        "seq": 1,
+        "payload": {
+          "status": "running",
+          "raw_payload_ref": "fixture://runs/run-phase12-web-001/events/1"
+        },
+        "metadata": {
+          "backend_id": "fake-backend"
+        }
+      },
+      {
+        "event_id": "event-phase12-web-003",
+        "run_id": "run-phase12-web-001",
+        "event_type": "state_changed",
+        "occurred_at": "2026-06-29T00:00:02Z",
+        "seq": 2,
+        "payload": {
+          "status": "succeeded",
+          "raw_payload_ref": "fixture://runs/run-phase12-web-001/events/2"
+        },
+        "metadata": {
+          "backend_id": "fake-backend"
+        }
+      }
+    ]
+  },
+  "sse_frames": [
+    "id: event-phase12-web-001\nevent: state_changed\ndata: {\"event_id\":\"event-phase12-web-001\",\"event_type\":\"state_changed\",\"metadata\":{\"backend_id\":\"fake-backend\"},\"occurred_at\":\"2026-06-29T00:00:00Z\",\"payload\":{\"raw_payload_ref\":\"fixture://runs/run-phase12-web-001/events/0\",\"status\":\"queued\"},\"run_id\":\"run-phase12-web-001\",\"seq\":0}\n\n",
+    "id: event-phase12-web-002\nevent: state_changed\ndata: {\"event_id\":\"event-phase12-web-002\",\"event_type\":\"state_changed\",\"metadata\":{\"backend_id\":\"fake-backend\"},\"occurred_at\":\"2026-06-29T00:00:01Z\",\"payload\":{\"raw_payload_ref\":\"fixture://runs/run-phase12-web-001/events/1\",\"status\":\"running\"},\"run_id\":\"run-phase12-web-001\",\"seq\":1}\n\n",
+    "id: event-phase12-web-003\nevent: state_changed\ndata: {\"event_id\":\"event-phase12-web-003\",\"event_type\":\"state_changed\",\"metadata\":{\"backend_id\":\"fake-backend\"},\"occurred_at\":\"2026-06-29T00:00:02Z\",\"payload\":{\"raw_payload_ref\":\"fixture://runs/run-phase12-web-001/events/2\",\"status\":\"succeeded\"},\"run_id\":\"run-phase12-web-001\",\"seq\":2}\n\n"
+  ],
+  "web_delivery": {
+    "delivery_id": "delivery-phase12-web-001",
+    "channel_id": "web",
+    "accepted": true,
+    "delivered_at": "2026-06-29T00:00:03Z",
+    "idempotency_key": "web-delivery-idem-001",
+    "metadata": {
+      "channel_id": "web",
+      "delivery_type": "text",
+      "artifact_refs": [],
+      "content_ref": "fixture://web/phase12/delivery/text-001",
+      "output_policy_action_ref": "fixture://policy/inkstatute_web_output_boundary/allow_business_output",
+      "fixture_only": true,
+      "network_io": false
+    }
+  },
+  "web_feedback_callback": {
+    "channel_id": "web",
+    "payload_ref": "fixture://web/phase12/inbound/feedback-001",
+    "received_at": "2026-06-29T00:00:04Z",
+    "idempotency_key": "web-feedback-idem-001",
+    "metadata": {
+      "payload": {
+        "type": "feedback",
+        "feedback_id": "feedback-phase12-web-001",
+        "conversation_id": "conv-phase12-web-001",
+        "user_id": "user-phase12-web-001",
+        "turn_id": "turn-phase12-web-001",
+        "feedback_target": "result-phase12-web-001",
+        "action": "up"
+      }
+    }
+  },
+  "feedback_event": {
+    "feedback_id": "feedback-phase12-web-001",
+    "turn_id": "turn-phase12-web-001",
+    "conversation_id": "conv-phase12-web-001",
+    "user_id": "user-phase12-web-001",
+    "source": "web_form",
+    "event_type": "rating",
+    "status": "pending",
+    "created_at": "2026-06-29T00:00:04Z",
+    "feedback_target": "result-phase12-web-001",
+    "action": "up",
+    "rating": 1.0,
+    "industry_context": {},
+    "metadata": {
+      "payload_ref": "fixture://web/phase12/inbound/feedback-001",
+      "idempotency_key": "web-feedback-idem-001",
+      "source_event": "web_sse_fixture",
+      "source_status": "sanitized_fixture",
+      "fixture_only": true
+    }
+  },
+  "channel_capabilities": {
+    "supports_text": true,
+    "supports_files": true,
+    "supports_cards": false,
+    "supports_streaming": true,
+    "ack_deadline_ms": 1000,
+    "idempotency_strategy": "web_payload_ref",
+    "metadata": {
+      "enabled": true,
+      "fixture_only": true,
+      "network_io": false
+    }
+  },
+  "channel_health": {
+    "ok": true,
+    "component_id": "web-sse-channel",
+    "checked_at": "2026-06-29T00:00:05Z",
+    "detail": "fixture channel enabled",
+    "metadata": {
+      "fixture_only": true,
+      "network_io": false,
+      "session_secret_ref_configured": false
+    }
+  }
+}
