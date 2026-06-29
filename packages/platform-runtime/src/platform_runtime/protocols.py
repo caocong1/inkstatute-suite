@@ -8,6 +8,7 @@ surfaces and pure data shapes required to type those surfaces.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import AsyncIterator, Protocol, TypeAlias
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
@@ -241,7 +242,12 @@ class SolutionLoader(Protocol):
 
     def load(self, manifest: SolutionPackageManifest) -> Solution: ...
 
-    def materialize_for(self, solution: Solution, backend_id: str) -> BackendSolutionBundle: ...
+    def materialize_for(
+        self,
+        solution: Solution,
+        backend_id: str,
+        output_dir: Path | None = None,
+    ) -> tuple[list[Issue], BackendSolutionBundle | None]: ...
 
 
 class RunRuntime(Protocol):
