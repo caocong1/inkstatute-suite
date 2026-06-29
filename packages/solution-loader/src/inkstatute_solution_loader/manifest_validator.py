@@ -112,8 +112,11 @@ class ManifestValidator:
         ):
             issues.extend(self._scan_string(field_path, value))
 
-        # 4. solution_id format
-        if manifest.solution_id and not _SOLUTION_ID_RE.match(manifest.solution_id):
+        # 3b. CR-02: recursively scan metadata string values for secret markers.
+        issues.extend(self._scan_metadata_strings("metadata", metadata))
+
+        # 4. solution_id format — WR-07: reject empty/None (falsy short-circuit fix).
+        if not manifest.solution_id or not _SOLUTION_ID_RE.match(manifest.solution_id):
             issues.append(
                 Issue(
                     path="solution_id",
@@ -181,6 +184,23 @@ class ManifestValidator:
                     severity="error",
                 )
             )
+        return issues
+
+    @staticmethod
+    def _scan_metadata_strings(prefix: str, value: object) -> list[Issue]:
+        """Recursively scan metadata (dicts/lists/strings) for secret markers."""
+        issues: list[Issue] = []
+        if isinstance(value, Mapping):
+            for k, v in value.items():
+                sub = f"{prefix}.{k}" if prefix else str(k)
+                issues.extend(ManifestValidator._scan_metadata_strings(sub, v))
+        elif isinstance(value, (list, tuple)):
+            for i, v in enumerate(value):
+                issues.extend(
+                    ManifestValidator._scan_metadata_strings(f"{prefix}[{i}]", v)
+                )
+        elif isinstance(value, str):
+            issues.extend(ManifestValidator._scan_string(prefix, value))
         return issues
 
 
