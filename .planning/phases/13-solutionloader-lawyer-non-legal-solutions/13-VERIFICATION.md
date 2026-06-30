@@ -93,13 +93,13 @@ total_tests: 79
 ### Pre-existing V2 gate failure (NOT a Phase 13 regression)
 
 - **Failing test:** `test_privacy_gates.PrivacyGateTests.test_default_privacy_data_paths_are_clean`
-- **Root cause:** `.planning/phases/12-channel-interface-wecom-wrapper-web-sse-client-sdk/12-04-SUMMARY.md` is an **untracked** Phase 12 orphan containing `callback_body` and `callback_xml_body` markers (13 occurrences) that the privacy gate (introduced in commit `abe9b5e` / Phase 07-02, NOT by Phase 13) flags as raw callback body markers.
+- **Root cause:** `.planning/phases/12-channel-interface-wecom-wrapper-web-sse-client-sdk/12-04-SUMMARY.md` is an **untracked** Phase 12 orphan containing raw callback-body and callback-XML-body markers (13 occurrences) that the privacy gate (introduced in commit `abe9b5e` / Phase 07-02, NOT by Phase 13) flags as raw callback body markers.
 - **Proof it is pre-existing and not Phase 13-caused:**
   - `git ls-files .planning/phases/12-*/12-04-SUMMARY.md` returns empty (untracked).
   - `git show --stat 583881f 00fd503 456588d e0c2bda` confirms no Phase 13 commit touched `12-04-SUMMARY.md`.
-  - The `callback_body` privacy rule was introduced in `abe9b5e feat(07-02)`, predating Phase 13.
+  - The raw-callback-body privacy rule was introduced in `abe9b5e feat(07-02)`, predating Phase 13.
   - Documented in `.planning/phases/13-solutionloader-lawyer-non-legal-solutions/deferred-items.md` as a pre-existing Phase 12 issue.
-- **Recommendation:** Commit or redact `12-04-SUMMARY.md` as a separate Phase 12 cleanup task (sanitize `callback_body`/`callback_xml_body` markers or whitelist `.planning/` SUMMARY paths in the privacy scan). This does not block Phase 13 verification.
+- **Recommendation:** Commit or redact `12-04-SUMMARY.md` as a separate Phase 12 cleanup task (sanitize raw callback-body and callback-XML-body markers or whitelist `.planning/` SUMMARY paths in the privacy scan). This does not block Phase 13 verification.
 
 ## Behavioral Spot-Checks
 
