@@ -223,6 +223,24 @@ class InMemorySessionResolutionStoreTests(unittest.TestCase):
         self.assertEqual(contract_log.entries()[0].event["text_length"], 2)
         self.assertNotIn("继续", repr(contract_log.entries()[0].to_dict()))
 
+    def test_store_resolve_uses_scoped_snapshots_without_raw_text_storage(self) -> None:
+        store = InMemorySessionResolutionStore(clock=lambda: FIXED_NOW)
+        scope = make_scope()
+        store.upsert_session(make_session(scope=scope))
+
+        decision = store.resolve(
+            scope=scope,
+            text="继续处理这个事项。",
+            raw_payload_ref="fixture://payloads/store-resolve",
+            id_factory=lambda prefix: f"{prefix}-store",
+        )
+        event = store.record_decision(decision)
+
+        self.assertEqual(decision.action, SessionResolutionAction.CONTINUE_SESSION)
+        self.assertEqual(event["scope"]["tenant_id"], "tenant-001")
+        self.assertEqual(event["raw_payload_ref"], "fixture://payloads/store-resolve")
+        self.assertNotIn("继续处理", repr(store.decision_events()))
+
     def test_rejects_or_excludes_forbidden_metadata_before_storage(self) -> None:
         store = InMemorySessionResolutionStore(clock=lambda: FIXED_NOW)
         scope = make_scope()
