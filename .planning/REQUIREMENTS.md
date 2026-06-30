@@ -248,12 +248,12 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
   - Inbound normalizes to `ChannelMessage`/`AgentTurn`/`FeedbackEvent`; outbound is `ChannelDelivery`.
   - Secret refs are isolated per `BotInstance`/`ChannelBinding`.
 
-- [ ] **REQ-multichannel-fixture**: Prove a non-WeCom channel end-to-end to validate channel neutrality.
+- [x] **REQ-multichannel-fixture**: Prove a non-WeCom channel end-to-end to validate channel neutrality.
   - Provides a Web API + SSE channel passing end-to-end against fakes.
   - Per-channel delivery/feedback/idempotency/output-policy fixtures exist.
   - No production-grade requirement beyond passing fixtures.
 
-- [ ] **REQ-client-embedding-surface**: Ship the platform API server, a TypeScript client SDK, and an embeddable web chat component.
+- [x] **REQ-client-embedding-surface**: Ship the platform API server, a TypeScript client SDK, and an embeddable web chat component.
   - `apps/platform_api` hosts `RunRuntime` via HTTP + SSE/WebSocket.
   - `packages/platform-sdk-ts` is generated deterministically from OpenAPI.
   - `apps/web_chat` renders `RunEvent` streaming and is embeddable by Tauri/Electron/Flutter webview.
@@ -266,12 +266,12 @@ Requirements for the new milestone (GSD Phase 09–13). Architecture basis: `.pl
   - `materialize_for("hermes")` produces/refreshes a sanitized profile bundle.
   - The loader is enabled behind a default-OFF flag.
 
-- [ ] **REQ-solution-backend-portability**: Solutions must be described in a backend-neutral format and materialized per backend.
+- [x] **REQ-solution-backend-portability**: Solutions must be described in a backend-neutral format and materialized per backend.
   - Manifest holds `persona_ref`, neutral skill descriptors, MCP refs, output-policy overlay, eval fixtures, adapter config defaults, secret-name templates, and `industry_context` defaults.
   - No Hermes-runtime-shaped fields at the contract level.
   - The lawyer solution runs with zero new legal top-level fields in platform core.
 
-- [ ] **REQ-solution-privacy-gate**: A solution privacy scan must reject any sensitive content in solution bundles.
+- [x] **REQ-solution-privacy-gate**: A solution privacy scan must reject any sensitive content in solution bundles.
   - Rejects secrets, logs, DBs, media, raw payloads, customer docs, and confidential artifacts.
   - Bundles are distributable only when sanitized.
 
@@ -341,22 +341,22 @@ Explicitly excluded from V2 to prevent scope creep.
 | REQ-v2-thin-contract-layer | Phase 7 | Complete |
 | REQ-lawyer-trial-acceptance | Phase 8 | Pending |
 | REQ-v2-development-order | Phase 8 | Pending |
-| REQ-platform-north-star | Phase 09 | Planned |
-| REQ-platform-contract-extension | Phase 09 | Planned |
-| REQ-boundary-scan-allowlist | Phase 09 | Planned |
-| REQ-platform-run-runtime | Phase 10 | Planned |
-| REQ-runtime-embeddability | Phase 10 | Planned |
-| REQ-runlane-output-boundary | Phase 10 | Planned |
-| REQ-hermes-backend-adapter | Phase 11 | Planned |
-| REQ-adapter-capability-probe | Phase 11 | Planned |
-| REQ-hermes-run-parity-spike | Phase 11 | Planned |
-| REQ-channel-adapter-interface | Phase 12 | Planned |
-| REQ-multichannel-fixture | Phase 12 | Planned |
-| REQ-client-embedding-surface | Phase 12 | Planned |
-| REQ-solution-loader | Phase 13 | Planned |
-| REQ-solution-backend-portability | Phase 13 | Planned |
-| REQ-solution-privacy-gate | Phase 13 | Planned |
-| REQ-nonlegal-solution-composability | Phase 13 | Planned |
+| REQ-platform-north-star | Phase 09 | Complete |
+| REQ-platform-contract-extension | Phase 09 | Complete |
+| REQ-boundary-scan-allowlist | Phase 09 | Complete |
+| REQ-platform-run-runtime | Phase 10 | Complete |
+| REQ-runtime-embeddability | Phase 10 | Complete |
+| REQ-runlane-output-boundary | Phase 10 | Complete |
+| REQ-hermes-backend-adapter | Phase 11 | Complete |
+| REQ-adapter-capability-probe | Phase 11 | Complete |
+| REQ-hermes-run-parity-spike | Phase 11 | Complete |
+| REQ-channel-adapter-interface | Phase 12 | Complete |
+| REQ-multichannel-fixture | Phase 12 | Complete |
+| REQ-client-embedding-surface | Phase 12 | Complete |
+| REQ-solution-loader | Phase 13 | Complete |
+| REQ-solution-backend-portability | Phase 13 | Complete |
+| REQ-solution-privacy-gate | Phase 13 | Complete |
+| REQ-nonlegal-solution-composability | Phase 13 | Complete |
 
 **Coverage:**
 
