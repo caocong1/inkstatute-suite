@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: — Conversational Context and Memory Foundation
-status: planning
+status: executing
 stopped_at: v1.2 milestone initialized; Phase 14 ready to plan
-last_updated: "2026-06-30T22:35:40.325Z"
-last_activity: 2026-06-30 -- Phase 15 planning complete
+last_updated: "2026-06-30T22:44:30.227Z"
+last_activity: 2026-06-30 -- Phase 15 execution started
 progress:
   total_phases: 14
   completed_phases: 10
-  total_plans: 33
-  completed_plans: 33
+  total_plans: 36
+  completed_plans: 34
   percent: 71
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-30)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.2 — Conversational Context and Memory Foundation
+**Current focus:** Phase 15 — Session Resolver and Interrupt Runtime
 
 ## Current Position
 
 Milestone: v1.2 — Conversational Context and Memory Foundation
-Phase: 14
-Plan: Not started
-Status: Ready to plan Phase 14
+Phase: 15 (Session Resolver and Interrupt Runtime) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Next action: `$gsd-plan-phase 14` (or `$gsd-discuss-phase 14` if more context gathering is desired)
-Last activity: 2026-06-30 -- Phase 15 planning complete
+Last activity: 2026-06-30 -- Phase 15 execution started
 
 Progress (v1.2): [░░░░░░░░░░] 0% of milestone phases (0/5)
 
@@ -114,6 +114,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 12 P04 | 20 min | 4 tasks | 10 files |
 | Phase 13 P13-01 | 4min | 8 tasks | 9 files |
 | Phase 13 P13-03 | 1min | 5 tasks | 5 files |
+| Phase 15 P15-01 | 5m21s | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -201,6 +202,10 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 13 Plan 13-01] INKSTATUTE_SOLUTION_LOADER_ENABLED default-off flag follows Phase 12 pattern; require_enabled() returns False by default; malformed values resolve to False.
 - [Phase ?]: [Phase 13 Plan 13-03] demo_non_legal pack reuses inkstatute_solutions_lawfirm.sanitize by import (single source of truth for refusal patterns); both packs register against backend_id='hermes' and share one DefaultSolutionLoader instance — zero platform-code change.
 - [Phase ?]: [Phase 13 Plan 13-03] manifest.output_policy.allow_legal_conclusions is explicitly false in the demo pack — first manifest to claim non-legal output scope, proving output_policy is an overlay (not a hardcoded legal gate).
+- [Phase 15]: [Phase 15 Plan 15-01] Keep session resolution in platform-runtime as a dependency-free library surface with no WeCom, Hermes, database, queue, or service process coupling. — Preserves backend neutrality and AGENTS.md scope limits.
+- [Phase 15]: [Phase 15 Plan 15-01] Use tenant/workspace/channel/user/bot/conversation/thread scoped store keys so conversation IDs alone cannot resume another user state. — Mitigates cross-user resume and satisfies CTX-02/CTX-04 scope isolation requirements.
+- [Phase 15]: [Phase 15 Plan 15-01] Leave protocols.py unchanged because no additional caller Protocol was required; public dataclasses and resolve_session_turn are exported from platform_runtime. — Keeps protocols.py signature-only and avoids unnecessary API surface.
+- [Phase 15]: [Phase 15 Plan 15-01] Serialize decisions with raw_payload_ref, text_sha256_16, text_length, IDs, statuses, timestamps, action, and reason only. — Meets CTX-04 and the plan threat model by excluding raw legal/customer text.
 
 ### Pending Todos
 
@@ -232,7 +237,7 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T16:00:00.000Z
+Last session: 2026-06-30T22:43:39.930Z
 Stopped at: v1.2 milestone initialized; Phase 14 ready to plan
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md

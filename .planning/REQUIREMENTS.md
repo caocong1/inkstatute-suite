@@ -9,10 +9,10 @@
 
 ### Session Continuity
 
-- [ ] **CTX-01**: Ordinary users can continue a conversation without typing `/new`, `/resume`, or any agent/session command.
-- [ ] **CTX-02**: The platform can resolve a stable `conversation_id` and an active `session_id/thread_id` from channel, user, bot, active task, pending interrupt, and idle-window signals.
-- [ ] **CTX-03**: The platform can automatically start a new session when the message is clearly a new task, the prior session is stale, or the active session has terminated.
-- [ ] **CTX-04**: Session decisions are recorded as minimized metadata with raw payload references, not raw legal text.
+- [x] **CTX-01**: Ordinary users can continue a conversation without typing `/new`, `/resume`, or any agent/session command.
+- [x] **CTX-02**: The platform can resolve a stable `conversation_id` and an active `session_id/thread_id` from channel, user, bot, active task, pending interrupt, and idle-window signals.
+- [x] **CTX-03**: The platform can automatically start a new session when the message is clearly a new task, the prior session is stale, or the active session has terminated.
+- [x] **CTX-04**: Session decisions are recorded as minimized metadata with raw payload references, not raw legal text.
 
 ### Short-Term Context
 
@@ -71,10 +71,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CTX-01 | Phase 15 | Pending |
-| CTX-02 | Phase 15 | Pending |
-| CTX-03 | Phase 15 | Pending |
-| CTX-04 | Phase 15 | Pending |
+| CTX-01 | Phase 15 | Complete |
+| CTX-02 | Phase 15 | Complete |
+| CTX-03 | Phase 15 | Complete |
+| CTX-04 | Phase 15 | Complete |
 | STM-01 | Phase 16 | Pending |
 | STM-02 | Phase 16 | Pending |
 | STM-03 | Phase 16 | Pending |
