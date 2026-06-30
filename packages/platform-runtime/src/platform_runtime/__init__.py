@@ -36,10 +36,22 @@ from .output_boundary import BoundaryAction, BoundaryDecision, DefaultAssistantO
 from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
 from .fakes import FakeBackendAdapter, FakeChannelAdapter, FakeIdFactory, FakeRuntimeClock
 from .runtime import DefaultRunRuntime, RunRuntimeStateError
+from .session_resolver import (
+    ActiveTaskSnapshot,
+    InMemorySessionResolutionStore,
+    PendingInterruptSnapshot,
+    SessionResolutionAction,
+    SessionResolutionDecision,
+    SessionResolutionPolicy,
+    SessionScope,
+    SessionSnapshot,
+    resolve_session_turn,
+)
 from .store import ContractLogEntry, ContractLogPrivacyError, InMemoryContractLogStore
 
 __all__ = [
     "AckResponse",
+    "ActiveTaskSnapshot",
     "AssistantOutputBoundary",
     "AssistantOutputDecision",
     "Approval",
@@ -66,7 +78,9 @@ __all__ = [
     "IdFactory",
     "InboundNormalized",
     "InMemoryContractLogStore",
+    "InMemorySessionResolutionStore",
     "Issue",
+    "PendingInterruptSnapshot",
     "RawInbound",
     "Run",
     "RunEvent",
@@ -77,8 +91,14 @@ __all__ = [
     "RuntimeClock",
     "RuntimeFeatureDisabledError",
     "RuntimeFeatureFlags",
+    "SessionResolutionAction",
+    "SessionResolutionDecision",
+    "SessionResolutionPolicy",
+    "SessionScope",
+    "SessionSnapshot",
     "Solution",
     "SolutionBinding",
     "SolutionLoader",
     "SolutionPackageManifest",
+    "resolve_session_turn",
 ]
