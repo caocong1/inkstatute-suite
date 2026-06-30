@@ -23,15 +23,11 @@ V2 moves from contract definitions to verified production shadow recording, then
 - [x] **Phase 7: CI, Composability, and Privacy Gates** - Enforce industry-neutral composability, coverage, relationship integrity, thin-layer boundaries, and safety baselines in CI. (completed 2026-06-28)
 - [ ] **Phase 8: Lawyer Trial Acceptance** - Run the five-workday lawyer trial and validate V2 acceptance metrics.
 
-### Milestone v1.1 — Platform Foundation (refactor toward a reusable agent platform)
+### Milestone v1.1 — Platform Foundation (COMPLETED 2026-06-30)
 
-> New milestone (planning label v1.1). Autonomous-buildable Phase 09–13. Architecture basis: `.planning/drafts/agent-platform-north-star.md`. Execution plan: `.planning/drafts/agent-platformization-plan-v5.md`. Phase 8 (v1.0 lawyer trial) remains a **parallel human gate** and is NOT a dependency of Phase 09. New runtime lanes are default-OFF; live cutover is a human gate outside the autonomous path.
-
-- [x] **Phase 09: Architecture Contracts & Schema Foundation** - Lock the four North Star contracts, extend `platform-contract` with new schemas, write ADRs, add the boundary-scan allowlist. Non-runtime. (completed 2026-06-28)
-- [x] **Phase 10: Embeddable RunRuntime + Fake Backend** - Implement `RunRuntime` as an injectable library with a fake backend and run-event output boundary. Default-OFF. (completed 2026-06-28)
-- [x] **Phase 11: Hermes BackendAdapter + Parity Spike** - Implement the Hermes backend adapter (one-shot first), a non-mutating capability probe, and a fixture `/v1/runs` parity spike. Default-OFF. (completed 2026-06-29)
-- [ ] **Phase 12: Channel Interface + WeCom Wrapper + Web/SSE + Client SDK** - Make WeCom one `ChannelAdapter`; add a Web/SSE channel, platform API server, TS SDK, and embeddable chat component. Default-OFF.
-- [ ] **Phase 13: SolutionLoader + Lawyer & Non-Legal Solutions** - Backend-portable solution loader; lawyer solution materialized to a Hermes profile; non-legal demo; composability/privacy gates.
+> **Archived:** [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) | [v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md)
+>
+> 5 phases (09–13), 20 plans, 99 commits, 195 files changed, 25,368 insertions. V2 gate: 8/8 pass, 287 tests. Audit: passed. All four North Star contracts shipped (ChannelAdapter, BackendAdapter, SolutionLoader, RunRuntime). All lanes default-OFF. Phase 8 (Lawyer Trial Acceptance) remains a parallel human gate.
 
 ## Phase Details
 
@@ -219,86 +215,13 @@ Plans:
 - [x] 08-03-PLAN.md — Pending acceptance report and human gate.
 - [x] 08-04-PLAN.md — WeCom task flow and progress event runtime.
 
-### Phase 09: Architecture Contracts & Schema Foundation
-
-**Goal**: Lock the four North Star interface contracts and extend the platform-contract package with the new neutral schemas, with zero runtime behavior change.
-**Depends on**: Phase 7 (contract/CI baseline). Not blocked by Phase 8 (parallel human gate).
-**Requirements**: REQ-platform-north-star, REQ-platform-contract-extension, REQ-boundary-scan-allowlist
-**Success Criteria** (what must be TRUE):
-
-  1. The North Star doc is promoted to `docs/architecture/` and the four Protocols (`ChannelAdapter`, `BackendAdapter`, `SolutionLoader`, `RunRuntime`) exist as signature-only stubs in `packages/platform-runtime`.
-  2. New JSON Schemas + Python bindings exist in `platform-contract`: `ChannelMessage`, `ChannelDelivery`, `Run`, `RunEvent`, `RunStep`, `ToolCall`, `Approval`, `ArtifactRecord`, `Session`, `Tenant`, `Workspace`, `SolutionPackageManifest` (+ neutral skill/mcp descriptors), `BotInstance`, `ChannelBinding`.
-  3. `Run.status` uses the existing `AsyncTaskState`; `AdapterCapabilitySet` is extended backward-compatibly; `ArtifactRecord` does not replace nested `AgentResult.artifacts`.
-  4. ADR-0001 through ADR-0007 drafts exist under `docs/architecture/adr/`.
-  5. The boundary-scan allowlist tool passes on neutral packages; a non-legal fixture validates with no platform-code change; existing V2 contracts still validate.
-
-**Plans**: TBD
-
-### Phase 10: Embeddable RunRuntime + Fake Backend
-
-**Goal**: Implement `RunRuntime` as a dependency-injected, embeddable library and prove the full run lifecycle against fakes with no live system.
-**Depends on**: Phase 09
-**Requirements**: REQ-platform-run-runtime, REQ-runtime-embeddability, REQ-runlane-output-boundary
-**Success Criteria** (what must be TRUE):
-
-  1. `RunRuntime` implements create/poll/stream/cancel/approve against a `FakeBackendAdapter` and `FakeChannelAdapter`.
-  2. `RunRuntime` constructs with zero channels and with no network server (embeddability invariants N1/N4).
-  3. Every run event/delta passes through the assistant output boundary; leak fixtures prove meta/tool/approval/gateway events never surface to ordinary users.
-  4. Contract-log store is append-only and `raw_payload_ref`-first; run logs store refs/hashes only, never secrets or raw payloads.
-  5. All new lanes are gated behind default-OFF feature flags.
-
-**Plans**: TBD
-
-### Phase 11: Hermes BackendAdapter + Parity Spike
-
-**Goal**: Implement the Hermes backend adapter (subprocess one-shot first), a non-mutating capability probe, and a fixture-based `/v1/runs` lawfirm-equivalence parity spike.
-**Depends on**: Phase 10
-**Requirements**: REQ-hermes-backend-adapter, REQ-adapter-capability-probe, REQ-hermes-run-parity-spike
-**Success Criteria** (what must be TRUE):
-
-  1. The Hermes adapter passes `BackendAdapter` Protocol conformance tests via subprocess one-shot.
-  2. The capability probe is non-mutating (`/health` + `/v1/capabilities` + `/v1/models`, never `GET /v1/runs/{id}`); probe failure falls back to one-shot with a sanitized audit reason.
-  3. The `/v1/runs` lane exists behind `INKSTATUTE_HERMES_API_RUNS_ENABLED` and is not default.
-  4. The parity spike compares `/v1/runs` vs one-shot on fixtures (legal Q&A, drafting+artifact, follow-up, route-mismatch, MCP/tool task, non-legal) and reports pass/fail; one-shot stays default if it fails.
-  5. `Approval` cannot auto-approve high-risk legal conclusions; no transcripts/secrets are committed.
-
-**Plans**: TBD
-
-### Phase 12: Channel Interface + WeCom Wrapper + Web/SSE + Client SDK
-
-**Goal**: Make WeCom one implementation under `ChannelAdapter`, add a Web API/SSE channel, and ship the platform API server, TS SDK, and embeddable chat component — all default-OFF.
-**Depends on**: Phase 10 (runtime), Phase 11 (a real backend to exercise)
-**Requirements**: REQ-channel-adapter-interface, REQ-multichannel-fixture, REQ-client-embedding-surface
-**Success Criteria** (what must be TRUE):
-
-  1. The existing WeCom primitives are wrapped behind `ChannelAdapter` (behind a flag); existing WeCom tests pass with no production regression.
-  2. A non-WeCom channel (Web API + SSE) passes end-to-end against fakes.
-  3. Channel adapters never call backend adapters directly (enforced by boundary scan); they submit through `RunRuntime`.
-  4. `apps/platform_api` hosts `RunRuntime`; `packages/platform-sdk-ts` is generated deterministically from OpenAPI; `apps/web_chat` renders `RunEvent` streaming.
-  5. Secret refs are isolated per `BotInstance`/`ChannelBinding`; no cross-channel payload sharing.
-
-**Plans**: TBD
-
-### Phase 13: SolutionLoader + Lawyer & Non-Legal Solutions
-
-**Goal**: Prove the lawyer pack is a backend-portable solution (not platform core) and that a non-legal pack runs through the same contracts unchanged.
-**Depends on**: Phase 11 (materialize-to-hermes), Phase 09 (manifest schema)
-**Requirements**: REQ-solution-loader, REQ-solution-backend-portability, REQ-solution-privacy-gate, REQ-nonlegal-solution-composability
-**Success Criteria** (what must be TRUE):
-
-  1. `SolutionLoader` validates/loads manifests and `materialize_for("hermes")` produces/refreshes a sanitized lawfirm profile bundle with no undeclared side effects.
-  2. The lawyer solution runs through platform contracts with zero new legal top-level fields in platform core.
-  3. A `demo_non_legal` solution runs through the same contracts with no platform-code change.
-  4. The solution privacy scan rejects secrets, logs, DBs, media, raw payloads, customer docs, and confidential artifacts.
-  5. Composability gates prove the platform core stays industry-neutral.
-
-**Plans**: TBD
+_(Phases 09–13 archived — see [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md))_
 
 ## Progress
 
 **Execution Order:**
 Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
-Milestone v1.1 (Platform Foundation) executes 09 -> 10 -> 11 -> 12 -> 13. Phase 09 does not depend on Phase 8; the v1.0 lawyer trial (Phase 8) runs as a parallel human gate.
+Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30. Phase 8 (v1.0 lawyer trial) remains a parallel human gate.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -311,9 +234,4 @@ Milestone v1.1 (Platform Foundation) executes 09 -> 10 -> 11 -> 12 -> 13. Phase 
 | 6. Read and Feedback Service APIs | 3/3 | Complete    | 2026-06-28 |
 | 7. CI, Composability, and Privacy Gates | 3/3 | Complete    | 2026-06-28 |
 | 8. Lawyer Trial Acceptance | 4/4 | Human Needed - Live UAT Pending | - |
-| --- Milestone v1.1 — Platform Foundation --- | | | |
-| 09. Architecture Contracts & Schema Foundation | 4/4 | Complete    | 2026-06-28 |
-| 10. Embeddable RunRuntime + Fake Backend | 4/4 | Complete    | 2026-06-28 |
-| 11. Hermes BackendAdapter + Parity Spike | 4/4 | Complete    | 2026-06-29 |
-| 12. Channel Interface + WeCom Wrapper + Web/SSE + Client SDK | 4/4 | Complete    | 2026-06-29 |
-| 13. SolutionLoader + Lawyer & Non-Legal Solutions | 3/4 | In Progress|  |
+| --- Milestone v1.1 — Platform Foundation (COMPLETED) --- | | | See [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) |

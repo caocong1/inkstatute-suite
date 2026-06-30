@@ -1,0 +1,13 @@
+{
+  "name": "@inkstatute/web-chat",
+  "version": "0.1.0",
+  "description": "Embeddable web chat renderer for InkStatute RunEvent streaming. Remote/thin, default-off, sanitized.",
+  "license": "Proprietary",
+  "private": true,
+  "main": "src/render.ts",
+  "types": "src/render.ts",
+  "files": [
+    "src",
+    "README.md"
+  ]
+}

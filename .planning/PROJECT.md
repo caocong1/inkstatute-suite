@@ -94,6 +94,8 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 | Autonomy split: Phase 09–13 are code+test+fixtures (autonomous); live cutover and Phase 8 trial are human gates off the autonomous path | Enables hands-free `$gsd-autonomous` while preserving live-safety and legal human review | Decided 2026-06-29 |
 | Keep Phase 10 `DefaultRunRuntime` embeddable, default-off, ref-first, and output-boundary-enforced for every yielded run event | The reusable platform core must be injectable and privacy-preserving before Hermes parity work starts | Verified in Phase 10 on 2026-06-29 |
 | Keep Hermes one-shot as the default backend lane after Phase 11 | The `/v1/runs` parity spike is implemented but intentionally reports route mismatch evidence; API runs remain default-off behind `INKSTATUTE_HERMES_API_RUNS_ENABLED` until parity and later human gates approve | Verified in Phase 11 on 2026-06-29 |
+| Phase 12 channel/client surface is default-off, remote/thin, and not live acceptance across WeCom wrapper, Web/SSE, platform API, SDK, and web chat | The platform channel lane is an embeddable building block, not a production UI; live cutover remains a separate human gate | Verified in Phase 12 on 2026-06-29 |
+| Web chat renderer emits DOM-free RenderRecord objects, not HTML strings; host view layer maps records to framework primitives | Eliminates XSS-via-string-concatenation class; forces hosts to use React/Preact/lit-html/raw DOM/server template primitives | Decided 2026-06-29 |
 
 ## Next Milestone — Platform Foundation (v1.1)
 
@@ -103,6 +105,38 @@ The active development focus is now milestone **v1.1 (Platform Foundation)**, GS
 - Execution plan: `.planning/drafts/agent-platformization-plan-v5.md`
 - The V1.0 lawyer trial (Phase 8) remains a parallel human gate and is not a dependency of Phase 09.
 - V2 PRD remains source of truth only for not-regressing existing lawyer-bot behavior; the North Star doc is authoritative for platform shape.
+
+## Current State
+
+**Milestone v1.1 — Platform Foundation: SHIPPED (2026-06-30)**
+
+v1.1 delivered the four-contract North Star platform architecture with 5 phases, 20 plans, 99 commits, 195 files, and 25,368 lines added. All 287 V2 gate tests pass. Audit status: passed.
+
+**What shipped:**
+- Four North Star contracts (ChannelAdapter, BackendAdapter, SolutionLoader, RunRuntime) as independently swappable seams
+- Embeddable DefaultRunRuntime with output boundary and default-off feature flags
+- Hermes BackendAdapter (subprocess one-shot + capability probe + /v1/runs parity spike)
+- Channel interface (WeCom wrapper + Web/SSE channel) + Platform API server + TypeScript SDK + embeddable web chat renderer
+- SolutionLoader with lawfirm solution (sanitizing Hermes materializer) and demo_non_legal solution
+- All new lanes default-OFF; live cutover is a separate human gate
+
+**Parallel human gates (not autonomous-completable):**
+- Phase 8 (Lawyer Trial Acceptance) — 5-workday live WeCom trial pending
+- Phase 5 live WeCom UAT — fixture-satisfied, operator confirmation needed
+- All v1.1 runtime lanes — default-OFF, live promotion is a human gate
+
+**Archive:** [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) | [v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md)
+
+## Next Milestone Goals
+
+Placeholder — define via `/gsd-new-milestone`.
+
+Potential directions:
+- Live cutover of v1.1 platform lanes (human gate)
+- Phase 8 lawyer trial acceptance (human gate)
+- Codex adapter prototype (M2 scope)
+- Direct provider-model adapter prototype (M2 scope)
+- Independent Router Service normalization upgrade (M2 scope)
 
 ## Evolution
 
@@ -122,4 +156,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-06-29 after Phase 11 Hermes BackendAdapter verification and security review*
+*Last updated: 2026-06-30 after v1.1 milestone archive (Platform Foundation shipped)*

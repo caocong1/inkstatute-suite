@@ -1,0 +1,132 @@
+{
+  "fixture_id": "phase12-web-chat-render-001",
+  "description": "Sanitized Phase 12 web chat render fixture: RunEvent streaming records covering state transitions, message deltas, an artifact, an approval request, and an error. The fixture is consumed by the apps/web_chat TypeScript renderer and Python test harness; it is NOT live acceptance evidence.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "renderer": {
+    "package": "@inkstatute/web-chat",
+    "module": "src/render.ts",
+    "remote_thin": true,
+    "framework_dependency": "none",
+    "no_local_runtime": true,
+    "default_off": true
+  },
+  "sdk_compatibility": {
+    "generated_from": "apps/platform_api/openapi/platform-api.json",
+    "sse_frame_format": "id: <id>\\nevent: <event>\\ndata: <json>\\n\\n",
+    "consumes": "SseFrame { event, id, data }"
+  },
+  "events": [
+    {
+      "event_id": "event-wc-001",
+      "run_id": "run-web-chat-001",
+      "event_type": "state_changed",
+      "occurred_at": "2026-06-29T00:00:00Z",
+      "seq": 0,
+      "status": "queued",
+      "metadata": {"backend_id": "fake-backend"}
+    },
+    {
+      "event_id": "event-wc-002",
+      "run_id": "run-web-chat-001",
+      "event_type": "state_changed",
+      "occurred_at": "2026-06-29T00:00:01Z",
+      "seq": 1,
+      "status": "running",
+      "metadata": {"backend_id": "fake-backend"}
+    },
+    {
+      "event_id": "event-wc-003",
+      "run_id": "run-web-chat-001",
+      "event_type": "message_delta",
+      "occurred_at": "2026-06-29T00:00:02Z",
+      "seq": 2,
+      "message_delta": "Synthesizing a status summary for the sanitized education fixture.",
+      "metadata": {"backend_id": "fake-backend"}
+    },
+    {
+      "event_id": "event-wc-004",
+      "run_id": "run-web-chat-001",
+      "event_type": "message_delta",
+      "occurred_at": "2026-06-29T00:00:03Z",
+      "seq": 3,
+      "message_delta": " Stream complete; no raw payload retained.",
+      "metadata": {"backend_id": "fake-backend"}
+    },
+    {
+      "event_id": "event-wc-005",
+      "run_id": "run-web-chat-001",
+      "event_type": "artifact_ready",
+      "occurred_at": "2026-06-29T00:00:04Z",
+      "seq": 4,
+      "artifact_id": "artifact-wc-001",
+      "metadata": {"artifact_ref": "fixture://web/phase12/artifact/summary-001"}
+    },
+    {
+      "event_id": "event-wc-006",
+      "run_id": "run-web-chat-001",
+      "event_type": "approval_requested",
+      "occurred_at": "2026-06-29T00:00:05Z",
+      "seq": 5,
+      "approval_id": "approval-wc-001",
+      "metadata": {"approval_prompt_ref": "fixture://web/phase12/approval/prompt-001"}
+    },
+    {
+      "event_id": "event-wc-007",
+      "run_id": "run-web-chat-001",
+      "event_type": "error",
+      "occurred_at": "2026-06-29T00:00:06Z",
+      "seq": 6,
+      "error": {
+        "category": "transient",
+        "code": "synthetic_retryable",
+        "message": "Synthetic retryable condition: backend self-test fixture.",
+        "stage": "stream"
+      },
+      "metadata": {"backend_id": "fake-backend"}
+    },
+    {
+      "event_id": "event-wc-008",
+      "run_id": "run-web-chat-001",
+      "event_type": "run_completed",
+      "occurred_at": "2026-06-29T00:00:07Z",
+      "seq": 7,
+      "status": "succeeded",
+      "metadata": {"backend_id": "fake-backend"}
+    }
+  ],
+  "expected_render": {
+    "summary": {
+      "run_id": "run-web-chat-001",
+      "status": "succeeded",
+      "state_changed": 2,
+      "message_deltas": 2,
+      "artifacts": 1,
+      "approvals": 1,
+      "errors": 1
+    },
+    "record_count": 8,
+    "first_assistant_text": "Synthesizing a status summary for the sanitized education fixture."
+  },
+  "unsafety_samples": {
+    "description": "Sample inputs the renderer must reject or escape; included here so the Python test harness can prove the boundary.",
+    "raw_payload_metadata_event": {
+      "event_id": "event-wc-unsafe-001",
+      "run_id": "run-web-chat-unsafe-001",
+      "event_type": "message_delta",
+      "occurred_at": "2026-06-29T00:01:00Z",
+      "seq": 0,
+      "message_delta": "harmless text",
+      "metadata": {"raw_payload": "fixture://unsafe/leak", "backend_id": "fake-backend"}
+    },
+    "html_injection_event": {
+      "event_id": "event-wc-unsafe-002",
+      "run_id": "run-web-chat-unsafe-002",
+      "event_type": "message_delta",
+      "occurred_at": "2026-06-29T00:01:01Z",
+      "seq": 0,
+      "message_delta": "<script>alert('xss')</script>"
+    }
+  }
+}

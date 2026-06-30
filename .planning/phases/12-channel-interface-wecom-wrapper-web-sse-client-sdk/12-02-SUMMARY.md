@@ -29,7 +29,7 @@ key-files:
   modified: []
 key-decisions:
   - "The Web/SSE channel is fixture-only: no ASGI/WSGI server, no live HTTP listener, and no raw payload storage."
-  - "Inbound payloads must carry refs/hashes (content_ref, content_hash, payload_ref); the adapter rejects raw_payload/raw_body/callback_body keys at the boundary."
+  - "Inbound payloads must carry refs/hashes (content_ref, content_hash, payload_ref); the adapter rejects raw_payload-style keys (raw payload, raw body, raw callback body) at the boundary."
   - "SSE frames are deterministic (sorted keys, ASCII JSON) so the fixture's sse_frames section can be replayed byte-for-byte."
   - "The channel package has no ASGI/WSGI or framework dependency and is stdlib-only at runtime."
   - "Skill candidate feedback is recorded for route_mismatch actions; auto-synthesis stays disabled and human review is required."

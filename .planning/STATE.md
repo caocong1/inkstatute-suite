@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: — Platform Foundation
-status: executing
-stopped_at: context exhaustion at 83% (2026-06-29)
-last_updated: "2026-06-29T17:02:24.464Z"
-last_activity: 2026-06-29 -- Phase 13 execution started
+milestone: v1.1-archived
+milestone_name: Platform Foundation
+status: milestone_completed
+stopped_at: milestone archive complete (2026-06-30)
+last_updated: "2026-06-30T12:00:00.000Z"
+last_activity: 2026-06-30 -- v1.1 milestone archived
 progress:
   total_phases: 14
   completed_phases: 13
@@ -18,21 +18,21 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-29)
+See: .planning/PROJECT.md (updated 2026-06-30)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 13 — solutionloader-lawyer-non-legal-solutions
+**Current focus:** Milestone v1.1 archived — awaiting next milestone definition
 
 ## Current Position
 
-Milestone: v1.1 — Platform Foundation (refactor toward a reusable agent platform)
-Phase: 13 (solutionloader-lawyer-non-legal-solutions) — EXECUTING
-Plan: 2 of 4
-Status: Ready to execute
-Next action: `$gsd-plan-phase 13` or `$gsd-progress --next --auto`
-Last activity: 2026-06-29 -- Phase 13 execution started
+Milestone: v1.1 — Platform Foundation (ARCHIVED 2026-06-30)
+Phase: null (no active phase)
+Plan: null
+Status: Milestone complete — archive finalized
+Next action: `/gsd-new-milestone` to define next milestone, or `$gsd-resume-work` if continuing
+Last activity: 2026-06-30 -- v1.1 milestone archived
 
-Progress (v1.1): [████████░░] 80% of milestone phases (4/5)
+Progress (v1.1): [██████████] 100% of milestone phases (5/5)
 
 ### Parallel Human Gate (v1.0)
 
@@ -44,7 +44,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 
 **Velocity:**
 
-- Total plans completed: 42
+- Total plans completed: 49
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -221,12 +221,15 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | Beyond V2 | Independent Router Service, Skill Registry, full Web UI, Tauri desktop, automatic skill synthesis, complete security platform | Deferred to M2-M4 | V2 initialization |
+| Human gate | Phase 8 Lawyer Trial Acceptance (7 pending UAT scenarios) | Deferred (parallel human gate) | v1.1 archive |
+| Human gate | Phase 5 live WeCom UAT (fixture-satisfied, operator confirmation needed) | Deferred (human gate) | v1.1 archive |
 
 ## Session Continuity
 
-Last session: 2026-06-29T17:02:18.885Z
-Stopped at: context exhaustion at 83% (2026-06-29)
+Last session: 2026-06-30T12:00:00.000Z
+Stopped at: milestone archive complete (2026-06-30)
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/drafts/agent-platformization-plan-v5.md
 Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
+v1.1 archive: .planning/milestones/v1.1-ROADMAP.md

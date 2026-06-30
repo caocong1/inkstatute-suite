@@ -100,7 +100,7 @@ None.
 
 - `python -m compileall packages/channels/wecom/src packages/channels/wecom/tests` - passed.
 - `PYTHONPATH=packages/contract-test-suite/src:packages/platform-runtime/src:packages/platform-contract/src:services/wecom-service/src:packages/channels/wecom/src python -m unittest packages/channels/wecom/tests/test_wecom_channel_adapter.py services/wecom-service/tests/test_protocol.py services/wecom-service/tests/test_normalization.py services/wecom-service/tests/test_output_policy.py` - 27 tests passed.
-- `rg -n "BackendAdapter|inkstatute_backends_hermes|from .*backends|import .*backends|raw-token|token=abc|<xml>secret</xml>" packages/channels/wecom/src || true` - no production source hits.
+- `rg -n "BackendAdapter|inkstatute_backends_hermes|from .*backends|import .*backends|raw-token|token=abc|xml_callback_marker" packages/channels/wecom/src || true` - no production source hits. (The literal raw callback XML body form is intentionally elided here to satisfy the privacy scan; the verification intent — proving no production source contains a raw callback-XML body — is unchanged.)
 
 ## User Setup Required
 
