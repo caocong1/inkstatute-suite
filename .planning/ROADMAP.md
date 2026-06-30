@@ -321,7 +321,7 @@ Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30.
 | 8. Lawyer Trial Acceptance | 4/4 | Complete    | 2026-06-30 |
 | --- Milestone v1.1 — Platform Foundation (COMPLETED) --- | | | See [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) |
 | 14. Memory Research and Contract Spec | 3/3 | Complete    | 2026-06-30 |
-| 15. Session Resolver and Interrupt Runtime | 1/3 | In Progress|  |
+| 15. Session Resolver and Interrupt Runtime | 2/3 | In Progress|  |
 | 16. Short-Term Context Assembler | 0/TBD | Pending | - |
 | 17. Long-Term Memory and Feedback Learning | 0/TBD | Pending | - |
 | 18. External Memory Adapter Evaluation and Acceptance Gates | 0/TBD | Pending | - |

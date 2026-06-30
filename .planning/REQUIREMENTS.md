@@ -30,10 +30,10 @@
 
 ### Skill Clarification and Interrupts
 
-- [ ] **INT-01**: A backend/skill can return a platform interrupt that maps to `waiting_for_user` / `needs_clarification` and persists the required resume state.
-- [ ] **INT-02**: WeCom delivery sends the clarification question as ordinary lawyer-assistant output, and the user's next answer resumes the paused run instead of starting an unrelated task.
-- [ ] **INT-03**: Interrupts preserve multiple-choice or freeform question metadata when available, but do not require ordinary users to know any agent terminology.
-- [ ] **INT-04**: Timeout, cancellation, and duplicate-answer behavior are deterministic and privacy-safe.
+- [x] **INT-01**: A backend/skill can return a platform interrupt that maps to `waiting_for_user` / `needs_clarification` and persists the required resume state.
+- [x] **INT-02**: WeCom delivery sends the clarification question as ordinary lawyer-assistant output, and the user's next answer resumes the paused run instead of starting an unrelated task.
+- [x] **INT-03**: Interrupts preserve multiple-choice or freeform question metadata when available, but do not require ordinary users to know any agent terminology.
+- [x] **INT-04**: Timeout, cancellation, and duplicate-answer behavior are deterministic and privacy-safe.
 
 ### Feedback and Learning
 
@@ -83,10 +83,10 @@
 | LTM-02 | Phase 14 | Complete |
 | LTM-03 | Phase 17 | Pending |
 | LTM-04 | Phase 17 | Pending |
-| INT-01 | Phase 15 | Pending |
-| INT-02 | Phase 15 | Pending |
-| INT-03 | Phase 15 | Pending |
-| INT-04 | Phase 15 | Pending |
+| INT-01 | Phase 15 | Complete |
+| INT-02 | Phase 15 | Complete |
+| INT-03 | Phase 15 | Complete |
+| INT-04 | Phase 15 | Complete |
 | FBK-01 | Phase 17 | Pending |
 | FBK-02 | Phase 17 | Pending |
 | FBK-03 | Phase 17 | Pending |

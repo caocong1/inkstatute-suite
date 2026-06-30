@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: — Conversational Context and Memory Foundation
 status: executing
-stopped_at: v1.2 milestone initialized; Phase 14 ready to plan
-last_updated: "2026-06-30T22:44:30.227Z"
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-06-30T22:56:11.957Z"
 last_activity: 2026-06-30 -- Phase 15 execution started
 progress:
   total_phases: 14
   completed_phases: 10
   total_plans: 36
-  completed_plans: 34
+  completed_plans: 35
   percent: 71
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-06-30)
 
 Milestone: v1.2 — Conversational Context and Memory Foundation
 Phase: 15 (Session Resolver and Interrupt Runtime) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Next action: `$gsd-plan-phase 14` (or `$gsd-discuss-phase 14` if more context gathering is desired)
 Last activity: 2026-06-30 -- Phase 15 execution started
@@ -115,6 +115,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 13 P13-01 | 4min | 8 tasks | 9 files |
 | Phase 13 P13-03 | 1min | 5 tasks | 5 files |
 | Phase 15 P15-01 | 5m21s | 2 tasks | 3 files |
+| Phase 15 P15-02 | 8m02s | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -206,6 +207,9 @@ Recent decisions affecting current work:
 - [Phase 15]: [Phase 15 Plan 15-01] Use tenant/workspace/channel/user/bot/conversation/thread scoped store keys so conversation IDs alone cannot resume another user state. — Mitigates cross-user resume and satisfies CTX-02/CTX-04 scope isolation requirements.
 - [Phase 15]: [Phase 15 Plan 15-01] Leave protocols.py unchanged because no additional caller Protocol was required; public dataclasses and resolve_session_turn are exported from platform_runtime. — Keeps protocols.py signature-only and avoids unnecessary API surface.
 - [Phase 15]: [Phase 15 Plan 15-01] Serialize decisions with raw_payload_ref, text_sha256_16, text_length, IDs, statuses, timestamps, action, and reason only. — Meets CTX-04 and the plan threat model by excluding raw legal/customer text.
+- [Phase 15]: [Phase 15 Plan 15-02] Represent interrupt resume as a normal backend submit_run handoff with explicit sanitized resume metadata instead of adding a mandatory BackendAdapter method.
+- [Phase 15]: [Phase 15 Plan 15-02] Keep interrupt scope isolation on the Phase 15 SessionScope key, including tenant, workspace, channel, user, bot, conversation, and thread.
+- [Phase 15]: [Phase 15 Plan 15-02] Persist prompt/resume/schema refs plus answer hash and length only; the answer text is transient input to the backend handoff and is not written to lifecycle or contract-log evidence.
 
 ### Pending Todos
 
@@ -237,8 +241,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-06-30T22:43:39.930Z
-Stopped at: v1.2 milestone initialized; Phase 14 ready to plan
+Last session: 2026-06-30T22:55:56.532Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/ROADMAP.md
