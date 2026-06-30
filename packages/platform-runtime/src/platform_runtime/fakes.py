@@ -6,7 +6,8 @@ from dataclasses import replace
 from typing import AsyncIterator, Iterable
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
-from platform_contract.enums import AsyncTaskState, RunEventType
+from platform_contract.enums import AgentResultStatus, AsyncTaskState, ReplyType, RunEventType
+from platform_contract.events import AgentResult
 
 from .protocols import (
     AckResponse,
@@ -66,6 +67,7 @@ class FakeBackendAdapter:
             AsyncTaskState.RUNNING,
             AsyncTaskState.SUCCEEDED,
         ),
+        clarification_result: dict[str, object] | None = None,
     ) -> None:
         self._backend_id = backend_id
         self._clock = clock or FakeRuntimeClock()
@@ -73,6 +75,7 @@ class FakeBackendAdapter:
         self._submit_statuses = tuple(_coerce_status(status) for status in submit_statuses)
         if not self._submit_statuses:
             self._submit_statuses = (AsyncTaskState.QUEUED,)
+        self._clarification_result = dict(clarification_result or {})
 
         self.submitted_requests: list[RunRequest] = []
         self.cancelled_run_ids: list[str] = []
@@ -108,12 +111,16 @@ class FakeBackendAdapter:
         self.submitted_requests.append(req)
         run_id = self._id_factory.new_id("run")
         backend_run_id = self._id_factory.new_id("backend-run")
-        final_status = self._submit_statuses[-1]
+        is_clarification = bool(self._clarification_result) and "interrupt_id" not in req.metadata
+        submit_statuses = (AsyncTaskState.WAITING_FOR_USER,) if is_clarification else self._submit_statuses
+        final_status = submit_statuses[-1]
+        result = self._clarification_agent_result(req, run_id) if is_clarification else None
         run = Run(
             run_id=run_id,
             status=final_status,
             turn_id=req.turn.turn_id,
             solution_id=req.solution.solution_id,
+            result=result,
             metadata={
                 "backend_run_id": backend_run_id,
                 "backend_id": self._backend_id,
@@ -121,13 +128,14 @@ class FakeBackendAdapter:
                 "workspace_id": req.workspace_id,
                 "session_id": req.session_id,
                 "raw_payload_ref": req.turn.metadata.get("raw_payload_ref"),
+                **({"interrupt_id": req.metadata["interrupt_id"]} if "interrupt_id" in req.metadata else {}),
             },
         )
         self.runs[run_id] = run
         self.events[run_id] = []
-        for status in self._submit_statuses:
+        for status in submit_statuses:
             self._append_event(run_id, RunEventType.STATE_CHANGED, status=status)
-        self.artifacts[run_id] = [
+        self.artifacts[run_id] = [] if is_clarification else [
             ArtifactRecord(
                 artifact_id=self._id_factory.new_id("artifact"),
                 kind="text",
@@ -139,7 +147,7 @@ class FakeBackendAdapter:
         return RunHandle(
             run_id=run_id,
             backend_run_id=backend_run_id,
-            status=self._submit_statuses[0],
+            status=submit_statuses[0],
             metadata={"event_count": len(self.events[run_id])},
         )
 
@@ -230,6 +238,21 @@ class FakeBackendAdapter:
         )
         self.events[run_id].append(event)
         return event
+
+    def _clarification_agent_result(self, req: RunRequest, run_id: str) -> AgentResult:
+        metadata = {
+            "run_id": run_id,
+            **self._clarification_result,
+        }
+        return AgentResult(
+            result_id=self._id_factory.new_id("result"),
+            turn_id=req.turn.turn_id,
+            status=AgentResultStatus.NEEDS_CLARIFICATION,
+            reply_type=ReplyType.STATUS_UPDATE,
+            content=None,
+            clarifying_questions=[],
+            metadata=metadata,
+        )
 
 
 class FakeChannelAdapter:

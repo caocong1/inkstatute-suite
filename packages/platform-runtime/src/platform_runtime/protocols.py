@@ -21,6 +21,8 @@ from platform_contract.events import (
     OutputConstraints,
 )
 
+from .session_resolver import SessionScope
+
 RunId: TypeAlias = str
 ChannelId: TypeAlias = str
 BackendId: TypeAlias = str
@@ -252,6 +254,15 @@ class SolutionLoader(Protocol):
 
 class RunRuntime(Protocol):
     async def create_run(self, req: RunRequest) -> Run: ...
+
+    async def resume_interrupt(
+        self,
+        *,
+        interrupt_id: str,
+        scope: SessionScope,
+        req: RunRequest,
+        idempotency_key: str | None = None,
+    ) -> Run: ...
 
     async def poll(self, run_id: str) -> Run: ...
 

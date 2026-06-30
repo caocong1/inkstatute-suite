@@ -47,7 +47,7 @@ def make_run_request(*, turn_id: str = "turn-001", content: str = "synthetic req
             message_type=MessageType.TEXT,
             received_at=FIXED_NOW,
             content=content,
-            metadata={"raw_payload_ref": f"fixture://payloads/{turn_id}"},
+            metadata={"raw_payload_ref": f"fixture://payloads/{turn_id}", "thread_id": "thread-001"},
         ),
         solution=SolutionBinding(solution_id="solution-001", version="1.0.0"),
         tenant_id="tenant-001",

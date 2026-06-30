@@ -7,12 +7,14 @@ from datetime import datetime, timezone
 import hashlib
 from typing import AsyncIterator, Iterable, Mapping
 
-from platform_contract.enums import AsyncTaskState, RunEventType
+from platform_contract.enums import AgentResultStatus, AsyncTaskState, InterruptStatus, RunEventType
 
 from .feature_flags import RuntimeFeatureFlags
+from .interrupts import InMemoryInterruptStore, InterruptLifecycleAction, InterruptRecord
 from .output_boundary import BoundaryAction, DefaultAssistantOutputBoundary
 from .ports import AssistantOutputBoundary, ContractLogStore, IdFactory, RuntimeClock
 from .protocols import Approval, BackendAdapter, ChannelAdapter, Run, RunEvent, RunRequest
+from .session_resolver import SessionScope
 
 
 class RunRuntimeStateError(RuntimeError):
@@ -32,6 +34,7 @@ class DefaultRunRuntime:
         output_boundary: AssistantOutputBoundary | None = None,
         clock: RuntimeClock | None = None,
         id_factory: IdFactory | None = None,
+        interrupt_store: InMemoryInterruptStore | None = None,
     ) -> None:
         self.backend = backend
         self.channels = tuple(channels)
@@ -40,6 +43,8 @@ class DefaultRunRuntime:
         self.output_boundary = output_boundary or DefaultAssistantOutputBoundary()
         self.clock = clock or _SystemRuntimeClock()
         self.id_factory = id_factory or _SequentialIdFactory()
+        self.interrupt_store = interrupt_store
+        self._resumed_run_by_key: dict[tuple[str, str | None, str | None], str] = {}
 
     async def create_run(self, req: RunRequest) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
@@ -53,6 +58,71 @@ class DefaultRunRuntime:
                 status=handle.status,
                 event_id=self.id_factory.new_id("run-event"),
                 metadata={"source": "runtime_create"},
+            )
+        run = await self.backend.get_run(handle.run_id)
+        self._record_clarification_interrupt_if_needed(req=req, run=run)
+        return run
+
+    async def resume_interrupt(
+        self,
+        *,
+        interrupt_id: str,
+        scope: SessionScope,
+        req: RunRequest,
+        idempotency_key: str | None = None,
+    ) -> Run:
+        self.feature_flags.require_enabled("run_runtime_enabled")
+        self._require_interrupt_store()
+        self._require_contract_log_store_if_enabled()
+        answer = str(req.turn.content or "")
+        decision = self.interrupt_store.resolve(
+            interrupt_id=interrupt_id,
+            scope=scope,
+            turn_id=req.turn.turn_id,
+            answer_text=answer,
+            idempotency_key=idempotency_key,
+        )
+        if decision.action == InterruptLifecycleAction.DUPLICATE_ANSWER_IGNORED:
+            run_id = self._resumed_run_by_key.get(_resume_key(interrupt_id, req.turn.turn_id, idempotency_key))
+            if run_id is None:
+                raise RunRuntimeStateError("duplicate interrupt resume has no recorded backend run")
+            return await self.backend.get_run(run_id)
+        if decision.action != InterruptLifecycleAction.RESOLVED or decision.interrupt is None:
+            raise RunRuntimeStateError(f"interrupt cannot be resumed: {decision.action.value}")
+
+        interrupt = decision.interrupt
+        resume_metadata = {
+            **req.metadata,
+            "source": "runtime_resume_interrupt",
+            "interrupt_id": interrupt.event.interrupt_id,
+            "resume_state_ref": interrupt.event.resume_state_ref,
+            "resuming_run_id": interrupt.event.run_id,
+            "resolved_turn_id": req.turn.turn_id,
+            "answer_text_sha256_16": _sha256_16(answer),
+            "answer_text_length": len(answer),
+            "resolved_idempotency_key": idempotency_key,
+            "privacy": "no_raw_answer_text_stored",
+        }
+        resume_req = replace(req, metadata=resume_metadata)
+        handle = await self.backend.submit_run(resume_req)
+        self._resumed_run_by_key[_resume_key(interrupt_id, req.turn.turn_id, idempotency_key)] = handle.run_id
+        if self.feature_flags.contract_log_enabled:
+            self._append_run_record(resume_req, handle.run_id, handle.status, handle.backend_run_id)
+            self._append_state_event(
+                run_id=handle.run_id,
+                turn_id=req.turn.turn_id,
+                status=handle.status,
+                event_id=self.id_factory.new_id("run-event"),
+                metadata={
+                    "source": "runtime_resume_interrupt",
+                    "interrupt_id": interrupt.event.interrupt_id,
+                    "resume_state_ref": interrupt.event.resume_state_ref,
+                    "resuming_run_id": interrupt.event.run_id,
+                    "answer_text_sha256_16": _sha256_16(answer),
+                    "answer_text_length": len(answer),
+                    "resolved_idempotency_key": idempotency_key,
+                    "privacy": "no_raw_answer_text_stored",
+                },
             )
         return await self.backend.get_run(handle.run_id)
 
@@ -153,9 +223,51 @@ class DefaultRunRuntime:
             raise RunRuntimeStateError("contract_log_enabled requires contract_log_store")
         return self.contract_log_store
 
+    def _require_interrupt_store(self) -> InMemoryInterruptStore:
+        if self.interrupt_store is None:
+            raise RunRuntimeStateError("interrupt resume requires interrupt_store")
+        return self.interrupt_store
+
     def _require_contract_log_store_if_enabled(self) -> None:
         if self.feature_flags.contract_log_enabled:
             self._contract_log()
+
+    def _record_clarification_interrupt_if_needed(self, *, req: RunRequest, run: Run) -> None:
+        if not _is_clarification_run(run):
+            return
+        store = self._require_interrupt_store()
+        result_metadata = dict(run.result.metadata if run.result is not None else {})
+        prompt_ref = _required_ref(result_metadata, "prompt_ref")
+        resume_state_ref = _required_ref(result_metadata, "resume_state_ref")
+        record = store.create_clarification(
+            scope=_scope_from_request(req),
+            run_id=run.run_id,
+            session_id=req.session_id or "",
+            prompt_ref=prompt_ref,
+            resume_state_ref=resume_state_ref,
+            reason=str(result_metadata.get("reason") or "backend_needs_clarification"),
+            expected_response_schema_ref=_optional_ref(result_metadata, "expected_response_schema_ref"),
+            expires_at=_optional_ref(result_metadata, "expires_at"),
+            metadata=_clarification_metadata(result_metadata),
+        )
+        if self.feature_flags.contract_log_enabled:
+            self._append_interrupt_record(record)
+            self._append_state_event(
+                run_id=run.run_id,
+                turn_id=run.turn_id,
+                status=AsyncTaskState.WAITING_FOR_USER,
+                event_id=self.id_factory.new_id("run-event"),
+                metadata={
+                    "source": "runtime_clarification_interrupt",
+                    "interrupt_id": record.event.interrupt_id,
+                    "interrupt_status": InterruptStatus.WAITING_FOR_USER.value,
+                    "agent_result_status": AgentResultStatus.NEEDS_CLARIFICATION.value,
+                    "privacy": "no_raw_prompt_or_answer_text_stored",
+                },
+            )
+
+    def _append_interrupt_record(self, record: InterruptRecord) -> None:
+        self._contract_log().append("run_interrupt", record.as_event())
 
     def _apply_output_boundary(self, event: RunEvent) -> RunEvent | None:
         visible_text = _event_visible_text(event)
@@ -217,6 +329,10 @@ def _sha256_or_none(value: str | None) -> str | None:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _sha256_16(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+
 def _status_value(status: AsyncTaskState | str) -> str:
     if isinstance(status, AsyncTaskState):
         return status.value
@@ -253,6 +369,69 @@ def _boundary_action_value(action: object) -> str:
     if isinstance(action, BoundaryAction):
         return action.value
     return str(action)
+
+
+def _is_clarification_run(run: Run) -> bool:
+    if _status_value(run.status) != AsyncTaskState.WAITING_FOR_USER.value:
+        return False
+    if run.result is None:
+        return False
+    status = run.result.status
+    if isinstance(status, AgentResultStatus):
+        return status == AgentResultStatus.NEEDS_CLARIFICATION
+    return str(status) == AgentResultStatus.NEEDS_CLARIFICATION.value
+
+
+def _scope_from_request(req: RunRequest) -> SessionScope:
+    return SessionScope(
+        tenant_id=str(req.tenant_id or ""),
+        workspace_id=str(req.workspace_id or ""),
+        channel_id=_channel_id(req),
+        user_id=req.turn.user_id,
+        bot_instance_id=str(req.bot_instance_id or ""),
+        conversation_id=req.turn.conversation_id,
+        thread_id=_optional_text(req.turn.metadata.get("thread_id")),
+    )
+
+
+def _channel_id(req: RunRequest) -> str:
+    channel = req.turn.channel
+    return getattr(channel, "value", str(channel))
+
+
+def _required_ref(metadata: Mapping[str, object], key: str) -> str:
+    value = metadata.get(key)
+    if value is None or str(value) == "":
+        raise RunRuntimeStateError(f"clarification result missing {key}")
+    return str(value)
+
+
+def _optional_ref(metadata: Mapping[str, object], key: str) -> str | None:
+    value = metadata.get(key)
+    if value is None:
+        return None
+    return str(value)
+
+
+def _optional_text(value: object) -> str | None:
+    if value is None:
+        return None
+    return str(value)
+
+
+def _clarification_metadata(metadata: Mapping[str, object]) -> dict[str, object]:
+    allowed_keys = {
+        "question_kind",
+        "choice_refs",
+        "expected_response_schema_ref",
+        "raw_payload_ref",
+        "privacy",
+    }
+    return {key: value for key, value in metadata.items() if key in allowed_keys}
+
+
+def _resume_key(interrupt_id: str, turn_id: str | None, idempotency_key: str | None) -> tuple[str, str | None, str | None]:
+    return (interrupt_id, turn_id, idempotency_key)
 
 
 __all__ = [
