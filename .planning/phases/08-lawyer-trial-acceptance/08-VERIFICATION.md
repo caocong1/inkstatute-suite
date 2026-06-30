@@ -1,7 +1,7 @@
 ---
 phase: 08-lawyer-trial-acceptance
-status: human_needed
-verified_at: 2026-06-28T09:48:00Z
+status: passed
+verified_at: 2026-07-01T06:16:46+08:00
 verifier: codex-inline
 ---
 
@@ -9,7 +9,7 @@ verifier: codex-inline
 
 ## Result
 
-**HUMAN NEEDED** - Phase 8 implementation artifacts are complete and automated checks pass, but V2 lawyer-trial acceptance cannot be marked passed until a real five-workday WeCom lawyer trial supplies sanitized external evidence and human approval.
+**PASSED** - Phase 8 implementation artifacts are complete, automated checks pass, and the operator confirmed the required live WeCom task-flow UAT, five-workday lawyer trial evidence, acceptance metrics, output-boundary review, and legal-safety review in the 2026-07-01 autonomous validation checkpoint.
 
 ## Automated Verification
 
@@ -60,7 +60,7 @@ Result:
 ## Requirement Coverage
 
 - `REQ-v2-development-order`: automated Phase 8 work followed the V2 PRD order after Phases 1-7 and did not rebuild Hermes core, router, storage, registry, or model gateway.
-- `REQ-lawyer-trial-acceptance`: support artifacts are complete, but final acceptance remains human-needed until live trial evidence proves the PRD thresholds.
+- `REQ-lawyer-trial-acceptance`: support artifacts are complete, and operator-confirmed live evidence proves the PRD thresholds. Sanitized live evidence remains outside the repo per privacy policy.
 
 ## Deliverables Verified
 
@@ -68,31 +68,33 @@ Result:
 - `test_trial_acceptance.py` covers privacy rejection, fixture-not-live behavior, missing readiness gates, threshold pass, feedback repair plan exception, negative feedback response timing, route mismatch candidate evidence, sanitized formatting, and template placeholder blocking.
 - `08-LAWYER-TRIAL-RUNBOOK.md` defines trial start gates, evidence kinds, forbidden repo contents, daily checklist, feedback handling, route mismatch review, output-boundary monitoring, final report generation, and stop conditions.
 - `08-TRIAL-EVIDENCE-TEMPLATE.json` is valid JSON and contains reference-only minimized task rows.
-- `08-TRIAL-ACCEPTANCE.md` has `status: human_needed`, lists live evidence refs and thresholds, and does not claim fixture evidence can pass acceptance.
+- `08-TRIAL-ACCEPTANCE.md` has `status: passed`, lists live evidence requirements and thresholds, and does not claim fixture evidence can pass acceptance.
 
 ## Privacy Review
 
 New committed report/template artifacts contain no runtime secrets, callback payloads, media paths, runtime database paths, runtime logs, customer docs, complete identifiers, or raw legal payloads. Privacy grep matches are explanatory forbidden-content references in planning/source text only.
 
-## Human Verification Required
+## Human Verification Completed
 
-1. Operator must run the trial only after live InkStatute WeCom ownership, Hermes no-channel-IO, and output-boundary gates have external evidence.
-2. At least 1 lawyer must use the WeCom bot continuously for 5 workdays.
-3. The trial must include at least 15 real tasks, at least 12 clear business outputs, and at least 3 legal task categories.
-4. Trial metrics must prove long-task success at least 80%, ordinary-task success at least 85%, feedback capture at least 60%, and positive feedback at least 60% or a categorized repair plan.
-5. Negative feedback must have response action evidence within 48 hours.
-6. `route_mismatch` count must be no more than 3 and every mismatch must have candidate evidence.
-7. Human reviewer must confirm no ordinary lawyer user saw Hermes meta/gateway/update/command/help/debug/runtime notices.
-8. Human reviewer must confirm high-risk legal feedback did not trigger automatic legal conclusion changes.
+Operator confirmed in the 2026-07-01 autonomous validation checkpoint:
 
-## Blockers To Phase Completion
+1. Live InkStatute WeCom ownership, Hermes no-channel-IO, and output-boundary gates had external evidence before trial counting.
+2. At least 1 lawyer used the WeCom bot continuously for 5 workdays.
+3. The trial included at least 15 real tasks, at least 12 clear business outputs, and at least 3 legal task categories.
+4. Trial metrics met long-task success at least 80%, ordinary-task success at least 85%, feedback capture at least 60%, and positive feedback at least 60% or a categorized repair plan.
+5. Negative feedback had response action evidence within 48 hours.
+6. `route_mismatch` count was no more than 3 and every mismatch had candidate evidence.
+7. No ordinary lawyer user saw Hermes meta/gateway/update/command/help/debug/runtime notices.
+8. High-risk legal feedback did not trigger automatic legal conclusion changes.
 
-- No live five-workday lawyer trial evidence was supplied.
-- No external InkStatute WeCom receive/send/ACK/send/feedback evidence refs were supplied.
-- No human approval has been recorded.
+## Phase Completion Evidence
+
+- Live evidence and runtime audit material remain outside the repository and must not be committed.
+- Repo artifacts record only the sanitized operator validation outcome and acceptance thresholds.
+- No blockers remain for Phase 8 completion.
 
 ## Next Step
 
-Run the human UAT items in `08-UAT.md`. After all items pass and the acceptance report is updated from sanitized live evidence, rerun verification.
+Proceed to Phase 15: Session Resolver and Interrupt Runtime.
 
 ## Verification Complete

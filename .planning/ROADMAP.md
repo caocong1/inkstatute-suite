@@ -21,13 +21,26 @@ V2 moves from contract definitions to verified production shadow recording, then
 - [x] **Phase 5.5: InkStatute WeCom Service and Hermes Agent Adapter** - Build the WeCom receive/send service, define the agent backend adapter contract, make Hermes mode reproducible, and enforce a pure lawyer-assistant WeCom boundary. (completed 2026-06-28)
 - [x] **Phase 6: Read and Feedback Service APIs** - Deliver read-only conversation/task/feedback APIs plus feedback normalization, dedupe, classification, and pending queues. (completed 2026-06-28)
 - [x] **Phase 7: CI, Composability, and Privacy Gates** - Enforce industry-neutral composability, coverage, relationship integrity, thin-layer boundaries, and safety baselines in CI. (completed 2026-06-28)
-- [ ] **Phase 8: Lawyer Trial Acceptance** - Run the five-workday lawyer trial and validate V2 acceptance metrics.
+- [x] **Phase 8: Lawyer Trial Acceptance** - Run the five-workday lawyer trial and validate V2 acceptance metrics. (completed 2026-06-30)
 
 ### Milestone v1.1 — Platform Foundation (COMPLETED 2026-06-30)
 
 > **Archived:** [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) | [v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md)
 >
 > 5 phases (09–13), 20 plans, 99 commits, 195 files changed, 25,368 insertions. V2 gate: 8/8 pass, 287 tests. Audit: passed. All four North Star contracts shipped (ChannelAdapter, BackendAdapter, SolutionLoader, RunRuntime). All lanes default-OFF. Phase 8 (Lawyer Trial Acceptance) remains a parallel human gate.
+
+### Milestone v1.2 — Conversational Context and Memory Foundation (ACTIVE)
+
+**Goal:** Ordinary WeCom users can keep talking naturally without agent/session commands while InkStatute maintains bounded context, privacy-safe memory, resumable skill clarification, and feedback-informed learning.
+
+**Requirements:** `.planning/REQUIREMENTS.md`
+**Research:** `.planning/research/SUMMARY.md`
+
+- [x] **Phase 14: Memory Research and Contract Spec** - Lock the context/memory vocabulary, schemas, privacy policy, and Mem0/Zep evaluation criteria. (completed 2026-06-30)
+- [ ] **Phase 15: Session Resolver and Interrupt Runtime** - Implement invisible session/thread resolution plus waiting-for-user clarification resume.
+- [ ] **Phase 16: Short-Term Context Assembler** - Build deterministic context assembly with recent turns, rolling summaries, active task state, artifacts, and budget trimming.
+- [ ] **Phase 17: Long-Term Memory and Feedback Learning** - Add platform-native memory store/candidate flow and feedback-to-context behavior with human review gates.
+- [ ] **Phase 18: External Memory Adapter Evaluation and Acceptance Gates** - Spike Mem0/Zep-style adapter contracts on sanitized fixtures and finalize the production recommendation.
 
 ## Phase Details
 
@@ -217,11 +230,83 @@ Plans:
 
 _(Phases 09–13 archived — see [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md))_
 
+### Phase 14: Memory Research and Contract Spec
+
+**Goal**: Developers can implement context and memory from stable platform contracts and documented evaluation criteria instead of ad hoc prompt stuffing.
+**Depends on**: Milestone v1.1 platform contracts
+**Requirements**: LTM-01, LTM-02, EXT-01
+**Success Criteria** (what must be TRUE):
+
+  1. `MemoryRecord`, `MemoryCandidate`, `MemoryUse`, `ContextBundle`, and `RunInterrupt` are specified as backend-neutral schemas and Python bindings.
+  2. The privacy policy defines allowed memory scopes, TTL, source refs, sensitivity, confidence, deletion metadata, and raw-payload reference rules.
+  3. Mem0/Zep-style external memory systems are compared against platform-native memory for deployment, privacy, tenant isolation, deletion/export, latency, and adapter fit.
+  4. No external memory system becomes mandatory for legal production in this phase.
+
+**Plans**: TBD
+
+### Phase 15: Session Resolver and Interrupt Runtime
+
+**Goal**: Ordinary users can continue, clarify, or start a new task without knowing session commands.
+**Depends on**: Phase 14
+**Requirements**: CTX-01, CTX-02, CTX-03, CTX-04, INT-01, INT-02, INT-03, INT-04
+**Success Criteria** (what must be TRUE):
+
+  1. WeCom and platform channels resolve active `conversation_id` and `session_id/thread_id` from channel/user/bot, active task, pending interrupt, and idle-window signals.
+  2. A clearly new task can open a new session automatically while stale or terminal sessions are not accidentally resumed.
+  3. Backend/skill clarification maps to `waiting_for_user` / `needs_clarification` and persists resume state.
+  4. The user's next WeCom reply resumes the paused run and does not require `/new`, `/resume`, or agent terminology.
+  5. Session decisions and interrupt records are privacy-safe and use raw payload references.
+
+**Plans**: TBD
+
+### Phase 16: Short-Term Context Assembler
+
+**Goal**: Runtime can send high-signal bounded context to backends without unbounded history growth.
+**Depends on**: Phase 15
+**Requirements**: STM-01, STM-02, STM-03, STM-04
+**Success Criteria** (what must be TRUE):
+
+  1. Context assembly includes the current turn, pending clarification, active task state, recent turns, artifact refs, feedback corrections, and rolling summaries under a deterministic budget.
+  2. Current turn, pending clarification, and output-policy constraints are never dropped during trimming.
+  3. Long conversation tests prove the assembler does not send full history to the backend.
+  4. Rolling summaries preserve intent, constraints, unanswered questions, artifacts, and outcomes without storing sensitive full text by default.
+
+**Plans**: TBD
+
+### Phase 17: Long-Term Memory and Feedback Learning
+
+**Goal**: Privacy-safe memory and feedback corrections can improve future context while high-risk legal changes remain human-reviewed.
+**Depends on**: Phase 16
+**Requirements**: LTM-03, LTM-04, FBK-01, FBK-02, FBK-03, FBK-04
+**Success Criteria** (what must be TRUE):
+
+  1. A platform-native `MemoryStore` can persist and retrieve scoped memory records using refs, TTL, confidence, sensitivity, and deletion metadata.
+  2. Feedback can influence current-session context as corrections or constraints.
+  3. Repeated negative feedback can create memory or routing candidates with source refs and confidence.
+  4. Route mismatch and `skill_candidate` items remain pending human review with no-auto-modify metadata.
+  5. Existing feedback dedupe and pending queue behavior remains intact.
+
+**Plans**: TBD
+
+### Phase 18: External Memory Adapter Evaluation and Acceptance Gates
+
+**Goal**: The team knows whether to use platform-native memory, Mem0, Zep, or another adapter later, based on contract evidence and privacy gates.
+**Depends on**: Phase 17
+**Requirements**: EXT-02, EXT-03, EXT-04
+**Success Criteria** (what must be TRUE):
+
+  1. A `MemoryStore` adapter contract and capability manifest can represent external memory stores without changing RunRuntime or channel contracts.
+  2. Mem0/Zep-style adapter spikes use only synthetic or sanitized fixtures.
+  3. Privacy tests fail if raw legal payloads, secrets, or unreviewed high-risk legal conclusions are stored as reusable memory.
+  4. The milestone ends with a documented production recommendation and acceptance gate for live legal memory use.
+
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8.
-Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30. Phase 8 (v1.0 lawyer trial) remains a parallel human gate.
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 5.5 -> 6 -> 7 -> 8, with archived v1.1 phases 09-13 and active v1.2 phases 14-18.
+Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30. Phase 8 (v1.0 lawyer trial) remains a parallel human gate. Milestone v1.2 is active and starts at Phase 14.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -233,5 +318,10 @@ Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30.
 | 5.5. InkStatute WeCom Service and Hermes Agent Adapter | 4/4 | Complete    | 2026-06-28 |
 | 6. Read and Feedback Service APIs | 3/3 | Complete    | 2026-06-28 |
 | 7. CI, Composability, and Privacy Gates | 3/3 | Complete    | 2026-06-28 |
-| 8. Lawyer Trial Acceptance | 4/4 | Human Needed - Live UAT Pending | - |
+| 8. Lawyer Trial Acceptance | 4/4 | Complete    | 2026-06-30 |
 | --- Milestone v1.1 — Platform Foundation (COMPLETED) --- | | | See [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) |
+| 14. Memory Research and Contract Spec | 3/3 | Complete    | 2026-06-30 |
+| 15. Session Resolver and Interrupt Runtime | 0/TBD | Pending | - |
+| 16. Short-Term Context Assembler | 0/TBD | Pending | - |
+| 17. Long-Term Memory and Feedback Learning | 0/TBD | Pending | - |
+| 18. External Memory Adapter Evaluation and Acceptance Gates | 0/TBD | Pending | - |

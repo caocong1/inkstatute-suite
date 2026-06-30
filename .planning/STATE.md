@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1-archived
-milestone_name: Platform Foundation
-status: milestone_completed
-stopped_at: milestone archive complete (2026-06-30)
-last_updated: "2026-06-30T12:00:00.000Z"
-last_activity: 2026-06-30 -- v1.1 milestone archived
+milestone: v1.2
+milestone_name: — Conversational Context and Memory Foundation
+status: planning
+stopped_at: v1.2 milestone initialized; Phase 14 ready to plan
+last_updated: "2026-06-30T22:18:21.092Z"
+last_activity: 2026-06-30
 progress:
   total_phases: 14
-  completed_phases: 13
-  total_plans: 50
-  completed_plans: 49
-  percent: 93
+  completed_phases: 10
+  total_plans: 33
+  completed_plans: 33
+  percent: 71
 ---
 
 # Project State
@@ -21,18 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-30)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.1 archived — awaiting next milestone definition
+**Current focus:** Milestone v1.2 — Conversational Context and Memory Foundation
 
 ## Current Position
 
-Milestone: v1.1 — Platform Foundation (ARCHIVED 2026-06-30)
-Phase: null (no active phase)
-Plan: null
-Status: Milestone complete — archive finalized
-Next action: `/gsd-new-milestone` to define next milestone, or `$gsd-resume-work` if continuing
-Last activity: 2026-06-30 -- v1.1 milestone archived
+Milestone: v1.2 — Conversational Context and Memory Foundation
+Phase: 14
+Plan: Not started
+Status: Ready to plan Phase 14
+Next action: `$gsd-plan-phase 14` (or `$gsd-discuss-phase 14` if more context gathering is desired)
+Last activity: 2026-06-30
 
-Progress (v1.1): [██████████] 100% of milestone phases (5/5)
+Progress (v1.2): [░░░░░░░░░░] 0% of milestone phases (0/5)
 
 ### Parallel Human Gate (v1.0)
 
@@ -44,7 +44,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 
 **Velocity:**
 
-- Total plans completed: 49
+- Total plans completed: 60
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -62,6 +62,8 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | 09 | 4 | - | - |
 | 10 | 4 | - | - |
 | 11 | 4 | - | - |
+| 14 | 3 | - | - |
+| 8 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -213,6 +215,8 @@ None yet.
 - Hermes agent adapter work must account for version drift with capability probing and a compatibility matrix before relying on hook/event/invocation behavior.
 - Phase 8 trial clock is blocked until live WeCom UAT proves the 08-04 task-flow runtime: quick ACK, recurring service-owned progress, explicit final/timeout/failure state, file+text merge, no empty-message answer, no Hermes meta leak, and fast response to follow-up messages during active long tasks.
 - Phase 8 trial clock is also blocked until fresh live UAT proves no progress-only backend output is recorded as `completed`; requested DOCX/file tasks must deliver an artifact or be recorded as explicit incomplete/failure.
+- v1.2 must not store full raw legal/customer text in memory records; memory is context support, not a new raw conversation database.
+- External memory systems such as Mem0/Zep require explicit privacy, retention, deletion/export, tenant-isolation, and deployment review before production legal use.
 
 ## Deferred Items
 
@@ -223,13 +227,17 @@ Items acknowledged and carried forward from previous milestone close:
 | Beyond V2 | Independent Router Service, Skill Registry, full Web UI, Tauri desktop, automatic skill synthesis, complete security platform | Deferred to M2-M4 | V2 initialization |
 | Human gate | Phase 8 Lawyer Trial Acceptance (7 pending UAT scenarios) | Deferred (parallel human gate) | v1.1 archive |
 | Human gate | Phase 5 live WeCom UAT (fixture-satisfied, operator confirmation needed) | Deferred (human gate) | v1.1 archive |
+| v1.2 follow-up | Production external memory service adoption (Mem0/Zep or similar) | Deferred until adapter evaluation and legal privacy gates pass | v1.2 initialization |
+| v1.2 follow-up | User-facing memory management UI | Deferred beyond v1.2 | v1.2 initialization |
 
 ## Session Continuity
 
-Last session: 2026-06-30T12:00:00.000Z
-Stopped at: milestone archive complete (2026-06-30)
+Last session: 2026-06-30T16:00:00.000Z
+Stopped at: v1.2 milestone initialized; Phase 14 ready to plan
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
-Execution plan: .planning/drafts/agent-platformization-plan-v5.md
+Execution plan: .planning/ROADMAP.md
+Requirements: .planning/REQUIREMENTS.md
+Research summary: .planning/research/SUMMARY.md
 Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
 v1.1 archive: .planning/milestones/v1.1-ROADMAP.md
