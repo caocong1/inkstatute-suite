@@ -35,6 +35,12 @@ from .ports import (
 from .output_boundary import BoundaryAction, BoundaryDecision, DefaultAssistantOutputBoundary
 from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
 from .fakes import FakeBackendAdapter, FakeChannelAdapter, FakeIdFactory, FakeRuntimeClock
+from .interrupts import (
+    InMemoryInterruptStore,
+    InterruptLifecycleAction,
+    InterruptLifecycleDecision,
+    InterruptRecord,
+)
 from .runtime import DefaultRunRuntime, RunRuntimeStateError
 from .session_resolver import (
     ActiveTaskSnapshot,
@@ -78,7 +84,11 @@ __all__ = [
     "IdFactory",
     "InboundNormalized",
     "InMemoryContractLogStore",
+    "InMemoryInterruptStore",
     "InMemorySessionResolutionStore",
+    "InterruptLifecycleAction",
+    "InterruptLifecycleDecision",
+    "InterruptRecord",
     "Issue",
     "PendingInterruptSnapshot",
     "RawInbound",
