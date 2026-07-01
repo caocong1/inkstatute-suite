@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-30)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 16 — Short-Term Context Assembler
+**Current focus:** Phase 17 — Long-Term Memory and Feedback Learning
 
 ## Current Position
 
 Milestone: v1.2 — Conversational Context and Memory Foundation
 Phase: 17
 Plan: Not started
-Status: Executing Phase 16
-Next action: `$gsd-plan-phase 14` (or `$gsd-discuss-phase 14` if more context gathering is desired)
+Status: Phase 16 complete — ready for Phase 17 context/planning
+Next action: `$gsd-autonomous --from 17` or `$gsd-plan-phase 17` after context is prepared
 Last activity: 2026-07-01
 
 Progress (v1.2): [░░░░░░░░░░] 0% of milestone phases (0/5)
