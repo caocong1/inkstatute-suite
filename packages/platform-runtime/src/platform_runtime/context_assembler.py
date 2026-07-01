@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
+import math
 from typing import Any
 
 from platform_contract.events import ContextBundle, JsonObject
 
 from .session_resolver import ActiveTaskSnapshot, PendingInterruptSnapshot, SessionScope
-from .session_resolver import _clock_now, _coerce_datetime, _json_clone, _new_id, _safe_metadata, _sha16, _timestamp
-from .store import ContractLogPrivacyError
+from .session_resolver import _clock_now, _json_clone, _new_id, _safe_metadata, _sha16, _timestamp
 
 
 class ContextAssemblyBudgetError(ValueError):
@@ -161,7 +161,190 @@ class ContextAssembler:
         now: datetime | str | None = None,
         id_factory: Callable[[str], str] | Any | None = None,
     ) -> ContextAssemblyResult:
-        raise NotImplementedError("ContextAssembler budget assembly is implemented in the next task")
+        cfg = policy or self.policy
+        current = _timestamp(now or _clock_now(self.clock))
+        id_source = id_factory or self.id_factory
+        safe_input_metadata = _safe_metadata(input.metadata)
+        safe_industry_context = _safe_metadata(input.industry_context)
+
+        recent_turn_refs = list(input.recent_turn_refs[: max(0, cfg.max_recent_turn_refs)])
+        artifact_refs = list(input.artifact_refs[: max(0, cfg.max_artifact_refs)])
+        feedback_correction_refs = list(input.feedback_correction_refs[: max(0, cfg.max_feedback_correction_refs)])
+        memory_refs = list(input.memory_refs[: max(0, cfg.max_memory_refs)])
+        active_task_refs = _active_task_refs(input)
+        raw_payload_refs = _raw_payload_refs(input)
+        summary = _copy_summary(input.rolling_summary) if input.rolling_summary is not None else None
+
+        dropped_sections: JsonObject = {
+            "recent_turn_refs": max(0, len(input.recent_turn_refs) - len(recent_turn_refs)),
+            "artifact_refs": max(0, len(input.artifact_refs) - len(artifact_refs)),
+            "feedback_correction_refs": max(0, len(input.feedback_correction_refs) - len(feedback_correction_refs)),
+            "memory_refs": max(0, len(input.memory_refs) - len(memory_refs)),
+            "active_task_refs": 0,
+        }
+        protected_sections = _protected_sections(input)
+
+        protected_bundle = self._bundle(
+            input=input,
+            policy=cfg,
+            created_at=current,
+            context_bundle_id=_new_id(id_source, "context-bundle"),
+            recent_turn_refs=(),
+            active_task_refs=(),
+            artifact_refs=(),
+            memory_refs=(),
+            raw_payload_refs=raw_payload_refs,
+            summary_ref=None,
+            metadata=_protected_bundle_metadata(
+                input=input,
+                dropped_sections=dropped_sections,
+                protected_sections=protected_sections,
+                safe_input_metadata=safe_input_metadata,
+            ),
+            industry_context=safe_industry_context,
+        )
+        protected_tokens = _estimate_tokens(_context_bundle_as_event(protected_bundle), cfg)
+        if protected_tokens > cfg.budget_tokens:
+            raise ContextAssemblyBudgetError(
+                f"protected context requires {protected_tokens} estimated tokens, budget is {cfg.budget_tokens}"
+            )
+
+        context_bundle_id = _new_id(id_source, "context-bundle")
+        bundle = self._bundle(
+            input=input,
+            policy=cfg,
+            created_at=current,
+            context_bundle_id=context_bundle_id,
+            recent_turn_refs=recent_turn_refs,
+            active_task_refs=active_task_refs,
+            artifact_refs=artifact_refs,
+            memory_refs=memory_refs,
+            raw_payload_refs=raw_payload_refs,
+            summary_ref=summary.summary_ref if summary is not None else None,
+            metadata=_bundle_metadata(
+                input=input,
+                feedback_correction_refs=feedback_correction_refs,
+                dropped_sections=dropped_sections,
+                estimated_tokens=0,
+                protected_sections=protected_sections,
+                safe_input_metadata=safe_input_metadata,
+                active_task_refs=active_task_refs,
+            ),
+            industry_context=safe_industry_context,
+        )
+        estimated = _estimate_tokens(_context_bundle_as_event(bundle), cfg)
+
+        trim_order = (
+            ("feedback_correction_refs", feedback_correction_refs),
+            ("memory_refs", memory_refs),
+            ("recent_turn_refs", recent_turn_refs),
+            ("artifact_refs", artifact_refs),
+            ("active_task_refs", active_task_refs),
+        )
+        while estimated > cfg.budget_tokens:
+            trimmed = False
+            for section, values in trim_order:
+                if values:
+                    values.pop()
+                    dropped_sections[section] = int(dropped_sections.get(section, 0)) + 1
+                    trimmed = True
+                    break
+            if not trimmed:
+                break
+            bundle = self._bundle(
+                input=input,
+                policy=cfg,
+                created_at=current,
+                context_bundle_id=context_bundle_id,
+                recent_turn_refs=recent_turn_refs,
+                active_task_refs=active_task_refs,
+                artifact_refs=artifact_refs,
+                memory_refs=memory_refs,
+                raw_payload_refs=raw_payload_refs,
+                summary_ref=summary.summary_ref if summary is not None else None,
+                metadata=_bundle_metadata(
+                    input=input,
+                    feedback_correction_refs=feedback_correction_refs,
+                    dropped_sections=dropped_sections,
+                    estimated_tokens=0,
+                    protected_sections=protected_sections,
+                    safe_input_metadata=safe_input_metadata,
+                    active_task_refs=active_task_refs,
+                ),
+                industry_context=safe_industry_context,
+            )
+            estimated = _estimate_tokens(_context_bundle_as_event(bundle), cfg)
+
+        if estimated > cfg.budget_tokens:
+            raise ContextAssemblyBudgetError(
+                f"context requires {estimated} estimated tokens after trimming, budget is {cfg.budget_tokens}"
+            )
+
+        bundle = self._bundle(
+            input=input,
+            policy=cfg,
+            created_at=current,
+            context_bundle_id=context_bundle_id,
+            recent_turn_refs=recent_turn_refs,
+            active_task_refs=active_task_refs,
+            artifact_refs=artifact_refs,
+            memory_refs=memory_refs,
+            raw_payload_refs=raw_payload_refs,
+            summary_ref=summary.summary_ref if summary is not None else None,
+            metadata=_bundle_metadata(
+                input=input,
+                feedback_correction_refs=feedback_correction_refs,
+                dropped_sections=dropped_sections,
+                estimated_tokens=estimated,
+                protected_sections=protected_sections,
+                safe_input_metadata=safe_input_metadata,
+                active_task_refs=active_task_refs,
+            ),
+            industry_context=safe_industry_context,
+        )
+        return ContextAssemblyResult(
+            bundle=bundle,
+            estimated_tokens=estimated,
+            dropped_sections=_json_clone(dropped_sections),
+            protected_sections=protected_sections,
+        )
+
+    def _bundle(
+        self,
+        *,
+        input: ContextAssemblyInput,
+        policy: ContextAssemblyPolicy,
+        created_at: str,
+        context_bundle_id: str,
+        recent_turn_refs: Sequence[str],
+        active_task_refs: Sequence[str],
+        artifact_refs: Sequence[str],
+        memory_refs: Sequence[str],
+        raw_payload_refs: Sequence[str],
+        summary_ref: str | None,
+        metadata: Mapping[str, Any],
+        industry_context: Mapping[str, Any],
+    ) -> ContextBundle:
+        return ContextBundle(
+            context_bundle_id=context_bundle_id,
+            tenant_id=input.scope.tenant_id,
+            workspace_id=input.scope.workspace_id,
+            session_id=input.session_id,
+            created_at=created_at,
+            budget_tokens=policy.budget_tokens,
+            run_id=input.run_id,
+            turn_id=input.turn_id,
+            recent_turn_refs=list(recent_turn_refs),
+            summary_ref=summary_ref,
+            active_task_refs=list(active_task_refs),
+            artifact_refs=list(artifact_refs),
+            memory_refs=list(memory_refs),
+            interrupt_id=input.pending_interrupt.interrupt_id if input.pending_interrupt is not None else None,
+            trim_strategy=policy.trim_strategy,
+            raw_payload_refs=list(raw_payload_refs),
+            industry_context=_safe_metadata(industry_context),
+            metadata=_safe_metadata(metadata),
+        )
 
 
 def _copy_summary(record: RollingSummaryRecord) -> RollingSummaryRecord:
@@ -181,6 +364,133 @@ def _copy_summary(record: RollingSummaryRecord) -> RollingSummaryRecord:
         updated_at=str(event.get("updated_at", "")),
         metadata=_safe_metadata(record.metadata),
     )
+
+
+def _active_task_refs(input: ContextAssemblyInput) -> list[str]:
+    refs = list(input.active_task_refs)
+    if input.active_task is not None and not refs:
+        task_ref = input.active_task.metadata.get("state_ref")
+        if task_ref is not None:
+            refs.append(str(task_ref))
+        else:
+            refs.append(input.active_task.task_id)
+    return refs
+
+
+def _raw_payload_refs(input: ContextAssemblyInput) -> list[str]:
+    refs: list[str] = []
+    if input.current_turn_raw_payload_ref is not None:
+        refs.append(input.current_turn_raw_payload_ref)
+    refs.extend(input.raw_payload_refs)
+    return list(dict.fromkeys(refs))
+
+
+def _protected_sections(input: ContextAssemblyInput) -> tuple[str, ...]:
+    sections = ["current_turn"]
+    if input.pending_interrupt is not None:
+        sections.append("pending_clarification")
+    if input.output_constraints_ref is not None or input.output_policy_ref is not None:
+        sections.append("output_policy")
+    return tuple(sections)
+
+
+def _bundle_metadata(
+    *,
+    input: ContextAssemblyInput,
+    feedback_correction_refs: Sequence[str],
+    dropped_sections: Mapping[str, Any],
+    estimated_tokens: int,
+    protected_sections: Sequence[str],
+    safe_input_metadata: Mapping[str, Any],
+    active_task_refs: Sequence[str],
+) -> JsonObject:
+    current_turn_text = input.current_turn_text or ""
+    metadata: JsonObject = {
+        **_safe_metadata(safe_input_metadata),
+        "privacy": "no_raw_payload_or_legal_text_stored",
+        "current_turn_ref": input.current_turn_ref,
+        "current_turn_text_sha256_16": _sha16(current_turn_text),
+        "current_turn_text_length": len(current_turn_text),
+        "feedback_correction_refs": list(feedback_correction_refs),
+        "dropped_sections": _json_clone(dropped_sections),
+        "estimated_tokens": estimated_tokens,
+        "protected_sections": list(protected_sections),
+    }
+    if input.pending_interrupt is not None:
+        metadata["pending_clarification_ref"] = input.pending_interrupt.prompt_ref
+        metadata["resume_state_ref"] = input.pending_interrupt.resume_state_ref
+        metadata["pending_interrupt_status"] = input.pending_interrupt.status
+    if input.output_constraints_ref is not None:
+        metadata["output_constraints_ref"] = input.output_constraints_ref
+    if input.output_policy_ref is not None:
+        metadata["output_policy_ref"] = input.output_policy_ref
+    if input.active_task is not None and active_task_refs:
+        metadata["active_task_id"] = input.active_task.task_id
+        metadata["active_task_status"] = input.active_task.status
+        if input.active_task.run_id is not None:
+            metadata["active_task_run_id"] = input.active_task.run_id
+        metadata["active_task_refs"] = list(active_task_refs)
+    if input.rolling_summary is not None:
+        metadata["rolling_summary"] = {
+            "summary_ref": input.rolling_summary.summary_ref,
+            "task_intent_refs": list(input.rolling_summary.task_intent_refs),
+            "user_constraint_refs": list(input.rolling_summary.user_constraint_refs),
+            "unanswered_question_refs": list(input.rolling_summary.unanswered_question_refs),
+            "artifact_refs": list(input.rolling_summary.artifact_refs),
+            "outcome_refs": list(input.rolling_summary.outcome_refs),
+            "text_sha256_16": input.rolling_summary.text_sha256_16,
+            "text_length": input.rolling_summary.text_length,
+        }
+    return _safe_metadata(metadata)
+
+
+def _protected_bundle_metadata(
+    *,
+    input: ContextAssemblyInput,
+    dropped_sections: Mapping[str, Any],
+    protected_sections: Sequence[str],
+    safe_input_metadata: Mapping[str, Any],
+) -> JsonObject:
+    current_turn_text = input.current_turn_text or ""
+    metadata: JsonObject = {
+        **_safe_metadata(safe_input_metadata),
+        "privacy": "no_raw_payload_or_legal_text_stored",
+        "current_turn_ref": input.current_turn_ref,
+        "current_turn_text_sha256_16": _sha16(current_turn_text),
+        "current_turn_text_length": len(current_turn_text),
+        "dropped_sections": _json_clone(dropped_sections),
+        "protected_sections": list(protected_sections),
+    }
+    if input.pending_interrupt is not None:
+        metadata["pending_clarification_ref"] = input.pending_interrupt.prompt_ref
+        metadata["resume_state_ref"] = input.pending_interrupt.resume_state_ref
+        metadata["pending_interrupt_status"] = input.pending_interrupt.status
+    if input.output_constraints_ref is not None:
+        metadata["output_constraints_ref"] = input.output_constraints_ref
+    if input.output_policy_ref is not None:
+        metadata["output_policy_ref"] = input.output_policy_ref
+    return _safe_metadata(metadata)
+
+
+def _estimate_tokens(event: Mapping[str, Any], policy: ContextAssemblyPolicy) -> int:
+    chars_per_token = max(1, int(policy.chars_per_token))
+    return math.ceil(_estimated_value_chars(event) / chars_per_token)
+
+
+def _estimated_value_chars(value: Any) -> int:
+    if value is None:
+        return 0
+    if isinstance(value, str):
+        return len(value)
+    if isinstance(value, bool):
+        return 4 if value else 5
+    if isinstance(value, int | float):
+        return len(str(value))
+    if isinstance(value, Mapping):
+        return sum(_estimated_value_chars(nested) for nested in value.values())
+    if isinstance(value, list | tuple):
+        return sum(_estimated_value_chars(nested) for nested in value)
+    return len(str(value))
 
 
 def _scope_key(scope: SessionScope) -> tuple[str, ...]:
