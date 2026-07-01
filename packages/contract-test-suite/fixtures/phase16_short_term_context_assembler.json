@@ -290,6 +290,7 @@
           "pending_clarification_ref",
           "output_constraints_ref"
         ],
+        "protected_section_count": 3,
         "protected_sections_survived_trimming": true,
         "rolling_summary": {
           "summary_ref": "summary://phase16/session-phase16-001/rolling-summary-004",
