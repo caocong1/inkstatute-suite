@@ -60,6 +60,13 @@ from .memory import (
     MemorySearchResult,
     MemoryStorePolicy,
 )
+from .memory_adapters import (
+    MemoryAdapterDecision,
+    MemoryAdapterEvaluation,
+    MemoryStoreAdapter,
+    MemoryStoreCapabilityManifest,
+    evaluate_memory_adapter_manifest,
+)
 from .runtime import DefaultRunRuntime, RunRuntimeStateError
 from .session_resolver import (
     ActiveTaskSnapshot,
@@ -123,6 +130,10 @@ __all__ = [
     "MemoryQuery",
     "MemorySearchResult",
     "MemoryStorePolicy",
+    "MemoryAdapterDecision",
+    "MemoryAdapterEvaluation",
+    "MemoryStoreAdapter",
+    "MemoryStoreCapabilityManifest",
     "PendingInterruptSnapshot",
     "RawInbound",
     "Run",
@@ -144,5 +155,6 @@ __all__ = [
     "SolutionLoader",
     "SolutionPackageManifest",
     "RollingSummaryRecord",
+    "evaluate_memory_adapter_manifest",
     "resolve_session_turn",
 ]
