@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import unittest
 from collections.abc import Iterable, Mapping
@@ -33,7 +34,7 @@ FORBIDDEN_TEXT_PATTERNS = (
     re.compile(r"\badmin_notice\b", re.IGNORECASE),
     re.compile(r"\btraceback\b", re.IGNORECASE),
     re.compile(r"\bstack trace\b", re.IGNORECASE),
-    re.compile(r"(^|\\s)/(new|resume|help|status|debug|memory)\b", re.IGNORECASE),
+    re.compile(r"(^|\s)/(new|resume|help|status|debug|memory)\b", re.IGNORECASE),
 )
 
 
@@ -106,6 +107,7 @@ class Phase15SessionInterruptRuntimeTests(unittest.TestCase):
         self.assertNotIn("/resume", text)
         self.assertNotIn("/new", text)
         self.assertFalse(self.fixture["metadata"]["session_command_required"])
+        self.assertTrue(any(pattern.search("please /debug") for pattern in FORBIDDEN_TEXT_PATTERNS))
 
         for object_path, value in iter_mapping_values(self.fixture):
             with self.subTest(path=object_path):
@@ -115,6 +117,23 @@ class Phase15SessionInterruptRuntimeTests(unittest.TestCase):
             with self.subTest(path=text_path):
                 for pattern in FORBIDDEN_TEXT_PATTERNS:
                     self.assertIsNone(pattern.search(value), f"{text_path} matched {pattern.pattern}")
+
+    def test_hash_and_length_evidence_matches_synthetic_content(self) -> None:
+        events = self.fixture["events"]
+        content = events["agent_turn"]["content"]
+        expected_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+        expected_length = len(content.encode("utf-8"))
+
+        self.assertEqual(events["agent_turn"]["metadata"]["content_sha256_16"], expected_hash)
+        self.assertEqual(events["agent_turn"]["metadata"]["content_length"], expected_length)
+        self.assertEqual(events["run"]["metadata"]["content_sha256_16"], expected_hash)
+        self.assertEqual(events["run"]["metadata"]["content_length"], expected_length)
+        branch = self.fixture["metadata"]["branch_evidence"]["pending_interrupt_resume"]
+        self.assertEqual(branch["text_sha256_16"], expected_hash)
+        self.assertEqual(branch["text_length"], expected_length)
+        resume_event = events["run_events"][1]["metadata"]
+        self.assertEqual(resume_event["answer_text_sha256_16"], expected_hash)
+        self.assertEqual(resume_event["answer_text_length"], expected_length)
 
     def test_run_events_are_ordered_and_linked_to_the_run(self) -> None:
         run_id = self.fixture["events"]["run"]["run_id"]

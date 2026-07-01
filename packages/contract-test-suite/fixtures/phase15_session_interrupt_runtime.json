@@ -33,8 +33,8 @@
         "agent_result_status": "needs_clarification",
         "run_interrupt_status": "waiting_for_user",
         "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
-        "text_sha256_16": "1b4f0d1a74d452a9",
-        "text_length": 31,
+        "text_sha256_16": "0a91875b1a12f139",
+        "text_length": 33,
         "session_command_required": false
       },
       "active_task_follow_up": {
@@ -83,8 +83,8 @@
         "source_status": "sanitized_callback",
         "message_id": "message-phase15-answer-001",
         "thread_id": "thread-phase15-001",
-        "content_sha256_16": "1b4f0d1a74d452a9",
-        "content_length": 31
+        "content_sha256_16": "0a91875b1a12f139",
+        "content_length": 33
       }
     },
     "route_decision": {
@@ -127,8 +127,8 @@
           "step_id": "resolve-session",
           "decision_action": "resume_interrupt",
           "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
-          "text_sha256_16": "1b4f0d1a74d452a9",
-          "text_length": 31
+          "text_sha256_16": "0a91875b1a12f139",
+          "text_length": 33
         },
         {
           "step_id": "resume-runtime",
@@ -230,8 +230,8 @@
         "channel": "wecom",
         "scope_ref": "fixture://phase15/scopes/wecom-user-bot-thread",
         "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
-        "content_sha256_16": "1b4f0d1a74d452a9",
-        "content_length": 31,
+        "content_sha256_16": "0a91875b1a12f139",
+        "content_length": 33,
         "privacy": "no_raw_payload_or_answer_text_stored"
       }
     },
@@ -285,8 +285,8 @@
           "interrupt_status": "resolved",
           "resolved_turn_id": "turn-phase15-answer-001",
           "resolved_idempotency_key": "idem-phase15-answer-001",
-          "answer_text_sha256_16": "1b4f0d1a74d452a9",
-          "answer_text_length": 31,
+          "answer_text_sha256_16": "0a91875b1a12f139",
+          "answer_text_length": 33,
           "privacy": "no_raw_answer_text_stored"
         }
       },

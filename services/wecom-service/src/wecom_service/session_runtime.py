@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
 import json
@@ -109,22 +109,60 @@ class WeComSessionRuntime:
         now: datetime | str | None = None,
         metadata: Mapping[str, Any] | None = None,
     ) -> WeComSessionRuntimeOutcome:
-        if idempotency_key and idempotency_key in self._outcome_by_idempotency_key:
-            prior = self._outcome_by_idempotency_key[idempotency_key]
-            return replace(
-                prior,
-                action=WeComSessionRuntimeAction.DUPLICATE_ANSWER_IGNORED,
-                evidence={**prior.evidence, "duplicate": True, "idempotency_key": idempotency_key},
-            )
-
+        _validate_turn_scope(turn=turn, scope=scope, run_request=run_request)
         current = now or _clock_now(self.clock)
-        pending_record = _pending_record_for_scope(self.interrupt_store, scope)
-        inactive_record = _latest_inactive_record_for_scope(self.interrupt_store, scope)
-        pending_snapshot = _pending_snapshot(pending_record)
-        active_snapshot = _active_snapshot(active_task, scope)
         raw_payload_ref = _raw_payload_ref(turn)
         turn_text = str(getattr(turn, "content", "") or "")
         turn_id = str(getattr(turn, "turn_id", "") or "unknown-turn")
+
+        if idempotency_key and idempotency_key in self._outcome_by_idempotency_key:
+            prior = self._outcome_by_idempotency_key[idempotency_key]
+            return WeComSessionRuntimeOutcome(
+                action=WeComSessionRuntimeAction.DUPLICATE_ANSWER_IGNORED,
+                decision=prior.decision,
+                run_id=prior.run_id,
+                evidence=_duplicate_evidence(
+                    prior.decision,
+                    interrupt_id=prior.decision.interrupt_id,
+                    idempotency_key=idempotency_key,
+                    backend_submit_count=1,
+                ),
+            )
+
+        pending_record = _pending_record_for_scope(self.interrupt_store, scope)
+        pending_snapshot = _pending_snapshot(pending_record)
+        active_snapshot = _active_snapshot(active_task, scope)
+
+        duplicate_record = _resolved_duplicate_record_for_scope(
+            self.interrupt_store,
+            scope,
+            turn_id=turn_id,
+            idempotency_key=idempotency_key,
+        )
+        if duplicate_record is not None:
+            decision = _resolve_decision(
+                scope=scope,
+                text=turn_text,
+                raw_payload_ref=raw_payload_ref,
+                recent_session=recent_session,
+                pending_interrupt=None,
+                active_task=None,
+                policy=self.policy,
+                now=current,
+                id_factory=self.id_factory,
+                metadata=metadata,
+            )
+            return WeComSessionRuntimeOutcome(
+                action=WeComSessionRuntimeAction.DUPLICATE_ANSWER_IGNORED,
+                decision=decision,
+                run_id=duplicate_record.event.run_id,
+                evidence=_duplicate_evidence(
+                    decision,
+                    interrupt_id=duplicate_record.event.interrupt_id,
+                    idempotency_key=idempotency_key,
+                    backend_submit_count=1,
+                ),
+            )
 
         if pending_record is not None and _record_is_expired(pending_record, current):
             expired = self.interrupt_store.resolve(
@@ -154,35 +192,6 @@ class WeComSessionRuntime:
                 | {
                     "interrupt_lifecycle_action": expired.action.value,
                     "interrupt_status": "expired",
-                    "resume_attempted": False,
-                },
-            )
-
-        if inactive_record is not None:
-            status = str(inactive_record.event.status)
-            action = (
-                WeComSessionRuntimeAction.INTERRUPT_CANCELLED
-                if status == "cancelled"
-                else WeComSessionRuntimeAction.INTERRUPT_EXPIRED
-            )
-            decision = _resolve_decision(
-                scope=scope,
-                text=turn_text,
-                raw_payload_ref=raw_payload_ref,
-                recent_session=recent_session,
-                pending_interrupt=None,
-                active_task=None,
-                policy=self.policy,
-                now=current,
-                id_factory=self.id_factory,
-                metadata=metadata,
-            )
-            return WeComSessionRuntimeOutcome(
-                action=action,
-                decision=decision,
-                evidence=_base_evidence(decision)
-                | {
-                    "interrupt_status": status,
                     "resume_attempted": False,
                 },
             )
@@ -253,6 +262,59 @@ class WeComSessionRuntime:
         )
 
 
+def _validate_turn_scope(*, turn: Any, scope: SessionScope, run_request: RunRequest) -> None:
+    mismatches: list[str] = []
+
+    _require_match(mismatches, "turn.user_id", getattr(turn, "user_id", None), scope.user_id)
+    _require_match(mismatches, "turn.conversation_id", getattr(turn, "conversation_id", None), scope.conversation_id)
+    _require_match(mismatches, "turn.channel", _channel_value(getattr(turn, "channel", None)), scope.channel_id)
+    _require_thread_match(mismatches, "turn.metadata.thread_id", getattr(turn, "metadata", None), scope.thread_id)
+
+    req_turn = getattr(run_request, "turn", None)
+    _require_match(mismatches, "run_request.turn_id", getattr(req_turn, "turn_id", None), getattr(turn, "turn_id", None))
+    _require_match(mismatches, "run_request.turn.user_id", getattr(req_turn, "user_id", None), scope.user_id)
+    _require_match(
+        mismatches,
+        "run_request.turn.conversation_id",
+        getattr(req_turn, "conversation_id", None),
+        scope.conversation_id,
+    )
+    _require_match(mismatches, "run_request.turn.channel", _channel_value(getattr(req_turn, "channel", None)), scope.channel_id)
+    _require_thread_match(mismatches, "run_request.turn.metadata.thread_id", getattr(req_turn, "metadata", None), scope.thread_id)
+    _require_match(mismatches, "run_request.tenant_id", run_request.tenant_id, scope.tenant_id)
+    _require_match(mismatches, "run_request.workspace_id", run_request.workspace_id, scope.workspace_id)
+    _require_match(mismatches, "run_request.bot_instance_id", run_request.bot_instance_id, scope.bot_instance_id)
+
+    if mismatches:
+        raise ValueError("turn/run_request scope mismatch: " + "; ".join(mismatches))
+
+
+def _require_match(mismatches: list[str], field: str, actual: Any, expected: Any) -> None:
+    if expected is None:
+        return
+    if actual is None or str(actual) != str(expected):
+        mismatches.append(f"{field}={actual!r} expected {expected!r}")
+
+
+def _require_thread_match(
+    mismatches: list[str],
+    field: str,
+    metadata: Any,
+    expected_thread_id: str | None,
+) -> None:
+    if expected_thread_id is None:
+        return
+    actual = metadata.get("thread_id") if isinstance(metadata, Mapping) else None
+    if actual is None or str(actual) != str(expected_thread_id):
+        mismatches.append(f"{field}={actual!r} expected {expected_thread_id!r}")
+
+
+def _channel_value(value: Any) -> str | None:
+    if value is None:
+        return None
+    return str(getattr(value, "value", value))
+
+
 def build_clarification_delivery(*, to_user: str, text: str) -> JsonObject:
     """Build a WeCom clarification envelope through existing output policy."""
 
@@ -318,6 +380,23 @@ def _base_evidence(decision: SessionResolutionDecision) -> JsonObject:
     }
 
 
+def _duplicate_evidence(
+    decision: SessionResolutionDecision,
+    *,
+    interrupt_id: str | None,
+    idempotency_key: str | None,
+    backend_submit_count: int,
+) -> JsonObject:
+    return _base_evidence(decision) | {
+        "duplicate": True,
+        "interrupt_id": interrupt_id,
+        "idempotency_key": idempotency_key,
+        "resume_attempted": False,
+        "runtime_resume_called": False,
+        "duplicate_backend_submit_count": backend_submit_count,
+    }
+
+
 def _pending_record_for_scope(
     store: InMemoryInterruptStore | None,
     scope: SessionScope,
@@ -327,17 +406,24 @@ def _pending_record_for_scope(
     return store.pending_for_scope(scope)
 
 
-def _latest_inactive_record_for_scope(
+def _resolved_duplicate_record_for_scope(
     store: InMemoryInterruptStore | None,
     scope: SessionScope,
+    *,
+    turn_id: str,
+    idempotency_key: str | None,
 ) -> InterruptRecord | None:
     if store is None:
         return None
     for record in reversed(store.records()):
         if record.scope != scope:
             continue
-        status = str(record.event.status)
-        if status in {InterruptLifecycleAction.CANCELLED.value, InterruptLifecycleAction.EXPIRED.value}:
+        if str(record.event.status) != InterruptLifecycleAction.RESOLVED.value:
+            continue
+        metadata = record.event.metadata
+        if metadata.get("resolved_turn_id") == turn_id:
+            return record
+        if idempotency_key is not None and metadata.get("resolved_idempotency_key") == idempotency_key:
             return record
     return None
 
