@@ -271,7 +271,13 @@ _(Phases 09–13 archived — see [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md))
   3. Long conversation tests prove the assembler does not send full history to the backend.
   4. Rolling summaries preserve intent, constraints, unanswered questions, artifacts, and outcomes without storing sensitive full text by default.
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 16-01-PLAN.md — Core context assembler and rolling summary support.
+- [ ] 16-02-PLAN.md — Runtime opt-in wiring for backend-bound context bundles.
+- [ ] 16-03-PLAN.md — Contract-suite evidence for bounded short-term context.
 
 ### Phase 17: Long-Term Memory and Feedback Learning
 
@@ -322,6 +328,6 @@ Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30.
 | --- Milestone v1.1 — Platform Foundation (COMPLETED) --- | | | See [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) |
 | 14. Memory Research and Contract Spec | 3/3 | Complete    | 2026-06-30 |
 | 15. Session Resolver and Interrupt Runtime | 3/3 | Complete   | 2026-07-01 |
-| 16. Short-Term Context Assembler | 0/TBD | Pending | - |
+| 16. Short-Term Context Assembler | 0/3 | Pending | - |
 | 17. Long-Term Memory and Feedback Learning | 0/TBD | Pending | - |
 | 18. External Memory Adapter Evaluation and Acceptance Gates | 0/TBD | Pending | - |
