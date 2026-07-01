@@ -37,10 +37,10 @@
 
 ### Feedback and Learning
 
-- [ ] **FBK-01**: Feedback events can influence the next context assembly for the same session as corrections or constraints.
-- [ ] **FBK-02**: Repeated negative feedback can create memory or routing candidates with source refs and confidence, but cannot automatically modify high-risk legal skills.
-- [ ] **FBK-03**: Route mismatch and `skill_candidate` evidence remains human-reviewed with no-auto-modify metadata.
-- [ ] **FBK-04**: Feedback dedupe and pending queues continue to work with memory candidates and context-use records.
+- [x] **FBK-01**: Feedback events can influence the next context assembly for the same session as corrections or constraints.
+- [x] **FBK-02**: Repeated negative feedback can create memory or routing candidates with source refs and confidence, but cannot automatically modify high-risk legal skills.
+- [x] **FBK-03**: Route mismatch and `skill_candidate` evidence remains human-reviewed with no-auto-modify metadata.
+- [x] **FBK-04**: Feedback dedupe and pending queues continue to work with memory candidates and context-use records.
 
 ### External Memory Adapter Evaluation
 
@@ -87,10 +87,10 @@
 | INT-02 | Phase 15 | Complete |
 | INT-03 | Phase 15 | Complete |
 | INT-04 | Phase 15 | Complete |
-| FBK-01 | Phase 17 | Pending |
-| FBK-02 | Phase 17 | Pending |
-| FBK-03 | Phase 17 | Pending |
-| FBK-04 | Phase 17 | Pending |
+| FBK-01 | Phase 17 | Complete |
+| FBK-02 | Phase 17 | Complete |
+| FBK-03 | Phase 17 | Complete |
+| FBK-04 | Phase 17 | Complete |
 | EXT-01 | Phase 14 | Complete |
 | EXT-02 | Phase 18 | Pending |
 | EXT-03 | Phase 18 | Pending |
