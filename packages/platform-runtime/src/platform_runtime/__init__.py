@@ -50,6 +50,13 @@ from .interrupts import (
     InterruptLifecycleDecision,
     InterruptRecord,
 )
+from .memory import (
+    InMemoryMemoryStore,
+    MemoryPrivacyError,
+    MemoryQuery,
+    MemorySearchResult,
+    MemoryStorePolicy,
+)
 from .runtime import DefaultRunRuntime, RunRuntimeStateError
 from .session_resolver import (
     ActiveTaskSnapshot,
@@ -99,12 +106,17 @@ __all__ = [
     "InboundNormalized",
     "InMemoryContractLogStore",
     "InMemoryInterruptStore",
+    "InMemoryMemoryStore",
     "InMemoryRollingSummaryStore",
     "InMemorySessionResolutionStore",
     "InterruptLifecycleAction",
     "InterruptLifecycleDecision",
     "InterruptRecord",
     "Issue",
+    "MemoryPrivacyError",
+    "MemoryQuery",
+    "MemorySearchResult",
+    "MemoryStorePolicy",
     "PendingInterruptSnapshot",
     "RawInbound",
     "Run",
