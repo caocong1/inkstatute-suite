@@ -5,16 +5,17 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
-from typing import AsyncIterator, Iterable, Mapping
+from typing import Any, AsyncIterator, Iterable, Mapping
 
 from platform_contract.enums import AgentResultStatus, AsyncTaskState, InterruptStatus, RunEventType
 
+from .context_assembler import ContextAssembler, ContextAssemblyInput
 from .feature_flags import RuntimeFeatureFlags
 from .interrupts import InMemoryInterruptStore, InterruptLifecycleAction, InterruptRecord
 from .output_boundary import BoundaryAction, DefaultAssistantOutputBoundary
 from .ports import AssistantOutputBoundary, ContractLogStore, IdFactory, RuntimeClock
 from .protocols import Approval, BackendAdapter, ChannelAdapter, Run, RunEvent, RunRequest
-from .session_resolver import SessionScope
+from .session_resolver import PendingInterruptSnapshot, SessionScope
 
 
 class RunRuntimeStateError(RuntimeError):
@@ -35,6 +36,7 @@ class DefaultRunRuntime:
         clock: RuntimeClock | None = None,
         id_factory: IdFactory | None = None,
         interrupt_store: InMemoryInterruptStore | None = None,
+        context_assembler: ContextAssembler | None = None,
     ) -> None:
         self.backend = backend
         self.channels = tuple(channels)
@@ -44,17 +46,19 @@ class DefaultRunRuntime:
         self.clock = clock or _SystemRuntimeClock()
         self.id_factory = id_factory or _SequentialIdFactory()
         self.interrupt_store = interrupt_store
+        self.context_assembler = context_assembler
         self._resumed_run_by_key: dict[tuple[str, str | None, str | None], str] = {}
 
     async def create_run(self, req: RunRequest) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
         self._require_contract_log_store_if_enabled()
-        handle = await self.backend.submit_run(req)
+        backend_req = self._attach_context_bundle(req)
+        handle = await self.backend.submit_run(backend_req)
         if self.feature_flags.contract_log_enabled:
-            self._append_run_record(req, handle.run_id, handle.status, handle.backend_run_id)
+            self._append_run_record(backend_req, handle.run_id, handle.status, handle.backend_run_id)
             self._append_state_event(
                 run_id=handle.run_id,
-                turn_id=req.turn.turn_id,
+                turn_id=backend_req.turn.turn_id,
                 status=handle.status,
                 event_id=self.id_factory.new_id("run-event"),
                 metadata={"source": "runtime_create"},
@@ -138,6 +142,74 @@ class DefaultRunRuntime:
                 },
             )
         return await self.backend.get_run(handle.run_id)
+
+    def _attach_context_bundle(
+        self,
+        req: RunRequest,
+        *,
+        pending_interrupt: InterruptRecord | None = None,
+    ) -> RunRequest:
+        if not self.feature_flags.context_assembly_enabled:
+            return req
+        if self.context_assembler is None:
+            raise RunRuntimeStateError("context_assembly_enabled requires context_assembler")
+
+        assembly_input = self._context_assembly_input(req, pending_interrupt=pending_interrupt)
+        result = self.context_assembler.assemble(assembly_input)
+        context_event = result.as_event()
+        metadata = {
+            **dict(req.metadata),
+            "context_bundle_id": context_event["context_bundle_id"],
+            "context_bundle": context_event,
+        }
+        if self.feature_flags.contract_log_enabled:
+            self._contract_log().append("context_bundle", context_event)
+        return replace(req, metadata=metadata)
+
+    def _context_assembly_input(
+        self,
+        req: RunRequest,
+        *,
+        pending_interrupt: InterruptRecord | None = None,
+    ) -> ContextAssemblyInput:
+        metadata = dict(req.metadata)
+        current_turn_ref = _first_text(
+            metadata.get("current_turn_ref"),
+            req.turn.metadata.get("current_turn_ref"),
+            req.turn.metadata.get("raw_payload_ref"),
+            f"turn://{req.turn.turn_id}",
+        )
+        output_constraints_ref = _optional_first_text(
+            metadata.get("output_constraints_ref"),
+            _output_constraints_metadata(req).get("output_constraints_ref"),
+            _output_constraints_metadata(req).get("constraints_ref"),
+        )
+        output_policy_ref = _optional_first_text(
+            metadata.get("output_policy_ref"),
+            _output_constraints_metadata(req).get("output_policy_ref"),
+        )
+        return ContextAssemblyInput(
+            scope=_scope_from_request(req),
+            session_id=str(req.session_id or ""),
+            turn_id=req.turn.turn_id,
+            current_turn_ref=current_turn_ref,
+            current_turn_text=req.turn.content,
+            current_turn_raw_payload_ref=_raw_payload_ref(req),
+            run_id=_optional_text(metadata.get("run_id")),
+            recent_turn_refs=_metadata_sequence(metadata.get("recent_turn_refs")),
+            artifact_refs=_metadata_sequence(metadata.get("artifact_refs")),
+            feedback_correction_refs=_metadata_sequence(metadata.get("feedback_correction_refs")),
+            pending_interrupt=_pending_interrupt_snapshot(pending_interrupt) if pending_interrupt is not None else None,
+            memory_refs=_metadata_sequence(metadata.get("memory_refs")),
+            output_constraints_ref=output_constraints_ref,
+            output_policy_ref=output_policy_ref,
+            raw_payload_refs=_metadata_sequence(metadata.get("raw_payload_refs")),
+            industry_context=_metadata_mapping(metadata.get("industry_context")),
+            metadata={
+                "source": metadata.get("source", "runtime_create"),
+                "privacy": "no_raw_payload_or_legal_text_stored",
+            },
+        )
 
     async def _pending_interrupt_for_resume(
         self,
@@ -505,6 +577,57 @@ def _optional_text(value: object) -> str | None:
     if value is None:
         return None
     return str(value)
+
+
+def _first_text(*values: object) -> str:
+    for value in values:
+        if value is not None and str(value) != "":
+            return str(value)
+    raise RunRuntimeStateError("context assembly requires a current_turn_ref")
+
+
+def _optional_first_text(*values: object) -> str | None:
+    for value in values:
+        if value is not None and str(value) != "":
+            return str(value)
+    return None
+
+
+def _metadata_sequence(value: object) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        return (value,)
+    if isinstance(value, Iterable):
+        return tuple(str(item) for item in value if item is not None and str(item) != "")
+    return (str(value),)
+
+
+def _metadata_mapping(value: object) -> dict[str, Any]:
+    if isinstance(value, Mapping):
+        return {str(key): nested for key, nested in value.items()}
+    return {}
+
+
+def _output_constraints_metadata(req: RunRequest) -> Mapping[str, object]:
+    if req.output_constraints is None:
+        return {}
+    return req.output_constraints.metadata
+
+
+def _pending_interrupt_snapshot(record: InterruptRecord) -> PendingInterruptSnapshot:
+    return PendingInterruptSnapshot(
+        scope=record.scope,
+        interrupt_id=record.event.interrupt_id,
+        run_id=record.event.run_id,
+        session_id=record.event.session_id,
+        status=_enum_value(record.event.status),
+        created_at=record.event.created_at,
+        expires_at=record.event.expires_at,
+        prompt_ref=record.event.prompt_ref,
+        resume_state_ref=record.event.resume_state_ref,
+        metadata=dict(record.event.metadata),
+    )
 
 
 def _clarification_metadata(metadata: Mapping[str, object]) -> dict[str, object]:

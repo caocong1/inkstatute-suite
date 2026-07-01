@@ -16,6 +16,7 @@ class RuntimeFeatureFlags:
     channel_delivery_enabled: bool = False
     approval_lane_enabled: bool = False
     contract_log_enabled: bool = False
+    context_assembly_enabled: bool = False
 
     def require_enabled(self, flag_name: str) -> None:
         known_flags = {field.name for field in fields(self)}
