@@ -46,6 +46,7 @@ class SchemaValidationTests(unittest.TestCase):
                 "phase10-runruntime-fake-backend-001",
                 "phase15-session-interrupt-runtime-001",
                 "phase16-short-term-context-assembler-001",
+                "phase17-long-term-memory-feedback-learning-001",
             },
         )
 

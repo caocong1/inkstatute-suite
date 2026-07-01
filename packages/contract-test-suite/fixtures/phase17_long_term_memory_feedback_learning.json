@@ -1,0 +1,322 @@
+{
+  "fixture_id": "phase17-long-term-memory-feedback-learning-001",
+  "description": "Synthetic Phase 17 fixture proving privacy-safe long-term memory retrieval and feedback learning relationships.",
+  "metadata": {
+    "phase": "17",
+    "requirements": [
+      "LTM-03",
+      "LTM-04",
+      "FBK-01",
+      "FBK-02",
+      "FBK-03",
+      "FBK-04"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase17_long_term_memory_feedback_learning.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase17-001",
+      "conversation_id": "conversation-phase17-001",
+      "channel": "wecom",
+      "user_id": "user-phase17-001",
+      "message_type": "text",
+      "received_at": "2026-07-01T08:00:00Z",
+      "content": "Synthetic citation preference correction request.",
+      "metadata": {
+        "content_sha256_16": "1b4b474b894f92bd",
+        "content_length": 45,
+        "raw_payload_ref": "fixture://phase17/turns/turn-phase17-001/raw"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase17-001",
+      "turn_id": "turn-phase17-001",
+      "primary_skill": "synthetic_memory_feedback",
+      "confidence": 0.82,
+      "mode": "matched",
+      "created_at": "2026-07-01T08:00:01Z",
+      "supporting_skills": [
+        "synthetic_feedback_learning"
+      ],
+      "matched_rule": "fixture://phase17/routing/memory-feedback",
+      "reason": "Synthetic route for Phase 17 memory feedback evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase17/route/route-phase17-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase17-001",
+      "turn_id": "turn-phase17-001",
+      "started_at": "2026-07-01T08:00:01Z",
+      "ended_at": "2026-07-01T08:00:04Z",
+      "active_skill_name": "synthetic_memory_feedback",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-01T08:00:04Z",
+      "ingested_at": "2026-07-01T08:00:05Z",
+      "seq": 1,
+      "steps": [
+        {
+          "step_id": "step-phase17-memory-retrieval",
+          "state": "succeeded",
+          "memory_refs": [
+            "memory-phase17-active-001"
+          ],
+          "raw_payload_ref": "fixture://phase17/trace/step-memory-retrieval"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "context-bundle-phase17-001",
+        "memory_use_id": "memory-use-phase17-001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase17-001",
+      "turn_id": "turn-phase17-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic response summary ref: result://phase17/result-phase17-001/summary",
+      "feedback_target": "delivery-phase17-001",
+      "metadata": {
+        "trace_id": "trace-phase17-001",
+        "context_bundle_id": "context-bundle-phase17-001",
+        "visible_text_sha256_16": "cd58cc9a27489559",
+        "visible_text_length": 67,
+        "raw_payload_ref": "fixture://phase17/results/result-phase17-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase17-route-001",
+      "turn_id": "turn-phase17-001",
+      "result_id": "result-phase17-001",
+      "conversation_id": "conversation-phase17-001",
+      "user_id": "user-phase17-001",
+      "source": "card_button",
+      "event_type": "route_mismatch",
+      "status": "pending",
+      "created_at": "2026-07-01T08:01:00Z",
+      "feedback_target": "delivery-phase17-001",
+      "action": "route_wrong",
+      "route_mismatch": true,
+      "skill_candidate": {
+        "detected": true,
+        "source": "route_mismatch",
+        "proposed_name": "synthetic_memory_feedback_specialist",
+        "risk_level": "high",
+        "requires_human_review": true,
+        "evidence": [
+          "feedback-phase17-route-001",
+          "route-phase17-001"
+        ],
+        "metadata": {
+          "no_auto_modify": true,
+          "raw_payload_ref": "fixture://phase17/feedback/feedback-phase17-route-001/raw"
+        }
+      },
+      "labels": [
+        "route_mismatch",
+        "skill_candidate"
+      ],
+      "related_skill": "synthetic_memory_feedback",
+      "related_route_decision": "route-phase17-001",
+      "raw_payload_ref": "fixture://phase17/feedback/feedback-phase17-route-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase17:route:001",
+        "duplicate_count": 2,
+        "correction_ref": "feedback://feedback-phase17-route-001/correction",
+        "message_sha256_16": "bb89edaa21113482",
+        "message_length": 31,
+        "privacy": "refs_hashes_lengths_statuses_only",
+        "no_auto_modify": true
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "context-bundle-phase17-001",
+      "tenant_id": "tenant-phase17-001",
+      "workspace_id": "workspace-phase17-001",
+      "session_id": "session-phase17-001",
+      "created_at": "2026-07-01T08:00:02Z",
+      "budget_tokens": 2048,
+      "run_id": "run-phase17-001",
+      "turn_id": "turn-phase17-001",
+      "recent_turn_refs": [
+        "fixture://phase17/turns/recent-001"
+      ],
+      "summary_ref": "summary://phase17/session-phase17-001/rolling-summary-001",
+      "active_task_refs": [
+        "runtime://phase17/tasks/active-task-001"
+      ],
+      "artifact_refs": [
+        "artifact://phase17/evidence/context-evidence-001"
+      ],
+      "memory_refs": [
+        "memory-phase17-active-001"
+      ],
+      "trim_strategy": "protected_then_feedback_memory_recent_artifact",
+      "raw_payload_refs": [
+        "fixture://phase17/turns/turn-phase17-001/raw"
+      ],
+      "metadata": {
+        "feedback_correction_refs": [
+          "feedback://feedback-phase17-correction-001/correction"
+        ],
+        "memory_search_policy": {
+          "minimum_confidence": 0.5,
+          "allowed_sensitivities": [
+            "public",
+            "internal",
+            "confidential"
+          ],
+          "excluded_statuses": [
+            "deleted",
+            "suppressed"
+          ],
+          "restricted_excluded_by_default": true
+        },
+        "estimated_tokens": 420,
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "memory_records": [
+      {
+        "memory_id": "memory-phase17-active-001",
+        "tenant_id": "tenant-phase17-001",
+        "workspace_id": "workspace-phase17-001",
+        "scope": "user",
+        "status": "active",
+        "sensitivity": "confidential",
+        "created_at": "2026-06-30T08:00:00Z",
+        "updated_at": "2026-07-01T08:00:00Z",
+        "source_refs": [
+          "feedback://feedback-phase17-correction-001",
+          "summary://phase17/session-phase17-001/rolling-summary-001"
+        ],
+        "summary": "Synthetic citation format preference summary.",
+        "subject": "citation_format",
+        "related_user_id": "user-phase17-001",
+        "session_id": "session-phase17-001",
+        "raw_payload_ref": "fixture://phase17/memory/memory-phase17-active-001/raw",
+        "confidence": 0.82,
+        "ttl_expires_at": "2026-12-31T00:00:00Z",
+        "metadata": {
+          "summary_sha256_16": "cd876b9d4f9f6a46",
+          "summary_length": 43,
+          "labels": [
+            "citation_error",
+            "format_issue"
+          ],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      },
+      {
+        "memory_id": "memory-phase17-deleted-001",
+        "tenant_id": "tenant-phase17-001",
+        "workspace_id": "workspace-phase17-001",
+        "scope": "session",
+        "status": "deleted",
+        "sensitivity": "internal",
+        "created_at": "2026-06-30T08:00:00Z",
+        "updated_at": "2026-07-01T08:02:00Z",
+        "source_refs": [
+          "feedback://feedback-phase17-old-001"
+        ],
+        "session_id": "session-phase17-001",
+        "raw_payload_ref": "fixture://phase17/memory/memory-phase17-deleted-001/raw",
+        "confidence": 0.4,
+        "deleted_at": "2026-07-01T08:02:00Z",
+        "deletion_reason": "user_deletion_request",
+        "metadata": {
+          "excluded_from_context": true,
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ],
+    "memory_candidates": [
+      {
+        "candidate_id": "memory-candidate-phase17-repeat-001",
+        "tenant_id": "tenant-phase17-001",
+        "workspace_id": "workspace-phase17-001",
+        "status": "pending",
+        "source_refs": [
+          "feedback://feedback-phase17-correction-001",
+          "feedback://feedback-phase17-correction-002"
+        ],
+        "created_at": "2026-07-01T08:01:30Z",
+        "proposed_scope": "session",
+        "proposed_sensitivity": "confidential",
+        "proposed_action": "create_memory_candidate",
+        "proposed_record_ref": "memory://candidates/memory-candidate-phase17-repeat-001",
+        "reason": "citation_error feedback learning candidate",
+        "confidence": 0.7,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://phase17/feedback/feedback-phase17-correction-001/raw",
+        "metadata": {
+          "category": "citation_error",
+          "feedback_count": 2,
+          "feedback_targets": [
+            "delivery-phase17-001"
+          ],
+          "no_auto_modify": false,
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      },
+      {
+        "candidate_id": "memory-candidate-phase17-route-001",
+        "tenant_id": "tenant-phase17-001",
+        "workspace_id": "workspace-phase17-001",
+        "status": "pending",
+        "source_refs": [
+          "feedback://feedback-phase17-route-001",
+          "route://route-phase17-001"
+        ],
+        "created_at": "2026-07-01T08:01:40Z",
+        "proposed_scope": "session",
+        "proposed_sensitivity": "confidential",
+        "proposed_action": "review_route_or_skill_candidate",
+        "proposed_record_ref": "memory://candidates/memory-candidate-phase17-route-001",
+        "reason": "route_mismatch feedback learning candidate",
+        "confidence": 0.6,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://phase17/feedback/feedback-phase17-route-001/raw",
+        "metadata": {
+          "category": "route_mismatch",
+          "feedback_count": 1,
+          "feedback_targets": [
+            "delivery-phase17-001"
+          ],
+          "no_auto_modify": true,
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ],
+    "memory_uses": [
+      {
+        "use_id": "memory-use-phase17-001",
+        "memory_id": "memory-phase17-active-001",
+        "context_bundle_id": "context-bundle-phase17-001",
+        "used_at": "2026-07-01T08:00:02Z",
+        "purpose": "feedback_learning_context",
+        "run_id": "run-phase17-001",
+        "turn_id": "turn-phase17-001",
+        "relevance_score": 0.82,
+        "policy_result": "selected",
+        "source_refs": [
+          "feedback://feedback-phase17-correction-001"
+        ],
+        "metadata": {
+          "matched_terms": [
+            "citation_error",
+            "format_issue"
+          ],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ]
+  }
+}
