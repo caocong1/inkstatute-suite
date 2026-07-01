@@ -272,10 +272,13 @@ _(Phases 09–13 archived — see [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md))
   4. Rolling summaries preserve intent, constraints, unanswered questions, artifacts, and outcomes without storing sensitive full text by default.
 
 **Plans**: 3 plans
-
 Plans:
+**Wave 1**
 
 - [ ] 16-01-PLAN.md — Core context assembler and rolling summary support.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 16-02-PLAN.md — Runtime opt-in wiring for backend-bound context bundles.
 - [ ] 16-03-PLAN.md — Contract-suite evidence for bounded short-term context.
 
