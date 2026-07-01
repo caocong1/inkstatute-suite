@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: — Conversational Context and Memory Foundation
 status: executing
-stopped_at: Completed 17-02-PLAN.md
-last_updated: "2026-07-01T15:45:27.478Z"
-last_activity: 2026-07-01 -- Phase 17 planning complete
+stopped_at: Completed Phase 17 verification and review
+last_updated: "2026-07-01T15:49:56.502Z"
+last_activity: 2026-07-01
 progress:
   total_phases: 14
   completed_phases: 13
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-30)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 17 — Long-Term Memory and Feedback Learning
+**Current focus:** Phase 18 - External Memory Adapter Evaluation and Acceptance Gates
 
 ## Current Position
 
 Milestone: v1.2 — Conversational Context and Memory Foundation
-Phase: 17
+Phase: 18
 Plan: Not started
 Status: Ready to execute
-Next action: `$gsd-autonomous --from 17` or `$gsd-plan-phase 17` after context is prepared
-Last activity: 2026-07-01 -- Phase 17 planning complete
+Next action: `$gsd-autonomous --from 18` or `$gsd-plan-phase 18` after context is prepared
+Last activity: 2026-07-01
 
 Progress (v1.2): [░░░░░░░░░░] 0% of milestone phases (0/5)
 
@@ -44,7 +44,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 
 **Velocity:**
 
-- Total plans completed: 63
+- Total plans completed: 66
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -65,6 +65,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | 14 | 3 | - | - |
 | 8 | 4 | - | - |
 | 16 | 3 | - | - |
+| 17 | 3 | - | - |
 
 **Recent Trend:**
 
