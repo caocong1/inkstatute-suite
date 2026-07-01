@@ -51,6 +51,9 @@ from .interrupts import (
     InterruptRecord,
 )
 from .memory import (
+    FeedbackLearningInput,
+    FeedbackLearningPolicy,
+    FeedbackLearningResult,
     InMemoryMemoryStore,
     MemoryPrivacyError,
     MemoryQuery,
@@ -102,6 +105,9 @@ __all__ = [
     "FakeChannelAdapter",
     "FakeIdFactory",
     "FakeRuntimeClock",
+    "FeedbackLearningInput",
+    "FeedbackLearningPolicy",
+    "FeedbackLearningResult",
     "IdFactory",
     "InboundNormalized",
     "InMemoryContractLogStore",
