@@ -1,0 +1,424 @@
+{
+  "fixture_id": "phase16-short-term-context-assembler-001",
+  "description": "Sanitized contract evidence for bounded Phase 16 short-term context assembly.",
+  "metadata": {
+    "phase": "16",
+    "requirements": [
+      "STM-01",
+      "STM-02",
+      "STM-03",
+      "STM-04"
+    ],
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "evidence_kind": "synthetic_contract_suite_fixture",
+    "live_acceptance_claimed": false,
+    "scope": {
+      "tenant_id": "tenant-phase16-001",
+      "workspace_id": "workspace-phase16-001",
+      "channel_id": "channel-phase16-wecom-001",
+      "user_id": "user-phase16-001",
+      "bot_instance_id": "bot-phase16-001",
+      "conversation_id": "conversation-phase16-001",
+      "thread_id": "thread-phase16-001",
+      "session_id": "session-phase16-001"
+    },
+    "budget_evidence": {
+      "budget_tokens": 1800,
+      "estimated_tokens": 742,
+      "within_budget": true,
+      "estimator": "deterministic_value_budget"
+    },
+    "trim_evidence": {
+      "trim_strategy": "preserve_protected_then_trim_recent_turns",
+      "input_recent_turn_count": 64,
+      "emitted_recent_turn_count": 4,
+      "dropped_recent_turn_count": 60,
+      "recent_turn_refs_are_bounded": true
+    },
+    "protected_section_evidence": {
+      "current_turn_ref": "fixture://phase16/turns/turn-phase16-current-001",
+      "pending_clarification_ref": "runtime://phase16/interrupts/interrupt-phase16-001/prompt",
+      "interrupt_id": "interrupt-phase16-001",
+      "output_constraints_ref": "fixture://phase16/output-constraints/output-policy-001",
+      "survived_trimming": true
+    },
+    "rolling_summary_evidence": {
+      "summary_ref": "summary://phase16/session-phase16-001/rolling-summary-004",
+      "summary_sha256_16": "f2e4926ef6b89694",
+      "summary_length": 34,
+      "task_intent_ref": "summary://phase16/session-phase16-001/intent-004",
+      "constraint_refs": [
+        "summary://phase16/session-phase16-001/constraints-004"
+      ],
+      "open_question_refs": [
+        "summary://phase16/session-phase16-001/questions-004"
+      ],
+      "artifact_refs": [
+        "artifact://phase16/artifacts/context-evidence-001"
+      ],
+      "outcome_ref": "summary://phase16/session-phase16-001/outcome-003",
+      "content_embedded": false
+    },
+    "active_task_refs": [
+      "runtime://phase16/tasks/active-task-001"
+    ],
+    "artifact_refs": [
+      "artifact://phase16/artifacts/context-evidence-001"
+    ],
+    "feedback_correction_refs": [
+      "fixture://phase16/feedback/feedback-phase16-correction-001"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase16-current-001",
+      "conversation_id": "conversation-phase16-001",
+      "channel": "wecom",
+      "user_id": "user-phase16-001",
+      "message_type": "text",
+      "received_at": "2026-07-01T04:00:00Z",
+      "content": "Synthetic bounded context request.",
+      "output_constraints": {
+        "format": "markdown",
+        "features": [
+          "reference_first",
+          "service_owned_notice_only"
+        ],
+        "template_ref": "fixture://phase16/output-constraints/output-policy-001",
+        "language_register": "formal",
+        "must_cite": [
+          "fixture://phase16/citation-policy/contract-suite-only"
+        ],
+        "metadata": {
+          "output_constraints_ref": "fixture://phase16/output-constraints/output-policy-001",
+          "privacy": "policy_ref_only"
+        }
+      },
+      "industry_context": {},
+      "metadata": {
+        "idempotency_key": "idem-phase16-current-001",
+        "message_id": "message-phase16-current-001",
+        "thread_id": "thread-phase16-001",
+        "raw_payload_ref": "fixture://phase16/payloads/current-turn-001",
+        "current_turn_ref": "fixture://phase16/turns/turn-phase16-current-001",
+        "content_sha256_16": "90ace4bd86c36a9e",
+        "content_length": 34,
+        "privacy": "synthetic_no_customer_payload"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase16-context-001",
+      "turn_id": "turn-phase16-current-001",
+      "primary_skill": "short_term_context_assembly",
+      "confidence": 0.91,
+      "mode": "matched",
+      "matched_rule": "context_assembly_enabled",
+      "reason": "assemble bounded refs before backend run",
+      "created_at": "2026-07-01T04:00:01Z",
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "industry_context": {},
+      "metadata": {
+        "context_bundle_id": "context-bundle-phase16-001",
+        "scope_ref": "fixture://phase16/scopes/wecom-user-bot-thread",
+        "privacy": "refs_only"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase16-context-001",
+      "turn_id": "turn-phase16-current-001",
+      "started_at": "2026-07-01T04:00:01Z",
+      "ended_at": "2026-07-01T04:00:03Z",
+      "active_skill_name": "short_term_context_assembly",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-01T04:00:03Z",
+      "ingested_at": "2026-07-01T04:00:04Z",
+      "seq": 0,
+      "steps": [
+        {
+          "step_id": "collect-protected-refs",
+          "current_turn_ref": "fixture://phase16/turns/turn-phase16-current-001",
+          "pending_clarification_ref": "runtime://phase16/interrupts/interrupt-phase16-001/prompt",
+          "output_constraints_ref": "fixture://phase16/output-constraints/output-policy-001"
+        },
+        {
+          "step_id": "trim-recent-turns",
+          "input_recent_turn_count": 64,
+          "emitted_recent_turn_count": 4,
+          "dropped_recent_turn_count": 60
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-phase16-context-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-phase16-context-001",
+        "turn_id": "turn-phase16-current-001",
+        "primary_skill": "short_term_context_assembly",
+        "confidence": 0.91,
+        "mode": "matched",
+        "matched_rule": "context_assembly_enabled",
+        "reason": "assemble bounded refs before backend run",
+        "created_at": "2026-07-01T04:00:01Z",
+        "supporting_skills": [],
+        "gates_before": [],
+        "gates_after": [],
+        "required_tools": [],
+        "industry_context": {},
+        "metadata": {
+          "context_bundle_id": "context-bundle-phase16-001",
+          "scope_ref": "fixture://phase16/scopes/wecom-user-bot-thread",
+          "privacy": "refs_only"
+        }
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {},
+      "metadata": {
+        "context_bundle_id": "context-bundle-phase16-001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase16-context-001",
+      "turn_id": "turn-phase16-current-001",
+      "status": "partial",
+      "reply_type": "status_update",
+      "content": "Synthetic context bundle assembled.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-phase16-context-001",
+          "kind": "json",
+          "name": "phase16-context-bundle.json",
+          "uri": "artifact://phase16/artifacts/context-evidence-001",
+          "source_refs": [
+            "fixture://phase16/context-bundles/context-bundle-phase16-001"
+          ],
+          "metadata": {
+            "privacy": "artifact_ref_only"
+          }
+        }
+      ],
+      "feedback_target": "result-phase16-context-001",
+      "industry_context": {},
+      "metadata": {
+        "run_id": "run-phase16-001",
+        "context_bundle_id": "context-bundle-phase16-001",
+        "privacy": "no_business_conclusion_claim"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase16-correction-001",
+      "turn_id": "turn-phase16-current-001",
+      "conversation_id": "conversation-phase16-001",
+      "user_id": "user-phase16-001",
+      "source": "web_form",
+      "event_type": "correction",
+      "status": "triaged",
+      "created_at": "2026-07-01T04:00:05Z",
+      "result_id": "result-phase16-context-001",
+      "feedback_target": "result-phase16-context-001",
+      "action": "needs_fix",
+      "raw_payload_ref": "fixture://phase16/feedback/feedback-phase16-correction-001",
+      "industry_context": {},
+      "metadata": {
+        "feedback_correction_ref": "fixture://phase16/feedback/feedback-phase16-correction-001",
+        "correction_status": "triaged",
+        "requires_human_review": true,
+        "auto_promoted": false,
+        "privacy": "feedback_ref_status_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "context-bundle-phase16-001",
+      "tenant_id": "tenant-phase16-001",
+      "workspace_id": "workspace-phase16-001",
+      "session_id": "session-phase16-001",
+      "created_at": "2026-07-01T04:00:02Z",
+      "budget_tokens": 1800,
+      "run_id": "run-phase16-001",
+      "turn_id": "turn-phase16-current-001",
+      "recent_turn_refs": [
+        "fixture://phase16/recent-turns/turn-061",
+        "fixture://phase16/recent-turns/turn-062",
+        "fixture://phase16/recent-turns/turn-063",
+        "fixture://phase16/recent-turns/turn-064"
+      ],
+      "summary_ref": "summary://phase16/session-phase16-001/rolling-summary-004",
+      "active_task_refs": [
+        "runtime://phase16/tasks/active-task-001"
+      ],
+      "artifact_refs": [
+        "artifact://phase16/artifacts/context-evidence-001"
+      ],
+      "memory_refs": [
+        "summary://phase16/session-phase16-001/rolling-summary-004"
+      ],
+      "interrupt_id": "interrupt-phase16-001",
+      "trim_strategy": "preserve_protected_then_trim_recent_turns",
+      "raw_payload_refs": [
+        "fixture://phase16/payloads/current-turn-001",
+        "fixture://phase16/feedback/feedback-phase16-correction-001"
+      ],
+      "industry_context": {},
+      "metadata": {
+        "privacy": "refs_hashes_lengths_statuses_only",
+        "scope": {
+          "tenant_id": "tenant-phase16-001",
+          "workspace_id": "workspace-phase16-001",
+          "channel_id": "channel-phase16-wecom-001",
+          "user_id": "user-phase16-001",
+          "bot_instance_id": "bot-phase16-001",
+          "conversation_id": "conversation-phase16-001",
+          "thread_id": "thread-phase16-001"
+        },
+        "budget_tokens": 1800,
+        "estimated_tokens": 742,
+        "input_recent_turn_count": 64,
+        "emitted_recent_turn_count": 4,
+        "dropped_recent_turn_count": 60,
+        "current_turn_ref": "fixture://phase16/turns/turn-phase16-current-001",
+        "current_turn_sha256_16": "90ace4bd86c36a9e",
+        "current_turn_length": 34,
+        "pending_clarification_ref": "runtime://phase16/interrupts/interrupt-phase16-001/prompt",
+        "output_constraints_ref": "fixture://phase16/output-constraints/output-policy-001",
+        "protected_sections": [
+          "current_turn_ref",
+          "pending_clarification_ref",
+          "output_constraints_ref"
+        ],
+        "protected_sections_survived_trimming": true,
+        "rolling_summary": {
+          "summary_ref": "summary://phase16/session-phase16-001/rolling-summary-004",
+          "summary_sha256_16": "f2e4926ef6b89694",
+          "summary_length": 34,
+          "task_intent_ref": "summary://phase16/session-phase16-001/intent-004",
+          "constraint_refs": [
+            "summary://phase16/session-phase16-001/constraints-004"
+          ],
+          "open_question_refs": [
+            "summary://phase16/session-phase16-001/questions-004"
+          ],
+          "artifact_refs": [
+            "artifact://phase16/artifacts/context-evidence-001"
+          ],
+          "outcome_ref": "summary://phase16/session-phase16-001/outcome-003",
+          "content_embedded": false
+        },
+        "active_task_evidence": {
+          "active_task_ref": "runtime://phase16/tasks/active-task-001",
+          "status": "running",
+          "run_id": "run-phase16-001"
+        },
+        "feedback_corrections": [
+          {
+            "feedback_id": "feedback-phase16-correction-001",
+            "feedback_correction_ref": "fixture://phase16/feedback/feedback-phase16-correction-001",
+            "status": "triaged",
+            "requires_human_review": true,
+            "auto_promoted": false
+          }
+        ],
+        "long_conversation_policy": {
+          "recent_turn_refs_are_bounded": true,
+          "history_window_ref": "fixture://phase16/history-windows/window-064",
+          "complete_history_embedded": false
+        }
+      }
+    },
+    "run": {
+      "run_id": "run-phase16-001",
+      "tenant_id": "tenant-phase16-001",
+      "workspace_id": "workspace-phase16-001",
+      "solution_id": "solution-phase16-001",
+      "backend_id": "fake-backend",
+      "session_id": "session-phase16-001",
+      "turn_id": "turn-phase16-current-001",
+      "status": "running",
+      "objective": "Synthetic context assembly proof",
+      "requested_output": {
+        "format": "markdown",
+        "features": [
+          "reference_first",
+          "service_owned_notice_only"
+        ],
+        "template_ref": "fixture://phase16/output-constraints/output-policy-001",
+        "language_register": "formal",
+        "must_cite": [
+          "fixture://phase16/citation-policy/contract-suite-only"
+        ],
+        "metadata": {
+          "output_constraints_ref": "fixture://phase16/output-constraints/output-policy-001"
+        }
+      },
+      "created_at": "2026-07-01T04:00:01Z",
+      "updated_at": "2026-07-01T04:00:03Z",
+      "started_at": "2026-07-01T04:00:02Z",
+      "industry_context": {},
+      "metadata": {
+        "context_bundle_id": "context-bundle-phase16-001",
+        "raw_payload_ref": "fixture://phase16/payloads/current-turn-001",
+        "content_sha256_16": "90ace4bd86c36a9e",
+        "content_length": 34,
+        "privacy": "no_customer_payload_stored"
+      }
+    },
+    "run_interrupt": {
+      "interrupt_id": "interrupt-phase16-001",
+      "run_id": "run-phase16-001",
+      "session_id": "session-phase16-001",
+      "status": "waiting_for_user",
+      "reason": "pending_clarification",
+      "created_at": "2026-07-01T03:59:45Z",
+      "prompt_ref": "runtime://phase16/interrupts/interrupt-phase16-001/prompt",
+      "resume_state_ref": "runtime://phase16/interrupts/interrupt-phase16-001/resume-state",
+      "expected_response_schema_ref": "fixture://phase16/schemas/clarification-answer",
+      "expires_at": "2026-07-01T04:30:00Z",
+      "metadata": {
+        "pending_clarification_ref": "runtime://phase16/interrupts/interrupt-phase16-001/prompt",
+        "privacy": "prompt_ref_only"
+      }
+    },
+    "run_events": [
+      {
+        "event_id": "run-event-phase16-000",
+        "run_id": "run-phase16-001",
+        "event_type": "state_changed",
+        "status": "running",
+        "occurred_at": "2026-07-01T04:00:02Z",
+        "seq": 0,
+        "metadata": {
+          "context_bundle_id": "context-bundle-phase16-001",
+          "trim_strategy": "preserve_protected_then_trim_recent_turns",
+          "estimated_tokens": 742,
+          "budget_tokens": 1800
+        }
+      }
+    ],
+    "artifact_records": [
+      {
+        "artifact_id": "artifact-phase16-context-001",
+        "run_id": "run-phase16-001",
+        "result_id": "result-phase16-context-001",
+        "tenant_id": "tenant-phase16-001",
+        "workspace_id": "workspace-phase16-001",
+        "kind": "json",
+        "name": "phase16-context-bundle.json",
+        "uri": "artifact://phase16/artifacts/context-evidence-001",
+        "mime_type": "application/json",
+        "size_bytes": 1024,
+        "checksum": "sha256:phase16-context-evidence",
+        "source_refs": [
+          "fixture://phase16/context-bundles/context-bundle-phase16-001"
+        ],
+        "created_at": "2026-07-01T04:00:03Z",
+        "metadata": {
+          "privacy": "artifact_metadata_only"
+        }
+      }
+    ]
+  }
+}
