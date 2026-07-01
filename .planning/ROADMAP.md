@@ -37,7 +37,7 @@ V2 moves from contract definitions to verified production shadow recording, then
 **Research:** `.planning/research/SUMMARY.md`
 
 - [x] **Phase 14: Memory Research and Contract Spec** - Lock the context/memory vocabulary, schemas, privacy policy, and Mem0/Zep evaluation criteria. (completed 2026-06-30)
-- [ ] **Phase 15: Session Resolver and Interrupt Runtime** - Implement invisible session/thread resolution plus waiting-for-user clarification resume.
+- [x] **Phase 15: Session Resolver and Interrupt Runtime** - Implement invisible session/thread resolution plus waiting-for-user clarification resume. (completed 2026-07-01)
 - [ ] **Phase 16: Short-Term Context Assembler** - Build deterministic context assembly with recent turns, rolling summaries, active task state, artifacts, and budget trimming.
 - [ ] **Phase 17: Long-Term Memory and Feedback Learning** - Add platform-native memory store/candidate flow and feedback-to-context behavior with human review gates.
 - [ ] **Phase 18: External Memory Adapter Evaluation and Acceptance Gates** - Spike Mem0/Zep-style adapter contracts on sanitized fixtures and finalize the production recommendation.
@@ -321,7 +321,7 @@ Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30.
 | 8. Lawyer Trial Acceptance | 4/4 | Complete    | 2026-06-30 |
 | --- Milestone v1.1 — Platform Foundation (COMPLETED) --- | | | See [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) |
 | 14. Memory Research and Contract Spec | 3/3 | Complete    | 2026-06-30 |
-| 15. Session Resolver and Interrupt Runtime | 2/3 | In Progress|  |
+| 15. Session Resolver and Interrupt Runtime | 3/3 | Complete   | 2026-07-01 |
 | 16. Short-Term Context Assembler | 0/TBD | Pending | - |
 | 17. Long-Term Memory and Feedback Learning | 0/TBD | Pending | - |
 | 18. External Memory Adapter Evaluation and Acceptance Gates | 0/TBD | Pending | - |
