@@ -7,6 +7,8 @@ from platform_contract.events import AgentTurn
 
 from platform_runtime import (
     Approval,
+    ContextAssembler,
+    ContextAssemblyPolicy,
     DefaultRunRuntime,
     InMemoryContractLogStore,
     RunRequest,
@@ -101,6 +103,94 @@ class DefaultRunRuntimeTests(unittest.IsolatedAsyncioTestCase):
             await runtime.create_run(make_run_request())
 
         self.assertEqual(backend.submitted_requests, [])
+
+    def test_context_assembly_flag_is_default_off(self) -> None:
+        flags = RuntimeFeatureFlags()
+
+        self.assertFalse(flags.context_assembly_enabled)
+        with self.assertRaisesRegex(
+            RuntimeFeatureDisabledError,
+            "runtime feature flag disabled: context_assembly_enabled",
+        ):
+            flags.require_enabled("context_assembly_enabled")
+
+    async def test_create_run_does_not_attach_context_when_context_assembly_default_off(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(run_runtime_enabled=True),
+            context_assembler=ContextAssembler(),
+        )
+
+        original = make_run_request()
+        await runtime.create_run(original)
+        submitted = backend.submitted_requests[0]
+
+        self.assertIs(submitted, original)
+        self.assertNotIn("context_bundle", submitted.metadata)
+        self.assertNotIn("context_bundle_id", submitted.metadata)
+        self.assertEqual(original.metadata, {})
+
+    async def test_create_run_with_context_enabled_requires_assembler_before_backend_call(self) -> None:
+        backend = FakeBackendAdapter()
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                context_assembly_enabled=True,
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            RunRuntimeStateError,
+            "context_assembly_enabled requires context_assembler",
+        ):
+            await runtime.create_run(make_run_request())
+
+        self.assertEqual(backend.submitted_requests, [])
+
+    async def test_create_run_with_context_enabled_submits_replaced_request_and_logs_bundle(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FakeBackendAdapter(clock=clock, id_factory=id_factory)
+        store = InMemoryContractLogStore(clock=clock.now)
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                contract_log_enabled=True,
+                context_assembly_enabled=True,
+            ),
+            contract_log_store=store,
+            context_assembler=ContextAssembler(
+                policy=ContextAssemblyPolicy(budget_tokens=512),
+                clock=clock,
+                id_factory=id_factory,
+            ),
+            clock=clock,
+            id_factory=id_factory,
+        )
+        original = make_run_request()
+
+        await runtime.create_run(original)
+        submitted = backend.submitted_requests[0]
+        entries = store.entries()
+
+        self.assertIsNot(submitted, original)
+        self.assertEqual(original.metadata, {})
+        self.assertIn("context_bundle_id", submitted.metadata)
+        self.assertEqual(submitted.metadata["context_bundle_id"], submitted.metadata["context_bundle"]["context_bundle_id"])
+        self.assertEqual(
+            submitted.metadata["context_bundle"]["metadata"]["current_turn_ref"],
+            "fixture://payloads/turn-001",
+        )
+        self.assertEqual(
+            submitted.metadata["context_bundle"]["metadata"]["current_turn_text_length"],
+            len("synthetic request"),
+        )
+        self.assertEqual([entry.event_key for entry in entries], ["context_bundle", "run", "run_event"])
+        self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
+        self.assertNotIn("synthetic request", repr(submitted.metadata))
 
     async def test_create_run_with_flags_calls_backend_and_appends_contract_records(self) -> None:
         clock = FakeRuntimeClock(start=FIXED_NOW)
