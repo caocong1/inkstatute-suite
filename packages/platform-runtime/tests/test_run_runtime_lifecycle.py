@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from platform_contract.enums import AsyncTaskState, Channel, MessageType
-from platform_contract.events import AgentTurn
+from platform_contract.events import AgentTurn, OutputConstraints
 
 from platform_runtime import (
     Approval,
@@ -11,10 +11,12 @@ from platform_runtime import (
     ContextAssemblyPolicy,
     DefaultRunRuntime,
     InMemoryContractLogStore,
+    InMemoryInterruptStore,
     RunRequest,
     RunRuntimeStateError,
     RuntimeFeatureDisabledError,
     RuntimeFeatureFlags,
+    SessionScope,
     SolutionBinding,
 )
 from platform_runtime.fakes import (
@@ -29,22 +31,41 @@ from platform_runtime.protocols import ChannelDelivery
 FIXED_NOW = "2026-06-29T02:00:00Z"
 
 
-def make_run_request() -> RunRequest:
+def make_scope() -> SessionScope:
+    return SessionScope(
+        tenant_id="tenant-001",
+        workspace_id="workspace-001",
+        channel_id="web",
+        user_id="user-001",
+        bot_instance_id="",
+        conversation_id="conversation-001",
+    )
+
+
+def make_run_request(
+    *,
+    turn_id: str = "turn-001",
+    content: str = "synthetic request",
+    metadata: dict[str, object] | None = None,
+    output_constraints: OutputConstraints | None = None,
+) -> RunRequest:
     return RunRequest(
         turn=AgentTurn(
-            turn_id="turn-001",
+            turn_id=turn_id,
             conversation_id="conversation-001",
             channel=Channel.WEB,
             user_id="user-001",
             message_type=MessageType.TEXT,
             received_at=FIXED_NOW,
-            content="synthetic request",
-            metadata={"raw_payload_ref": "fixture://payloads/turn-001"},
+            content=content,
+            metadata={"raw_payload_ref": f"fixture://payloads/{turn_id}"},
         ),
         solution=SolutionBinding(solution_id="solution-001", version="1.0.0"),
         tenant_id="tenant-001",
         workspace_id="workspace-001",
         session_id="session-001",
+        output_constraints=output_constraints,
+        metadata=dict(metadata or {}),
     )
 
 
@@ -191,6 +212,125 @@ class DefaultRunRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([entry.event_key for entry in entries], ["context_bundle", "run", "run_event"])
         self.assertNotIn("synthetic request", repr([entry.to_dict() for entry in entries]))
         self.assertNotIn("synthetic request", repr(submitted.metadata))
+
+    async def test_resume_interrupt_with_context_enabled_preserves_refs_constraints_and_privacy(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FakeBackendAdapter(clock=clock, id_factory=id_factory)
+        interrupt_store = InMemoryInterruptStore(clock=clock, id_factory=id_factory)
+        record = interrupt_store.create_clarification(
+            scope=make_scope(),
+            run_id="run-paused-001",
+            session_id="session-001",
+            prompt_ref="fixture://prompts/clarify-001",
+            resume_state_ref="fixture://resume/run-paused-001",
+            reason="backend_needs_clarification",
+        )
+        contract_log = InMemoryContractLogStore(clock=clock.now)
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                contract_log_enabled=True,
+                context_assembly_enabled=True,
+            ),
+            contract_log_store=contract_log,
+            interrupt_store=interrupt_store,
+            context_assembler=ContextAssembler(
+                policy=ContextAssemblyPolicy(budget_tokens=320, max_recent_turn_refs=12),
+                clock=clock,
+                id_factory=id_factory,
+            ),
+            clock=clock,
+            id_factory=id_factory,
+        )
+        output_constraints = OutputConstraints(
+            format="docx",
+            metadata={
+                "output_constraints_ref": "fixture://constraints/docx-output",
+                "output_policy_ref": "fixture://policies/lawyer-user-output",
+            },
+        )
+
+        await runtime.resume_interrupt(
+            interrupt_id=record.event.interrupt_id,
+            scope=make_scope(),
+            req=make_run_request(
+                turn_id="turn-answer-001",
+                content="sensitive answer text",
+                metadata={
+                    "recent_turn_refs": [f"fixture://turns/recent-{idx:03d}" for idx in range(30)],
+                    "memory_refs": [f"fixture://memory/{idx:03d}" for idx in range(10)],
+                },
+                output_constraints=output_constraints,
+            ),
+            idempotency_key="idem-001",
+        )
+        submitted = backend.submitted_requests[0]
+        context_bundle = submitted.metadata["context_bundle"]
+        context_metadata = context_bundle["metadata"]
+
+        self.assertEqual(submitted.metadata["interrupt_id"], record.event.interrupt_id)
+        self.assertEqual(submitted.metadata["resume_state_ref"], "fixture://resume/run-paused-001")
+        self.assertEqual(submitted.metadata["context_bundle_id"], context_bundle["context_bundle_id"])
+        self.assertEqual(context_bundle["interrupt_id"], record.event.interrupt_id)
+        self.assertEqual(context_metadata["pending_clarification_ref"], "fixture://prompts/clarify-001")
+        self.assertEqual(context_metadata["resume_state_ref"], "fixture://resume/run-paused-001")
+        self.assertEqual(context_metadata["current_turn_ref"], "fixture://payloads/turn-answer-001")
+        self.assertEqual(context_metadata["current_turn_text_length"], len("sensitive answer text"))
+        self.assertEqual(context_metadata["output_constraints_ref"], "fixture://constraints/docx-output")
+        self.assertEqual(context_metadata["output_policy_ref"], "fixture://policies/lawyer-user-output")
+        self.assertIn("pending_clarification", context_metadata["protected_sections"])
+        self.assertIn("output_policy", context_metadata["protected_sections"])
+        self.assertLess(len(context_bundle["recent_turn_refs"]), 30)
+        self.assertNotIn("sensitive answer text", repr(submitted.metadata))
+        self.assertNotIn("sensitive answer text", repr([entry.to_dict() for entry in contract_log.entries()]))
+        self.assertNotIn("which option", repr([entry.to_dict() for entry in contract_log.entries()]).lower())
+
+    async def test_duplicate_resume_with_context_enabled_does_not_submit_backend_twice(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FakeBackendAdapter(clock=clock, id_factory=id_factory)
+        interrupt_store = InMemoryInterruptStore(clock=clock, id_factory=id_factory)
+        record = interrupt_store.create_clarification(
+            scope=make_scope(),
+            run_id="run-paused-001",
+            session_id="session-001",
+            prompt_ref="fixture://prompts/clarify-001",
+            resume_state_ref="fixture://resume/run-paused-001",
+            reason="backend_needs_clarification",
+        )
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(
+                run_runtime_enabled=True,
+                context_assembly_enabled=True,
+            ),
+            interrupt_store=interrupt_store,
+            context_assembler=ContextAssembler(
+                policy=ContextAssemblyPolicy(budget_tokens=320),
+                clock=clock,
+                id_factory=id_factory,
+            ),
+            clock=clock,
+            id_factory=id_factory,
+        )
+
+        first = await runtime.resume_interrupt(
+            interrupt_id=record.event.interrupt_id,
+            scope=make_scope(),
+            req=make_run_request(turn_id="turn-answer-001", content="sensitive answer text"),
+            idempotency_key="idem-001",
+        )
+        duplicate = await runtime.resume_interrupt(
+            interrupt_id=record.event.interrupt_id,
+            scope=make_scope(),
+            req=make_run_request(turn_id="turn-answer-001", content="sensitive answer text"),
+            idempotency_key="idem-001",
+        )
+
+        self.assertEqual(first.run_id, duplicate.run_id)
+        self.assertEqual(len(backend.submitted_requests), 1)
 
     async def test_create_run_with_flags_calls_backend_and_appends_contract_records(self) -> None:
         clock = FakeRuntimeClock(start=FIXED_NOW)
