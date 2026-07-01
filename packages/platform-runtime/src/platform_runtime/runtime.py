@@ -104,7 +104,8 @@ class DefaultRunRuntime:
             "privacy": "no_raw_answer_text_stored",
         }
         resume_req = replace(req, metadata=resume_metadata)
-        handle = await self.backend.submit_run(resume_req)
+        backend_req = self._attach_context_bundle(resume_req, pending_interrupt=interrupt)
+        handle = await self.backend.submit_run(backend_req)
         decision = self.interrupt_store.resolve(
             interrupt_id=interrupt_id,
             scope=scope,
@@ -124,7 +125,7 @@ class DefaultRunRuntime:
 
         self._resumed_run_by_key[_resume_key(interrupt_id, req.turn.turn_id, idempotency_key)] = handle.run_id
         if self.feature_flags.contract_log_enabled:
-            self._append_run_record(resume_req, handle.run_id, handle.status, handle.backend_run_id)
+            self._append_run_record(backend_req, handle.run_id, handle.status, handle.backend_run_id)
             self._append_state_event(
                 run_id=handle.run_id,
                 turn_id=req.turn.turn_id,
