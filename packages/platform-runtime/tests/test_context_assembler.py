@@ -5,7 +5,10 @@ import unittest
 
 from platform_runtime import (
     ActiveTaskSnapshot,
+    ContextAssembler,
+    ContextAssemblyBudgetError,
     ContextAssemblyInput,
+    ContextAssemblyPolicy,
     InMemoryRollingSummaryStore,
     PendingInterruptSnapshot,
     RollingSummaryRecord,
@@ -53,6 +56,51 @@ def make_summary(**overrides: object) -> RollingSummaryRecord:
     }
     values.update(overrides)
     return RollingSummaryRecord(**values)
+
+
+def make_context_input(**overrides: object) -> ContextAssemblyInput:
+    scope = overrides.get("scope", make_scope())
+    values = {
+        "scope": scope,
+        "session_id": "session-001",
+        "turn_id": "turn-001",
+        "current_turn_ref": "fixture://turns/current",
+        "current_turn_text": "客户补充了不能进入上下文事件的具体事实。",
+        "current_turn_raw_payload_ref": "fixture://payloads/current",
+        "run_id": "run-001",
+        "recent_turn_refs": tuple(f"fixture://turns/recent-{index:03d}" for index in range(10)),
+        "active_task": ActiveTaskSnapshot(
+            scope=scope,
+            task_id="task-001",
+            run_id="run-active",
+            session_id="session-001",
+            status="running",
+            updated_at=FIXED_NOW,
+            metadata={"state_ref": "fixture://tasks/task-001"},
+        ),
+        "active_task_refs": ("fixture://tasks/task-001",),
+        "artifact_refs": tuple(f"fixture://artifacts/{index:03d}" for index in range(6)),
+        "feedback_correction_refs": tuple(f"fixture://feedback/correction-{index:03d}" for index in range(4)),
+        "pending_interrupt": PendingInterruptSnapshot(
+            scope=scope,
+            interrupt_id="interrupt-001",
+            run_id="run-interrupt",
+            session_id="session-001",
+            status="waiting_for_user",
+            created_at=FIXED_NOW,
+            prompt_ref="fixture://prompts/interrupt-001",
+            resume_state_ref="fixture://resume/interrupt-001",
+        ),
+        "rolling_summary": make_summary(scope=scope),
+        "memory_refs": tuple(f"fixture://memory/{index:03d}" for index in range(5)),
+        "output_constraints_ref": "fixture://output-constraints/001",
+        "output_policy_ref": "fixture://output-policy/001",
+        "raw_payload_refs": ("fixture://payloads/attachment-001",),
+        "industry_context": {"industry_ref": "fixture://industry/context-001"},
+        "metadata": {"input_ref": "fixture://context-input/001"},
+    }
+    values.update(overrides)
+    return ContextAssemblyInput(**values)
 
 
 class ContextAssemblyContractTests(unittest.TestCase):
@@ -162,6 +210,109 @@ class InMemoryRollingSummaryStoreTests(unittest.TestCase):
 
         self.assertEqual(mutated.metadata["source_ref"], "mutated")
         self.assertEqual(store.get(scope, "session-001").metadata["source_ref"], "fixture://summary-metadata/001")
+
+
+class ContextAssemblerBudgetTests(unittest.TestCase):
+    def test_assemble_returns_schema_shaped_context_bundle_with_all_sources(self) -> None:
+        assembler = ContextAssembler(
+            policy=ContextAssemblyPolicy(budget_tokens=4096, max_recent_turn_refs=6),
+            clock=lambda: FIXED_NOW,
+            id_factory=lambda prefix: f"{prefix}-001",
+        )
+
+        result = assembler.assemble(make_context_input())
+        event = result.as_event()
+        bundle = result.bundle
+
+        self.assertEqual(bundle.context_bundle_id, "context-bundle-001")
+        self.assertEqual(bundle.tenant_id, "tenant-001")
+        self.assertEqual(bundle.workspace_id, "workspace-001")
+        self.assertEqual(bundle.session_id, "session-001")
+        self.assertEqual(bundle.turn_id, "turn-001")
+        self.assertEqual(bundle.run_id, "run-001")
+        self.assertEqual(bundle.summary_ref, "fixture://summaries/session-001")
+        self.assertEqual(bundle.interrupt_id, "interrupt-001")
+        self.assertEqual(bundle.trim_strategy, "protected_then_feedback_memory_recent_artifact")
+        self.assertEqual(bundle.recent_turn_refs, [f"fixture://turns/recent-{index:03d}" for index in range(6)])
+        self.assertIn("fixture://tasks/task-001", bundle.active_task_refs)
+        self.assertEqual(len(bundle.artifact_refs), 6)
+        self.assertIn("fixture://memory/000", bundle.memory_refs)
+        self.assertIn("fixture://payloads/current", bundle.raw_payload_refs)
+        self.assertEqual(bundle.industry_context["industry_ref"], "fixture://industry/context-001")
+        self.assertEqual(event["metadata"]["current_turn_ref"], "fixture://turns/current")
+        self.assertEqual(event["metadata"]["feedback_correction_refs"], [f"fixture://feedback/correction-{index:03d}" for index in range(4)])
+
+    def test_long_conversation_is_bounded_and_records_dropped_sections(self) -> None:
+        input_record = make_context_input(
+            recent_turn_refs=tuple(f"fixture://turns/recent-{index:03d}" for index in range(80)),
+            artifact_refs=tuple(f"fixture://artifacts/{index:03d}" for index in range(20)),
+            feedback_correction_refs=tuple(f"fixture://feedback/correction-{index:03d}" for index in range(12)),
+            memory_refs=tuple(f"fixture://memory/{index:03d}" for index in range(20)),
+        )
+        policy = ContextAssemblyPolicy(
+            budget_tokens=220,
+            max_recent_turn_refs=12,
+            max_artifact_refs=10,
+            max_feedback_correction_refs=5,
+            max_memory_refs=8,
+        )
+
+        result = ContextAssembler(policy=policy, clock=lambda: FIXED_NOW, id_factory=lambda prefix: f"{prefix}-trim").assemble(input_record)
+
+        self.assertLess(len(result.bundle.recent_turn_refs), len(input_record.recent_turn_refs))
+        self.assertLessEqual(len(result.bundle.recent_turn_refs), policy.max_recent_turn_refs)
+        self.assertLessEqual(len(result.bundle.artifact_refs), policy.max_artifact_refs)
+        self.assertLessEqual(result.estimated_tokens, policy.budget_tokens)
+        self.assertGreater(result.dropped_sections["recent_turn_refs"], 0)
+        self.assertGreater(result.dropped_sections["artifact_refs"], 0)
+        self.assertNotIn("recent-079", repr(result.as_event()))
+
+    def test_protected_sections_survive_trimming(self) -> None:
+        policy = ContextAssemblyPolicy(
+            budget_tokens=185,
+            max_recent_turn_refs=20,
+            max_artifact_refs=20,
+            max_feedback_correction_refs=10,
+            max_memory_refs=20,
+        )
+
+        result = ContextAssembler(policy=policy, clock=lambda: FIXED_NOW, id_factory=lambda prefix: f"{prefix}-protected").assemble(
+            make_context_input(recent_turn_refs=tuple(f"fixture://turns/recent-{index:03d}" for index in range(60)))
+        )
+        event = result.as_event()
+
+        self.assertEqual(result.bundle.turn_id, "turn-001")
+        self.assertEqual(result.bundle.interrupt_id, "interrupt-001")
+        self.assertEqual(event["metadata"]["pending_clarification_ref"], "fixture://prompts/interrupt-001")
+        self.assertEqual(event["metadata"]["resume_state_ref"], "fixture://resume/interrupt-001")
+        self.assertEqual(event["metadata"]["output_constraints_ref"], "fixture://output-constraints/001")
+        self.assertEqual(event["metadata"]["output_policy_ref"], "fixture://output-policy/001")
+        self.assertEqual(event["metadata"]["current_turn_ref"], "fixture://turns/current")
+        self.assertEqual(event["metadata"]["current_turn_text_length"], len("客户补充了不能进入上下文事件的具体事实。"))
+        self.assertIn("current_turn", result.protected_sections)
+        self.assertIn("pending_clarification", result.protected_sections)
+        self.assertIn("output_policy", result.protected_sections)
+
+    def test_impossible_budget_fails_closed_before_bundle_creation(self) -> None:
+        with self.assertRaises(ContextAssemblyBudgetError):
+            ContextAssembler(
+                policy=ContextAssemblyPolicy(budget_tokens=8),
+                clock=lambda: FIXED_NOW,
+                id_factory=lambda prefix: f"{prefix}-too-small",
+            ).assemble(make_context_input())
+
+    def test_assembly_is_deterministic_and_serialization_excludes_raw_text(self) -> None:
+        input_record = make_context_input()
+        policy = ContextAssemblyPolicy(budget_tokens=260, max_recent_turn_refs=8)
+        assembler = ContextAssembler(policy=policy, clock=lambda: FIXED_NOW, id_factory=lambda prefix: f"{prefix}-det")
+
+        first = assembler.assemble(input_record).as_event()
+        second = assembler.assemble(input_record).as_event()
+
+        self.assertEqual(first, second)
+        self.assertNotIn(input_record.current_turn_text, repr(first))
+        self.assertNotIn("这是不能进入事件的完整摘要文本", repr(first))
+        self.assertRegex(first["metadata"]["current_turn_text_sha256_16"], r"^[0-9a-f]{16}$")
 
 
 if __name__ == "__main__":
