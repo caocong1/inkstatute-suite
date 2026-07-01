@@ -43,6 +43,7 @@ class RecordingRuntime:
         idempotency_key: str | None = None,
     ) -> Run:
         self.calls.append((interrupt_id, scope, req, idempotency_key))
+        run_id = f"resumed-{len(self.calls):03d}"
         if self.interrupt_store is not None:
             self.interrupt_store.resolve(
                 interrupt_id=interrupt_id,
@@ -50,9 +51,13 @@ class RecordingRuntime:
                 turn_id=req.turn.turn_id,
                 answer_text=req.turn.content,
                 idempotency_key=idempotency_key,
+                metadata={
+                    "backend_resume_submitted": True,
+                    "resumed_backend_run_id": run_id,
+                },
             )
         return Run(
-            run_id=f"resumed-{len(self.calls):03d}",
+            run_id=run_id,
             status=AsyncTaskState.RUNNING,
             turn_id=req.turn.turn_id,
             solution_id=req.solution.solution_id,
@@ -310,6 +315,7 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(first.action, WeComSessionRuntimeAction.RESUME_INTERRUPT)
         self.assertEqual(duplicate.action, WeComSessionRuntimeAction.DUPLICATE_ANSWER_IGNORED)
+        self.assertEqual(duplicate.run_id, first.run_id)
         self.assertEqual(duplicate.evidence["interrupt_id"], active.event.interrupt_id)
         self.assertFalse(duplicate.evidence["resume_attempted"])
         self.assertFalse(duplicate.evidence["runtime_resume_called"])

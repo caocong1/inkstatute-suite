@@ -25,6 +25,19 @@ from platform_runtime.interrupts import (
 FIXED_NOW = "2026-06-29T03:00:00Z"
 
 
+class FlakyResumeBackend(FakeBackendAdapter):
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
+        self.resume_failures_remaining = 1
+
+    async def submit_run(self, req: RunRequest):
+        if "interrupt_id" in req.metadata and self.resume_failures_remaining > 0:
+            self.resume_failures_remaining -= 1
+            self.submitted_requests.append(req)
+            raise RuntimeError("backend resume unavailable")
+        return await super().submit_run(req)
+
+
 def make_scope(*, user_id: str = "user-001") -> SessionScope:
     return SessionScope(
         tenant_id="tenant-001",
@@ -253,7 +266,56 @@ class DefaultRunRuntimeInterruptTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(submitted.metadata["resolved_idempotency_key"], "idem-001")
         self.assertEqual(submitted.metadata["answer_text_length"], len("sensitive answer text"))
         self.assertRegex(submitted.metadata["answer_text_sha256_16"], r"^[0-9a-f]{16}$")
+        resolved = interrupt_store.get(record.event.interrupt_id)
+        self.assertEqual(resolved.event.status, InterruptStatus.RESOLVED)
+        self.assertTrue(resolved.event.metadata["backend_resume_submitted"])
+        self.assertEqual(resolved.event.metadata["resumed_backend_run_id"], run.run_id)
         self.assertNotIn("sensitive answer text", repr([entry.to_dict() for entry in contract_log.entries()]))
+
+    async def test_resume_interrupt_keeps_interrupt_waiting_when_backend_submit_fails(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FlakyResumeBackend(clock=clock, id_factory=id_factory)
+        interrupt_store = InMemoryInterruptStore(clock=clock, id_factory=id_factory)
+        record = interrupt_store.create_clarification(
+            scope=make_scope(),
+            run_id="run-paused-001",
+            session_id="session-001",
+            prompt_ref="fixture://prompts/clarify-001",
+            resume_state_ref="fixture://resume/run-paused-001",
+            reason="backend_needs_clarification",
+        )
+        runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(run_runtime_enabled=True),
+            interrupt_store=interrupt_store,
+            clock=clock,
+            id_factory=id_factory,
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "backend resume unavailable"):
+            await runtime.resume_interrupt(
+                interrupt_id=record.event.interrupt_id,
+                scope=make_scope(),
+                req=make_run_request(turn_id="turn-answer-001", content="sensitive answer text"),
+                idempotency_key="idem-001",
+            )
+
+        waiting = interrupt_store.get(record.event.interrupt_id)
+        self.assertEqual(waiting.event.status, InterruptStatus.WAITING_FOR_USER)
+        self.assertIsNone(waiting.event.resolved_turn_id)
+        self.assertEqual(interrupt_store.pending_for_scope(make_scope()).event.interrupt_id, record.event.interrupt_id)
+
+        retried = await runtime.resume_interrupt(
+            interrupt_id=record.event.interrupt_id,
+            scope=make_scope(),
+            req=make_run_request(turn_id="turn-answer-001", content="sensitive answer text"),
+            idempotency_key="idem-001",
+        )
+
+        self.assertEqual(retried.run_id, "run-001")
+        self.assertEqual(len(backend.submitted_requests), 2)
+        self.assertEqual(interrupt_store.get(record.event.interrupt_id).event.status, InterruptStatus.RESOLVED)
 
     async def test_duplicate_resume_idempotency_does_not_call_backend_twice(self) -> None:
         clock = FakeRuntimeClock(start=FIXED_NOW)

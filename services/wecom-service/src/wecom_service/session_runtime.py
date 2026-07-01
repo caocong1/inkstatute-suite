@@ -155,7 +155,7 @@ class WeComSessionRuntime:
             return WeComSessionRuntimeOutcome(
                 action=WeComSessionRuntimeAction.DUPLICATE_ANSWER_IGNORED,
                 decision=decision,
-                run_id=duplicate_record.event.run_id,
+                run_id=str(duplicate_record.event.metadata["resumed_backend_run_id"]),
                 evidence=_duplicate_evidence(
                     decision,
                     interrupt_id=duplicate_record.event.interrupt_id,
@@ -421,6 +421,8 @@ def _resolved_duplicate_record_for_scope(
         if str(record.event.status) != InterruptLifecycleAction.RESOLVED.value:
             continue
         metadata = record.event.metadata
+        if metadata.get("backend_resume_submitted") is not True or not metadata.get("resumed_backend_run_id"):
+            continue
         if metadata.get("resolved_turn_id") == turn_id:
             return record
         if idempotency_key is not None and metadata.get("resolved_idempotency_key") == idempotency_key:

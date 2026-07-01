@@ -180,6 +180,7 @@ class InMemoryInterruptStore:
         turn_id: str,
         answer_text: str | None,
         idempotency_key: str | None = None,
+        metadata: Mapping[str, Any] | None = None,
         now: datetime | str | None = None,
     ) -> InterruptLifecycleDecision:
         current = _timestamp(now or _clock_now(self._clock))
@@ -245,19 +246,21 @@ class InMemoryInterruptStore:
             )
 
         answer = str(answer_text or "")
+        resolution_metadata = {
+            "resolved_turn_id": turn_id,
+            "resolved_at": current,
+            "answer_text_sha256_16": _sha16(answer),
+            "answer_text_length": len(answer),
+            "resolved_idempotency_key": idempotency_key,
+            **dict(metadata or {}),
+        }
         resolved = self._transition(
             record,
             status=InterruptStatus.RESOLVED,
             now=current,
             reason=record.event.reason,
             resolved_turn_id=turn_id,
-            metadata={
-                "resolved_turn_id": turn_id,
-                "resolved_at": current,
-                "answer_text_sha256_16": _sha16(answer),
-                "answer_text_length": len(answer),
-                "resolved_idempotency_key": idempotency_key,
-            },
+            metadata=resolution_metadata,
         )
         return self._remember_decision(
             InterruptLifecycleDecision(
@@ -265,12 +268,7 @@ class InMemoryInterruptStore:
                 interrupt=resolved,
                 decided_at=current,
                 reason="interrupt_resolved",
-                metadata={
-                    "resolved_turn_id": turn_id,
-                    "answer_text_sha256_16": _sha16(answer),
-                    "answer_text_length": len(answer),
-                    "resolved_idempotency_key": idempotency_key,
-                },
+                metadata=resolution_metadata,
             )
         )
 

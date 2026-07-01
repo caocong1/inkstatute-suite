@@ -75,22 +75,18 @@ class DefaultRunRuntime:
         self._require_interrupt_store()
         self._require_contract_log_store_if_enabled()
         answer = str(req.turn.content or "")
-        decision = self.interrupt_store.resolve(
+        current = self.clock.now()
+        interrupt = await self._pending_interrupt_for_resume(
             interrupt_id=interrupt_id,
             scope=scope,
             turn_id=req.turn.turn_id,
             answer_text=answer,
             idempotency_key=idempotency_key,
+            now=current,
         )
-        if decision.action == InterruptLifecycleAction.DUPLICATE_ANSWER_IGNORED:
-            run_id = self._resumed_run_by_key.get(_resume_key(interrupt_id, req.turn.turn_id, idempotency_key))
-            if run_id is None:
-                raise RunRuntimeStateError("duplicate interrupt resume has no recorded backend run")
-            return await self.backend.get_run(run_id)
-        if decision.action != InterruptLifecycleAction.RESOLVED or decision.interrupt is None:
-            raise RunRuntimeStateError(f"interrupt cannot be resumed: {decision.action.value}")
+        if isinstance(interrupt, Run):
+            return interrupt
 
-        interrupt = decision.interrupt
         resume_metadata = {
             **req.metadata,
             "source": "runtime_resume_interrupt",
@@ -105,6 +101,23 @@ class DefaultRunRuntime:
         }
         resume_req = replace(req, metadata=resume_metadata)
         handle = await self.backend.submit_run(resume_req)
+        decision = self.interrupt_store.resolve(
+            interrupt_id=interrupt_id,
+            scope=scope,
+            turn_id=req.turn.turn_id,
+            answer_text=answer,
+            idempotency_key=idempotency_key,
+            metadata={
+                "backend_resume_submitted": True,
+                "resumed_backend_run_id": handle.run_id,
+                "resumed_backend_run_status": _status_value(handle.status),
+                "resumed_backend_handle_id": handle.backend_run_id,
+            },
+            now=current,
+        )
+        if decision.action != InterruptLifecycleAction.RESOLVED:
+            raise RunRuntimeStateError(f"interrupt cannot be resumed: {decision.action.value}")
+
         self._resumed_run_by_key[_resume_key(interrupt_id, req.turn.turn_id, idempotency_key)] = handle.run_id
         if self.feature_flags.contract_log_enabled:
             self._append_run_record(resume_req, handle.run_id, handle.status, handle.backend_run_id)
@@ -125,6 +138,45 @@ class DefaultRunRuntime:
                 },
             )
         return await self.backend.get_run(handle.run_id)
+
+    async def _pending_interrupt_for_resume(
+        self,
+        *,
+        interrupt_id: str,
+        scope: SessionScope,
+        turn_id: str,
+        answer_text: str,
+        idempotency_key: str | None,
+        now: datetime | str,
+    ) -> InterruptRecord | Run:
+        record = self.interrupt_store.get(interrupt_id)
+        if record is None:
+            raise RunRuntimeStateError(f"interrupt cannot be resumed: {InterruptLifecycleAction.NOT_FOUND.value}")
+        if record.scope != scope:
+            raise RunRuntimeStateError(f"interrupt cannot be resumed: {InterruptLifecycleAction.SCOPE_MISMATCH.value}")
+
+        status = _enum_value(record.event.status)
+        if status == InterruptStatus.RESOLVED.value:
+            run_id = self._resumed_run_by_key.get(_resume_key(interrupt_id, turn_id, idempotency_key))
+            if run_id is None:
+                raise RunRuntimeStateError("duplicate interrupt resume has no recorded backend run")
+            return await self.backend.get_run(run_id)
+
+        if status == InterruptStatus.CANCELLED.value:
+            raise RunRuntimeStateError(f"interrupt cannot be resumed: {InterruptLifecycleAction.CANCELLED.value}")
+        if status == InterruptStatus.EXPIRED.value or _interrupt_is_expired(record, now):
+            decision = self.interrupt_store.resolve(
+                interrupt_id=interrupt_id,
+                scope=scope,
+                turn_id=turn_id,
+                answer_text=answer_text,
+                idempotency_key=idempotency_key,
+                now=now,
+            )
+            raise RunRuntimeStateError(f"interrupt cannot be resumed: {decision.action.value}")
+        if status != InterruptStatus.WAITING_FOR_USER.value:
+            raise RunRuntimeStateError(f"interrupt cannot be resumed: {status}")
+        return record
 
     async def poll(self, run_id: str) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
@@ -337,6 +389,29 @@ def _status_value(status: AsyncTaskState | str) -> str:
     if isinstance(status, AsyncTaskState):
         return status.value
     return str(status)
+
+
+def _enum_value(value: object) -> str:
+    return getattr(value, "value", str(value))
+
+
+def _interrupt_is_expired(record: InterruptRecord, now: datetime | str) -> bool:
+    if record.event.expires_at is None:
+        return False
+    return _coerce_datetime(record.event.expires_at) <= _coerce_datetime(now)
+
+
+def _coerce_datetime(value: datetime | str) -> datetime:
+    if isinstance(value, datetime):
+        normalized = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+        return normalized.astimezone(timezone.utc)
+    text = str(value)
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(text)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 _VISIBLE_TEXT_KEYS = ("message_delta", "visible_text", "text", "content", "delta")
