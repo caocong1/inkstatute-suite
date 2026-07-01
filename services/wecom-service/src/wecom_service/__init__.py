@@ -27,6 +27,12 @@ from .sender import (
     build_template_card_envelope,
     build_text_send_envelope,
 )
+from .session_runtime import (
+    WeComSessionRuntime,
+    WeComSessionRuntimeAction,
+    WeComSessionRuntimeOutcome,
+    build_clarification_delivery,
+)
 from .runtime_audit import append_runtime_audit, parse_bool_env
 from .task_flow import (
     TASK_STAGE_TO_ASYNC_STATE,
@@ -62,12 +68,16 @@ __all__ = [
     "TaskInputSummary",
     "TaskStageRecord",
     "WeComTaskStage",
+    "WeComSessionRuntime",
+    "WeComSessionRuntimeAction",
+    "WeComSessionRuntimeOutcome",
     "ack_response",
     "apply_output_policy",
     "append_runtime_audit",
     "assess_delivery_completion",
     "build_owned_notice",
     "build_file_send_envelope",
+    "build_clarification_delivery",
     "build_template_card_envelope",
     "build_text_send_envelope",
     "create_task_flow",

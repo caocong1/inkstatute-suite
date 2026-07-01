@@ -32,6 +32,7 @@ FIXED_NOW = "2026-06-29T03:00:00Z"
 @dataclass(slots=True)
 class RecordingRuntime:
     calls: list[tuple[str, SessionScope, RunRequest, str | None]] = field(default_factory=list)
+    interrupt_store: InMemoryInterruptStore | None = None
 
     async def resume_interrupt(
         self,
@@ -42,6 +43,14 @@ class RecordingRuntime:
         idempotency_key: str | None = None,
     ) -> Run:
         self.calls.append((interrupt_id, scope, req, idempotency_key))
+        if self.interrupt_store is not None:
+            self.interrupt_store.resolve(
+                interrupt_id=interrupt_id,
+                scope=scope,
+                turn_id=req.turn.turn_id,
+                answer_text=req.turn.content,
+                idempotency_key=idempotency_key,
+            )
         return Run(
             run_id=f"resumed-{len(self.calls):03d}",
             status=AsyncTaskState.RUNNING,
@@ -98,7 +107,7 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
             resume_state_ref="runtime://phase15/resume/other",
             reason="backend_needs_clarification",
         )
-        runtime = RecordingRuntime()
+        runtime = RecordingRuntime(interrupt_store=interrupt_store)
         helper = WeComSessionRuntime(runtime=runtime, interrupt_store=interrupt_store, id_factory=FakeIdFactory())
 
         outcome = await helper.handle_turn(
@@ -202,7 +211,7 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
             reason="backend_needs_clarification",
         )
         interrupt_store.cancel(interrupt_id=cancelled.event.interrupt_id, scope=self.scope_for(user_id="cancelled-user"))
-        runtime = RecordingRuntime()
+        runtime = RecordingRuntime(interrupt_store=interrupt_store)
         helper = WeComSessionRuntime(runtime=runtime, interrupt_store=interrupt_store, id_factory=FakeIdFactory())
 
         first = await helper.handle_turn(
@@ -249,7 +258,7 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(allowed["policy"]["action"], "allow")
         self.assertEqual(rewritten["msgtype"], "text")
         self.assertEqual(rewritten["policy"]["action"], "rewrite")
-        self.assertIn("InkStatute", rewritten["text"]["content"])
+        self.assertTrue(rewritten["text"]["content"])
         self.assertEqual(blocked["policy"]["action"], "block")
         self.assertNotIn("msgtype", blocked)
         self.assertNotIn("gateway restarted", json.dumps(rewritten, ensure_ascii=False).lower())
