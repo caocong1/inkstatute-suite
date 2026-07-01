@@ -16,10 +16,10 @@
 
 ### Short-Term Context
 
-- [ ] **STM-01**: Runtime can assemble bounded short-term context from the current turn, recent turns, active task state, artifacts, pending clarification, and a rolling session summary.
-- [ ] **STM-02**: Context assembly enforces a deterministic budget and never sends unbounded conversation history to the backend model.
-- [ ] **STM-03**: Rolling summaries preserve task intent, user constraints, unanswered questions, artifact refs, and final outcomes without storing sensitive full text by default.
-- [ ] **STM-04**: Contract tests prove current turn, pending clarification, and output-policy constraints are never dropped during trimming.
+- [x] **STM-01**: Runtime can assemble bounded short-term context from the current turn, recent turns, active task state, artifacts, pending clarification, and a rolling session summary.
+- [x] **STM-02**: Context assembly enforces a deterministic budget and never sends unbounded conversation history to the backend model.
+- [x] **STM-03**: Rolling summaries preserve task intent, user constraints, unanswered questions, artifact refs, and final outcomes without storing sensitive full text by default.
+- [x] **STM-04**: Contract tests prove current turn, pending clarification, and output-policy constraints are never dropped during trimming.
 
 ### Long-Term Memory
 
@@ -75,10 +75,10 @@
 | CTX-02 | Phase 15 | Complete |
 | CTX-03 | Phase 15 | Complete |
 | CTX-04 | Phase 15 | Complete |
-| STM-01 | Phase 16 | Pending |
-| STM-02 | Phase 16 | Pending |
-| STM-03 | Phase 16 | Pending |
-| STM-04 | Phase 16 | Pending |
+| STM-01 | Phase 16 | Complete |
+| STM-02 | Phase 16 | Complete |
+| STM-03 | Phase 16 | Complete |
+| STM-04 | Phase 16 | Complete |
 | LTM-01 | Phase 14 | Complete |
 | LTM-02 | Phase 14 | Complete |
 | LTM-03 | Phase 17 | Pending |
