@@ -35,6 +35,15 @@ from .ports import (
 from .output_boundary import BoundaryAction, BoundaryDecision, DefaultAssistantOutputBoundary
 from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
 from .fakes import FakeBackendAdapter, FakeChannelAdapter, FakeIdFactory, FakeRuntimeClock
+from .context_assembler import (
+    ContextAssembler,
+    ContextAssemblyBudgetError,
+    ContextAssemblyInput,
+    ContextAssemblyPolicy,
+    ContextAssemblyResult,
+    InMemoryRollingSummaryStore,
+    RollingSummaryRecord,
+)
 from .interrupts import (
     InMemoryInterruptStore,
     InterruptLifecycleAction,
@@ -74,6 +83,11 @@ __all__ = [
     "ContractLogEntry",
     "ContractLogPrivacyError",
     "ContractLogStore",
+    "ContextAssembler",
+    "ContextAssemblyBudgetError",
+    "ContextAssemblyInput",
+    "ContextAssemblyPolicy",
+    "ContextAssemblyResult",
     "DefaultRunRuntime",
     "DefaultAssistantOutputBoundary",
     "DeliveryResult",
@@ -85,6 +99,7 @@ __all__ = [
     "InboundNormalized",
     "InMemoryContractLogStore",
     "InMemoryInterruptStore",
+    "InMemoryRollingSummaryStore",
     "InMemorySessionResolutionStore",
     "InterruptLifecycleAction",
     "InterruptLifecycleDecision",
@@ -110,5 +125,6 @@ __all__ = [
     "SolutionBinding",
     "SolutionLoader",
     "SolutionPackageManifest",
+    "RollingSummaryRecord",
     "resolve_session_turn",
 ]
