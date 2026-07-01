@@ -332,5 +332,5 @@ Milestone v1.1 (Platform Foundation) COMPLETED: phases 09-13 shipped 2026-06-30.
 | 14. Memory Research and Contract Spec | 3/3 | Complete    | 2026-06-30 |
 | 15. Session Resolver and Interrupt Runtime | 3/3 | Complete   | 2026-07-01 |
 | 16. Short-Term Context Assembler | 3/3 | Complete    | 2026-07-01 |
-| 17. Long-Term Memory and Feedback Learning | 0/TBD | Pending | - |
+| 17. Long-Term Memory and Feedback Learning | 1/3 | In Progress|  |
 | 18. External Memory Adapter Evaluation and Acceptance Gates | 0/TBD | Pending | - |

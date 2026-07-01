@@ -25,8 +25,8 @@
 
 - [x] **LTM-01**: The platform defines backend-neutral `MemoryRecord`, `MemoryCandidate`, `MemoryUse`, and `ContextBundle` schemas and Python bindings.
 - [x] **LTM-02**: Memory records support scope, source refs, confidence, sensitivity, TTL/expiry, deletion metadata, and raw payload references.
-- [ ] **LTM-03**: Long-term memory retrieval can provide relevant privacy-safe memories across sessions without making contract logs a raw conversation database.
-- [ ] **LTM-04**: Memory writes are gated by policy so high-risk legal conclusions, customer raw payloads, secrets, and unreviewed skill changes are not stored as reusable memory.
+- [x] **LTM-03**: Long-term memory retrieval can provide relevant privacy-safe memories across sessions without making contract logs a raw conversation database.
+- [x] **LTM-04**: Memory writes are gated by policy so high-risk legal conclusions, customer raw payloads, secrets, and unreviewed skill changes are not stored as reusable memory.
 
 ### Skill Clarification and Interrupts
 
@@ -81,8 +81,8 @@
 | STM-04 | Phase 16 | Complete |
 | LTM-01 | Phase 14 | Complete |
 | LTM-02 | Phase 14 | Complete |
-| LTM-03 | Phase 17 | Pending |
-| LTM-04 | Phase 17 | Pending |
+| LTM-03 | Phase 17 | Complete |
+| LTM-04 | Phase 17 | Complete |
 | INT-01 | Phase 15 | Complete |
 | INT-02 | Phase 15 | Complete |
 | INT-03 | Phase 15 | Complete |
