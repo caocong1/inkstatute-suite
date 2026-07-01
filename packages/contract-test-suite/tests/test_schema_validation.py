@@ -45,6 +45,7 @@ class SchemaValidationTests(unittest.TestCase):
                 "platform-foundation-non-legal-run-001",
                 "phase10-runruntime-fake-backend-001",
                 "phase15-session-interrupt-runtime-001",
+                "phase16-short-term-context-assembler-001",
             },
         )
 
