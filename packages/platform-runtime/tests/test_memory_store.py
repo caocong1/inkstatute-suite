@@ -97,6 +97,31 @@ class InMemoryMemoryStoreTests(unittest.TestCase):
         self.assertEqual(results[0].policy_result, "selected")
         self.assertEqual(results[0].metadata["privacy"], "refs_hashes_lengths_statuses_only")
 
+    def test_search_excludes_zero_match_records_when_query_has_terms(self) -> None:
+        store = InMemoryMemoryStore()
+        store.upsert(make_memory(memory_id="matching", summary="citation format"))
+        store.upsert(
+            make_memory(
+                memory_id="visible-but-unmatched",
+                subject="billing",
+                summary="invoice preference",
+                metadata={"labels": ["billing"]},
+            )
+        )
+
+        results = store.search(make_query(text="citation"))
+
+        self.assertEqual([result.record.memory_id for result in results], ["matching"])
+
+    def test_search_without_terms_can_list_visible_records_by_confidence(self) -> None:
+        store = InMemoryMemoryStore()
+        store.upsert(make_memory(memory_id="low", confidence=0.2))
+        store.upsert(make_memory(memory_id="high", confidence=0.9))
+
+        results = store.search(make_query(text=None, labels=()))
+
+        self.assertEqual([result.record.memory_id for result in results], ["high", "low"])
+
     def test_policy_excludes_deleted_suppressed_expired_low_confidence_and_restricted(self) -> None:
         store = InMemoryMemoryStore()
         store.upsert(make_memory(memory_id="active"))

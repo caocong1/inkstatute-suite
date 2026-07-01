@@ -94,6 +94,8 @@ class InMemoryMemoryStore:
             _search_result(record, query_terms)
             for record in self.list_for_query(query, policy=cfg)
         ]
+        if query_terms:
+            results = [result for result in results if result.matched_terms]
         results.sort(
             key=lambda item: (
                 -item.relevance_score,
