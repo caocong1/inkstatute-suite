@@ -1,0 +1,349 @@
+{
+  "fixture_id": "phase18-external-memory-adapter-acceptance-001",
+  "description": "Synthetic Phase 18 fixture proving external memory adapter evaluation remains sanitized, reference-first, and non-default for live legal memory.",
+  "metadata": {
+    "phase": "18",
+    "requirements": [
+      "EXT-02",
+      "EXT-03",
+      "EXT-04"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "no_live_external_invocation": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "adapter_manifests": [
+      {
+        "adapter_id": "platform-native",
+        "provider": "platform_native",
+        "decision": "accepted_for_current_legal_use",
+        "deployment_model": "in_process",
+        "source_refs": [
+          "docs/architecture/memory/context-memory-contracts.md",
+          "packages/platform-runtime/src/platform_runtime/memory.py",
+          "packages/platform-runtime/src/platform_runtime/memory_adapters.py"
+        ],
+        "supports_memory_records": true,
+        "supports_memory_candidates": true,
+        "supports_memory_uses": true,
+        "supports_ttl": true,
+        "supports_delete": true,
+        "supports_export": true,
+        "supports_tenant_isolation": true,
+        "supports_raw_payload_blocking": true,
+        "supports_human_review_gate": true,
+        "stores_raw_payloads_by_default": false,
+        "network_required": false,
+        "requires_secret_refs": false,
+        "sanitized_fixture_only": false,
+        "default_for_legal_memory": true,
+        "approved_for_live_legal_memory": true,
+        "required_gates": [],
+        "blockers": []
+      },
+      {
+        "adapter_id": "mem0-style-sanitized",
+        "provider": "mem0",
+        "decision": "accepted_for_sanitized_spike",
+        "deployment_model": "self_hosted_or_hosted_api",
+        "source_refs": [
+          "https://docs.mem0.ai/api-reference",
+          "https://docs.mem0.ai/open-source/features/rest-api",
+          "https://docs.mem0.ai/api-reference/memory/delete-memories",
+          "https://docs.mem0.ai/api-reference/memory/create-memory-export"
+        ],
+        "supports_memory_records": true,
+        "supports_memory_candidates": false,
+        "supports_memory_uses": false,
+        "supports_ttl": false,
+        "supports_delete": true,
+        "supports_export": true,
+        "supports_tenant_isolation": true,
+        "supports_raw_payload_blocking": true,
+        "supports_human_review_gate": true,
+        "stores_raw_payloads_by_default": false,
+        "network_required": true,
+        "requires_secret_refs": true,
+        "sanitized_fixture_only": true,
+        "default_for_legal_memory": false,
+        "approved_for_live_legal_memory": false,
+        "required_gates": [
+          "privacy_review",
+          "tenant_isolation_evidence",
+          "deletion_export_evidence",
+          "data_residency_review",
+          "security_secret_review",
+          "human_review_policy",
+          "latency_relevance_eval",
+          "live_legal_memory_gate"
+        ],
+        "blockers": []
+      },
+      {
+        "adapter_id": "zep-style-sanitized",
+        "provider": "zep",
+        "decision": "accepted_for_sanitized_spike",
+        "deployment_model": "cloud_or_byoc",
+        "source_refs": [
+          "https://help.getzep.com/quick-start-guide",
+          "https://help.getzep.com/faq",
+          "https://help.getzep.com/deleting-data-from-the-graph",
+          "https://help.getzep.com/users-and-user-graphs"
+        ],
+        "supports_memory_records": true,
+        "supports_memory_candidates": false,
+        "supports_memory_uses": false,
+        "supports_ttl": false,
+        "supports_delete": true,
+        "supports_export": false,
+        "supports_tenant_isolation": true,
+        "supports_raw_payload_blocking": true,
+        "supports_human_review_gate": true,
+        "stores_raw_payloads_by_default": false,
+        "network_required": true,
+        "requires_secret_refs": true,
+        "sanitized_fixture_only": true,
+        "default_for_legal_memory": false,
+        "approved_for_live_legal_memory": false,
+        "required_gates": [
+          "privacy_review",
+          "tenant_isolation_evidence",
+          "deletion_export_evidence",
+          "data_residency_review",
+          "security_secret_review",
+          "human_review_policy",
+          "latency_relevance_eval",
+          "live_legal_memory_gate"
+        ],
+        "blockers": []
+      }
+    ],
+    "live_legal_memory_gates": [
+      "privacy_review",
+      "tenant_isolation_evidence",
+      "deletion_export_evidence",
+      "data_residency_review",
+      "security_secret_review",
+      "human_review_policy",
+      "latency_relevance_eval",
+      "operator_runbook",
+      "incident_response",
+      "user_deletion_export_procedure"
+    ],
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_memory_adapter_contract.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase18_external_memory_adapter_acceptance.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase18-001",
+      "conversation_id": "conversation-phase18-001",
+      "channel": "wecom",
+      "user_id": "user-phase18-001",
+      "message_type": "text",
+      "received_at": "2026-07-01T09:00:00Z",
+      "content": "Synthetic external memory adapter evaluation request.",
+      "metadata": {
+        "content_sha256_16": "e8d54b83b5bf2e39",
+        "content_length": 53,
+        "raw_payload_ref": "fixture://phase18/turns/turn-phase18-001/raw"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase18-001",
+      "turn_id": "turn-phase18-001",
+      "primary_skill": "synthetic_external_memory_adapter_evaluation",
+      "confidence": 0.84,
+      "mode": "matched",
+      "created_at": "2026-07-01T09:00:01Z",
+      "supporting_skills": [
+        "synthetic_memory_privacy_gate"
+      ],
+      "matched_rule": "fixture://phase18/routing/external-memory-adapter",
+      "reason": "Synthetic route for Phase 18 adapter acceptance evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase18/route/route-phase18-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase18-001",
+      "turn_id": "turn-phase18-001",
+      "started_at": "2026-07-01T09:00:01Z",
+      "ended_at": "2026-07-01T09:00:05Z",
+      "active_skill_name": "synthetic_external_memory_adapter_evaluation",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-01T09:00:05Z",
+      "ingested_at": "2026-07-01T09:00:06Z",
+      "seq": 1,
+      "steps": [
+        {
+          "step_id": "step-phase18-manifest-evaluation",
+          "state": "succeeded",
+          "adapter_refs": [
+            "adapter://platform-native",
+            "adapter://mem0-style-sanitized",
+            "adapter://zep-style-sanitized"
+          ],
+          "raw_payload_ref": "fixture://phase18/trace/manifest-evaluation"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "context-bundle-phase18-001",
+        "adapter_evaluation_ref": "fixture://phase18/adapter-evaluations/local",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase18-001",
+      "turn_id": "turn-phase18-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic recommendation ref: recommendation://phase18/external-memory-adapters",
+      "feedback_target": "delivery-phase18-001",
+      "metadata": {
+        "trace_id": "trace-phase18-001",
+        "context_bundle_id": "context-bundle-phase18-001",
+        "recommendation_ref": "recommendation://phase18/external-memory-adapters",
+        "visible_text_sha256_16": "59b26dd686207437",
+        "visible_text_length": 76,
+        "raw_payload_ref": "fixture://phase18/results/result-phase18-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase18-001",
+      "turn_id": "turn-phase18-001",
+      "result_id": "result-phase18-001",
+      "conversation_id": "conversation-phase18-001",
+      "user_id": "user-phase18-001",
+      "source": "card_button",
+      "event_type": "rating",
+      "status": "pending",
+      "created_at": "2026-07-01T09:01:00Z",
+      "feedback_target": "delivery-phase18-001",
+      "action": "up",
+      "labels": [
+        "external_memory_adapter_evaluation"
+      ],
+      "raw_payload_ref": "fixture://phase18/feedback/feedback-phase18-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase18:001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "context-bundle-phase18-001",
+      "tenant_id": "tenant-phase18-001",
+      "workspace_id": "workspace-phase18-001",
+      "session_id": "session-phase18-001",
+      "created_at": "2026-07-01T09:00:02Z",
+      "budget_tokens": 2048,
+      "run_id": "run-phase18-001",
+      "turn_id": "turn-phase18-001",
+      "recent_turn_refs": [
+        "fixture://phase18/turns/recent-001"
+      ],
+      "summary_ref": "summary://phase18/session-phase18-001/adapter-summary-001",
+      "active_task_refs": [],
+      "artifact_refs": [
+        "artifact://phase18/evidence/adapter-evidence-001"
+      ],
+      "memory_refs": [
+        "memory-phase18-adapter-contract-001"
+      ],
+      "trim_strategy": "protected_then_adapter_evidence_memory_recent_artifact",
+      "raw_payload_refs": [
+        "fixture://phase18/turns/turn-phase18-001/raw"
+      ],
+      "metadata": {
+        "adapter_evaluation_refs": [
+          "adapter://platform-native",
+          "adapter://mem0-style-sanitized",
+          "adapter://zep-style-sanitized"
+        ],
+        "estimated_tokens": 390,
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "memory_records": [
+      {
+        "memory_id": "memory-phase18-adapter-contract-001",
+        "tenant_id": "tenant-phase18-001",
+        "workspace_id": "workspace-phase18-001",
+        "scope": "workspace",
+        "status": "active",
+        "sensitivity": "internal",
+        "created_at": "2026-07-01T09:00:00Z",
+        "updated_at": "2026-07-01T09:00:00Z",
+        "source_refs": [
+          "adapter://platform-native",
+          "adapter://mem0-style-sanitized",
+          "adapter://zep-style-sanitized"
+        ],
+        "summary": "Synthetic adapter gate decision summary.",
+        "subject": "external_memory_adapter_acceptance",
+        "raw_payload_ref": "fixture://phase18/memory/memory-phase18-adapter-contract-001/raw",
+        "confidence": 0.86,
+        "ttl_expires_at": "2026-12-31T00:00:00Z",
+        "metadata": {
+          "labels": [
+            "external_memory",
+            "adapter_contract",
+            "sanitized_fixture"
+          ],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ],
+    "memory_candidates": [
+      {
+        "candidate_id": "memory-candidate-phase18-external-adapter-001",
+        "tenant_id": "tenant-phase18-001",
+        "workspace_id": "workspace-phase18-001",
+        "status": "pending",
+        "source_refs": [
+          "adapter://mem0-style-sanitized",
+          "adapter://zep-style-sanitized"
+        ],
+        "created_at": "2026-07-01T09:00:05Z",
+        "proposed_scope": "workspace",
+        "proposed_sensitivity": "confidential",
+        "proposed_action": "review_external_memory_adapter_for_future_use",
+        "proposed_record_ref": "memory://candidates/memory-candidate-phase18-external-adapter-001",
+        "reason": "external_memory_adapter_acceptance_gate",
+        "confidence": 0.6,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://phase18/adapter-evaluations/local/raw",
+        "metadata": {
+          "no_auto_modify": true,
+          "category": "external_memory_adapter",
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ],
+    "memory_uses": [
+      {
+        "use_id": "memory-use-phase18-001",
+        "memory_id": "memory-phase18-adapter-contract-001",
+        "context_bundle_id": "context-bundle-phase18-001",
+        "used_at": "2026-07-01T09:00:02Z",
+        "purpose": "external_memory_adapter_evaluation_context",
+        "run_id": "run-phase18-001",
+        "turn_id": "turn-phase18-001",
+        "relevance_score": 0.86,
+        "policy_result": "selected",
+        "source_refs": [
+          "adapter://platform-native"
+        ],
+        "metadata": {
+          "matched_terms": [
+            "external_memory",
+            "adapter_contract"
+          ],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ]
+  }
+}
