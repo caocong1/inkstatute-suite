@@ -158,6 +158,12 @@ class DefaultRunRuntime:
         status = _enum_value(record.event.status)
         if status == InterruptStatus.RESOLVED.value:
             run_id = self._resumed_run_by_key.get(_resume_key(interrupt_id, turn_id, idempotency_key))
+            if run_id is None and _same_resume(record, turn_id=turn_id, idempotency_key=idempotency_key):
+                metadata = record.event.metadata
+                durable_run_id = metadata.get("resumed_backend_run_id")
+                if metadata.get("backend_resume_submitted") is True and durable_run_id:
+                    run_id = str(durable_run_id)
+                    self._resumed_run_by_key[_resume_key(interrupt_id, turn_id, idempotency_key)] = run_id
             if run_id is None:
                 raise RunRuntimeStateError("duplicate interrupt resume has no recorded backend run")
             return await self.backend.get_run(run_id)
@@ -399,6 +405,13 @@ def _interrupt_is_expired(record: InterruptRecord, now: datetime | str) -> bool:
     if record.event.expires_at is None:
         return False
     return _coerce_datetime(record.event.expires_at) <= _coerce_datetime(now)
+
+
+def _same_resume(record: InterruptRecord, *, turn_id: str, idempotency_key: str | None) -> bool:
+    metadata = record.event.metadata
+    return metadata.get("resolved_turn_id") == turn_id or (
+        idempotency_key is not None and metadata.get("resolved_idempotency_key") == idempotency_key
+    )
 
 
 def _coerce_datetime(value: datetime | str) -> datetime:

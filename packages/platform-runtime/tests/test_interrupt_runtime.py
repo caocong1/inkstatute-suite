@@ -354,6 +354,50 @@ class DefaultRunRuntimeInterruptTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first.run_id, duplicate.run_id)
         self.assertEqual(len(backend.submitted_requests), 1)
 
+    async def test_duplicate_resume_after_runtime_restart_uses_durable_resume_metadata(self) -> None:
+        clock = FakeRuntimeClock(start=FIXED_NOW)
+        id_factory = FakeIdFactory()
+        backend = FakeBackendAdapter(clock=clock, id_factory=id_factory)
+        interrupt_store = InMemoryInterruptStore(clock=clock, id_factory=id_factory)
+        record = interrupt_store.create_clarification(
+            scope=make_scope(),
+            run_id="run-paused-001",
+            session_id="session-001",
+            prompt_ref="fixture://prompts/clarify-001",
+            resume_state_ref="fixture://resume/run-paused-001",
+            reason="backend_needs_clarification",
+        )
+        first_runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(run_runtime_enabled=True),
+            interrupt_store=interrupt_store,
+            clock=clock,
+            id_factory=id_factory,
+        )
+
+        first = await first_runtime.resume_interrupt(
+            interrupt_id=record.event.interrupt_id,
+            scope=make_scope(),
+            req=make_run_request(turn_id="turn-answer-001", content="sensitive answer text"),
+            idempotency_key="idem-001",
+        )
+        restarted_runtime = DefaultRunRuntime(
+            backend=backend,
+            feature_flags=RuntimeFeatureFlags(run_runtime_enabled=True),
+            interrupt_store=interrupt_store,
+            clock=clock,
+            id_factory=id_factory,
+        )
+        duplicate = await restarted_runtime.resume_interrupt(
+            interrupt_id=record.event.interrupt_id,
+            scope=make_scope(),
+            req=make_run_request(turn_id="turn-answer-001", content="sensitive answer text"),
+            idempotency_key="idem-001",
+        )
+
+        self.assertEqual(first.run_id, duplicate.run_id)
+        self.assertEqual(len(backend.submitted_requests), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
