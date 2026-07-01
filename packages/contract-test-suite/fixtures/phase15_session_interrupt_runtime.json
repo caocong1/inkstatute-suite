@@ -1,0 +1,376 @@
+{
+  "fixture_id": "phase15-session-interrupt-runtime-001",
+  "description": "Sanitized evidence for Phase 15 session resolution and interrupt resume behavior.",
+  "metadata": {
+    "phase": "15",
+    "requirements": [
+      "CTX-01",
+      "CTX-02",
+      "CTX-03",
+      "CTX-04",
+      "INT-01",
+      "INT-02",
+      "INT-03",
+      "INT-04"
+    ],
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "session_command_required": false,
+    "ordinary_user_command_surface": "none",
+    "scope_fields": [
+      "tenant_id",
+      "workspace_id",
+      "channel_id",
+      "user_id",
+      "bot_instance_id",
+      "conversation_id",
+      "thread_id"
+    ],
+    "branch_evidence": {
+      "pending_interrupt_resume": {
+        "decision_action": "resume_interrupt",
+        "decision_reason": "pending_interrupt_precedence",
+        "run_status": "waiting_for_user",
+        "agent_result_status": "needs_clarification",
+        "run_interrupt_status": "waiting_for_user",
+        "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
+        "text_sha256_16": "1b4f0d1a74d452a9",
+        "text_length": 31,
+        "session_command_required": false
+      },
+      "active_task_follow_up": {
+        "decision_action": "active_task_follow_up",
+        "decision_reason": "active_task_precedence",
+        "route": "status_request",
+        "notice_kind": "status_running",
+        "accepted_by_backend": true,
+        "raw_payload_ref": "fixture://phase15/payloads/turn-followup-001"
+      },
+      "start_new_session_stale": {
+        "decision_action": "start_new_session",
+        "decision_reason": "session_idle_window_expired",
+        "prior_session_status": "open",
+        "prior_run_status": "running"
+      },
+      "start_new_session_terminal_or_new_task": {
+        "terminal_session_reason": "terminal_session_status",
+        "terminal_run_reason": "terminal_prior_run_status",
+        "new_task_reason": "new_task_signal",
+        "decision_action": "start_new_session"
+      },
+      "duplicate_timeout_cancel": {
+        "duplicate_action": "duplicate_answer_ignored",
+        "duplicate_backend_submit_count": 1,
+        "expired_action": "interrupt_expired",
+        "cancelled_action": "interrupt_cancelled",
+        "privacy": "answer_text_not_stored"
+      }
+    }
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase15-answer-001",
+      "conversation_id": "conversation-phase15-001",
+      "channel": "wecom",
+      "user_id": "user-phase15-001",
+      "message_type": "text",
+      "received_at": "2026-07-01T03:00:00Z",
+      "content": "Synthetic clarification response.",
+      "industry_context": {},
+      "metadata": {
+        "idempotency_key": "idem-phase15-answer-001",
+        "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
+        "source_event": "wecom_callback",
+        "source_status": "sanitized_callback",
+        "message_id": "message-phase15-answer-001",
+        "thread_id": "thread-phase15-001",
+        "content_sha256_16": "1b4f0d1a74d452a9",
+        "content_length": 31
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase15-session-001",
+      "turn_id": "turn-phase15-answer-001",
+      "primary_skill": "session_interrupt_resume",
+      "confidence": 0.95,
+      "mode": "matched",
+      "matched_rule": "pending_interrupt_precedence",
+      "reason": "pending interrupt beats active task and recent session",
+      "created_at": "2026-07-01T03:00:01Z",
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "industry_context": {},
+      "metadata": {
+        "decision_action": "resume_interrupt",
+        "decision_id": "session-decision-phase15-001",
+        "session_id": "session-phase15-waiting-001",
+        "interrupt_id": "interrupt-phase15-001",
+        "scope_ref": "fixture://phase15/scopes/wecom-user-bot-thread",
+        "session_command_required": false,
+        "ordinary_user_command_surface": "none",
+        "privacy": "no_raw_payload_or_answer_text_stored"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase15-session-001",
+      "turn_id": "turn-phase15-answer-001",
+      "started_at": "2026-07-01T03:00:02Z",
+      "ended_at": "2026-07-01T03:00:05Z",
+      "active_skill_name": "session_interrupt_resume",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-01T03:00:05Z",
+      "ingested_at": "2026-07-01T03:00:06Z",
+      "seq": 0,
+      "steps": [
+        {
+          "step_id": "resolve-session",
+          "decision_action": "resume_interrupt",
+          "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
+          "text_sha256_16": "1b4f0d1a74d452a9",
+          "text_length": 31
+        },
+        {
+          "step_id": "resume-runtime",
+          "interrupt_id": "interrupt-phase15-001",
+          "resume_state_ref": "runtime://phase15/continuation-state/run-waiting-001"
+        }
+      ],
+      "tool_calls": [],
+      "artifacts_written": [],
+      "route_decision": {
+        "route_decision_id": "route-phase15-session-001",
+        "turn_id": "turn-phase15-answer-001",
+        "primary_skill": "session_interrupt_resume",
+        "confidence": 0.95,
+        "mode": "matched",
+        "matched_rule": "pending_interrupt_precedence",
+        "reason": "pending interrupt beats active task and recent session",
+        "created_at": "2026-07-01T03:00:01Z",
+        "supporting_skills": [],
+        "gates_before": [],
+        "gates_after": [],
+        "required_tools": [],
+        "industry_context": {},
+        "metadata": {
+          "decision_action": "resume_interrupt",
+          "decision_id": "session-decision-phase15-001",
+          "session_id": "session-phase15-waiting-001",
+          "interrupt_id": "interrupt-phase15-001",
+          "scope_ref": "fixture://phase15/scopes/wecom-user-bot-thread",
+          "session_command_required": false,
+          "ordinary_user_command_surface": "none",
+          "privacy": "no_raw_payload_or_answer_text_stored"
+        }
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {},
+      "metadata": {
+        "runtime_helper": "wecom_session_runtime",
+        "pending_interrupt_precedence": true,
+        "active_task_precedence_tested": true,
+        "stale_new_split_tested": true,
+        "duplicate_timeout_cancel_tested": true,
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase15-clarify-001",
+      "turn_id": "turn-phase15-answer-001",
+      "status": "needs_clarification",
+      "reply_type": "status_update",
+      "clarifying_questions": [],
+      "feedback_target": "result-phase15-clarify-001",
+      "industry_context": {},
+      "metadata": {
+        "run_id": "run-phase15-waiting-001",
+        "async_task_state": "waiting_for_user",
+        "prompt_ref": "fixture://phase15/prompts/clarify-001",
+        "resume_state_ref": "runtime://phase15/continuation-state/run-waiting-001",
+        "expected_response_schema_ref": "fixture://phase15/schemas/clarification-answer",
+        "delivery_kind": "clarification",
+        "service_owner": "inkstatute_wecom_service",
+        "ordinary_user_command_surface": "none",
+        "privacy": "no_raw_prompt_or_answer_text_stored"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase15-observer-001",
+      "turn_id": "turn-phase15-answer-001",
+      "conversation_id": "conversation-phase15-001",
+      "user_id": "user-phase15-001",
+      "source": "admin_annotation",
+      "event_type": "correction",
+      "status": "pending",
+      "created_at": "2026-07-01T03:01:00Z",
+      "result_id": "result-phase15-clarify-001",
+      "feedback_target": "result-phase15-clarify-001",
+      "action": "needs_fix",
+      "raw_payload_ref": "fixture://phase15/feedback/observer-001",
+      "industry_context": {},
+      "metadata": {
+        "phase15_fixture_marker": true,
+        "privacy": "synthetic_observer_feedback"
+      }
+    },
+    "run": {
+      "run_id": "run-phase15-waiting-001",
+      "tenant_id": "tenant-phase15-001",
+      "workspace_id": "workspace-phase15-001",
+      "solution_id": "solution-lawyer-assistant-001",
+      "backend_id": "fake-backend",
+      "session_id": "session-phase15-waiting-001",
+      "turn_id": "turn-phase15-answer-001",
+      "status": "waiting_for_user",
+      "created_at": "2026-07-01T02:59:30Z",
+      "updated_at": "2026-07-01T03:00:05Z",
+      "industry_context": {},
+      "metadata": {
+        "channel": "wecom",
+        "scope_ref": "fixture://phase15/scopes/wecom-user-bot-thread",
+        "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
+        "content_sha256_16": "1b4f0d1a74d452a9",
+        "content_length": 31,
+        "privacy": "no_raw_payload_or_answer_text_stored"
+      }
+    },
+    "run_interrupt": {
+      "interrupt_id": "interrupt-phase15-001",
+      "run_id": "run-phase15-waiting-001",
+      "session_id": "session-phase15-waiting-001",
+      "status": "waiting_for_user",
+      "reason": "backend_needs_clarification",
+      "created_at": "2026-07-01T02:59:45Z",
+      "prompt_ref": "fixture://phase15/prompts/clarify-001",
+      "resume_state_ref": "runtime://phase15/continuation-state/run-waiting-001",
+      "expected_response_schema_ref": "fixture://phase15/schemas/clarification-answer",
+      "expires_at": "2026-07-01T03:30:00Z",
+      "metadata": {
+        "async_task_state": "waiting_for_user",
+        "agent_result_status": "needs_clarification",
+        "question_kind": "freeform",
+        "raw_payload_ref": "fixture://phase15/payloads/turn-answer-001",
+        "privacy": "no_raw_prompt_or_answer_text_stored"
+      }
+    },
+    "run_events": [
+      {
+        "event_id": "run-event-phase15-000",
+        "run_id": "run-phase15-waiting-001",
+        "event_type": "state_changed",
+        "status": "waiting_for_user",
+        "occurred_at": "2026-07-01T02:59:45Z",
+        "seq": 0,
+        "metadata": {
+          "source": "runtime_clarification_interrupt",
+          "interrupt_id": "interrupt-phase15-001",
+          "interrupt_status": "waiting_for_user",
+          "agent_result_status": "needs_clarification",
+          "prompt_ref": "fixture://phase15/prompts/clarify-001",
+          "resume_state_ref": "runtime://phase15/continuation-state/run-waiting-001",
+          "privacy": "no_raw_prompt_or_answer_text_stored"
+        }
+      },
+      {
+        "event_id": "run-event-phase15-001",
+        "run_id": "run-phase15-waiting-001",
+        "event_type": "state_changed",
+        "status": "running",
+        "occurred_at": "2026-07-01T03:00:05Z",
+        "seq": 1,
+        "metadata": {
+          "source": "runtime_resume_interrupt",
+          "interrupt_id": "interrupt-phase15-001",
+          "interrupt_status": "resolved",
+          "resolved_turn_id": "turn-phase15-answer-001",
+          "resolved_idempotency_key": "idem-phase15-answer-001",
+          "answer_text_sha256_16": "1b4f0d1a74d452a9",
+          "answer_text_length": 31,
+          "privacy": "no_raw_answer_text_stored"
+        }
+      },
+      {
+        "event_id": "run-event-phase15-002",
+        "run_id": "run-phase15-waiting-001",
+        "event_type": "state_changed",
+        "status": "running",
+        "occurred_at": "2026-07-01T03:00:06Z",
+        "seq": 2,
+        "metadata": {
+          "source": "wecom_session_runtime",
+          "branch": "duplicate_answer",
+          "interrupt_lifecycle_action": "duplicate_answer_ignored",
+          "duplicate_backend_submit_count": 1,
+          "privacy": "no_raw_answer_text_stored"
+        }
+      },
+      {
+        "event_id": "run-event-phase15-003",
+        "run_id": "run-phase15-waiting-001",
+        "event_type": "state_changed",
+        "status": "failed",
+        "occurred_at": "2026-07-01T03:00:07Z",
+        "seq": 3,
+        "metadata": {
+          "source": "wecom_session_runtime",
+          "branch": "expired_interrupt",
+          "interrupt_lifecycle_action": "interrupt_expired",
+          "expired_interrupt_ref": "runtime://phase15/interrupts/expired-001",
+          "resume_attempted": false,
+          "privacy": "no_raw_answer_text_stored"
+        }
+      },
+      {
+        "event_id": "run-event-phase15-004",
+        "run_id": "run-phase15-waiting-001",
+        "event_type": "state_changed",
+        "status": "cancelled",
+        "occurred_at": "2026-07-01T03:00:08Z",
+        "seq": 4,
+        "metadata": {
+          "source": "wecom_session_runtime",
+          "branch": "cancelled_interrupt",
+          "interrupt_lifecycle_action": "interrupt_cancelled",
+          "cancelled_interrupt_ref": "runtime://phase15/interrupts/cancelled-001",
+          "resume_attempted": false,
+          "privacy": "no_raw_answer_text_stored"
+        }
+      },
+      {
+        "event_id": "run-event-phase15-005",
+        "run_id": "run-phase15-waiting-001",
+        "event_type": "state_changed",
+        "status": "running",
+        "occurred_at": "2026-07-01T03:00:09Z",
+        "seq": 5,
+        "metadata": {
+          "source": "wecom_session_runtime",
+          "branch": "active_task_follow_up",
+          "route": "status_request",
+          "notice_kind": "status_running",
+          "accepted_by_backend": true,
+          "raw_payload_ref": "fixture://phase15/payloads/turn-followup-001",
+          "privacy": "no_raw_payload_or_answer_text_stored"
+        }
+      },
+      {
+        "event_id": "run-event-phase15-006",
+        "run_id": "run-phase15-waiting-001",
+        "event_type": "state_changed",
+        "status": "queued",
+        "occurred_at": "2026-07-01T03:00:10Z",
+        "seq": 6,
+        "metadata": {
+          "source": "session_resolver",
+          "branch": "start_new_session",
+          "stale_reason": "session_idle_window_expired",
+          "terminal_session_reason": "terminal_session_status",
+          "terminal_run_reason": "terminal_prior_run_status",
+          "new_task_reason": "new_task_signal",
+          "privacy": "no_raw_payload_or_answer_text_stored"
+        }
+      }
+    ]
+  }
+}
