@@ -148,6 +148,9 @@ class HindsightMemory:
         bank_id = self._bank_id(input.tenant_id, input.workspace_id, input.user_id)
         await self._ensure_bank(bank_id)
         try:
+            max_results = input.max_results
+            if input.focus_policy is not None:
+                max_results = input.focus_policy.max_results
             result = await self._client.arecall(bank_id=bank_id, query=input.query)
             memories = tuple(
                 RecalledMemory(
@@ -159,10 +162,12 @@ class HindsightMemory:
                 )
                 for index, item in enumerate(result.results)
             )
+            selected = memories[: max(1, max_results)] if max_results else memories
             return MemoryRecallResult(
                 bank_id=bank_id,
                 query=input.query,
-                memories=memories[: max(1, input.max_results)] if input.max_results else memories,
+                memories=selected,
+                filtered_count=len(memories) - len(selected),
                 metadata={
                     "scope": {
                         "tenant_id": input.tenant_id,

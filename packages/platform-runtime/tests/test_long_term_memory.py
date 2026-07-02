@@ -59,7 +59,7 @@ class FakeMemoryContractTest(unittest.IsolatedAsyncioTestCase):
                 workspace_id=self.workspace,
                 user_id=self.user,
                 bank_id=self.bank,
-                content="Alice is a lawyer.",
+                content="Alice is a lawyer working on contract disputes.",
             )
         )
         result = await self.memory.areflect(

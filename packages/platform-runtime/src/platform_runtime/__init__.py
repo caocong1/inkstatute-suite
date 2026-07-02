@@ -61,6 +61,15 @@ from .long_term_memory import (
     MemoryRetainResult,
     RecalledMemory,
 )
+from .memory_policy import (
+    MemoryCategory,
+    MemoryContentClassification,
+    MemoryContentClassifier,
+    MemoryFocusPolicy,
+    MemoryFocusResult,
+    MemoryRetentionDecision,
+    MemoryRetentionPolicy,
+)
 from .fake_memory import FakeMemory
 from .hindsight_memory import HindsightMemory, HindsightMemoryError
 from .memory import (
@@ -182,6 +191,13 @@ __all__ = [
     "MemoryRetainInput",
     "MemoryRetainResult",
     "RecalledMemory",
+    "MemoryCategory",
+    "MemoryContentClassification",
+    "MemoryContentClassifier",
+    "MemoryFocusPolicy",
+    "MemoryFocusResult",
+    "MemoryRetentionDecision",
+    "MemoryRetentionPolicy",
     "FakeMemory",
     "HindsightMemory",
     "HindsightMemoryError",

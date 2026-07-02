@@ -24,6 +24,7 @@ class MemoryRetainInput:
     source_refs: tuple[str, ...] = ()
     metadata: JsonObject = field(default_factory=dict)
     now: str | datetime | None = None
+    retention_policy: "MemoryRetentionPolicy | None" = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +39,7 @@ class MemoryRecallInput:
     max_results: int = 8
     metadata: JsonObject = field(default_factory=dict)
     now: str | datetime | None = None
+    focus_policy: "MemoryFocusPolicy | None" = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +73,7 @@ class MemoryRecallResult:
     bank_id: str
     query: str
     memories: tuple[RecalledMemory, ...] = ()
+    filtered_count: int = 0
     metadata: JsonObject = field(default_factory=dict)
 
 
@@ -91,6 +94,8 @@ class MemoryRetainResult:
 
     bank_id: str
     retained_count: int = 0
+    discarded_count: int = 0
+    classifications: tuple[object, ...] = ()
     metadata: JsonObject = field(default_factory=dict)
 
 
