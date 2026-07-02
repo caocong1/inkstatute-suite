@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from .classification import FeedbackClassification, classify_feedback_event
+from .memory_wiring import wire_feedback_to_memory
 from .wecom_normalizer import normalize_wecom_feedback_records
 
 
@@ -225,10 +226,58 @@ def _string(value: Any) -> str | None:
     return text if text else None
 
 
+def ingest_feedback_callback_for_memory(
+    *,
+    wecom_callback_events: Iterable[Mapping[str, Any]] | None = None,
+    contract_feedback_events: Iterable[Mapping[str, Any]] | None = None,
+    tenant_id: str,
+    workspace_id: str,
+    session_id: str,
+    user_id: str,
+    context_bundle_id: str | None = None,
+    run_id: str | None = None,
+    turn_id: str | None = None,
+    policy: Any | None = None,
+    context_store: Any | None = None,
+    review_store: Any | None = None,
+    durable_candidate_store: Any | None = None,
+    selected_memory_ids: tuple[str, ...] = (),
+    now: str | None = None,
+    clock: Any | None = None,
+) -> Any:
+    """Normalize callback/service feedback and wire it into memory learning.
+
+    This queue-level helper owns the normalization/dedupe/classification flow
+    and delegates the memory-learning step to ``memory_wiring``.
+    """
+    normalized = normalize_feedback_inputs(
+        wecom_callback_events=wecom_callback_events,
+        contract_feedback_events=contract_feedback_events,
+    )
+    return wire_feedback_to_memory(
+        events=normalized,
+        tenant_id=tenant_id,
+        workspace_id=workspace_id,
+        session_id=session_id,
+        user_id=user_id,
+        context_bundle_id=context_bundle_id,
+        run_id=run_id,
+        turn_id=turn_id,
+        policy=policy,
+        context_store=context_store,
+        review_store=review_store,
+        durable_candidate_store=durable_candidate_store,
+        selected_memory_ids=selected_memory_ids,
+        now=now,
+        clock=clock,
+    )
+
+
 __all__ = [
     "FeedbackQueueItem",
     "build_pending_feedback_queue",
     "dedupe_feedback_events",
+    "ingest_feedback_callback_for_memory",
     "load_jsonl_records",
     "normalize_feedback_inputs",
 ]
