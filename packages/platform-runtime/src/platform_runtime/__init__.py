@@ -60,6 +60,7 @@ from .memory import (
     MemorySearchResult,
     MemoryStorePolicy,
 )
+from .sqlite_memory import SQLiteMemoryStore
 from .memory_adapters import (
     MemoryAdapterDecision,
     MemoryAdapterEvaluation,
@@ -145,6 +146,7 @@ __all__ = [
     "RuntimeClock",
     "RuntimeFeatureDisabledError",
     "RuntimeFeatureFlags",
+    "SQLiteMemoryStore",
     "SessionResolutionAction",
     "SessionResolutionDecision",
     "SessionResolutionPolicy",

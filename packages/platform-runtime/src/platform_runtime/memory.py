@@ -38,6 +38,14 @@ class MemoryQuery:
     now: str | datetime | None = None
     max_results: int | None = None
     metadata: JsonObject = field(default_factory=dict)
+    # Lifecycle filter fields — ignored by InMemoryMemoryStore but used by SQLiteMemoryStore
+    sensitivities: tuple[str, ...] = ()
+    statuses: tuple[str, ...] = ()
+    minimum_confidence: float | None = None
+    ttl_expires_before: str | None = None
+    ttl_expires_after: str | None = None
+    include_deleted: bool = False
+    include_expired: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,23 +97,7 @@ class InMemoryMemoryStore:
         policy: MemoryStorePolicy | None = None,
     ) -> tuple[MemorySearchResult, ...]:
         cfg = policy or MemoryStorePolicy()
-        query_terms = _terms_from_query(query)
-        results = [
-            _search_result(record, query_terms)
-            for record in self.list_for_query(query, policy=cfg)
-        ]
-        if query_terms:
-            results = [result for result in results if result.matched_terms]
-        results.sort(
-            key=lambda item: (
-                -item.relevance_score,
-                -float(item.record.confidence if item.record.confidence is not None else 0.0),
-                _reverse_timestamp_key(item.record.updated_at),
-                item.record.memory_id,
-            )
-        )
-        limit = max(0, int(query.max_results if query.max_results is not None else cfg.max_results))
-        return tuple(results[:limit])
+        return _search_records(self.list_for_query(query, policy=cfg), query, cfg)
 
     def mark_deleted(self, memory_id: str, *, deleted_at: str | datetime | None = None, reason: str = "") -> MemoryRecord:
         record = self._records[memory_id]
@@ -594,6 +586,81 @@ def _copy_record(record: MemoryRecord) -> MemoryRecord:
     )
 
 
+def _validate_candidate(candidate: MemoryCandidate) -> None:
+    _safe_metadata(candidate.metadata)
+    _safe_metadata(candidate.industry_context)
+    for ref in candidate.source_refs:
+        _validate_ref(ref, field="source_refs")
+    if candidate.raw_payload_ref is not None:
+        _validate_ref(candidate.raw_payload_ref, field="raw_payload_ref")
+
+
+def _validate_use(use: MemoryUse) -> None:
+    _safe_metadata(use.metadata)
+    for ref in use.source_refs:
+        _validate_ref(ref, field="source_refs")
+
+
+def _copy_candidate(candidate: MemoryCandidate) -> MemoryCandidate:
+    return MemoryCandidate(
+        candidate_id=candidate.candidate_id,
+        tenant_id=candidate.tenant_id,
+        workspace_id=candidate.workspace_id,
+        status=str(candidate.status),
+        source_refs=list(candidate.source_refs),
+        created_at=candidate.created_at,
+        proposed_scope=candidate.proposed_scope,
+        proposed_sensitivity=candidate.proposed_sensitivity,
+        proposed_action=candidate.proposed_action,
+        memory_id=candidate.memory_id,
+        proposed_record_ref=candidate.proposed_record_ref,
+        reason=candidate.reason,
+        confidence=candidate.confidence,
+        requires_human_review=bool(candidate.requires_human_review),
+        raw_payload_ref=candidate.raw_payload_ref,
+        industry_context=_safe_metadata(candidate.industry_context),
+        metadata=_safe_metadata(candidate.metadata),
+    )
+
+
+def _copy_use(use: MemoryUse) -> MemoryUse:
+    return MemoryUse(
+        use_id=use.use_id,
+        memory_id=use.memory_id,
+        context_bundle_id=use.context_bundle_id,
+        used_at=use.used_at,
+        purpose=use.purpose,
+        run_id=use.run_id,
+        turn_id=use.turn_id,
+        relevance_score=use.relevance_score,
+        policy_result=use.policy_result,
+        source_refs=list(use.source_refs),
+        metadata=_safe_metadata(use.metadata),
+    )
+
+
+def _search_records(
+    records: Iterable[MemoryRecord],
+    query: MemoryQuery,
+    policy: MemoryStorePolicy,
+) -> tuple[MemorySearchResult, ...]:
+    """Rank and limit memory records from any source (in-memory or SQLite)."""
+    query_terms = _terms_from_query(query)
+    results = [_search_result(record, query_terms) for record in records]
+    if query_terms:
+        results = [result for result in results if result.matched_terms]
+    results.sort(
+        key=lambda item: (
+            -item.relevance_score,
+            -float(item.record.confidence if item.record.confidence is not None else 0.0),
+            _reverse_timestamp_key(item.record.updated_at),
+            item.record.memory_id,
+        )
+    )
+    limit = max(0, int(query.max_results if query.max_results is not None else policy.max_results))
+    return tuple(results[:limit])
+
+
 def _json_clone(value: Mapping[str, Any]) -> JsonObject:
     return json.loads(json.dumps(value, ensure_ascii=False, sort_keys=True))
 
@@ -627,4 +694,9 @@ __all__ = [
     "MemoryQuery",
     "MemorySearchResult",
     "MemoryStorePolicy",
+    "_copy_candidate",
+    "_copy_use",
+    "_search_records",
+    "_validate_candidate",
+    "_validate_use",
 ]
