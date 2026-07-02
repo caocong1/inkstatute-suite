@@ -7,10 +7,11 @@ last_updated: "2026-07-03T03:00:00.000Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 0
   completed_plans: 0
-  percent: 83
+  percent: 100
+status: complete
 ---
 
 # Project State
@@ -26,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 Phase: 31 (Real-Provider Validation and Regression Gates)
 Plan: —
-Status: Planning
-Last activity: 2026-07-03 — Phase 30 completed, retry + observability shipped
+Status: Complete
+Last activity: 2026-07-03 — Phase 31 completed; milestone v1.4 shipped
 
 ### Deferred Items
 

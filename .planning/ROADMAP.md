@@ -21,7 +21,11 @@
 - [x] **Phase 28: Memory Semantics: Focus vs Retention** - Distinguish transient task context from durable memory and implement recall/retention policy.
 - [x] **Phase 29: WeCom/Runtime Integration** - Wire memory into the ordinary WeCom/runtime flow before and after agent turns.
 - [x] **Phase 30: Error Handling and Observability** - Add retry, graceful degradation, and contract events for memory operations.
-- [ ] **Phase 31: Real-Provider Validation and Regression Gates** - Validate with live Hindsight, add automated tests, and keep V2 gates green.
+- [x] **Phase 31: Real-Provider Validation and Regression Gates** - Validate with live Hindsight, add automated tests, and keep V2 gates green.
+
+## Milestone v1.4 Status
+
+**Status:** COMPLETE — all 6 phases shipped.
 
 ## Phase Details
 
