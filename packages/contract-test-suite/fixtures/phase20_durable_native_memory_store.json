@@ -1,0 +1,300 @@
+{
+  "fixture_id": "phase20-durable-native-memory-store-001",
+  "description": "Synthetic Phase 20 fixture proving SQLiteMemoryStore durable native memory: reference-first persistence, tombstone deletion, retention expiry, export, privacy boundaries, and adapter conformance.",
+  "metadata": {
+    "phase": "20",
+    "requirements": [
+      "MEM-01",
+      "MEM-02",
+      "MEM-03",
+      "MEM-04",
+      "MEM-05"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "no_live_external_invocation": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "store": {
+      "adapter_id": "platform-native-sqlite",
+      "provider": "platform_native",
+      "deployment_model": "in_process_sqlite",
+      "decision": "accepted_for_current_legal_use",
+      "source_refs": [
+        "docs/architecture/memory/production-memory-system-strategy.md",
+        "packages/platform-runtime/src/platform_runtime/sqlite_memory.py",
+        "packages/platform-runtime/src/platform_runtime/memory.py"
+      ],
+      "supports_memory_records": true,
+      "supports_memory_candidates": true,
+      "supports_memory_uses": true,
+      "supports_ttl": true,
+      "supports_delete": true,
+      "supports_export": true,
+      "supports_tenant_isolation": true,
+      "supports_raw_payload_blocking": true,
+      "supports_human_review_gate": true,
+      "stores_raw_payloads_by_default": false,
+      "network_required": false,
+      "requires_secrets": false,
+      "sanitized_fixture_only": false,
+      "default_for_legal_memory": true,
+      "approved_for_live_legal_memory": true,
+      "data_residency": "process_local",
+      "deletion_model": "ttl_and_tombstone",
+      "export_model": "memory_record_sqlite_export"
+    },
+    "durable_store_evidence": {
+      "persist_reload": "memory-phase20-active-001 upserted and reloaded from SQLiteMemoryStore via db_path",
+      "tombstone_deletion": "memory-phase20-deleted-001 marked deleted via mark_deleted; status=deleted, deleted_at set",
+      "retention_expiry": "memory-phase20-expired-001 moved to status=expired by expire_records when ttl_expires_at <= now",
+      "export_includes_deleted": "export_records returns active, deleted, and expired rows for tenant/workspace scope",
+      "privacy_rejection": "upsert rejects records with raw_payload, full_text, or secret-like metadata before SQLite write",
+      "tenant_isolation": "list_for_query applies tenant_id and workspace_id WHERE clauses before Python visibility check",
+      "sql_parameterization": "injection-shaped tenant_id returns empty results; table remains intact"
+    },
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_sqlite_memory_store.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_memory_adapter_contract.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase20_durable_native_memory_store.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest discover -s packages/platform-runtime/tests"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase20-001",
+      "conversation_id": "conversation-phase20-001",
+      "channel": "wecom",
+      "user_id": "user-phase20-001",
+      "message_type": "text",
+      "received_at": "2026-07-02T08:00:00Z",
+      "content": "Synthetic durable memory store recall request.",
+      "metadata": {
+        "content_sha256_16": "a7c3b1e9f2d450e8",
+        "content_length": 46,
+        "raw_payload_ref": "fixture://phase20/turns/turn-phase20-001/raw"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase20-001",
+      "turn_id": "turn-phase20-001",
+      "primary_skill": "synthetic_durable_memory_store",
+      "confidence": 0.88,
+      "mode": "matched",
+      "created_at": "2026-07-02T08:00:01Z",
+      "supporting_skills": [
+        "synthetic_memory_recall"
+      ],
+      "matched_rule": "fixture://phase20/routing/durable-memory-store",
+      "reason": "Synthetic route for Phase 20 durable native memory store evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase20/route/route-phase20-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase20-001",
+      "turn_id": "turn-phase20-001",
+      "started_at": "2026-07-02T08:00:01Z",
+      "ended_at": "2026-07-02T08:00:03Z",
+      "active_skill_name": "synthetic_durable_memory_store",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-02T08:00:03Z",
+      "ingested_at": "2026-07-02T08:00:04Z",
+      "seq": 1,
+      "steps": [
+        {
+          "step_id": "step-phase20-memory-recall",
+          "state": "succeeded",
+          "memory_refs": [
+            "memory-phase20-active-001"
+          ],
+          "raw_payload_ref": "fixture://phase20/trace/step-memory-recall"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "bundle-phase20-001",
+        "memory_use_id": "use-phase20-001",
+        "store": "platform-native-sqlite",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase20-001",
+      "turn_id": "turn-phase20-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic response summary ref: result://phase20/result-phase20-001/summary",
+      "feedback_target": "delivery-phase20-001",
+      "metadata": {
+        "trace_id": "trace-phase20-001",
+        "context_bundle_id": "bundle-phase20-001",
+        "visible_text_sha256_16": "e4b2a1c9f3d07e58",
+        "visible_text_length": 70,
+        "raw_payload_ref": "fixture://phase20/results/result-phase20-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase20-001",
+      "turn_id": "turn-phase20-001",
+      "result_id": "result-phase20-001",
+      "conversation_id": "conversation-phase20-001",
+      "user_id": "user-phase20-001",
+      "source": "card_button",
+      "event_type": "rating",
+      "status": "resolved",
+      "created_at": "2026-07-02T08:01:00Z",
+      "feedback_target": "delivery-phase20-001",
+      "action": "up",
+      "labels": ["rating"],
+      "raw_payload_ref": "fixture://phase20/feedback/feedback-phase20-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase20:rating:001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "bundle-phase20-001",
+      "tenant_id": "tenant-phase20-001",
+      "workspace_id": "workspace-phase20-001",
+      "session_id": "session-phase20-001",
+      "created_at": "2026-07-02T08:00:01Z",
+      "budget_tokens": 4096,
+      "run_id": "run-phase20-001",
+      "turn_id": "turn-phase20-001",
+      "memory_refs": ["memory://memory-phase20-active-001"],
+      "recent_turn_refs": ["turn://turn-phase20-001"],
+      "metadata": {
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "memory_records": [
+      {
+        "memory_id": "memory-phase20-active-001",
+        "tenant_id": "tenant-phase20-001",
+        "workspace_id": "workspace-phase20-001",
+        "scope": "session",
+        "status": "active",
+        "sensitivity": "confidential",
+        "created_at": "2026-07-01T08:00:00Z",
+        "updated_at": "2026-07-02T08:00:00Z",
+        "source_refs": [
+          "feedback://feedback-phase20-correction-001",
+          "summary://phase20/session-phase20-001/rolling-summary-001"
+        ],
+        "summary": "Synthetic citation format preference for durable store.",
+        "subject": "citation_format",
+        "related_user_id": "user-phase20-001",
+        "session_id": "session-phase20-001",
+        "raw_payload_ref": "fixture://phase20/memory/memory-phase20-active-001/raw",
+        "confidence": 0.85,
+        "ttl_expires_at": "2027-01-01T00:00:00Z",
+        "metadata": {
+          "summary_sha256_16": "7e3b9c1f4a2d8e0b",
+          "summary_length": 53,
+          "labels": ["citation_error", "format_issue"],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      },
+      {
+        "memory_id": "memory-phase20-deleted-001",
+        "tenant_id": "tenant-phase20-001",
+        "workspace_id": "workspace-phase20-001",
+        "scope": "user",
+        "status": "deleted",
+        "sensitivity": "confidential",
+        "created_at": "2026-06-01T08:00:00Z",
+        "updated_at": "2026-07-01T09:00:00Z",
+        "source_refs": [
+          "feedback://feedback-phase20-negative-001"
+        ],
+        "summary": "Synthetic tombstoned memory record.",
+        "subject": "tombstone_test",
+        "related_user_id": "user-phase20-001",
+        "raw_payload_ref": "fixture://phase20/memory/memory-phase20-deleted-001/raw",
+        "confidence": 0.6,
+        "ttl_expires_at": "2026-12-01T00:00:00Z",
+        "deleted_at": "2026-07-01T09:00:00Z",
+        "deletion_reason": "user_deletion_request",
+        "metadata": {
+          "summary_sha256_16": "1a2b3c4d5e6f7a8b",
+          "summary_length": 37,
+          "labels": ["tombstone"],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      },
+      {
+        "memory_id": "memory-phase20-expired-001",
+        "tenant_id": "tenant-phase20-001",
+        "workspace_id": "workspace-phase20-001",
+        "scope": "workspace",
+        "status": "deleted",
+        "sensitivity": "internal",
+        "created_at": "2026-01-01T08:00:00Z",
+        "updated_at": "2026-07-02T08:00:00Z",
+        "source_refs": [
+          "summary://phase20/session-phase20-002/rolling-summary-001"
+        ],
+        "summary": "Synthetic retention-expired memory record (TTL passed; status updated by expire_records).",
+        "subject": "retention_expiry_test",
+        "raw_payload_ref": "fixture://phase20/memory/memory-phase20-expired-001/raw",
+        "confidence": 0.4,
+        "ttl_expires_at": "2026-06-01T00:00:00Z",
+        "deleted_at": "2026-07-02T08:00:00Z",
+        "deletion_reason": "ttl_expired_by_retain_policy",
+        "metadata": {
+          "summary_sha256_16": "2c3d4e5f6a7b8c9d",
+          "summary_length": 88,
+          "labels": ["ttl_expired"],
+          "privacy": "refs_hashes_lengths_statuses_only",
+          "expire_records_evidence": "expire_records(now=2026-07-02T08:00:00Z) updated status from active to deleted for ttl_expires_at=2026-06-01T00:00:00Z"
+        }
+      }
+    ],
+    "memory_candidates": [
+      {
+        "candidate_id": "candidate-phase20-001",
+        "tenant_id": "tenant-phase20-001",
+        "workspace_id": "workspace-phase20-001",
+        "status": "pending",
+        "source_refs": [
+          "feedback://feedback-phase20-negative-001",
+          "feedback://feedback-phase20-negative-002"
+        ],
+        "created_at": "2026-07-02T08:00:00Z",
+        "proposed_scope": "user",
+        "proposed_sensitivity": "confidential",
+        "proposed_action": "create_memory_candidate",
+        "proposed_record_ref": "memory://candidates/candidate-phase20-001",
+        "reason": "Synthetic repeated negative feedback candidate for durable store.",
+        "confidence": 0.65,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://phase20/candidates/candidate-phase20-001/raw",
+        "metadata": {
+          "no_auto_modify": false,
+          "category": "citation_error",
+          "feedback_count": 2,
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ],
+    "memory_uses": [
+      {
+        "use_id": "use-phase20-001",
+        "memory_id": "memory-phase20-active-001",
+        "context_bundle_id": "bundle-phase20-001",
+        "used_at": "2026-07-02T08:00:01Z",
+        "purpose": "context_assembly",
+        "run_id": "run-phase20-001",
+        "turn_id": "turn-phase20-001",
+        "relevance_score": 0.85,
+        "policy_result": "selected",
+        "source_refs": [
+          "memory://memory-phase20-active-001"
+        ],
+        "metadata": {
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ]
+  }
+}
