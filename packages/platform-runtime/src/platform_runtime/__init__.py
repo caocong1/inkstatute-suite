@@ -82,6 +82,8 @@ from .memory_review import (
     ReviewDeciderError,
 )
 from .memory_orchestrator import (
+    MemoryUseEvidenceError,
+    MemoryUseEvidenceFailureMode,
     MemoryOrchestrator,
     MemoryOrchestratorPolicy,
     OrchestratorIsolationError,
@@ -178,6 +180,8 @@ __all__ = [
     "MemoryCandidateReviewAction",
     "MemoryCandidateReviewDecider",
     "MemoryCandidateReviewDecision",
+    "MemoryUseEvidenceError",
+    "MemoryUseEvidenceFailureMode",
     "MemoryOrchestrator",
     "MemoryOrchestratorPolicy",
     "MemoryStoreAdapter",

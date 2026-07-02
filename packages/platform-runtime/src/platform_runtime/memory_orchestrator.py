@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
+from enum import StrEnum
 from typing import Any
 
 from platform_contract.events import MemoryRecord, MemoryUse
@@ -17,6 +18,32 @@ from .session_resolver import SessionScope, _new_id, _timestamp
 
 class OrchestratorIsolationError(ValueError):
     """Raised when a recall query scope does not match the resolved session scope."""
+
+
+class MemoryUseEvidenceFailureMode(StrEnum):
+    """Policy for evidence-capable MemoryUse sinks that fail while recording."""
+
+    FAIL_CLOSED = "fail_closed"
+    DEGRADED = "degraded"
+    IGNORE_IF_UNSUPPORTED = "ignore_if_unsupported"
+
+
+class MemoryUseEvidenceError(RuntimeError):
+    """Raised when MemoryUse evidence cannot be recorded under fail-closed policy."""
+
+    def __init__(
+        self,
+        code: str,
+        *,
+        memory_ids: tuple[str, ...] = (),
+        failed_count: int = 0,
+        error_class: str = "",
+    ) -> None:
+        super().__init__(code)
+        self.code = code
+        self.memory_ids = memory_ids
+        self.failed_count = failed_count
+        self.error_class = error_class
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +67,9 @@ class MemoryOrchestratorPolicy:
 
     record_memory_use: bool = True
     """When True, record a MemoryUse for each selected memory (if store supports it)."""
+
+    memory_use_evidence_failure_mode: MemoryUseEvidenceFailureMode = MemoryUseEvidenceFailureMode.DEGRADED
+    """How to handle failures from evidence-capable MemoryUse sinks."""
 
 
 class MemoryOrchestrator:
@@ -147,31 +177,24 @@ class MemoryOrchestrator:
 
         result = self._assembler.assemble(assembly_input, now=now_str, id_factory=self._id_factory)
 
-        # Record MemoryUse evidence for each selected memory.
-        if self._policy.record_memory_use and hasattr(self._memory_store, "record_memory_use"):
-            context_bundle_id = result.bundle.context_bundle_id
-            for search_result in selected:
-                memory_id = search_result.record.memory_id
-                use_id = _new_id(self._id_factory, "memory-use")
-                use = MemoryUse(
-                    use_id=use_id,
-                    memory_id=memory_id,
-                    context_bundle_id=context_bundle_id,
-                    used_at=now_str,
-                    purpose="context_assembly",
-                    run_id=run_id,
-                    turn_id=turn_id,
-                    relevance_score=search_result.relevance_score,
-                    policy_result="selected",
-                    source_refs=[f"memory://{memory_id}"],
-                    metadata={"privacy": "no_raw_payload_or_legal_text_stored"},
-                )
-                try:
-                    self._memory_store.record_memory_use(use)  # type: ignore[attr-defined]
-                except Exception:  # noqa: BLE001
-                    pass  # fail-open: MemoryUse recording is evidence only
+        evidence_metadata = _record_memory_use_evidence(
+            memory_store=self._memory_store,
+            selected=selected,
+            result=result,
+            policy=self._policy,
+            now=now_str,
+            run_id=run_id,
+            turn_id=turn_id,
+            id_factory=self._id_factory,
+        )
 
-        return result
+        return replace(
+            result,
+            metadata={
+                **result.metadata,
+                **evidence_metadata,
+            },
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +229,97 @@ def _clock_now(clock: Any | None) -> str:
     return str(clock)
 
 
+def _record_memory_use_evidence(
+    *,
+    memory_store: MemoryStoreAdapter,
+    selected: tuple[MemorySearchResult, ...],
+    result: ContextAssemblyResult,
+    policy: MemoryOrchestratorPolicy,
+    now: str,
+    run_id: str | None,
+    turn_id: str,
+    id_factory: Any | None,
+) -> dict[str, Any]:
+    selected_count = len(selected)
+    base = {
+        "memory_use_evidence_selected_count": selected_count,
+        "memory_use_evidence_recorded_count": 0,
+        "memory_use_evidence_failed_count": 0,
+        "memory_use_evidence_privacy": "refs_ids_counts_statuses_only",
+    }
+    if selected_count == 0:
+        return {
+            **base,
+            "memory_use_evidence_status": "not_applicable",
+        }
+    if not policy.record_memory_use:
+        return {
+            **base,
+            "memory_use_evidence_status": "disabled",
+        }
+    if not hasattr(memory_store, "record_memory_use"):
+        return {
+            **base,
+            "memory_use_evidence_status": "unsupported",
+            "memory_use_evidence_error_code": "memory_use_evidence_unsupported",
+        }
+
+    context_bundle_id = result.bundle.context_bundle_id
+    recorded_count = 0
+    failed_memory_ids: list[str] = []
+    error_class = ""
+    for search_result in selected:
+        memory_id = search_result.record.memory_id
+        use = MemoryUse(
+            use_id=_new_id(id_factory, "memory-use"),
+            memory_id=memory_id,
+            context_bundle_id=context_bundle_id,
+            used_at=now,
+            purpose="context_assembly",
+            run_id=run_id,
+            turn_id=turn_id,
+            relevance_score=search_result.relevance_score,
+            policy_result="selected",
+            source_refs=[f"memory://{memory_id}"],
+            metadata={"privacy": "no_raw_payload_or_legal_text_stored"},
+        )
+        try:
+            memory_store.record_memory_use(use)  # type: ignore[attr-defined]
+            recorded_count += 1
+        except Exception as exc:  # noqa: BLE001
+            failed_memory_ids.append(memory_id)
+            if not error_class:
+                error_class = type(exc).__name__
+
+    if failed_memory_ids:
+        code = "memory_use_evidence_record_failed"
+        if policy.memory_use_evidence_failure_mode == MemoryUseEvidenceFailureMode.FAIL_CLOSED:
+            raise MemoryUseEvidenceError(
+                code,
+                memory_ids=tuple(failed_memory_ids),
+                failed_count=len(failed_memory_ids),
+                error_class=error_class,
+            )
+        return {
+            **base,
+            "memory_use_evidence_status": "degraded",
+            "memory_use_evidence_recorded_count": recorded_count,
+            "memory_use_evidence_failed_count": len(failed_memory_ids),
+            "memory_use_evidence_error_code": code,
+            "memory_use_evidence_error_class": error_class,
+            "memory_use_evidence_memory_ids": list(failed_memory_ids),
+        }
+
+    return {
+        **base,
+        "memory_use_evidence_status": "recorded",
+        "memory_use_evidence_recorded_count": recorded_count,
+    }
+
+
 __all__ = [
+    "MemoryUseEvidenceError",
+    "MemoryUseEvidenceFailureMode",
     "MemoryOrchestratorPolicy",
     "MemoryOrchestrator",
     "OrchestratorIsolationError",
