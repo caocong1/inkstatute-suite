@@ -7,10 +7,11 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from enum import StrEnum
 import json
-from typing import Any
+from typing import Any, Protocol
 
 from platform_contract.events import JsonObject
 from platform_runtime.interrupts import InMemoryInterruptStore, InterruptLifecycleAction, InterruptRecord
+from platform_runtime.memory_orchestrator import MemoryOrchestrator
 from platform_runtime.protocols import Run, RunRequest, RunRuntime
 from platform_runtime.session_resolver import (
     ActiveTaskSnapshot,
@@ -72,6 +73,13 @@ class WeComSessionRuntimeOutcome:
         return _safe_json(event)
 
 
+class FeedbackCorrectionRefProvider(Protocol):
+    """Lightweight port for same-session feedback correction refs."""
+
+    def list_feedback_correction_refs(self, **kwargs: Any) -> tuple[str, ...]:
+        """Return refs suitable for ContextBundle assembly."""
+
+
 class WeComSessionRuntime:
     """Pure orchestration seam for normalized WeCom turns.
 
@@ -86,12 +94,16 @@ class WeComSessionRuntime:
         runtime: RunRuntime,
         interrupt_store: InMemoryInterruptStore | None = None,
         policy: SessionResolutionPolicy | None = None,
+        memory_orchestrator: MemoryOrchestrator | None = None,
+        feedback_correction_ref_provider: FeedbackCorrectionRefProvider | None = None,
         clock: Any | None = None,
         id_factory: Any | None = None,
     ) -> None:
         self.runtime = runtime
         self.interrupt_store = interrupt_store
         self.policy = policy or SessionResolutionPolicy()
+        self.memory_orchestrator = memory_orchestrator
+        self.feedback_correction_ref_provider = feedback_correction_ref_provider
         self.clock = clock
         self.id_factory = id_factory
         self._outcome_by_idempotency_key: dict[str, WeComSessionRuntimeOutcome] = {}
@@ -255,7 +267,25 @@ class WeComSessionRuntime:
             if decision.action == SessionResolutionAction.CONTINUE_SESSION
             else WeComSessionRuntimeAction.START_NEW_SESSION
         )
-        run = await self.runtime.create_run(_run_request_for_decision(run_request, decision=decision))
+        decision_request = _run_request_for_decision(run_request, decision=decision)
+        correction_refs = self._feedback_correction_refs(
+            scope=scope,
+            session_id=str(decision.session_id),
+            now=current,
+        )
+        if correction_refs:
+            decision_request = _with_feedback_correction_refs(decision_request, correction_refs)
+        if self.memory_orchestrator is not None:
+            decision_request = _with_memory_context(
+                decision_request,
+                memory_orchestrator=self.memory_orchestrator,
+                scope=scope,
+                decision=decision,
+                current_turn_text=turn_text,
+                feedback_correction_refs=correction_refs,
+                now=current,
+            )
+        run = await self.runtime.create_run(decision_request)
         outcome = WeComSessionRuntimeOutcome(
             action=action,
             decision=decision,
@@ -270,6 +300,30 @@ class WeComSessionRuntime:
         if idempotency_key:
             self._outcome_by_idempotency_key[idempotency_key] = outcome
         return outcome
+
+    def _feedback_correction_refs(
+        self,
+        *,
+        scope: SessionScope,
+        session_id: str,
+        now: datetime | str,
+    ) -> tuple[str, ...]:
+        provider = self.feedback_correction_ref_provider
+        if provider is None:
+            return ()
+        refs = provider.list_feedback_correction_refs(
+            tenant_id=scope.tenant_id,
+            workspace_id=scope.workspace_id,
+            channel_id=scope.channel_id,
+            user_id=scope.user_id,
+            bot_instance_id=scope.bot_instance_id,
+            conversation_id=scope.conversation_id,
+            thread_id=scope.thread_id,
+            session_id=session_id,
+            scope=scope,
+            now=_timestamp(now),
+        )
+        return tuple(ref for ref in _metadata_sequence(refs) if "://" in ref)
 
 
 def _validate_turn_scope(*, turn: Any, scope: SessionScope, run_request: RunRequest) -> None:
@@ -416,6 +470,80 @@ def _run_request_for_decision(run_request: RunRequest, *, decision: SessionResol
     )
 
 
+def _with_feedback_correction_refs(run_request: RunRequest, refs: tuple[str, ...]) -> RunRequest:
+    existing = dict(run_request.metadata)
+    merged_refs = _append_many_unique(_metadata_sequence(existing.get("feedback_correction_refs")), refs)
+    return replace(
+        run_request,
+        metadata=_safe_json(
+            {
+                **existing,
+                "feedback_correction_refs": merged_refs,
+            }
+        ),
+    )
+
+
+def _with_memory_context(
+    run_request: RunRequest,
+    *,
+    memory_orchestrator: MemoryOrchestrator,
+    scope: SessionScope,
+    decision: SessionResolutionDecision,
+    current_turn_text: str,
+    feedback_correction_refs: tuple[str, ...],
+    now: datetime | str,
+) -> RunRequest:
+    metadata = dict(run_request.metadata)
+    current_turn_ref = _string(metadata.get("current_turn_ref")) or _raw_payload_ref(run_request.turn) or f"turn://{run_request.turn.turn_id}"
+    effective_feedback_refs = tuple(
+        _append_many_unique(_metadata_sequence(metadata.get("feedback_correction_refs")), feedback_correction_refs)
+    )
+    result = memory_orchestrator.recall_and_assemble(
+        scope=scope,
+        session_id=str(decision.session_id),
+        turn_id=str(getattr(run_request.turn, "turn_id", "") or "unknown-turn"),
+        current_turn_ref=current_turn_ref,
+        current_turn_text=current_turn_text,
+        recent_turn_refs=_metadata_sequence(metadata.get("recent_turn_refs")),
+        artifact_refs=_metadata_sequence(metadata.get("artifact_refs")),
+        feedback_correction_refs=effective_feedback_refs,
+        output_policy_ref=_string(metadata.get("output_policy_ref")),
+        run_id=None,
+        now=_timestamp(now),
+    )
+    bundle = result.bundle
+    bundle_metadata = dict(bundle.metadata)
+    context_metadata = {
+        "context_bundle_id": bundle.context_bundle_id,
+        "context_estimated_tokens": result.estimated_tokens,
+        "context_dropped_sections": result.dropped_sections,
+        "context_protected_sections": list(result.protected_sections),
+        "context_privacy": result.privacy,
+        "memory_refs": list(bundle.memory_refs),
+        "summary_ref": bundle.summary_ref,
+        "recent_turn_refs": list(bundle.recent_turn_refs),
+        "feedback_correction_refs": list(_metadata_sequence(bundle_metadata.get("feedback_correction_refs"))),
+        "artifact_refs": list(bundle.artifact_refs),
+        "output_policy_ref": _string(bundle_metadata.get("output_policy_ref")) or _string(metadata.get("output_policy_ref")),
+    }
+    evidence_metadata = {
+        key: value
+        for key, value in result.metadata.items()
+        if str(key).startswith("memory_use_evidence_")
+    }
+    return replace(
+        run_request,
+        metadata=_safe_json(
+            {
+                **metadata,
+                **context_metadata,
+                **evidence_metadata,
+            }
+        ),
+    )
+
+
 def _run_metadata_for_decision(run_request: RunRequest, *, decision: SessionResolutionDecision) -> JsonObject:
     existing = dict(run_request.metadata)
     turn = run_request.turn
@@ -459,6 +587,14 @@ def _append_unique(values: tuple[str, ...], value: str | None) -> list[str]:
     result = list(values)
     if value is not None and value not in result:
         result.append(value)
+    return result
+
+
+def _append_many_unique(values: tuple[str, ...], additions: tuple[str, ...]) -> list[str]:
+    result = list(values)
+    for value in additions:
+        if value not in result:
+            result.append(value)
     return result
 
 
@@ -625,6 +761,7 @@ _FORBIDDEN_FULL_TEXT_KEYS = {
 
 
 __all__ = [
+    "FeedbackCorrectionRefProvider",
     "WeComSessionRuntime",
     "WeComSessionRuntimeAction",
     "WeComSessionRuntimeOutcome",
