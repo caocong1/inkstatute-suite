@@ -7,10 +7,10 @@ last_updated: "2026-07-03T03:00:00.000Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 0
   completed_plans: 0
-  percent: 50
+  percent: 67
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 29 (WeCom/Runtime Integration)
+Phase: 30 (Error Handling and Observability)
 Plan: —
 Status: Planning
-Last activity: 2026-07-03 — Phase 28 completed, memory focus/retention policy shipped
+Last activity: 2026-07-03 — Phase 29 completed, memory wired into WeCom runtime
 
 ### Deferred Items
 

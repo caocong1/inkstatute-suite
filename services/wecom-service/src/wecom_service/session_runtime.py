@@ -10,17 +10,23 @@ import json
 from typing import Any, Protocol
 
 from platform_contract.events import JsonObject
-from platform_runtime.interrupts import InMemoryInterruptStore, InterruptLifecycleAction, InterruptRecord
-from platform_runtime.memory_orchestrator import MemoryOrchestrator
-from platform_runtime.protocols import Run, RunRequest, RunRuntime
-from platform_runtime.session_resolver import (
-    ActiveTaskSnapshot,
-    PendingInterruptSnapshot,
+from platform_runtime import (
+    InMemoryInterruptStore,
+    Memory,
+    MemoryOrchestrator,
+    Run,
+    RunRequest,
+    RunRuntime,
     SessionResolutionAction,
     SessionResolutionDecision,
     SessionResolutionPolicy,
     SessionScope,
     SessionSnapshot,
+)
+from platform_runtime.interrupts import InterruptLifecycleAction, InterruptRecord
+from platform_runtime.session_resolver import (
+    ActiveTaskSnapshot,
+    PendingInterruptSnapshot,
     resolve_session_turn,
 )
 
@@ -29,6 +35,7 @@ from .active_task_router import (
     AdapterTaskCapabilities,
     route_active_task_turn,
 )
+from .memory_integration import MemoryIntegrationPolicy, recall_for_turn
 from .sender import build_text_send_envelope
 
 
@@ -95,6 +102,8 @@ class WeComSessionRuntime:
         interrupt_store: InMemoryInterruptStore | None = None,
         policy: SessionResolutionPolicy | None = None,
         memory_orchestrator: MemoryOrchestrator | None = None,
+        memory: Memory | None = None,
+        memory_policy: Any | None = None,
         feedback_correction_ref_provider: FeedbackCorrectionRefProvider | None = None,
         clock: Any | None = None,
         id_factory: Any | None = None,
@@ -103,6 +112,8 @@ class WeComSessionRuntime:
         self.interrupt_store = interrupt_store
         self.policy = policy or SessionResolutionPolicy()
         self.memory_orchestrator = memory_orchestrator
+        self.memory = memory
+        self.memory_policy = memory_policy
         self.feedback_correction_ref_provider = feedback_correction_ref_provider
         self.clock = clock
         self.id_factory = id_factory
@@ -275,6 +286,15 @@ class WeComSessionRuntime:
         )
         if correction_refs:
             decision_request = _with_feedback_correction_refs(decision_request, correction_refs)
+        if self.memory is not None:
+            decision_request = await _with_recall_context(
+                decision_request,
+                memory=self.memory,
+                memory_policy=self.memory_policy,
+                scope=scope,
+                turn_text=turn_text,
+                now=current,
+            )
         if self.memory_orchestrator is not None:
             decision_request = _with_memory_context(
                 decision_request,
@@ -301,6 +321,36 @@ class WeComSessionRuntime:
             self._outcome_by_idempotency_key[idempotency_key] = outcome
         return outcome
 
+    async def finalize_memory(
+        self,
+        *,
+        outcome: WeComSessionRuntimeOutcome,
+        scope: SessionScope,
+        user_turn_text: str,
+        agent_reply_text: str,
+        now: datetime | str | None = None,
+    ) -> int:
+        """Retain durable memory after the agent reply is finalized.
+
+        This is a separate call from ``handle_turn`` because the final reply text is
+        only available after the runtime has produced a result and the output policy
+        has approved it. Returns the number of retained memory items.
+        """
+        if self.memory is None:
+            return 0
+        policy = self.memory_policy or MemoryIntegrationPolicy()
+        from .memory_integration import retain_turn_memory
+
+        return await retain_turn_memory(
+            self.memory,
+            tenant_id=scope.tenant_id,
+            workspace_id=scope.workspace_id,
+            user_id=scope.user_id,
+            user_turn_text=user_turn_text,
+            agent_reply_text=agent_reply_text,
+            policy=policy,
+        )
+
     def _feedback_correction_refs(
         self,
         *,
@@ -324,6 +374,34 @@ class WeComSessionRuntime:
             now=_timestamp(now),
         )
         return tuple(ref for ref in _metadata_sequence(refs) if "://" in ref)
+
+
+async def _with_recall_context(
+    run_request: RunRequest,
+    *,
+    memory: Memory,
+    memory_policy: Any | None,
+    scope: SessionScope,
+    turn_text: str,
+    now: datetime | str,
+) -> RunRequest:
+    """Recall relevant memory and attach a safe summary to the run request."""
+    policy = memory_policy or MemoryIntegrationPolicy()
+    recalled = await recall_for_turn(
+        memory,
+        tenant_id=scope.tenant_id,
+        workspace_id=scope.workspace_id,
+        user_id=scope.user_id,
+        query=turn_text,
+        policy=policy,
+    )
+    metadata = dict(run_request.metadata)
+    metadata["memory_recall_summary"] = {
+        "recalled_count": len(recalled),
+        "memory_refs": [f"memory://recall/{index}" for index in range(len(recalled))],
+        "privacy": "memory_texts_stored_outside_runtime_metadata",
+    }
+    return replace(run_request, metadata=_safe_json(metadata))
 
 
 def _validate_turn_scope(*, turn: Any, scope: SessionScope, run_request: RunRequest) -> None:
