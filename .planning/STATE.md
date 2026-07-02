@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Production Memory System and Evaluation Spikes
-status: in_progress
-stopped_at: Milestone v1.3 audit found closure gaps
-last_updated: "2026-07-02T14:30:28.479Z"
-last_activity: "2026-07-02 — Phase 25.1 inserted to close v1.3 memory runtime, feedback wiring, evidence, and verification gaps"
+status: verifying
+stopped_at: Milestone v1.2 completed and archived
+last_updated: "2026-07-02T15:15:32.418Z"
+last_activity: 2026-07-02 — Phase 25.1 inserted to close v1.3 audit gaps before milestone completion
 progress:
   total_phases: 7
   completed_phases: 6
