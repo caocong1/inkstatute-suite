@@ -60,6 +60,11 @@ from .memory import (
     MemorySearchResult,
     MemoryStorePolicy,
 )
+from .memory_orchestrator import (
+    MemoryOrchestrator,
+    MemoryOrchestratorPolicy,
+    OrchestratorIsolationError,
+)
 from .rolling_summary import (
     RollingSummaryPolicy,
     RollingSummaryProducer,
@@ -139,8 +144,11 @@ __all__ = [
     "MemoryStorePolicy",
     "MemoryAdapterDecision",
     "MemoryAdapterEvaluation",
+    "MemoryOrchestrator",
+    "MemoryOrchestratorPolicy",
     "MemoryStoreAdapter",
     "MemoryStoreCapabilityManifest",
+    "OrchestratorIsolationError",
     "PendingInterruptSnapshot",
     "RawInbound",
     "Run",
