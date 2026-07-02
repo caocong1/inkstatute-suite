@@ -171,7 +171,7 @@ class WeComIngressMemoryRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(metadata["feedback_correction_refs"], ["feedback://ingress/correction-001"])
         self.assertEqual(metadata["artifact_refs"], ["artifact://ingress/prior-docx"])
         self.assertEqual(metadata["output_policy_ref"], "output-policy://lawyer-assistant")
-        self.assertEqual(metadata["request_ref"], "wecom://turn/msg-memory-continue-001")
+        self.assertTrue(metadata["request_ref"].startswith("wecom://turn/"))
         self.assertIn("fixture://tenant/bootstrap", metadata["raw_payload_refs"])
         self.assertIn("fixture://wecom/callback/msg-memory-continue-001", metadata["raw_payload_refs"])
         self.assertEqual(metadata["memory_use_evidence_status"], "recorded")

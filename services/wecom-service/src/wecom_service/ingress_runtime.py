@@ -16,11 +16,12 @@ from platform_runtime import (
     SessionSnapshot,
     SolutionBinding,
 )
+from platform_runtime.memory_orchestrator import MemoryOrchestrator
 from platform_runtime.session_resolver import ActiveTaskSnapshot
 
 from .active_task_router import AdapterTaskCapabilities
 from .normalization import normalize_wecom_turn
-from .session_runtime import WeComSessionRuntime, WeComSessionRuntimeOutcome
+from .session_runtime import FeedbackCorrectionRefProvider, WeComSessionRuntime, WeComSessionRuntimeOutcome
 
 
 class WeComRuntimeIngress:
@@ -41,6 +42,8 @@ class WeComRuntimeIngress:
         bot_instance_id: str,
         interrupt_store: InMemoryInterruptStore | None = None,
         policy: SessionResolutionPolicy | None = None,
+        memory_orchestrator: MemoryOrchestrator | None = None,
+        feedback_correction_ref_provider: FeedbackCorrectionRefProvider | None = None,
         clock: Any | None = None,
         id_factory: Any | None = None,
         default_thread_id: str | None = None,
@@ -57,6 +60,8 @@ class WeComRuntimeIngress:
             runtime=runtime,
             interrupt_store=interrupt_store,
             policy=policy,
+            memory_orchestrator=memory_orchestrator,
+            feedback_correction_ref_provider=feedback_correction_ref_provider,
             clock=clock,
             id_factory=id_factory,
         )
