@@ -16,7 +16,7 @@
 
 ## Phases
 
-- [ ] **Phase 26: Memory Provider Evaluation and Selection** - Re-evaluate 2026 providers and select the best long-term memory backend for the product goal.
+- [x] **Phase 26: Memory Provider Evaluation and Selection** - Re-evaluate 2026 providers and select the best long-term memory backend for the product goal.
 - [ ] **Phase 27: Unified Memory Interface and Hindsight Adapter** - Define a single `Memory` interface and implement it with Hindsight as the primary backend.
 - [ ] **Phase 28: Memory Semantics: Focus vs Retention** - Distinguish transient task context from durable memory and implement recall/retention policy.
 - [ ] **Phase 29: WeCom/Runtime Integration** - Wire memory into the ordinary WeCom/runtime flow before and after agent turns.
