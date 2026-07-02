@@ -72,11 +72,17 @@ Plans:
   4. Summary generation fails closed when source refs, summarizer policy, or privacy checks are missing.
   5. Contract or runtime tests prove summary text is not embedded in `ContextBundle` metadata by default.
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 
-- [ ] TBD (run `$gsd-plan-phase 21` to break down)
+**Wave 1**
+
+- [ ] 21-01-PLAN.md — RollingSummaryPolicy, RollingSummaryTrigger, and RollingSummaryProducer core
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 21-02-PLAN.md — Phase 21 contract fixture and validation sign-off
 
 ### Phase 22: Recall Orchestrator and Context Injection
 

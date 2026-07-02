@@ -60,6 +60,12 @@ from .memory import (
     MemorySearchResult,
     MemoryStorePolicy,
 )
+from .rolling_summary import (
+    RollingSummaryPolicy,
+    RollingSummaryProducer,
+    RollingSummaryTrigger,
+    SummaryPrivacyError,
+)
 from .sqlite_memory import SQLiteMemoryStore
 from .memory_adapters import (
     MemoryAdapterDecision,
@@ -156,7 +162,11 @@ __all__ = [
     "SolutionBinding",
     "SolutionLoader",
     "SolutionPackageManifest",
+    "RollingSummaryPolicy",
+    "RollingSummaryProducer",
     "RollingSummaryRecord",
+    "RollingSummaryTrigger",
+    "SummaryPrivacyError",
     "evaluate_memory_adapter_manifest",
     "resolve_session_turn",
 ]
