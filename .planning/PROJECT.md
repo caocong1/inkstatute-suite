@@ -10,6 +10,17 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
+## Current Milestone: v1.4 Long-Term Memory Productization
+
+**Goal:** Replace the evaluation-only memory approach with a single, productized long-term memory layer. The bot feels like one continuous companion: it focuses on the current task, yet remembers facts, preferences, and personality across days and tasks, without exposing the user to sessions, context windows, or fallback modes.
+
+**Target features:**
+- Re-evaluate and select the best 2026 external long-term memory provider for seamless, personalized recall.
+- Define a unified `Memory` interface (retain/recall/reflect) and implement it with the selected provider as the primary backend.
+- Wire the memory layer into the ordinary WeCom/runtime flow so recall happens before the agent turn and retention happens after the reply.
+- Implement clear internal error handling and observability without exposing fallback modes to the user.
+- Validate with real provider calls and keep the existing V2 gate suite passing.
+
 ## Requirements
 
 ### Validated
