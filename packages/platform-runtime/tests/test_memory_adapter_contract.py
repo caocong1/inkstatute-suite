@@ -14,6 +14,7 @@ from platform_runtime import (
     MemoryStoreAdapter,
     MemoryStoreCapabilityManifest,
     MemoryStorePolicy,
+    SQLiteMemoryStore,
     evaluate_memory_adapter_manifest,
 )
 from platform_runtime.runtime import DefaultRunRuntime
@@ -374,6 +375,99 @@ class MemoryAdapterContractTests(unittest.TestCase):
 
         self.assertNotIn("memory_adapter", signature.parameters)
         self.assertNotIn("memory_store", signature.parameters)
+
+
+class SQLiteMemoryStoreAdapterConformanceTests(unittest.TestCase):
+    """Verify SQLiteMemoryStore satisfies MemoryStoreAdapter without changing RunRuntime or WeCom contracts."""
+
+    def _make_store(self) -> SQLiteMemoryStore:
+        return SQLiteMemoryStore()
+
+    def test_sqlite_store_is_memory_store_adapter(self) -> None:
+        store = self._make_store()
+        self.assertIsInstance(store, MemoryStoreAdapter)
+        store.close()
+
+    def test_sqlite_capability_manifest_is_live_legal_ready(self) -> None:
+        store = self._make_store()
+        from platform_runtime import evaluate_memory_adapter_manifest
+        evaluation = evaluate_memory_adapter_manifest(store.capability_manifest())
+        store.close()
+
+        self.assertEqual(evaluation.decision, MemoryAdapterDecision.ACCEPTED_FOR_CURRENT_LEGAL_USE)
+        self.assertEqual(evaluation.blockers, ())
+        self.assertTrue(evaluation.is_live_legal_ready)
+
+    def test_sqlite_upsert_search_marks_deleted_and_export(self) -> None:
+        """SQLiteMemoryStore implements all MemoryStoreAdapter methods correctly."""
+        store = self._make_store()
+        record = make_memory()
+        store.upsert(record)
+
+        query = MemoryQuery(
+            tenant_id="tenant-001",
+            workspace_id="workspace-001",
+            session_id="session-001",
+            user_id="user-001",
+            text="adapter",
+            now="2026-07-01T08:00:00Z",
+        )
+        results = store.search(query)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].record.memory_id, "memory-adapter-001")
+
+        deleted = store.mark_deleted("memory-adapter-001", reason="test_conformance")
+        self.assertEqual(deleted.status, "deleted")
+
+        exported = store.export_records(query)
+        export_ids = {r.memory_id for r in exported}
+        self.assertIn("memory-adapter-001", export_ids)
+        store.close()
+
+    def test_sqlite_query_filters_sensitivities_and_statuses(self) -> None:
+        """SQLiteMemoryStore MemoryQuery lifecycle filters restrict returned records."""
+        store = self._make_store()
+        store.upsert(MemoryRecord(
+            memory_id="conf-001",
+            tenant_id="tenant-001",
+            workspace_id="workspace-001",
+            scope="workspace",
+            status="active",
+            sensitivity="confidential",
+            created_at="2026-07-01T08:00:00Z",
+            updated_at="2026-07-01T08:00:00Z",
+            source_refs=["fixture://test"],
+        ))
+        store.upsert(MemoryRecord(
+            memory_id="pub-001",
+            tenant_id="tenant-001",
+            workspace_id="workspace-001",
+            scope="workspace",
+            status="active",
+            sensitivity="public",
+            created_at="2026-07-01T08:00:00Z",
+            updated_at="2026-07-01T08:00:00Z",
+            source_refs=["fixture://test"],
+        ))
+
+        query_conf = MemoryQuery(
+            tenant_id="tenant-001",
+            workspace_id="workspace-001",
+            now="2026-07-01T08:00:00Z",
+            sensitivities=("confidential",),
+        )
+        results = store.list_for_query(query_conf, policy=MemoryStorePolicy(allowed_sensitivities=("public", "internal", "confidential")))
+        ids = {r.memory_id for r in results}
+        self.assertIn("conf-001", ids)
+        self.assertNotIn("pub-001", ids)
+        store.close()
+
+    def test_sqlite_does_not_change_run_runtime_or_wecom_constructors(self) -> None:
+        """RunRuntime constructor must not gain a memory_adapter parameter."""
+        signature = inspect.signature(DefaultRunRuntime.__init__)
+        self.assertNotIn("memory_adapter", signature.parameters)
+        self.assertNotIn("memory_store", signature.parameters)
+        self.assertNotIn("sqlite_memory", signature.parameters)
 
 
 if __name__ == "__main__":
