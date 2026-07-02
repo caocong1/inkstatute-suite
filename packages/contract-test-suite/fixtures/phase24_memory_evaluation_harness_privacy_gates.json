@@ -1,0 +1,211 @@
+{
+  "fixture_id": "phase24-memory-evaluation-harness-privacy-gates-001",
+  "description": "Synthetic Phase 24 fixture proving the memory evaluation harness and privacy gate system: 6 sanitized benchmark scenarios (multi-turn recall, cross-session continuity, deletion/export, tenant isolation, feedback learning integration, false-recall rejection) each producing a scored result, with hard gate enforcement.",
+  "metadata": {
+    "phase": "24",
+    "requirements": [
+      "EVAL-01",
+      "EVAL-02",
+      "EVAL-03",
+      "EVAL-04"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "no_live_external_invocation": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "eval_harness_evidence": {
+      "eval_01_all_six_scenarios_covered": true,
+      "eval_02_relevance_source_traceability_deletion_correctness_privacy_per_scenario": true,
+      "eval_03_hard_gate_enforced_cross_tenant_privacy_deletion_false_recall": true,
+      "eval_04_baseline_score_established_for_native_path": true,
+      "baseline_score": 1.0,
+      "all_scenarios_passed": true,
+      "no_raw_text_in_eval_fixtures": true
+    },
+    "eval_results": [
+      {
+        "scenario": "multi_turn_recall",
+        "passed": true,
+        "relevance_score": 1.0,
+        "source_traceability": true,
+        "deletion_correctness": true,
+        "privacy_passed": true,
+        "cross_tenant_leaked": false,
+        "notes": "recalled 3/3 session-scoped records"
+      },
+      {
+        "scenario": "cross_session_continuity",
+        "passed": true,
+        "relevance_score": 1.0,
+        "source_traceability": true,
+        "deletion_correctness": true,
+        "privacy_passed": true,
+        "cross_tenant_leaked": false,
+        "notes": "user-scope records recalled across sessions: 1"
+      },
+      {
+        "scenario": "deletion_and_export",
+        "passed": true,
+        "relevance_score": 1.0,
+        "source_traceability": true,
+        "deletion_correctness": true,
+        "privacy_passed": true,
+        "cross_tenant_leaked": false,
+        "notes": "deleted record not in results"
+      },
+      {
+        "scenario": "tenant_isolation",
+        "passed": true,
+        "relevance_score": 1.0,
+        "source_traceability": true,
+        "deletion_correctness": true,
+        "privacy_passed": true,
+        "cross_tenant_leaked": false,
+        "notes": "no cross-tenant leak"
+      },
+      {
+        "scenario": "feedback_learning_integration",
+        "passed": true,
+        "relevance_score": 1.0,
+        "source_traceability": true,
+        "deletion_correctness": true,
+        "privacy_passed": true,
+        "cross_tenant_leaked": false,
+        "notes": "promoted 1 candidate(s), recalled 1"
+      },
+      {
+        "scenario": "false_recall_rejection",
+        "passed": true,
+        "relevance_score": 1.0,
+        "source_traceability": true,
+        "deletion_correctness": true,
+        "privacy_passed": true,
+        "cross_tenant_leaked": false,
+        "notes": "session-scoped record not leaked to other session"
+      }
+    ],
+    "hard_gate_definitions": {
+      "cross_tenant_leak": "Any cross_tenant_leaked=True in any scenario result",
+      "privacy_failure": "Any privacy_passed=False in any scenario result",
+      "deletion_correctness_failure": "deletion_and_export scenario deletion_correctness=False",
+      "false_recall_failure": "false_recall_rejection scenario passes=False"
+    },
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_memory_eval.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase24_memory_evaluation_harness_privacy_gates.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest discover -s packages/platform-runtime/tests"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase24-001",
+      "conversation_id": "conversation-phase24-001",
+      "channel": "wecom",
+      "user_id": "user-phase24-001",
+      "message_type": "text",
+      "received_at": "2026-07-02T16:00:00Z",
+      "content": "Synthetic eval harness invocation turn for Phase 24 evidence.",
+      "metadata": {
+        "content_sha256_16": "f1a3b5c7d9e20468",
+        "content_length": 62,
+        "raw_payload_ref": "fixture://phase24/turns/turn-phase24-001/raw"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase24-001",
+      "turn_id": "turn-phase24-001",
+      "primary_skill": "synthetic_memory_eval_harness",
+      "confidence": 0.93,
+      "mode": "matched",
+      "created_at": "2026-07-02T16:00:01Z",
+      "supporting_skills": [],
+      "matched_rule": "fixture://phase24/routing/eval-harness",
+      "reason": "Synthetic route for Phase 24 memory evaluation harness evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase24/route/route-phase24-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase24-001",
+      "turn_id": "turn-phase24-001",
+      "started_at": "2026-07-02T16:00:01Z",
+      "ended_at": "2026-07-02T16:00:03Z",
+      "active_skill_name": "synthetic_memory_eval_harness",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-02T16:00:03Z",
+      "ingested_at": "2026-07-02T16:00:04Z",
+      "seq": 1,
+      "steps": [
+        {
+          "step_id": "step-phase24-run-eval",
+          "state": "succeeded",
+          "memory_refs": [],
+          "raw_payload_ref": "fixture://phase24/trace/step-run-eval"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "bundle-phase24-001",
+        "scenarios_run": 6,
+        "baseline_score": 1.0,
+        "hard_gate_failures": [],
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase24-001",
+      "turn_id": "turn-phase24-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic eval result: result://phase24/result-phase24-001/summary",
+      "feedback_target": "delivery-phase24-001",
+      "metadata": {
+        "trace_id": "trace-phase24-001",
+        "context_bundle_id": "bundle-phase24-001",
+        "visible_text_sha256_16": "c4d6e8a2b0f31579",
+        "visible_text_length": 64,
+        "raw_payload_ref": "fixture://phase24/results/result-phase24-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase24-001",
+      "turn_id": "turn-phase24-001",
+      "result_id": "result-phase24-001",
+      "conversation_id": "conversation-phase24-001",
+      "user_id": "user-phase24-001",
+      "source": "card_button",
+      "event_type": "rating",
+      "status": "resolved",
+      "created_at": "2026-07-02T16:01:00Z",
+      "feedback_target": "delivery-phase24-001",
+      "action": "up",
+      "labels": ["rating"],
+      "raw_payload_ref": "fixture://phase24/feedback/feedback-phase24-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase24:rating:001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "bundle-phase24-001",
+      "tenant_id": "tenant-phase24-001",
+      "workspace_id": "workspace-phase24-001",
+      "session_id": "session-phase24-001",
+      "created_at": "2026-07-02T16:00:01Z",
+      "budget_tokens": 4096,
+      "run_id": "run-phase24-001",
+      "turn_id": "turn-phase24-001",
+      "summary_ref": "summary://phase24/session-phase24-001/placeholder",
+      "recent_turn_refs": [
+        "turn://turn-phase24-001"
+      ],
+      "memory_refs": [],
+      "metadata": {
+        "privacy": "refs_hashes_lengths_statuses_only",
+        "eval_baseline_score": 1.0,
+        "eval_scenarios_run": 6,
+        "eval_hard_gate_failures": []
+      }
+    }
+  }
+}

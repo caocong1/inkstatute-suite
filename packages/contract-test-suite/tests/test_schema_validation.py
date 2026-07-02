@@ -54,6 +54,7 @@ class SchemaValidationTests(unittest.TestCase):
                 "phase21-rolling-summary-pipeline-001",
                 "phase22-recall-orchestrator-context-injection-001",
                 "phase23-feedback-to-memory-review-loop-001",
+                "phase24-memory-evaluation-harness-privacy-gates-001",
             },
         )
 
