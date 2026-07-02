@@ -29,7 +29,7 @@ v1.3 turns the v1.2 memory foundation into a production-capable native memory lo
 - [x] **Phase 23: Feedback-to-Memory Review Loop** - Convert feedback into same-session corrections and human-reviewed durable memory candidates.
 - [x] **Phase 24: Memory Evaluation Harness and Privacy Gates** - Build the sanitized benchmark and gates that prove recall quality, isolation, deletion, and safety.
 - [x] **Phase 25: External Memory Adapter Spikes and Final Recommendation** - Evaluate Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates behind the adapter boundary.
-- [ ] **Phase 25.1: Close gap: memory runtime and feedback wiring** (INSERTED) - Wire memory recall and feedback learning into real service/runtime flows, harden evidence behavior, and close verification artifacts.
+- [x] **Phase 25.1: Close gap: memory runtime and feedback wiring** (INSERTED) - Wire memory recall and feedback learning into real service/runtime flows, harden evidence behavior, and close verification artifacts.
 
 ## Phase Details
 
@@ -181,20 +181,20 @@ Plans:
 
 **Wave 1**
 
-- [ ] 25.1-01-PLAN.md — WeCom/runtime memory recall injection and MemoryUse evidence failure policy
-- [ ] 25.1-03-PLAN.md — Evaluation hardening with durable SQLite baseline and export evidence
+- [x] 25.1-01-PLAN.md — WeCom/runtime memory recall injection and MemoryUse evidence failure policy
+- [x] 25.1-03-PLAN.md — Evaluation hardening with durable SQLite baseline and export evidence
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 25.1-02-PLAN.md — Feedback callback memory ingestion, correction-ref store, and human-review-safe candidate flow
+- [x] 25.1-02-PLAN.md — Feedback callback memory ingestion, correction-ref store, and human-review-safe candidate flow
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 25.1-04-PLAN.md — Phase 20-25 validation and verification artifact closure
+- [x] 25.1-04-PLAN.md — Phase 20-25 validation and verification artifact closure
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 25.1-05-PLAN.md — Deterministic audit rerun, requirements traceability, and roadmap closeout
+- [x] 25.1-05-PLAN.md — Deterministic audit rerun, requirements traceability, and roadmap closeout
 
 ## Carried Gates
 
@@ -207,10 +207,10 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 20. Durable Native Memory Store | v1.3 | 0/3 | Not started | - |
-| 21. Rolling Summary Pipeline | v1.3 | 0/TBD | Not started | - |
-| 22. Recall Orchestrator and Context Injection | v1.3 | 0/TBD | Not started | - |
-| 23. Feedback-to-Memory Review Loop | v1.3 | 0/TBD | Not started | - |
-| 24. Memory Evaluation Harness and Privacy Gates | v1.3 | 0/TBD | Not started | - |
-| 25. External Memory Adapter Spikes and Final Recommendation | v1.3 | 0/TBD | Not started | - |
-| 25.1. Close gap: memory runtime and feedback wiring | v1.3 | 0/5 | Planned | - |
+| 20. Durable Native Memory Store | v1.3 | 3/3 | Complete | 2026-07-02 |
+| 21. Rolling Summary Pipeline | v1.3 | 2/2 | Complete | 2026-07-02 |
+| 22. Recall Orchestrator and Context Injection | v1.3 | 2/2 | Complete | 2026-07-02 |
+| 23. Feedback-to-Memory Review Loop | v1.3 | 2/2 | Complete | 2026-07-02 |
+| 24. Memory Evaluation Harness and Privacy Gates | v1.3 | 2/2 | Complete | 2026-07-02 |
+| 25. External Memory Adapter Spikes and Final Recommendation | v1.3 | 2/2 | Complete | 2026-07-02 |
+| 25.1. Close gap: memory runtime and feedback wiring | v1.3 | 5/5 | Complete | 2026-07-02 |
