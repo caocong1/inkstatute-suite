@@ -388,15 +388,18 @@ class SQLiteMemoryStoreAdapterConformanceTests(unittest.TestCase):
         self.assertIsInstance(store, MemoryStoreAdapter)
         store.close()
 
-    def test_sqlite_capability_manifest_is_live_legal_ready(self) -> None:
+    def test_sqlite_capability_manifest_is_no_longer_the_default_legal_memory(self) -> None:
         store = self._make_store()
         from platform_runtime import evaluate_memory_adapter_manifest
         evaluation = evaluate_memory_adapter_manifest(store.capability_manifest())
         store.close()
 
-        self.assertEqual(evaluation.decision, MemoryAdapterDecision.ACCEPTED_FOR_CURRENT_LEGAL_USE)
+        # v1.4 productized memory is the Hindsight-backed Memory interface.
+        # SQLiteMemoryStore remains approved for live legal memory but is no longer
+        # the default runtime path, so it is deferred for legal production.
+        self.assertEqual(evaluation.decision, MemoryAdapterDecision.DEFERRED_FOR_LEGAL_PRODUCTION)
         self.assertEqual(evaluation.blockers, ())
-        self.assertTrue(evaluation.is_live_legal_ready)
+        self.assertFalse(evaluation.is_live_legal_ready)
 
     def test_sqlite_upsert_search_marks_deleted_and_export(self) -> None:
         """SQLiteMemoryStore implements all MemoryStoreAdapter methods correctly."""

@@ -79,7 +79,7 @@ class MemoryOrchestrator:
     ``ContextBundle``, and records ``MemoryUse`` evidence — all without
     embedding raw legal/customer text.
 
-    ``DefaultRunRuntime`` and WeCom channel constructors are unchanged;
+    ``DefaultRunRuntime`` and channel constructors are unchanged;
     hosts that want orchestrated recall inject this class optionally.
     """
 

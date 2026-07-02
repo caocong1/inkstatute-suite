@@ -100,6 +100,13 @@ CREATE TABLE IF NOT EXISTS memory_uses (
 class SQLiteMemoryStore:
     """Durable, stdlib-only SQLite-backed memory store for platform-native legal memory.
 
+    .. deprecated:: v1.4
+        SQLiteMemoryStore is no longer the default long-term memory backend. Starting
+        with v1.4 the productized memory layer is the ``Memory`` interface implemented
+        by ``HindsightMemory``. SQLiteMemoryStore remains available for derived read-
+        model caches, legacy tests, and migration tooling, but new runtime code should
+        target the ``Memory`` interface instead.
+
     Uses Python stdlib sqlite3 only — no external dependencies.
     Stores refs, hashes, lengths, statuses, scopes, TTL, sensitivity, confidence, and
     safe summaries only. Raw payloads, full text, and secrets are rejected before storage.
@@ -156,7 +163,7 @@ class SQLiteMemoryStore:
             network_required=False,
             requires_secrets=False,
             sanitized_fixture_only=False,
-            default_for_legal_memory=True,
+            default_for_legal_memory=False,
             approved_for_live_legal_memory=True,
             data_residency="process_local",
             deletion_model="ttl_and_tombstone",

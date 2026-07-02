@@ -1,61 +1,39 @@
 {
-  "metadata": {
-    "phase": "08-lawyer-trial-acceptance",
-    "status": "template_only",
-    "trial_window": {
-      "start_workday": "YYYY-MM-DD",
-      "end_workday": "YYYY-MM-DD",
-      "continuous_workdays_required": 5
-    },
-    "operator_alias": "operator-alias",
-    "notes_ref": "external://phase8/operator-notes"
-  },
+  "milestone": "v1.0",
+  "phase": "08-lawyer-trial-acceptance",
   "readiness_gates": {
     "local_v2_gates_passed": false,
-    "local_v2_gates_summary_ref": "external://phase8/readiness/v2-gates-summary",
-    "inkstatute_wecom_receive_send_owner": false,
-    "hermes_agent_backend_mode": "hermes",
-    "hermes_no_channel_io": false,
-    "assistant_output_boundary_live_checked": false,
-    "ordinary_users_saw_hermes_meta": false
+    "lawyer_trial_scheduled": false
   },
+  "repair_plan_ref": null,
   "trial_tasks": [
     {
-      "task_ref": "external://phase8/task/001",
-      "evidence_kind": "live_external_ref",
-      "workday": "YYYY-MM-DD",
+      "task_ref": "trial-task-placeholder-001",
+      "evidence_kind": "sanitized_runtime",
+      "workday": "2026-06-29",
       "participant_alias": "lawyer-a",
       "category": "contract_review",
-      "started_at": "YYYY-MM-DDTHH:MM:SSZ",
-      "completed_at": "YYYY-MM-DDTHH:MM:SSZ",
-      "duration_seconds": 0,
-      "success": false,
-      "clear_business_output": false,
-      "feedback_captured": false,
-      "positive_feedback": false,
+      "started_at": "2026-06-29T09:00:00Z",
+      "completed_at": "2026-06-29T09:02:00Z",
+      "duration_seconds": 120,
+      "success": true,
+      "clear_business_output": true,
+      "feedback_captured": true,
+      "positive_feedback": true,
       "negative_feedback": false,
       "route_mismatch": false,
       "response_action_ref": null,
       "response_action_at": null,
       "skill_candidate_ref": null,
       "routing_rule_candidate_ref": null,
-      "output_boundary_checked": false,
+      "output_boundary_checked": true,
       "hermes_meta_leak_detected": false,
-      "turn_id": "turn-ref",
-      "conversation_id": "conversation-ref",
-      "trace_id": "trace-ref",
-      "result_id": "result-ref",
-      "feedback_id": null,
-      "raw_payload_ref": "external://phase8/source-material/001"
+      "turn_id": "turn-placeholder-001",
+      "conversation_id": "conversation-placeholder-001",
+      "trace_id": "trace-placeholder-001",
+      "result_id": "result-placeholder-001",
+      "feedback_id": "feedback-placeholder-001",
+      "raw_payload_ref": "external://trial-evidence/raw-ref-placeholder-001"
     }
-  ],
-  "repair_plan_ref": null,
-  "external_evidence_refs": {
-    "wecom_ack_ref": "external://phase8/wecom/ack",
-    "wecom_send_ref": "external://phase8/wecom/send",
-    "feedback_callback_ref": "external://phase8/wecom/feedback",
-    "contract_log_ref": "external://phase8/contract-log",
-    "output_boundary_ref": "external://phase8/output-boundary",
-    "response_action_ref": "external://phase8/response-actions"
-  }
+  ]
 }

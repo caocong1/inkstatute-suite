@@ -7,10 +7,10 @@ last_updated: "2026-07-03T03:00:00.000Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 0
   completed_plans: 0
-  percent: 17
+  percent: 33
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 27 (Unified Memory Interface and Hindsight Adapter)
+Phase: 28 (Memory Semantics: Focus vs Retention)
 Plan: —
-Status: Executing
-Last activity: 2026-07-03 — Phase 26 completed, Hindsight selected and smoke-tested
+Status: Planning
+Last activity: 2026-07-03 — Phase 27 completed, Memory interface + Hindsight adapter shipped
 
 ### Deferred Items
 
