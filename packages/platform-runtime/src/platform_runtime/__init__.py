@@ -60,6 +60,12 @@ from .memory import (
     MemorySearchResult,
     MemoryStorePolicy,
 )
+from .memory_eval import (
+    MemoryEvalGateError,
+    MemoryEvalReport,
+    MemoryEvalResult,
+    MemoryEvalRunner,
+)
 from .memory_review import (
     InMemoryMemoryCandidateReviewStore,
     MemoryCandidateReview,
@@ -152,6 +158,10 @@ __all__ = [
     "MemoryStorePolicy",
     "InMemoryMemoryCandidateReviewStore",
     "MemoryAdapterDecision",
+    "MemoryEvalGateError",
+    "MemoryEvalReport",
+    "MemoryEvalResult",
+    "MemoryEvalRunner",
     "MemoryAdapterEvaluation",
     "MemoryCandidateReview",
     "MemoryCandidateReviewAction",
