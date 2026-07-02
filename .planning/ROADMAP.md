@@ -5,7 +5,7 @@
 - Complete **V2 PRD Foundation** - Phases 1-8 completed by 2026-06-30; live Phase 5/8 human gates remain carried.
 - Complete **v1.1 Platform Foundation** - Phases 09-13 shipped 2026-06-30.
 - Complete **v1.2 Conversational Context and Memory Foundation** - Phases 14-19 shipped 2026-07-02 with accepted validation/operational tech debt.
-- Active **v1.3 Production Memory System and Evaluation Spikes** - Phases 20-25 planned.
+- Active **v1.3 Production Memory System and Evaluation Spikes** - Phases 20-25 complete; Phase 25.1 closure active after audit gaps.
 
 ## v1.3 Production Memory System and Evaluation Spikes
 
@@ -29,6 +29,7 @@ v1.3 turns the v1.2 memory foundation into a production-capable native memory lo
 - [x] **Phase 23: Feedback-to-Memory Review Loop** - Convert feedback into same-session corrections and human-reviewed durable memory candidates.
 - [x] **Phase 24: Memory Evaluation Harness and Privacy Gates** - Build the sanitized benchmark and gates that prove recall quality, isolation, deletion, and safety.
 - [x] **Phase 25: External Memory Adapter Spikes and Final Recommendation** - Evaluate Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates behind the adapter boundary.
+- [ ] **Phase 25.1: Close gap: memory runtime and feedback wiring** (INSERTED) - Wire memory recall and feedback learning into real service/runtime flows, harden evidence behavior, and close verification artifacts.
 
 ## Phase Details
 
@@ -160,6 +161,26 @@ Plans:
 
 - [ ] TBD (run `$gsd-plan-phase 25` to break down)
 
+### Phase 25.1: Close gap: memory runtime and feedback wiring (INSERTED)
+
+**Goal**: v1.3 audit gaps are closed so ordinary WeCom/runtime paths retrieve approved memory refs before backend submission, feedback callbacks can safely feed future context through reviewed memory, MemoryUse evidence behavior is production-safe, and phases 20-25 have the missing verification/validation artifacts needed for milestone completion.
+**Depends on**: Phase 25
+**Requirements**: REC-01, REC-02, REC-04, REC-05, FBL-01, FBL-02, FBL-03, FBL-04, EVAL-01, EVAL-02, MEM-01..MEM-05, SUM-01..SUM-04, XMEM-01..XMEM-05 verification closure
+**Success Criteria** (what must be TRUE):
+
+  1. Ordinary WeCom continue/start runtime flows can invoke memory recall before backend submission without exposing agent/session commands to users or breaking interrupt/active-task behavior.
+  2. Retrieved memory refs, rolling summary refs, feedback correction refs, artifact refs, and output-policy refs enter bounded `ContextBundle` metadata without raw legal/customer text.
+  3. Feedback-service callbacks can produce safe same-session correction refs and pending durable memory candidates while high-risk legal conclusions, route mismatch, and skill candidates remain human-reviewed and `no_auto_modify`.
+  4. `MemoryUse` evidence failures are not silently ignored in legal production mode; callers get fail-closed or explicit degraded status behavior.
+  5. Evaluation and contract evidence covers durable native memory, rolling summaries, recall, feedback learning, privacy gates, and external spike recommendations with synthetic/sanitized fixtures only.
+  6. `VERIFICATION.md` exists for phases 20-25 and validation artifacts exist or are explicitly normalized for phases 22-25.
+
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run `$gsd-plan-phase 25.1` to break down)
+
 ## Carried Gates
 
 - Phase 5 live WeCom UAT remains an operator-confirmed human gate.
@@ -177,3 +198,4 @@ Plans:
 | 23. Feedback-to-Memory Review Loop | v1.3 | 0/TBD | Not started | - |
 | 24. Memory Evaluation Harness and Privacy Gates | v1.3 | 0/TBD | Not started | - |
 | 25. External Memory Adapter Spikes and Final Recommendation | v1.3 | 0/TBD | Not started | - |
+| 25.1. Close gap: memory runtime and feedback wiring | v1.3 | 0/TBD | Not started | - |

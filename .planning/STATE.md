@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Production Memory System and Evaluation Spikes
-status: Ready for autonomous phase execution
-stopped_at: Milestone v1.2 completed and archived
-last_updated: "2026-07-02T08:25:20.086Z"
-last_activity: 2026-07-02 — Milestone v1.3 requirements and roadmap defined
+status: in_progress
+stopped_at: Milestone v1.3 audit found closure gaps
+last_updated: "2026-07-02T14:30:28.479Z"
+last_activity: "2026-07-02 — Phase 25.1 inserted to close v1.3 memory runtime, feedback wiring, evidence, and verification gaps"
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 13
+  total_plans: 14
   completed_plans: 13
-  percent: 100
+  percent: 86
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: — (MILESTONE COMPLETE)
+Phase: 25.1 (close-gap-v1-3-memory-runtime-and-feedback-wiring)
 Plan: —
-Status: ALL phases 20–25 complete; v1.3 InkStatute Memory Milestone DONE
-Last activity: 2026-07-02 — Phase 25 External Adapter Spikes complete (2 plans, 201 runtime tests, 11 contract tests pass; final recommendation: defer_all_external, platform-native default retained)
+Status: Active closure phase inserted after v1.3 audit found runtime memory, feedback wiring, evidence, and verification gaps
+Last activity: 2026-07-02 — Phase 25.1 inserted to close v1.3 audit gaps before milestone completion
 
 ### Parallel Human Gate (v1.0)
 
@@ -121,6 +121,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 ### Roadmap Evolution
 
 - Phase 19 added: Close gap: v1.2 WeCom session runtime E2E wiring
+- Phase 25.1 inserted after Phase 25: Close gap: v1.3 memory runtime and feedback wiring (URGENT)
 
 ### Decisions
 
