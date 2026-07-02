@@ -26,29 +26,41 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PLANNING = REPO_ROOT / ".planning"
 PHASES = PLANNING / "phases"
+V1_3_PHASES_ARCHIVE = PLANNING / "milestones" / "v1.3-phases"
 
 VERIFICATION_FILES = [
-    PLANNING / "phases/20-durable-native-memory-store/20-VERIFICATION.md",
-    PLANNING / "phases/21-rolling-summary-pipeline/21-VERIFICATION.md",
-    PLANNING / "phases/22-recall-orchestrator-context-injection/22-VERIFICATION.md",
-    PLANNING / "phases/23-feedback-to-memory-review-loop/23-VERIFICATION.md",
-    PLANNING / "phases/24-memory-evaluation-harness-privacy-gates/24-VERIFICATION.md",
-    PLANNING / "phases/25-external-memory-adapter-spikes/25-VERIFICATION.md",
+    "20-durable-native-memory-store/20-VERIFICATION.md",
+    "21-rolling-summary-pipeline/21-VERIFICATION.md",
+    "22-recall-orchestrator-context-injection/22-VERIFICATION.md",
+    "23-feedback-to-memory-review-loop/23-VERIFICATION.md",
+    "24-memory-evaluation-harness-privacy-gates/24-VERIFICATION.md",
+    "25-external-memory-adapter-spikes/25-VERIFICATION.md",
 ]
 
 VALIDATION_FILES = [
-    PLANNING / "phases/22-recall-orchestrator-context-injection/22-VALIDATION.md",
-    PLANNING / "phases/23-feedback-to-memory-review-loop/23-VALIDATION.md",
-    PLANNING / "phases/24-memory-evaluation-harness-privacy-gates/24-VALIDATION.md",
-    PLANNING / "phases/25-external-memory-adapter-spikes/25-VALIDATION.md",
-    PLANNING / "phases/25.1-close-gap-v1-3-memory-runtime-and-feedback-wiring/25.1-VALIDATION.md",
+    "22-recall-orchestrator-context-injection/22-VALIDATION.md",
+    "23-feedback-to-memory-review-loop/23-VALIDATION.md",
+    "24-memory-evaluation-harness-privacy-gates/24-VALIDATION.md",
+    "25-external-memory-adapter-spikes/25-VALIDATION.md",
+    "25.1-close-gap-v1-3-memory-runtime-and-feedback-wiring/25.1-VALIDATION.md",
 ]
 
 REQUIRED_VERIFICATION_HEADERS = ["## Goal", "## Must-Haves", "## Evidence", "## Automated Checks", "## Notes", "## Result"]
 REQUIRED_VALIDATION_HEADERS = ["## Test Infrastructure", "## Sampling Rate", "## Per-Task Verification Map", "## Wave 0 Requirements", "## Validation Sign-Off"]
 
-REQUIREMENTS_FILE = PLANNING / "REQUIREMENTS.md"
-AUDIT_FILE = PLANNING / "v1.3-MILESTONE-AUDIT.md"
+REQUIREMENTS_FILE = PLANNING / "milestones" / "v1.3-REQUIREMENTS.md"
+AUDIT_FILE = PLANNING / "milestones" / "v1.3-MILESTONE-AUDIT.md"
+
+
+def _resolve_artifact(rel_path: str) -> Path | None:
+    """Return the active or archived path for a v1.3 artifact, if it exists."""
+    active = PHASES / rel_path
+    archived = V1_3_PHASES_ARCHIVE / rel_path
+    if active.exists():
+        return active
+    if archived.exists():
+        return archived
+    return None
 
 V1_3_REQUIREMENTS = {
     "MEM-01", "MEM-02", "MEM-03", "MEM-04", "MEM-05",
@@ -66,17 +78,19 @@ def _read(path: Path) -> str:
 
 def check_artifacts() -> list[str]:
     failures: list[str] = []
-    for path in VERIFICATION_FILES:
-        if not path.exists():
-            failures.append(f"missing verification artifact: {path.relative_to(REPO_ROOT)}")
+    for rel_path in VERIFICATION_FILES:
+        path = _resolve_artifact(rel_path)
+        if path is None:
+            failures.append(f"missing verification artifact: {rel_path}")
             continue
         text = _read(path)
         for header in REQUIRED_VERIFICATION_HEADERS:
             if header not in text:
                 failures.append(f"{path.relative_to(REPO_ROOT)} missing header {header}")
-    for path in VALIDATION_FILES:
-        if not path.exists():
-            failures.append(f"missing validation artifact: {path.relative_to(REPO_ROOT)}")
+    for rel_path in VALIDATION_FILES:
+        path = _resolve_artifact(rel_path)
+        if path is None:
+            failures.append(f"missing validation artifact: {rel_path}")
             continue
         text = _read(path)
         for header in REQUIRED_VALIDATION_HEADERS:
@@ -88,7 +102,7 @@ def check_artifacts() -> list[str]:
 def check_traceability() -> list[str]:
     failures: list[str] = []
     if not REQUIREMENTS_FILE.exists():
-        failures.append("missing .planning/REQUIREMENTS.md")
+        failures.append("missing .planning/milestones/v1.3-REQUIREMENTS.md")
         return failures
     text = _read(REQUIREMENTS_FILE)
 
@@ -108,7 +122,7 @@ def check_traceability() -> list[str]:
 def check_audit_state() -> list[str]:
     failures: list[str] = []
     if not AUDIT_FILE.exists():
-        failures.append("missing .planning/v1.3-MILESTONE-AUDIT.md")
+        failures.append("missing .planning/milestones/v1.3-MILESTONE-AUDIT.md")
         return failures
     text = _read(AUDIT_FILE)
     if "status: gaps_found" in text:
