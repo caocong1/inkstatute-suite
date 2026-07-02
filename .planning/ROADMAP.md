@@ -1,74 +1,165 @@
 # Roadmap: 墨律 InkStatute
 
-## Overview
-
-V2 is an InkStatute-owned WeCom lawyer assistant platform with backend-neutral contracts, runtime seams, memory/context support, and Hermes `lawfirm` as the first agent backend. Completed milestone details are archived under `.planning/milestones/` so this live roadmap stays focused on current and next work.
-
 ## Milestones
 
-- Complete **V2 PRD Foundation** — Phases 1-8 completed by 2026-06-30; live Phase 5/8 human gates remain carried.
-- Complete **v1.1 Platform Foundation** — Phases 09-13 shipped 2026-06-30.
-- Complete **v1.2 Conversational Context and Memory Foundation** — Phases 14-19 shipped 2026-07-02 with accepted validation/operational tech debt.
-- Planned **Next milestone** — TBD via `$gsd-new-milestone`.
+- Complete **V2 PRD Foundation** - Phases 1-8 completed by 2026-06-30; live Phase 5/8 human gates remain carried.
+- Complete **v1.1 Platform Foundation** - Phases 09-13 shipped 2026-06-30.
+- Complete **v1.2 Conversational Context and Memory Foundation** - Phases 14-19 shipped 2026-07-02 with accepted validation/operational tech debt.
+- Active **v1.3 Production Memory System and Evaluation Spikes** - Phases 20-25 planned.
 
-## Phase Groups
+## v1.3 Production Memory System and Evaluation Spikes
 
-<details>
-<summary>Complete: V2 PRD Foundation (Phases 1-8)</summary>
+## Overview
 
-- [x] Phase 1: Platform Contract Foundation — completed 2026-06-27
-- [x] Phase 2: Contract Test Suite Foundation — completed 2026-06-27
-- [x] Phase 3: Hermes Integration Spike and Risk Closure — completed 2026-06-28
-- [x] Phase 4: Hermes Shadow Event Layer — completed 2026-06-28
-- [x] Phase 5: WeCom Shadow Loop Validation — completed 2026-06-28; live UAT remains a human gate
-- [x] Phase 5.5: InkStatute WeCom Service and Hermes Agent Adapter — completed 2026-06-28
-- [x] Phase 6: Read and Feedback Service APIs — completed 2026-06-28
-- [x] Phase 7: CI, Composability, and Privacy Gates — completed 2026-06-28
-- [x] Phase 8: Lawyer Trial Acceptance artifacts — completed 2026-06-30; five-workday lawyer trial remains a human gate
+v1.3 turns the v1.2 memory foundation into a production-capable native memory loop for the lawyer assistant. The milestone keeps platform-native memory as the default legal path, adds durable storage, rolling summaries, pre-run recall orchestration, feedback-to-memory review, and a repeatable evaluation harness. External systems from the lawyer-assistant memory component study are evaluated only as sanitized adapter spikes and cannot become live legal defaults without passing privacy, deletion/export, tenant isolation, human-review, relevance, latency, runbook, and procurement gates.
 
-</details>
+**Requirements:** `.planning/REQUIREMENTS.md`
+**Strategy:** `docs/architecture/memory/production-memory-system-strategy.md`
 
-<details>
-<summary>Complete: v1.1 Platform Foundation (Phases 09-13) — shipped 2026-06-30</summary>
+## Phases
 
-Archive: [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) | [v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md)
+**Phase Numbering:**
 
-- [x] Phase 09: Platform Interface Contracts — completed 2026-06-29
-- [x] Phase 10: Embeddable Run Runtime — completed 2026-06-29
-- [x] Phase 11: Hermes Backend Adapter — completed 2026-06-29
-- [x] Phase 12: Channel and Client Surface — completed 2026-06-29
-- [x] Phase 13: Solution Loader and Lawfirm Pack — completed 2026-06-29
+- Integer phases (20, 21, 22): Planned milestone work.
+- Decimal phases (20.1, 20.2): Urgent insertions after planning.
 
-</details>
+- [ ] **Phase 20: Durable Native Memory Store** - Implement the production-capable platform-native memory store, privacy guard, deletion/export, and baseline tests.
+- [ ] **Phase 21: Rolling Summary Pipeline** - Generate and persist safe summary refs for bounded long-running conversations.
+- [ ] **Phase 22: Recall Orchestrator and Context Injection** - Retrieve approved memory and summary refs before backend submission and attach bounded context to WeCom runtime flows.
+- [ ] **Phase 23: Feedback-to-Memory Review Loop** - Convert feedback into same-session corrections and human-reviewed durable memory candidates.
+- [ ] **Phase 24: Memory Evaluation Harness and Privacy Gates** - Build the sanitized benchmark and gates that prove recall quality, isolation, deletion, and safety.
+- [ ] **Phase 25: External Memory Adapter Spikes and Final Recommendation** - Evaluate Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates behind the adapter boundary.
 
-<details>
-<summary>Complete: v1.2 Conversational Context and Memory Foundation (Phases 14-19) — shipped 2026-07-02</summary>
+## Phase Details
 
-Archive: [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md) | [v1.2-MILESTONE-AUDIT.md](milestones/v1.2-MILESTONE-AUDIT.md)
+### Phase 20: Durable Native Memory Store
 
-- [x] Phase 14: Memory Research and Contract Spec — 3/3 plans, completed 2026-06-30
-- [x] Phase 15: Session Resolver and Interrupt Runtime — 3/3 plans, completed 2026-07-01
-- [x] Phase 16: Short-Term Context Assembler — 3/3 plans, completed 2026-07-01
-- [x] Phase 17: Long-Term Memory and Feedback Learning — 3/3 plans, completed 2026-07-01
-- [x] Phase 18: External Memory Adapter Evaluation and Acceptance Gates — 3/3 plans, completed 2026-07-02
-- [x] Phase 19: Close gap: v1.2 WeCom session runtime E2E wiring — 1/1 plan, completed 2026-07-02
+**Goal**: InkStatute has a durable, reference-first platform-native memory store that can become the default legal memory path without adding an external memory dependency.
+**Depends on**: Phase 17 and Phase 18 from v1.2
+**Requirements**: MEM-01, MEM-02, MEM-03, MEM-04, MEM-05
+**Success Criteria** (what must be TRUE):
 
-Audit result: `tech_debt`. No critical requirement, integration, or flow gaps remain after Phase 19. Accepted carry-forward items are tracked in `.planning/STATE.md`.
+  1. Developer can persist and retrieve `MemoryRecord`, `MemoryCandidate`, and `MemoryUse` evidence through a durable native store implementation.
+  2. Queries can filter by tenant, workspace, user, session, labels, source refs, sensitivity, confidence, TTL, deletion status, and deterministic relevance.
+  3. Recursive privacy guards reject raw payloads, full legal/customer text, callback bodies, document text, and secret-like metadata before storage.
+  4. Delete, tombstone, retention expiry, and export workflows are represented by code and tests.
+  5. Existing in-memory tests still pass, and the durable store can be used without changing `RunRuntime` or WeCom channel contracts.
 
-</details>
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run `$gsd-plan-phase 20` to break down)
+
+### Phase 21: Rolling Summary Pipeline
+
+**Goal**: Long-running conversations can produce safe rolling summary references that preserve intent, constraints, open questions, artifacts, and outcomes without stuffing raw history into backend context.
+**Depends on**: Phase 20
+**Requirements**: SUM-01, SUM-02, SUM-03, SUM-04
+**Success Criteria** (what must be TRUE):
+
+  1. A policy-driven summary producer can create or update `RollingSummaryRecord` from safe source refs.
+  2. Summary records carry `summary_ref`, hash, length, task intent refs, user constraint refs, unanswered question refs, artifact refs, outcome refs, timestamps, and scope.
+  3. Summary generation can trigger from turn count, budget pressure, task completion, or explicit host request.
+  4. Summary generation fails closed when source refs, summarizer policy, or privacy checks are missing.
+  5. Contract or runtime tests prove summary text is not embedded in `ContextBundle` metadata by default.
+
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run `$gsd-plan-phase 21` to break down)
+
+### Phase 22: Recall Orchestrator and Context Injection
+
+**Goal**: WeCom and runtime flows can automatically retrieve approved memory refs and rolling summaries before backend submission, then attach a bounded `ContextBundle` without exposing session commands to ordinary users.
+**Depends on**: Phase 21
+**Requirements**: REC-01, REC-02, REC-03, REC-04, REC-05
+**Success Criteria** (what must be TRUE):
+
+  1. A memory orchestration layer runs before backend submission and retrieves approved memory refs for the resolved session scope.
+  2. Retrieved memory refs, rolling summary refs, recent turn refs, feedback correction refs, artifact refs, and output-policy refs are passed into `ContextAssembler`.
+  3. Tenant/workspace/user/session isolation is enforced, with fail-closed behavior on ambiguous or cross-scope retrieval.
+  4. `MemoryUse` evidence records selected memories and context-bundle association without raw legal/customer text.
+  5. Ordinary WeCom continue/start flows can use the orchestrator while preserving interrupt resume and active-task behavior.
+
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run `$gsd-plan-phase 22` to break down)
+
+### Phase 23: Feedback-to-Memory Review Loop
+
+**Goal**: Feedback can safely affect future context through correction refs and human-reviewed memory candidates, while high-risk legal conclusions and skill/route changes remain review-only.
+**Depends on**: Phase 22
+**Requirements**: FBL-01, FBL-02, FBL-03, FBL-04, FBL-05
+**Success Criteria** (what must be TRUE):
+
+  1. Safe feedback corrections can enter the next same-session context as refs.
+  2. Repeated negative feedback creates pending memory candidates with source refs, confidence, proposed scope, sensitivity, and review metadata.
+  3. Reviewer actions can approve, reject, edit, tombstone, or defer candidates without auto-promoting unsafe content.
+  4. Approved candidates become durable `MemoryRecord` entries, and rejected/deferred candidates do not enter recall.
+  5. Route mismatch, skill candidate, and high-risk legal conclusion evidence remains human-reviewed with `no_auto_modify`.
+
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run `$gsd-plan-phase 23` to break down)
+
+### Phase 24: Memory Evaluation Harness and Privacy Gates
+
+**Goal**: InkStatute has a repeatable sanitized evaluation suite that proves native memory behavior and creates a fair baseline for external adapter candidates.
+**Depends on**: Phase 23
+**Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04
+**Success Criteria** (what must be TRUE):
+
+  1. A sanitized memory benchmark covers multi-turn recall, cross-session continuity, deletion/export, tenant isolation, feedback learning, and false-recall cases.
+  2. Evaluation reports include relevance, source traceability, P50/P95 latency where applicable, context-size impact, deletion correctness, and privacy scan results.
+  3. Local or CI gates fail on unsafe payload fields, cross-tenant recall, missing deletion/export evidence, or unreviewed high-risk memory promotion.
+  4. The native memory path is measured as the baseline that external adapters must beat or complement.
+  5. Evaluation fixtures remain synthetic or sanitized and do not claim live legal acceptance.
+
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run `$gsd-plan-phase 24` to break down)
+
+### Phase 25: External Memory Adapter Spikes and Final Recommendation
+
+**Goal**: External memory systems are compared against the native baseline through sanitized adapter spikes, producing an evidence-backed decision for whether any provider should enter a later production gate.
+**Depends on**: Phase 24
+**Requirements**: XMEM-01, XMEM-02, XMEM-03, XMEM-04, XMEM-05
+**Success Criteria** (what must be TRUE):
+
+  1. Zep/Hindsight-style graph or audit memory can be evaluated through `MemoryStoreAdapter` using sanitized fixtures only.
+  2. OpenViking/ReMe-style file-auditable memory can be evaluated through `MemoryStoreAdapter` using sanitized fixtures only.
+  3. Mem0-style quick PoC memory can be represented as an add/search/delete/export candidate without becoming the legal production default.
+  4. Candidate manifests record deployment model, data residency, secrets, tenant isolation, raw-payload blocking, human-review support, delete/export support, and source refs.
+  5. The final recommendation either keeps platform-native memory only, adds a gated external adapter candidate, or defers external adoption with evidence.
+
+**Plans**: TBD
+
+Plans:
+
+- [ ] TBD (run `$gsd-plan-phase 25` to break down)
 
 ## Carried Gates
 
 - Phase 5 live WeCom UAT remains an operator-confirmed human gate.
 - Phase 8 five-workday lawyer trial remains a live legal/human gate.
-- External memory services remain optional sanitized-spike candidates; platform-native memory stays the default legal path until privacy, residency, deletion/export, security, review, and procurement gates pass.
-- Nyquist validation artifacts for Phases 14, 15, 16, 18, and 19 are accepted validation debt from the v1.2 close.
+- External memory providers may not store live legal/customer payloads in v1.3.
+- Nyquist validation debt from v1.2 remains carried unless a dedicated validation phase is added.
 
 ## Progress
 
-| Phase Group | Milestone | Plans Complete | Status | Completed |
-|-------------|-----------|----------------|--------|-----------|
-| Phases 1-8 | V2 PRD Foundation | 27/27 | Complete with live human gates carried | 2026-06-30 |
-| Phases 09-13 | v1.1 Platform Foundation | 20/20 | Shipped | 2026-06-30 |
-| Phases 14-19 | v1.2 Conversational Context and Memory Foundation | 16/16 | Shipped with accepted tech debt | 2026-07-02 |
-| Next milestone | TBD | 0/0 | Awaiting definition | - |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 20. Durable Native Memory Store | v1.3 | 0/TBD | Not started | - |
+| 21. Rolling Summary Pipeline | v1.3 | 0/TBD | Not started | - |
+| 22. Recall Orchestrator and Context Injection | v1.3 | 0/TBD | Not started | - |
+| 23. Feedback-to-Memory Review Loop | v1.3 | 0/TBD | Not started | - |
+| 24. Memory Evaluation Harness and Privacy Gates | v1.3 | 0/TBD | Not started | - |
+| 25. External Memory Adapter Spikes and Final Recommendation | v1.3 | 0/TBD | Not started | - |

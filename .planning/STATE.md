@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Conversational Context and Memory Foundation
-status: Awaiting next milestone
-stopped_at: Milestone v1.2 archived
-last_updated: "2026-07-02T10:34:25+08:00"
-last_activity: 2026-07-02 — Milestone v1.2 completed and archived
+milestone: v1.3
+milestone_name: Production Memory System and Evaluation Spikes
+status: planning
+last_updated: "2026-07-02T07:39:23.815Z"
+last_activity: 2026-07-02
 progress:
   total_phases: 6
-  completed_phases: 6
-  total_plans: 16
-  completed_plans: 16
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Await next milestone definition; v1.2 is archived with accepted validation/operational tech debt.
+**Current focus:** v1.3 Production Memory System and Evaluation Spikes. Build native production memory first, then evaluate external memory candidates through sanitized adapter spikes.
 
 ## Current Position
 
-Phase: Milestone v1.2 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-02 — Milestone v1.2 completed and archived
+Status: Ready for autonomous phase execution
+Last activity: 2026-07-02 — Milestone v1.3 requirements and roadmap defined
 
 ### Parallel Human Gate (v1.0)
 

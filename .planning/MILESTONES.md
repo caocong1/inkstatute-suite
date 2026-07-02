@@ -1,5 +1,26 @@
 # Project Milestones: 墨律 InkStatute
 
+## v1.3 Production Memory System and Evaluation Spikes (Active)
+
+**Goal:** Make platform-native memory production-capable first, then evaluate external memory candidates through sanitized adapter spikes.
+
+**Planned phases:** 20-25
+
+**Artifacts:** [REQUIREMENTS.md](REQUIREMENTS.md) | [ROADMAP.md](ROADMAP.md) | [production-memory-system-strategy.md](../docs/architecture/memory/production-memory-system-strategy.md)
+
+**Planned outcomes:**
+
+- Durable native memory store with ref-first privacy, TTL/deletion/export, review state, and scoped query behavior.
+- Policy-driven rolling summaries stored as refs, hashes, lengths, and structured evidence.
+- Pre-run recall orchestration that attaches approved memory refs to bounded context for WeCom/runtime flows.
+- Feedback-to-memory review loop with same-session corrections and human-reviewed durable candidates.
+- Repeatable memory evaluation harness for recall quality, deletion/export, tenant isolation, privacy, latency, and token impact.
+- Sanitized adapter spikes for Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates, with a final production recommendation.
+
+**Current decision:** Native memory remains the legal default unless an external provider passes all gates and clearly beats or complements the native baseline.
+
+---
+
 ## v1.2 Conversational Context and Memory Foundation (Shipped: 2026-07-02)
 
 **Delivered:** Invisible WeCom conversation continuity, bounded context, interrupt resume, platform-native memory, feedback-informed learning, external-memory adapter evaluation, and the Phase 19 E2E session-runtime closure.
@@ -27,7 +48,7 @@
 - Service-level feedback-to-memory automation remains future integration work; Phase 17 delivered library surfaces and fixture evidence.
 - Live WeCom UAT and the five-workday lawyer trial remain human gates and are not claimed as autonomous production acceptance.
 
-**What's next:** Define the next milestone via `$gsd-new-milestone`.
+**Follow-up:** v1.3 Production Memory System and Evaluation Spikes is active.
 
 ---
 

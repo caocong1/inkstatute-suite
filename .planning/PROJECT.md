@@ -103,6 +103,7 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 | Treat memory indexes and summaries as derived/cacheable state, not the authority | Contract logs and reference stores remain the audit source; memory is context assembly support | Decided 2026-06-30 |
 | Model skill clarification as runtime interrupts | The one-shot conversation path loses ask-user flows; pausing and resuming runs preserves skill questions across user replies | Decided 2026-06-30 |
 | Keep platform-native memory as the lawyer-assistant default and route Zep/Hindsight, OpenViking/ReMe, and Mem0 through future sanitized spikes | The component study favors different providers for graph/audit, file-auditable, and PoC use cases, but live legal memory still needs privacy, deletion/export, residency, security, review, benchmark, and license gates | Decided 2026-07-02 |
+| Build v1.3 as native production memory first, with external providers as measured adapter spikes | A legal-memory system needs deletion/export, tenant isolation, human review, traceability, and raw-payload controls before provider convenience; external tools must beat or complement the native baseline through sanitized evidence | Decided 2026-07-02 |
 
 ## Last Completed Milestone: v1.2 Conversational Context and Memory Foundation
 
@@ -123,6 +124,22 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 - Roadmap archive: `.planning/milestones/v1.2-ROADMAP.md`
 - Audit archive: `.planning/milestones/v1.2-MILESTONE-AUDIT.md`
 - Research summary: `.planning/research/SUMMARY.md`
+
+## Current Milestone: v1.3 Production Memory System and Evaluation Spikes
+
+**Goal:** Turn the v1.2 memory foundation into a production-capable platform-native memory loop, while evaluating external memory systems only through sanitized adapter spikes.
+
+**Target features:**
+- Durable platform-native memory storage with ref-first privacy, scope isolation, TTL/deletion/export, review state, and deterministic query behavior.
+- Policy-driven rolling summaries that preserve intent, constraints, open questions, artifacts, and outcomes through refs, hashes, and lengths rather than raw legal text.
+- Memory recall orchestration before backend submission so WeCom continuation/start flows can automatically attach approved memory refs and summary refs to bounded context.
+- Feedback-to-memory review workflow where safe corrections affect current context and repeated negative feedback creates human-reviewed memory candidates.
+- Sanitized memory evaluation harness covering recall quality, false recall, tenant isolation, deletion/export, privacy gates, and token/latency impact.
+- External adapter spikes for Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates, measured against the native baseline without live legal/customer payloads.
+
+**Strategy:** `docs/architecture/memory/production-memory-system-strategy.md`
+**Requirements:** `.planning/REQUIREMENTS.md`
+**Roadmap:** `.planning/ROADMAP.md`
 
 ## Current State
 
@@ -164,16 +181,17 @@ v1.2 delivered automatic WeCom session continuity, interrupt resume, bounded sho
 
 **Archive:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md) | [v1.2-MILESTONE-AUDIT.md](milestones/v1.2-MILESTONE-AUDIT.md)
 
-## Next Milestone Goals
+**Milestone v1.3 — Production Memory System and Evaluation Spikes: ACTIVE**
 
-Current focus is defining the next milestone.
+v1.3 makes platform-native memory production-capable before any external memory service can handle live legal data. It builds durable memory storage, rolling summaries, recall orchestration, feedback review, evaluation gates, and sanitized external adapter spikes. External providers remain candidates, not defaults.
 
-Potential directions:
-- Live cutover of v1.1/v1.2 platform lanes (human gate)
-- Phase 8 lawyer trial acceptance (human gate)
-- Codex adapter prototype (M2 scope)
-- Direct provider-model adapter prototype (M2 scope)
-- Independent Router Service normalization upgrade (M2 scope)
+**What must ship:**
+- Durable native memory store and deletion/export/tombstone behavior
+- Rolling summary pipeline and safe summary refs
+- Pre-run recall orchestration and bounded context injection
+- Feedback-to-memory human review flow
+- Memory evaluation harness and privacy gates
+- External memory adapter spike report and final recommendation
 
 ## Evolution
 
@@ -193,4 +211,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-07-02 after v1.2 milestone archive*
+*Last updated: 2026-07-02 after v1.3 milestone definition*
