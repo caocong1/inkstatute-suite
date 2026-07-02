@@ -1,0 +1,265 @@
+{
+  "fixture_id": "phase23-feedback-to-memory-review-loop-001",
+  "description": "Synthetic Phase 23 fixture proving feedback-to-memory review loop: correction refs for same-session context injection, pending memory candidates from repeated negative feedback, approve/reject/edit/tombstone/defer decisions, routing candidate human-review guard, and no raw text in any promoted record.",
+  "metadata": {
+    "phase": "23",
+    "requirements": [
+      "FBL-01",
+      "FBL-02",
+      "FBL-03",
+      "FBL-04",
+      "FBL-05"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "no_live_external_invocation": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "review_loop_evidence": {
+      "fbl_01_correction_refs_produced": true,
+      "fbl_02_repeated_negative_creates_pending_candidates": true,
+      "fbl_03_decisions_supported": ["approve", "reject", "edit", "tombstone", "defer"],
+      "fbl_04_approved_candidate_promoted_to_active_memory_record": true,
+      "fbl_04_rejected_candidate_not_in_recall": true,
+      "fbl_05_routing_candidate_cannot_be_auto_approved": true,
+      "fbl_05_routing_candidate_can_be_deferred": true,
+      "no_raw_text_in_promoted_records": true
+    },
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_memory_review.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase23_feedback_to_memory_review_loop.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest discover -s packages/platform-runtime/tests"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase23-001",
+      "conversation_id": "conversation-phase23-001",
+      "channel": "wecom",
+      "user_id": "user-phase23-001",
+      "message_type": "text",
+      "received_at": "2026-07-02T14:00:00Z",
+      "content": "Synthetic feedback review trigger turn for Phase 23 evidence.",
+      "metadata": {
+        "content_sha256_16": "e5b3f1d9c2a40768",
+        "content_length": 62,
+        "raw_payload_ref": "fixture://phase23/turns/turn-phase23-001/raw"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase23-001",
+      "turn_id": "turn-phase23-001",
+      "primary_skill": "synthetic_feedback_review_loop",
+      "confidence": 0.91,
+      "mode": "matched",
+      "created_at": "2026-07-02T14:00:01Z",
+      "supporting_skills": [],
+      "matched_rule": "fixture://phase23/routing/feedback-review-loop",
+      "reason": "Synthetic route for Phase 23 feedback-to-memory review loop evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase23/route/route-phase23-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase23-001",
+      "turn_id": "turn-phase23-001",
+      "started_at": "2026-07-02T14:00:01Z",
+      "ended_at": "2026-07-02T14:00:03Z",
+      "active_skill_name": "synthetic_feedback_review_loop",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-02T14:00:03Z",
+      "ingested_at": "2026-07-02T14:00:04Z",
+      "seq": 1,
+      "steps": [
+        {
+          "step_id": "step-phase23-learn",
+          "state": "succeeded",
+          "memory_refs": [],
+          "raw_payload_ref": "fixture://phase23/trace/step-learn"
+        },
+        {
+          "step_id": "step-phase23-queue-candidates",
+          "state": "succeeded",
+          "memory_refs": [],
+          "raw_payload_ref": "fixture://phase23/trace/step-queue-candidates"
+        },
+        {
+          "step_id": "step-phase23-review-decisions",
+          "state": "succeeded",
+          "memory_refs": [
+            "memory://phase23/promoted-memory-001"
+          ],
+          "raw_payload_ref": "fixture://phase23/trace/step-review-decisions"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "bundle-phase23-001",
+        "correction_refs_count": 1,
+        "memory_candidates_queued": 2,
+        "review_decisions_applied": 3,
+        "promoted_memory_ids": ["memory://phase23/promoted-memory-001"],
+        "rejected_candidate_ids": ["memory-candidate-phase23-reject-001"],
+        "deferred_candidate_ids": ["memory-candidate-phase23-routing-001"],
+        "review_decisions": [
+          {
+            "review_id": "review-phase23-approve-001",
+            "candidate_id": "memory-candidate-phase23-approve-001",
+            "action": "approve",
+            "reviewer_id": "human-reviewer-phase23-001",
+            "reviewed_at": "2026-07-02T14:05:00Z",
+            "promotion_status": "promoted"
+          },
+          {
+            "review_id": "review-phase23-reject-001",
+            "candidate_id": "memory-candidate-phase23-reject-001",
+            "action": "reject",
+            "reviewer_id": "human-reviewer-phase23-001",
+            "reviewed_at": "2026-07-02T14:06:00Z",
+            "rejection_reason": "not_applicable_to_session_context",
+            "promotion_status": "rejected"
+          },
+          {
+            "review_id": "review-phase23-defer-001",
+            "candidate_id": "memory-candidate-phase23-routing-001",
+            "action": "defer",
+            "reviewer_id": "human-reviewer-phase23-001",
+            "reviewed_at": "2026-07-02T14:07:00Z",
+            "promotion_status": "deferred"
+          }
+        ],
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase23-001",
+      "turn_id": "turn-phase23-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic response summary ref: result://phase23/result-phase23-001/summary",
+      "feedback_target": "delivery-phase23-001",
+      "metadata": {
+        "trace_id": "trace-phase23-001",
+        "context_bundle_id": "bundle-phase23-001",
+        "visible_text_sha256_16": "b2d4e6a8c0f21379",
+        "visible_text_length": 70,
+        "raw_payload_ref": "fixture://phase23/results/result-phase23-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase23-001",
+      "turn_id": "turn-phase23-001",
+      "result_id": "result-phase23-001",
+      "conversation_id": "conversation-phase23-001",
+      "user_id": "user-phase23-001",
+      "source": "card_button",
+      "event_type": "correction",
+      "status": "resolved",
+      "created_at": "2026-07-02T14:01:00Z",
+      "feedback_target": "delivery-phase23-001",
+      "action": "needs_fix",
+      "labels": ["correction", "citation_error"],
+      "raw_payload_ref": "fixture://phase23/feedback/feedback-phase23-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase23:correction:001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "bundle-phase23-001",
+      "tenant_id": "tenant-phase23-001",
+      "workspace_id": "workspace-phase23-001",
+      "session_id": "session-phase23-001",
+      "created_at": "2026-07-02T14:00:01Z",
+      "budget_tokens": 4096,
+      "run_id": "run-phase23-001",
+      "turn_id": "turn-phase23-001",
+      "summary_ref": "summary://phase23/session-phase23-001/placeholder",
+      "recent_turn_refs": [
+        "turn://turn-phase23-001"
+      ],
+      "memory_refs": [
+        "memory://phase23/promoted-memory-001"
+      ],
+      "metadata": {
+        "privacy": "refs_hashes_lengths_statuses_only",
+        "feedback_correction_refs": [
+          "feedback://feedback-phase23-001/correction"
+        ]
+      }
+    },
+    "memory_candidates": [
+      {
+        "candidate_id": "memory-candidate-phase23-approve-001",
+        "tenant_id": "tenant-phase23-001",
+        "workspace_id": "workspace-phase23-001",
+        "status": "pending",
+        "source_refs": [
+          "feedback://feedback-phase23-neg-001/correction",
+          "feedback://feedback-phase23-neg-002/correction"
+        ],
+        "created_at": "2026-07-02T14:00:00Z",
+        "proposed_scope": "user",
+        "proposed_sensitivity": "confidential",
+        "proposed_action": "create_memory_candidate",
+        "proposed_record_ref": "memory://candidates/memory-candidate-phase23-approve-001",
+        "reason": "citation_error feedback learning candidate",
+        "confidence": 0.7,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://phase23/candidates/memory-candidate-phase23-approve-001/raw",
+        "metadata": {
+          "category": "citation_error",
+          "feedback_count": 2,
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      },
+      {
+        "candidate_id": "memory-candidate-phase23-reject-001",
+        "tenant_id": "tenant-phase23-001",
+        "workspace_id": "workspace-phase23-001",
+        "status": "pending",
+        "source_refs": [
+          "feedback://feedback-phase23-neg-003/correction",
+          "feedback://feedback-phase23-neg-004/correction"
+        ],
+        "created_at": "2026-07-02T14:00:00Z",
+        "proposed_scope": "user",
+        "proposed_sensitivity": "confidential",
+        "proposed_action": "create_memory_candidate",
+        "proposed_record_ref": "memory://candidates/memory-candidate-phase23-reject-001",
+        "reason": "format_issue feedback learning candidate",
+        "confidence": 0.6,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://phase23/candidates/memory-candidate-phase23-reject-001/raw",
+        "metadata": {
+          "category": "format_issue",
+          "feedback_count": 2,
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      },
+      {
+        "candidate_id": "memory-candidate-phase23-routing-001",
+        "tenant_id": "tenant-phase23-001",
+        "workspace_id": "workspace-phase23-001",
+        "status": "pending",
+        "source_refs": [
+          "feedback://feedback-phase23-route-001/correction"
+        ],
+        "created_at": "2026-07-02T14:00:00Z",
+        "proposed_scope": "user",
+        "proposed_sensitivity": "confidential",
+        "proposed_action": "review_route_or_skill_candidate",
+        "proposed_record_ref": "memory://candidates/memory-candidate-phase23-routing-001",
+        "reason": "route_mismatch feedback learning candidate",
+        "confidence": 0.5,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://phase23/candidates/memory-candidate-phase23-routing-001/raw",
+        "metadata": {
+          "category": "route_mismatch",
+          "feedback_count": 1,
+          "no_auto_modify": true,
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ]
+  }
+}
