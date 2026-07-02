@@ -1,0 +1,251 @@
+{
+  "fixture_id": "phase22-recall-orchestrator-context-injection-001",
+  "description": "Synthetic Phase 22 fixture proving memory recall orchestration: scoped recall, MemoryUse evidence, bounded ContextBundle assembly with summary ref, isolation enforcement, and no raw text in output.",
+  "metadata": {
+    "phase": "22",
+    "requirements": [
+      "REC-01",
+      "REC-02",
+      "REC-03",
+      "REC-04",
+      "REC-05"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "no_live_external_invocation": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "orchestrator_evidence": {
+      "recall_scope": "tenant_id=tenant-phase22-001, workspace_id=workspace-phase22-001, user_id=user-phase22-001",
+      "memories_recalled": 2,
+      "max_memory_refs_policy": 8,
+      "rolling_summary_injected": true,
+      "memory_use_recorded": true,
+      "isolation_enforced": true,
+      "cross_tenant_query_raises_error": true,
+      "run_runtime_constructor_unchanged": true,
+      "no_raw_text_in_bundle_metadata": true
+    },
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_memory_orchestrator.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase22_recall_orchestrator_context_injection.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest discover -s packages/platform-runtime/tests"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase22-001",
+      "conversation_id": "conversation-phase22-001",
+      "channel": "wecom",
+      "user_id": "user-phase22-001",
+      "message_type": "text",
+      "received_at": "2026-07-02T10:00:00Z",
+      "content": "Synthetic recall-before-submission turn for Phase 22 orchestration evidence.",
+      "metadata": {
+        "content_sha256_16": "d4a2f8c3b1e70956",
+        "content_length": 68,
+        "raw_payload_ref": "fixture://phase22/turns/turn-phase22-001/raw"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase22-001",
+      "turn_id": "turn-phase22-001",
+      "primary_skill": "synthetic_recall_orchestrator",
+      "confidence": 0.89,
+      "mode": "matched",
+      "created_at": "2026-07-02T10:00:01Z",
+      "supporting_skills": [
+        "synthetic_memory_injection"
+      ],
+      "matched_rule": "fixture://phase22/routing/recall-orchestrator",
+      "reason": "Synthetic route for Phase 22 recall orchestration evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase22/route/route-phase22-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase22-001",
+      "turn_id": "turn-phase22-001",
+      "started_at": "2026-07-02T10:00:01Z",
+      "ended_at": "2026-07-02T10:00:03Z",
+      "active_skill_name": "synthetic_recall_orchestrator",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-02T10:00:03Z",
+      "ingested_at": "2026-07-02T10:00:04Z",
+      "seq": 1,
+      "steps": [
+        {
+          "step_id": "step-phase22-recall",
+          "state": "succeeded",
+          "memory_refs": [
+            "memory://memory-phase22-active-001",
+            "memory://memory-phase22-active-002"
+          ],
+          "raw_payload_ref": "fixture://phase22/trace/step-recall"
+        },
+        {
+          "step_id": "step-phase22-assemble",
+          "state": "succeeded",
+          "memory_refs": [
+            "memory://memory-phase22-active-001",
+            "memory://memory-phase22-active-002"
+          ],
+          "raw_payload_ref": "fixture://phase22/trace/step-assemble"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "bundle-phase22-001",
+        "memory_use_ids": ["use-phase22-001", "use-phase22-002"],
+        "summary_ref": "summary://phase22/session-phase22-001/v1",
+        "isolation_check": "passed",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase22-001",
+      "turn_id": "turn-phase22-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic response summary ref: result://phase22/result-phase22-001/summary",
+      "feedback_target": "delivery-phase22-001",
+      "metadata": {
+        "trace_id": "trace-phase22-001",
+        "context_bundle_id": "bundle-phase22-001",
+        "visible_text_sha256_16": "f1e3c7a5b2d40869",
+        "visible_text_length": 70,
+        "raw_payload_ref": "fixture://phase22/results/result-phase22-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase22-001",
+      "turn_id": "turn-phase22-001",
+      "result_id": "result-phase22-001",
+      "conversation_id": "conversation-phase22-001",
+      "user_id": "user-phase22-001",
+      "source": "card_button",
+      "event_type": "rating",
+      "status": "resolved",
+      "created_at": "2026-07-02T10:01:00Z",
+      "feedback_target": "delivery-phase22-001",
+      "action": "up",
+      "labels": ["rating"],
+      "raw_payload_ref": "fixture://phase22/feedback/feedback-phase22-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase22:rating:001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "bundle-phase22-001",
+      "tenant_id": "tenant-phase22-001",
+      "workspace_id": "workspace-phase22-001",
+      "session_id": "session-phase22-001",
+      "created_at": "2026-07-02T10:00:01Z",
+      "budget_tokens": 4096,
+      "run_id": "run-phase22-001",
+      "turn_id": "turn-phase22-001",
+      "summary_ref": "summary://phase22/session-phase22-001/v1",
+      "recent_turn_refs": [
+        "turn://turn-phase22-001"
+      ],
+      "memory_refs": [
+        "memory://memory-phase22-active-001",
+        "memory://memory-phase22-active-002"
+      ],
+      "metadata": {
+        "privacy": "refs_hashes_lengths_statuses_only",
+        "rolling_summary": {
+          "summary_ref": "summary://phase22/session-phase22-001/v1",
+          "task_intent_refs": ["intent://phase22/citation-review"],
+          "text_sha256_16": "a3b5c1d7e9f20486",
+          "text_length": 195
+        },
+        "isolation_scope": "tenant-phase22-001/workspace-phase22-001/user-phase22-001"
+      }
+    },
+    "memory_records": [
+      {
+        "memory_id": "memory-phase22-active-001",
+        "tenant_id": "tenant-phase22-001",
+        "workspace_id": "workspace-phase22-001",
+        "scope": "session",
+        "status": "active",
+        "sensitivity": "confidential",
+        "created_at": "2026-07-01T08:00:00Z",
+        "updated_at": "2026-07-02T08:00:00Z",
+        "source_refs": [
+          "feedback://feedback-phase22-correction-001",
+          "turn://turn-phase22-historical-001"
+        ],
+        "summary": "Synthetic recalled memory record for context injection.",
+        "subject": "citation_format",
+        "related_user_id": "user-phase22-001",
+        "session_id": "session-phase22-001",
+        "raw_payload_ref": "fixture://phase22/memory/memory-phase22-active-001/raw",
+        "confidence": 0.86,
+        "metadata": {
+          "labels": ["citation_error"],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      },
+      {
+        "memory_id": "memory-phase22-active-002",
+        "tenant_id": "tenant-phase22-001",
+        "workspace_id": "workspace-phase22-001",
+        "scope": "user",
+        "status": "active",
+        "sensitivity": "internal",
+        "created_at": "2026-06-28T08:00:00Z",
+        "updated_at": "2026-07-02T09:00:00Z",
+        "source_refs": [
+          "summary://phase22/session-phase22-historical/rolling-summary-001"
+        ],
+        "summary": "Synthetic second recalled memory for multi-memory context injection.",
+        "subject": "user_preference",
+        "related_user_id": "user-phase22-001",
+        "raw_payload_ref": "fixture://phase22/memory/memory-phase22-active-002/raw",
+        "confidence": 0.75,
+        "metadata": {
+          "labels": ["preference"],
+          "privacy": "refs_hashes_lengths_statuses_only"
+        }
+      }
+    ],
+    "memory_uses": [
+      {
+        "use_id": "use-phase22-001",
+        "memory_id": "memory-phase22-active-001",
+        "context_bundle_id": "bundle-phase22-001",
+        "used_at": "2026-07-02T10:00:02Z",
+        "purpose": "context_assembly",
+        "run_id": "run-phase22-001",
+        "turn_id": "turn-phase22-001",
+        "relevance_score": 0.86,
+        "policy_result": "selected",
+        "source_refs": [
+          "memory://memory-phase22-active-001"
+        ],
+        "metadata": {
+          "privacy": "no_raw_payload_or_legal_text_stored"
+        }
+      },
+      {
+        "use_id": "use-phase22-002",
+        "memory_id": "memory-phase22-active-002",
+        "context_bundle_id": "bundle-phase22-001",
+        "used_at": "2026-07-02T10:00:02Z",
+        "purpose": "context_assembly",
+        "run_id": "run-phase22-001",
+        "turn_id": "turn-phase22-001",
+        "relevance_score": 0.75,
+        "policy_result": "selected",
+        "source_refs": [
+          "memory://memory-phase22-active-002"
+        ],
+        "metadata": {
+          "privacy": "no_raw_payload_or_legal_text_stored"
+        }
+      }
+    ]
+  }
+}

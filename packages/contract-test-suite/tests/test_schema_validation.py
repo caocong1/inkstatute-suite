@@ -52,6 +52,7 @@ class SchemaValidationTests(unittest.TestCase):
                 "phase18-external-memory-adapter-acceptance-001",
                 "phase20-durable-native-memory-store-001",
                 "phase21-rolling-summary-pipeline-001",
+                "phase22-recall-orchestrator-context-injection-001",
             },
         )
 
