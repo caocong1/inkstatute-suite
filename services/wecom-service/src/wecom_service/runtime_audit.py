@@ -5,9 +5,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any, Mapping
+
+_logger = logging.getLogger(__name__)
 
 
 _SECRET_KEY_HINTS = ("secret", "token", "key", "password", "authorization", "cookie")
@@ -46,7 +49,7 @@ def append_runtime_audit(
     try:
         os.chmod(target, 0o600)
     except OSError:
-        pass
+        _logger.debug("could not set permissions on audit file %s", target, exc_info=True)
     return record
 
 
@@ -68,6 +71,7 @@ def _stable_json(value: Any) -> str:
     try:
         return json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
     except TypeError:
+        _logger.debug("JSON serialization fell back to str() for type %s", type(value).__name__)
         return str(value)
 
 

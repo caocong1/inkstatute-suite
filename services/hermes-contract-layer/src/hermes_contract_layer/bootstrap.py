@@ -81,6 +81,9 @@ def check_sanitized_bundle_manifest(path: str | Path) -> HermesBootstrapReport:
     except FileNotFoundError:
         issues.append(_issue("missing_bundle_manifest", "bundle manifest does not exist", manifest_path))
         return HermesBootstrapReport(False, issues, {"manifest_path": str(manifest_path)})
+    except json.JSONDecodeError as exc:
+        issues.append(_issue("invalid_bundle_manifest", f"bundle manifest is not valid JSON: {exc}", manifest_path))
+        return HermesBootstrapReport(False, issues, {"manifest_path": str(manifest_path)})
 
     for found_path, text in _walk_strings(data):
         lowered = text.lower()
