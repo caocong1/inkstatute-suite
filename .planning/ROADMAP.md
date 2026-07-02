@@ -46,11 +46,17 @@ v1.3 turns the v1.2 memory foundation into a production-capable native memory lo
   5. Existing in-memory tests still pass, and the durable store can be used without changing `RunRuntime` or WeCom channel contracts.
 
 **Plans**: 3 plans
-
 Plans:
+**Wave 1**
 
 - [ ] 20-01-PLAN.md — SQLiteMemoryStore durable core
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 20-02-PLAN.md — Durable query, retention, export, and adapter conformance
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 20-03-PLAN.md — Phase 20 contract fixture and validation sign-off
 
 ### Phase 21: Rolling Summary Pipeline
