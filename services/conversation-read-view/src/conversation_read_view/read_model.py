@@ -6,6 +6,8 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from platform_contract.utils import coerce_str
+
 from .models import (
     ConversationTurnView,
     ConversationView,
@@ -50,7 +52,7 @@ class ContractLogReadModel:
 
         for record in normalized:
             event = scrub_contract_payload(record.event)
-            turn_id = _string(event.get("turn_id"))
+            turn_id = coerce_str(event.get("turn_id"))
             if turn_id is None:
                 issues.append(
                     ReadModelIssue(
@@ -95,7 +97,7 @@ class ContractLogReadModel:
             ]
             event_refs.extend(_event_reference(record) for record, _ in feedback_by_turn.get(turn_id, []))
 
-            conversation_id = _string(agent_turn.get("conversation_id")) or "unknown-conversation"
+            conversation_id = coerce_str(agent_turn.get("conversation_id")) or "unknown-conversation"
             turn_view = ConversationTurnView(
                 turn_id=turn_id,
                 conversation_id=conversation_id,
@@ -114,9 +116,9 @@ class ContractLogReadModel:
             tasks[task_id] = task_view
             tasks[turn_id] = task_view
 
-            trace_id = _string((execution_trace or {}).get("trace_id"))
+            trace_id = coerce_str((execution_trace or {}).get("trace_id"))
             if trace_id is None and isinstance((agent_result or {}).get("metadata"), Mapping):
-                trace_id = _string(agent_result["metadata"].get("trace_id"))  # type: ignore[index]
+                trace_id = coerce_str(agent_result["metadata"].get("trace_id"))  # type: ignore[index]
             if trace_id is not None:
                 trace_to_task_id[trace_id] = task_id
 
@@ -170,7 +172,7 @@ def _coerce_record(record: Any) -> _Record:
             ingested_at=str(record.get("ingested_at", "")),
             seq=_int(record.get("seq")),
             event=dict(record["event"]),
-            source_path=_string(record.get("source_path")),
+            source_path=coerce_str(record.get("source_path")),
         )
 
     return _Record(
@@ -208,7 +210,7 @@ def _task_id_for(
     ):
         metadata = event.get("metadata") if isinstance(event, Mapping) else None
         if isinstance(metadata, Mapping):
-            task_id = _string(metadata.get("task_id"))
+            task_id = coerce_str(metadata.get("task_id"))
             if task_id is not None:
                 return task_id, source_name
     return turn_id, "turn_id"
@@ -238,12 +240,6 @@ def _event_reference(record: _Record) -> EventReference:
         source_path=record.source_path,
     )
 
-
-def _string(value: Any) -> str | None:
-    if value is None:
-        return None
-    text = str(value)
-    return text if text else None
 
 
 def _int(value: Any) -> int:

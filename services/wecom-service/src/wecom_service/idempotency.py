@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
 from typing import Any, Mapping
+
+from platform_contract.utils import coerce_str, sha256_short
 
 
 def wecom_idempotency_key(callback: Mapping[str, Any]) -> str:
@@ -15,30 +16,19 @@ def wecom_idempotency_key(callback: Mapping[str, Any]) -> str:
         ("feedback", callback.get("feedback_id")),
     )
     for field_name, value in stable_fields:
-        text = _string(value)
+        text = coerce_str(value)
         if text is not None:
-            return f"wecom:{field_name}:{_digest(text)}"
+            return f"wecom:{field_name}:{sha256_short(text, length=24)}"
 
     fallback_parts = (
-        _string(callback.get("channel")) or "wecom",
-        _string(callback.get("user_id") or callback.get("FromUserName")) or "unknown-user",
-        _string(callback.get("conversation_id") or callback.get("chat_id") or callback.get("ChatId"))
+        coerce_str(callback.get("channel")) or "wecom",
+        coerce_str(callback.get("user_id") or callback.get("FromUserName")) or "unknown-user",
+        coerce_str(callback.get("conversation_id") or callback.get("chat_id") or callback.get("ChatId"))
         or "unknown-conversation",
-        _string(callback.get("created_at") or callback.get("CreateTime")) or "unknown-time",
-        _string(callback.get("event_type") or callback.get("MsgType") or callback.get("Event")) or "unknown-event",
+        coerce_str(callback.get("created_at") or callback.get("CreateTime")) or "unknown-time",
+        coerce_str(callback.get("event_type") or callback.get("MsgType") or callback.get("Event")) or "unknown-event",
     )
-    return f"wecom:fallback:{_digest(':'.join(fallback_parts))}"
-
-
-def _digest(value: str) -> str:
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:24]
-
-
-def _string(value: Any) -> str | None:
-    if value is None:
-        return None
-    text = str(value).strip()
-    return text if text else None
+    return f"wecom:fallback:{sha256_short(':'.join(fallback_parts), length=24)}"
 
 
 __all__ = ["wecom_idempotency_key"]

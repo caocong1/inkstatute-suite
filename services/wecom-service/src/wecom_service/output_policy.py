@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import re
 from typing import Any
+
+from platform_contract.utils import sha256_short
 
 from .owned_notices import build_owned_notice
 
@@ -93,7 +94,7 @@ def _audit(text: str, *, rule: str) -> dict[str, Any]:
     return {
         "policy": "inkstatute_wecom_output_boundary",
         "rule": rule,
-        "input_sha256_16": hashlib.sha256(text.encode("utf-8")).hexdigest()[:16],
+        "input_sha256_16": sha256_short(text),
         "input_length": len(text),
         "privacy": "no_original_text_stored",
     }

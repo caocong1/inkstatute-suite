@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from platform_contract.utils import format_timestamp, json_clone
+
 
 @dataclass(frozen=True)
 class ContractLogRecord:
@@ -45,13 +47,13 @@ class ContractEventWriter:
         occurred_at: str | None = None,
         ingested_at: str | None = None,
     ) -> ContractLogRecord:
-        now = _timestamp(self._clock() if self._clock else datetime.now(timezone.utc))
+        now = format_timestamp(self._clock() if self._clock else datetime.now(timezone.utc))
         record = ContractLogRecord(
             event_key=event_key,
             occurred_at=occurred_at or now,
             ingested_at=ingested_at or now,
             seq=self._next_seq,
-            event=_json_clone(event),
+            event=json_clone(event),
         )
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("a", encoding="utf-8") as handle:
@@ -66,16 +68,3 @@ class ContractEventWriter:
     ) -> list[ContractLogRecord]:
         items = events.items() if isinstance(events, Mapping) else events
         return [self.append(event_key, event) for event_key, event in items]
-
-
-def _timestamp(value: datetime | str) -> str:
-    if isinstance(value, datetime):
-        normalized = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-        return normalized.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-    if isinstance(value, str) and value.endswith("+00:00"):
-        return value[:-6] + "Z"
-    return str(value)
-
-
-def _json_clone(value: Mapping[str, Any]) -> dict[str, Any]:
-    return json.loads(json.dumps(value, ensure_ascii=False, sort_keys=True))
