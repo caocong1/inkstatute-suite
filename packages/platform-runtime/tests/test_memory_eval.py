@@ -19,6 +19,7 @@ from platform_runtime.memory_eval import (
     _collect_hard_gate_failures,
     _synthetic_record,
 )
+from platform_runtime.sqlite_memory import SQLiteMemoryStore
 
 FIXED_NOW = "2026-07-02T16:00:00+00:00"
 
@@ -186,6 +187,65 @@ class MemoryEvalReportTests(unittest.TestCase):
         ]
         score = MemoryEvalReport.compute_baseline(results)
         self.assertAlmostEqual(score, 2 / 3)
+
+
+class MemoryEvalSQLiteBaselineTests(unittest.TestCase):
+    """EVAL-02: SQLite durable baseline and export evidence."""
+
+    def make_runner(self) -> MemoryEvalRunner:
+        return MemoryEvalRunner(
+            memory_store_factory=lambda: SQLiteMemoryStore(clock=lambda: FIXED_NOW),
+            clock=lambda: FIXED_NOW,
+        )
+
+    def test_sqlite_baseline_score_is_perfect(self) -> None:
+        """SQLite-backed eval passes all six scenarios and hard gates."""
+        runner = self.make_runner()
+        report = runner.run()
+        self.assertAlmostEqual(report.baseline_score, 1.0)
+        report.assert_gates()
+
+    def test_sqlite_deletion_and_export_has_evidence(self) -> None:
+        """Durable store deletion/export scenario includes export evidence."""
+        runner = self.make_runner()
+        report = runner.run()
+        result = next(
+            r for r in report.results if r.scenario == "deletion_and_export"
+        )
+        self.assertTrue(result.passed, msg=result.notes)
+        self.assertTrue(result.deletion_correctness)
+        self.assertTrue(result.export_evidence_present)
+        self.assertGreaterEqual(result.export_record_count, 1)
+
+    def test_deleted_record_absent_from_recall_but_present_in_export(self) -> None:
+        """Deleted record is not recalled but appears in export evidence."""
+        runner = self.make_runner()
+        report = runner.run()
+        result = next(
+            r for r in report.results if r.scenario == "deletion_and_export"
+        )
+        self.assertTrue(result.passed, msg=result.notes)
+        self.assertIn("export evidence includes deleted record", result.notes)
+
+    def test_sqlite_results_have_source_traceability_and_privacy(self) -> None:
+        """Every SQLite-backed result reports traceability and privacy."""
+        runner = self.make_runner()
+        report = runner.run()
+        for r in report.results:
+            with self.subTest(scenario=r.scenario):
+                self.assertTrue(r.source_traceability, f"{r.scenario}: source_traceability=False")
+                self.assertTrue(r.privacy_passed, f"{r.scenario}: privacy_passed=False")
+
+    def test_in_memory_default_has_no_export_evidence(self) -> None:
+        """Fast in-memory default keeps export evidence fields empty."""
+        runner = make_runner()
+        report = runner.run()
+        result = next(
+            r for r in report.results if r.scenario == "deletion_and_export"
+        )
+        self.assertTrue(result.passed, msg=result.notes)
+        self.assertFalse(result.export_evidence_present)
+        self.assertEqual(result.export_record_count, 0)
 
 
 if __name__ == "__main__":

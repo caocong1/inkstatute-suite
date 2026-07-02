@@ -44,6 +44,8 @@ class MemoryEvalResult:
     cross_tenant_leaked: bool
     latency_ms: float | None = None
     context_size_tokens: int | None = None
+    export_evidence_present: bool = False
+    export_record_count: int = 0
     notes: str = ""
 
 
@@ -193,15 +195,41 @@ class MemoryEvalRunner:
         ))
         deleted_recalled = any(r.record.memory_id == "eval-delete-001" for r in results)
         deletion_correct = not deleted_recalled
+
+        export_evidence_present = False
+        export_record_count = 0
+        export_includes_deleted = False
+        if callable(getattr(store, "export_records", None)):
+            exported = store.export_records(MemoryQuery(
+                tenant_id=FIXED_EVAL_TENANT_A,
+                workspace_id=FIXED_EVAL_WORKSPACE,
+                now=now,
+            ))
+            export_record_count = len(exported)
+            export_evidence_present = export_record_count > 0
+            export_includes_deleted = any(
+                r.memory_id == "eval-delete-001" for r in exported
+            )
+
+        passed = deletion_correct and (not export_evidence_present or export_includes_deleted)
+        notes_parts = [f"deleted record not in results" if deletion_correct else "FAIL: deleted record recalled"]
+        if export_evidence_present:
+            if export_includes_deleted:
+                notes_parts.append(f"export evidence includes deleted record ({export_record_count} records)")
+            else:
+                notes_parts.append(f"FAIL: export evidence missing deleted record ({export_record_count} records)")
+                passed = False
         return MemoryEvalResult(
             scenario="deletion_and_export",
-            passed=deletion_correct,
-            relevance_score=1.0 if deletion_correct else 0.0,
+            passed=passed,
+            relevance_score=1.0 if passed else 0.0,
             source_traceability=True,
             deletion_correctness=deletion_correct,
             privacy_passed=_privacy_passed(results),
             cross_tenant_leaked=False,
-            notes="deleted record not in results" if deletion_correct else "FAIL: deleted record recalled",
+            export_evidence_present=export_evidence_present,
+            export_record_count=export_record_count,
+            notes="; ".join(notes_parts),
         )
 
     def _run_tenant_isolation(self) -> MemoryEvalResult:
