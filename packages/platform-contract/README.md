@@ -2,7 +2,7 @@
 
 `inkstatute-platform-contract` is the pure definition package for the InkStatute V2 platform contract layer.
 
-It exports JSON Schema files plus Python bindings for the five platform event contracts:
+It exports JSON Schema files plus Python bindings for the core platform event contracts:
 
 - `AgentTurn`
 - `AgentResult`
@@ -10,6 +10,10 @@ It exports JSON Schema files plus Python bindings for the five platform event co
 - `ExecutionTrace`
 - `RouteDecision`
 
+It also defines neutral runtime/resource contracts used by later V2 phases, including
+`Run`, `ChannelMessage`, `ChannelDelivery`, `MemoryRecord`, `MemoryCandidate`,
+`MemoryUse`, `ContextBundle`, and `RunInterrupt`.
+
 The package contains no Hermes imports, no service process, no persistence layer, and no network access. It is intended to be safe for downstream packages to import as a stable contract surface without starting or depending on Hermes runtime behavior.
 
-The contract is industry-neutral. Legal-specific fields must stay in `industry_context` or `metadata` containers rather than becoming top-level required platform fields.
+The contract is industry-neutral. Legal-specific fields must stay in `industry_context` or `metadata` containers rather than becoming top-level required platform fields. Memory and context contracts are reference-first: raw legal/customer payloads must stay outside contract events behind fields such as `source_refs`, `raw_payload_ref`, `summary_ref`, or `resume_state_ref`.

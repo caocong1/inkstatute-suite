@@ -27,11 +27,16 @@ class SelfCheckTests(unittest.TestCase):
                 "channel_delivery",
                 "channel_message",
                 "common",
+                "context_bundle",
                 "execution_trace",
                 "feedback_event",
+                "memory_candidate",
+                "memory_record",
+                "memory_use",
                 "route_decision",
                 "run",
                 "solution_package_manifest",
+                "run_interrupt",
             }
             <= set(self.schemas)
         )
@@ -41,6 +46,7 @@ class SelfCheckTests(unittest.TestCase):
             {
                 "legal-wecom-contract-review-001",
                 "non-legal-engineering-task-001",
+                "context-memory-foundation-001",
                 "platform-foundation-non-legal-run-001",
             },
         )

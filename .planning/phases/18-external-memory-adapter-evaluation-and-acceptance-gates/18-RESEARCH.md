@@ -64,11 +64,32 @@ Implication for InkStatute:
 - Episode/thread deletion semantics need careful mapping to InkStatute deletion/export expectations before use as an authoritative legal memory store.
 - Zep should not become the default legal production memory path in Phase 18.
 
+## Expanded Lawyer-Assistant Component Study
+
+Source checked locally on 2026-07-02:
+
+- `律师助理 Bot 的 Agent 记忆组件选型研究.md`
+
+Findings:
+
+- The study ranks Zep, Hindsight, OpenViking, mem0, and ReMe as the most relevant near-term candidates for a lawyer-assistant bot, with different roles rather than one universal winner.
+- Zep is strongest for enterprise graph memory, governance, cross-thread context, and right-to-be-forgotten style deletion, but still requires procurement, residency, deletion/export, and legal privacy review before live legal use.
+- Hindsight is positioned as a strong audit-focused candidate because of retain/recall/reflect behavior, hybrid retrieval, audit logs, and memory defense concepts; InkStatute should treat it as a future sanitized spike, not a default dependency.
+- OpenViking and ReMe represent file-oriented memory routes that are attractive for legal explainability, reviewability, export, and evidence-chain workflows; they need license, concurrency, permission, encryption, deletion, and operational review before team production use.
+- mem0 remains the fastest PoC candidate, but the study agrees it needs additional audit, deletion, encryption, and evidence-trace controls before legal production.
+- Letta, MemOS, memU, Second Me, and MetaMem remain watch-list or specialized candidates; they should not displace the Phase 18 default path.
+
+Implication for InkStatute:
+
+- Expand the Phase 18 recommendation beyond Mem0/Zep by naming Hindsight, OpenViking, and ReMe as explicit sanitized-spike candidates.
+- Keep platform-native memory as the current legal default because it already matches the v1.2 contract evidence, reference-first privacy rules, tenant scope checks, TTL/deletion metadata, and human-review gates.
+- Optimize the agent memory roadmap by splitting future work into three lanes: enterprise graph/audit memory (Zep or Hindsight), local file-auditable memory (OpenViking or ReMe), and quick PoC memory (mem0).
+
 ## Recommendation Direction Before Implementation
 
 - Keep platform-native memory as the default legal path for this milestone.
 - Add a provider-neutral adapter capability manifest and evaluation function.
-- Add synthetic Mem0/Zep-style manifest evidence and tests.
+- Add synthetic Mem0/Zep/Hindsight/OpenViking/ReMe-style manifest evidence and tests.
 - Final recommendation should distinguish:
   - `accepted_for_sanitized_spike`
   - `deferred_for_legal_production`

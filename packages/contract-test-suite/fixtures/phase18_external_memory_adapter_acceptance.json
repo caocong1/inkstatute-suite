@@ -116,6 +116,122 @@
           "live_legal_memory_gate"
         ],
         "blockers": []
+      },
+      {
+        "adapter_id": "hindsight-style-sanitized",
+        "provider": "hindsight",
+        "decision": "accepted_for_sanitized_spike",
+        "deployment_model": "self_hosted_or_cloud",
+        "source_refs": [
+          "https://hindsight.vectorize.io",
+          "https://github.com/vectorize-io/hindsight",
+          "律师助理 Bot 的 Agent 记忆组件选型研究.md"
+        ],
+        "supports_memory_records": true,
+        "supports_memory_candidates": false,
+        "supports_memory_uses": false,
+        "supports_ttl": false,
+        "supports_delete": true,
+        "supports_export": true,
+        "supports_tenant_isolation": true,
+        "supports_raw_payload_blocking": true,
+        "supports_human_review_gate": true,
+        "stores_raw_payloads_by_default": false,
+        "network_required": true,
+        "requires_secret_refs": true,
+        "sanitized_fixture_only": true,
+        "default_for_legal_memory": false,
+        "approved_for_live_legal_memory": false,
+        "required_gates": [
+          "privacy_review",
+          "tenant_isolation_evidence",
+          "deletion_export_evidence",
+          "data_residency_review",
+          "security_secret_review",
+          "human_review_policy",
+          "latency_relevance_eval",
+          "live_legal_memory_gate"
+        ],
+        "candidate_role": "audit_focused_recall_retain_reflect_spike",
+        "blockers": []
+      },
+      {
+        "adapter_id": "openviking-style-sanitized",
+        "provider": "openviking",
+        "decision": "accepted_for_sanitized_spike",
+        "deployment_model": "local_or_object_storage",
+        "source_refs": [
+          "https://openviking.ai",
+          "https://github.com/volcengine/OpenViking",
+          "律师助理 Bot 的 Agent 记忆组件选型研究.md"
+        ],
+        "supports_memory_records": true,
+        "supports_memory_candidates": false,
+        "supports_memory_uses": false,
+        "supports_ttl": false,
+        "supports_delete": false,
+        "supports_export": true,
+        "supports_tenant_isolation": true,
+        "supports_raw_payload_blocking": true,
+        "supports_human_review_gate": true,
+        "stores_raw_payloads_by_default": false,
+        "network_required": false,
+        "requires_secret_refs": false,
+        "sanitized_fixture_only": true,
+        "default_for_legal_memory": false,
+        "approved_for_live_legal_memory": false,
+        "required_gates": [
+          "privacy_review",
+          "tenant_isolation_evidence",
+          "deletion_export_evidence",
+          "data_residency_review",
+          "security_secret_review",
+          "human_review_policy",
+          "latency_relevance_eval",
+          "license_review",
+          "live_legal_memory_gate"
+        ],
+        "candidate_role": "local_file_context_spike",
+        "blockers": []
+      },
+      {
+        "adapter_id": "reme-style-sanitized",
+        "provider": "reme",
+        "decision": "accepted_for_sanitized_spike",
+        "deployment_model": "local_files",
+        "source_refs": [
+          "https://reme.agentscope.io",
+          "https://github.com/agentscope-ai/ReMe",
+          "律师助理 Bot 的 Agent 记忆组件选型研究.md"
+        ],
+        "supports_memory_records": true,
+        "supports_memory_candidates": false,
+        "supports_memory_uses": false,
+        "supports_ttl": false,
+        "supports_delete": true,
+        "supports_export": true,
+        "supports_tenant_isolation": true,
+        "supports_raw_payload_blocking": true,
+        "supports_human_review_gate": true,
+        "stores_raw_payloads_by_default": false,
+        "network_required": false,
+        "requires_secret_refs": false,
+        "sanitized_fixture_only": true,
+        "default_for_legal_memory": false,
+        "approved_for_live_legal_memory": false,
+        "required_gates": [
+          "privacy_review",
+          "tenant_isolation_evidence",
+          "deletion_export_evidence",
+          "data_residency_review",
+          "security_secret_review",
+          "human_review_policy",
+          "latency_relevance_eval",
+          "concurrency_permission_review",
+          "live_legal_memory_gate"
+        ],
+        "candidate_role": "human_auditable_markdown_memory_spike",
+        "blockers": []
       }
     ],
     "live_legal_memory_gates": [
@@ -181,10 +297,13 @@
         {
           "step_id": "step-phase18-manifest-evaluation",
           "state": "succeeded",
-          "adapter_refs": [
+        "adapter_refs": [
             "adapter://platform-native",
             "adapter://mem0-style-sanitized",
-            "adapter://zep-style-sanitized"
+            "adapter://zep-style-sanitized",
+            "adapter://hindsight-style-sanitized",
+            "adapter://openviking-style-sanitized",
+            "adapter://reme-style-sanitized"
           ],
           "raw_payload_ref": "fixture://phase18/trace/manifest-evaluation"
         }
@@ -260,7 +379,10 @@
         "adapter_evaluation_refs": [
           "adapter://platform-native",
           "adapter://mem0-style-sanitized",
-          "adapter://zep-style-sanitized"
+          "adapter://zep-style-sanitized",
+          "adapter://hindsight-style-sanitized",
+          "adapter://openviking-style-sanitized",
+          "adapter://reme-style-sanitized"
         ],
         "estimated_tokens": 390,
         "privacy": "refs_hashes_lengths_statuses_only"
@@ -279,7 +401,10 @@
         "source_refs": [
           "adapter://platform-native",
           "adapter://mem0-style-sanitized",
-          "adapter://zep-style-sanitized"
+          "adapter://zep-style-sanitized",
+          "adapter://hindsight-style-sanitized",
+          "adapter://openviking-style-sanitized",
+          "adapter://reme-style-sanitized"
         ],
         "summary": "Synthetic adapter gate decision summary.",
         "subject": "external_memory_adapter_acceptance",
@@ -304,7 +429,10 @@
         "status": "pending",
         "source_refs": [
           "adapter://mem0-style-sanitized",
-          "adapter://zep-style-sanitized"
+          "adapter://zep-style-sanitized",
+          "adapter://hindsight-style-sanitized",
+          "adapter://openviking-style-sanitized",
+          "adapter://reme-style-sanitized"
         ],
         "created_at": "2026-07-01T09:00:05Z",
         "proposed_scope": "workspace",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from enum import StrEnum
 import json
@@ -255,11 +255,21 @@ class WeComSessionRuntime:
             if decision.action == SessionResolutionAction.CONTINUE_SESSION
             else WeComSessionRuntimeAction.START_NEW_SESSION
         )
-        return WeComSessionRuntimeOutcome(
+        run = await self.runtime.create_run(_run_request_for_decision(run_request, decision=decision))
+        outcome = WeComSessionRuntimeOutcome(
             action=action,
             decision=decision,
-            evidence=_base_evidence(decision) | {"resume_attempted": False},
+            run_id=_run_id(run),
+            evidence=_base_evidence(decision)
+            | {
+                "resume_attempted": False,
+                "runtime_create_called": True,
+                "created_run_id": _run_id(run),
+            },
         )
+        if idempotency_key:
+            self._outcome_by_idempotency_key[idempotency_key] = outcome
+        return outcome
 
 
 def _validate_turn_scope(*, turn: Any, scope: SessionScope, run_request: RunRequest) -> None:
@@ -393,8 +403,63 @@ def _duplicate_evidence(
         "idempotency_key": idempotency_key,
         "resume_attempted": False,
         "runtime_resume_called": False,
+        "runtime_create_called": False,
         "duplicate_backend_submit_count": backend_submit_count,
     }
+
+
+def _run_request_for_decision(run_request: RunRequest, *, decision: SessionResolutionDecision) -> RunRequest:
+    return replace(
+        run_request,
+        session_id=decision.session_id,
+        metadata=_run_metadata_for_decision(run_request, decision=decision),
+    )
+
+
+def _run_metadata_for_decision(run_request: RunRequest, *, decision: SessionResolutionDecision) -> JsonObject:
+    existing = dict(run_request.metadata)
+    turn = run_request.turn
+    raw_payload_ref = decision.raw_payload_ref or _raw_payload_ref(turn)
+    raw_payload_refs = _append_unique(_metadata_sequence(existing.get("raw_payload_refs")), raw_payload_ref)
+    current_turn_ref = _string(existing.get("current_turn_ref")) or raw_payload_ref or f"turn://{turn.turn_id}"
+
+    return _safe_json(
+        {
+            **existing,
+            "source": "wecom_session_runtime",
+            "wecom_normalization": "already_normalized",
+            "session_command_required": False,
+            "ordinary_user_command_surface": "none",
+            "scope_isolation": "tenant_workspace_channel_user_bot_session_thread",
+            "session_resolution_decision_id": decision.decision_id,
+            "session_resolution_action": decision.action.value,
+            "session_resolution_reason": decision.reason,
+            "session_id": decision.session_id,
+            "current_turn_ref": current_turn_ref,
+            "raw_payload_ref": raw_payload_ref,
+            "raw_payload_refs": raw_payload_refs,
+            "privacy": "no_raw_payload_or_answer_text_stored",
+        }
+    )
+
+
+def _metadata_sequence(value: Any) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        text = _string(value)
+        return (text,) if text is not None else ()
+    if isinstance(value, list | tuple):
+        return tuple(text for item in value if (text := _string(item)) is not None)
+    text = _string(value)
+    return (text,) if text is not None else ()
+
+
+def _append_unique(values: tuple[str, ...], value: str | None) -> list[str]:
+    result = list(values)
+    if value is not None and value not in result:
+        result.append(value)
+    return result
 
 
 def _pending_record_for_scope(

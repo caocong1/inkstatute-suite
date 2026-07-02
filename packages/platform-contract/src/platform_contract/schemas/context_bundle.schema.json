@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/context_bundle.schema.json",
+  "title": "ContextBundle",
+  "description": "Bounded context package assembled for a backend run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "context_bundle_id",
+    "tenant_id",
+    "workspace_id",
+    "session_id",
+    "created_at",
+    "budget_tokens"
+  ],
+  "properties": {
+    "context_bundle_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "budget_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "recent_turn_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary_ref": {
+      "type": "string"
+    },
+    "active_task_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "memory_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "interrupt_id": {
+      "type": "string"
+    },
+    "trim_strategy": {
+      "type": "string"
+    },
+    "raw_payload_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

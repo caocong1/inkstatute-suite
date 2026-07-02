@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/run_interrupt.schema.json",
+  "title": "RunInterrupt",
+  "description": "Persisted waiting-for-user state for resumable backend or skill clarification.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "interrupt_id",
+    "run_id",
+    "session_id",
+    "status",
+    "reason",
+    "created_at",
+    "prompt_ref",
+    "resume_state_ref"
+  ],
+  "properties": {
+    "interrupt_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "waiting_for_user",
+        "resolved",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "reason": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "prompt_ref": {
+      "type": "string"
+    },
+    "resume_state_ref": {
+      "type": "string"
+    },
+    "expected_response_schema_ref": {
+      "type": "string"
+    },
+    "expires_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "resolved_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "resolved_turn_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

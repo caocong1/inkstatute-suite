@@ -168,6 +168,41 @@ class RouteMode(StrEnum):
     ZERO_MATCH = "zero_match"
 
 
+class MemoryScope(StrEnum):
+    SESSION = "session"
+    USER = "user"
+    WORKSPACE = "workspace"
+    TENANT = "tenant"
+
+
+class MemorySensitivity(StrEnum):
+    PUBLIC = "public"
+    INTERNAL = "internal"
+    CONFIDENTIAL = "confidential"
+    RESTRICTED = "restricted"
+
+
+class MemoryStatus(StrEnum):
+    CANDIDATE = "candidate"
+    ACTIVE = "active"
+    SUPPRESSED = "suppressed"
+    DELETED = "deleted"
+
+
+class MemoryCandidateStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    SUPPRESSED = "suppressed"
+
+
+class InterruptStatus(StrEnum):
+    WAITING_FOR_USER = "waiting_for_user"
+    RESOLVED = "resolved"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
 __all__ = [
     "AgentResultStatus",
     "ApprovalStatus",
@@ -181,6 +216,11 @@ __all__ = [
     "FeedbackSource",
     "FeedbackStatus",
     "LanguageRegister",
+    "InterruptStatus",
+    "MemoryCandidateStatus",
+    "MemoryScope",
+    "MemorySensitivity",
+    "MemoryStatus",
     "MessageType",
     "OutputFormat",
     "ReplyType",

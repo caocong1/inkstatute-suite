@@ -17,7 +17,12 @@ from .enums import (
     FeedbackEventType,
     FeedbackSource,
     FeedbackStatus,
+    InterruptStatus,
     LanguageRegister,
+    MemoryCandidateStatus,
+    MemoryScope,
+    MemorySensitivity,
+    MemoryStatus,
     MessageType,
     OutputFormat,
     ReplyType,
@@ -449,6 +454,105 @@ class ChannelBinding:
     metadata: JsonObject = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class MemoryRecord:
+    memory_id: str
+    tenant_id: str
+    workspace_id: str
+    scope: MemoryScope | str
+    status: MemoryStatus | str
+    sensitivity: MemorySensitivity | str
+    created_at: str
+    updated_at: str
+    source_refs: list[str]
+    summary: str | None = None
+    subject: str | None = None
+    related_user_id: str | None = None
+    session_id: str | None = None
+    raw_payload_ref: str | None = None
+    confidence: float | None = None
+    ttl_expires_at: str | None = None
+    deleted_at: str | None = None
+    deletion_reason: str | None = None
+    industry_context: JsonObject = field(default_factory=dict)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryCandidate:
+    candidate_id: str
+    tenant_id: str
+    workspace_id: str
+    status: MemoryCandidateStatus | str
+    source_refs: list[str]
+    created_at: str
+    proposed_scope: MemoryScope | str | None = None
+    proposed_sensitivity: MemorySensitivity | str | None = None
+    proposed_action: str | None = None
+    memory_id: str | None = None
+    proposed_record_ref: str | None = None
+    reason: str | None = None
+    confidence: float | None = None
+    requires_human_review: bool = True
+    raw_payload_ref: str | None = None
+    industry_context: JsonObject = field(default_factory=dict)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryUse:
+    use_id: str
+    memory_id: str
+    context_bundle_id: str
+    used_at: str
+    purpose: str
+    run_id: str | None = None
+    turn_id: str | None = None
+    relevance_score: float | None = None
+    policy_result: str | None = None
+    source_refs: list[str] = field(default_factory=list)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ContextBundle:
+    context_bundle_id: str
+    tenant_id: str
+    workspace_id: str
+    session_id: str
+    created_at: str
+    budget_tokens: int
+    run_id: str | None = None
+    turn_id: str | None = None
+    recent_turn_refs: list[str] = field(default_factory=list)
+    summary_ref: str | None = None
+    active_task_refs: list[str] = field(default_factory=list)
+    artifact_refs: list[str] = field(default_factory=list)
+    memory_refs: list[str] = field(default_factory=list)
+    interrupt_id: str | None = None
+    trim_strategy: str | None = None
+    raw_payload_refs: list[str] = field(default_factory=list)
+    industry_context: JsonObject = field(default_factory=dict)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class RunInterrupt:
+    interrupt_id: str
+    run_id: str
+    session_id: str
+    status: InterruptStatus | str
+    reason: str
+    created_at: str
+    prompt_ref: str
+    resume_state_ref: str
+    expected_response_schema_ref: str | None = None
+    expires_at: str | None = None
+    resolved_at: str | None = None
+    resolved_turn_id: str | None = None
+    metadata: JsonObject = field(default_factory=dict)
+
+
 __all__ = [
     "AgentResult",
     "AgentTurn",
@@ -463,10 +567,15 @@ __all__ = [
     "ErrorInfo",
     "ExecutionTrace",
     "FeedbackEvent",
+    "ContextBundle",
+    "MemoryCandidate",
+    "MemoryRecord",
+    "MemoryUse",
     "McpServerDescriptor",
     "NeutralSkillDescriptor",
     "OutputConstraints",
     "RouteDecision",
+    "RunInterrupt",
     "Run",
     "RunEvent",
     "RunStep",

@@ -45,9 +45,9 @@
 ### External Memory Adapter Evaluation
 
 - [x] **EXT-01**: The milestone compares platform-native memory against Mem0/Zep-style external memory systems for deployment, privacy, tenant isolation, deletion/export, latency, and adapter fit.
-- [ ] **EXT-02**: External memory stores can be represented behind a `MemoryStore` adapter contract and capability manifest without becoming the default legal path.
-- [ ] **EXT-03**: Any external adapter spike uses synthetic or sanitized fixtures only.
-- [ ] **EXT-04**: The final recommendation documents whether Mem0, Zep, another store, or platform-native storage should be used for later production work.
+- [x] **EXT-02**: External memory stores can be represented behind a `MemoryStore` adapter contract and capability manifest without becoming the default legal path.
+- [x] **EXT-03**: Any external adapter spike uses synthetic or sanitized fixtures only.
+- [x] **EXT-04**: The final recommendation documents whether Mem0, Zep, another store, or platform-native storage should be used for later production work.
 
 ## Deferred Beyond v1.2
 
@@ -92,9 +92,9 @@
 | FBK-03 | Phase 17 | Complete |
 | FBK-04 | Phase 17 | Complete |
 | EXT-01 | Phase 14 | Complete |
-| EXT-02 | Phase 18 | Pending |
-| EXT-03 | Phase 18 | Pending |
-| EXT-04 | Phase 18 | Pending |
+| EXT-02 | Phase 18 | Complete |
+| EXT-03 | Phase 18 | Complete |
+| EXT-04 | Phase 18 | Complete |
 
 **Coverage:**
 
@@ -104,4 +104,4 @@
 
 ---
 *Requirements defined: 2026-06-30*
-*Last updated: 2026-06-30 after v1.2 milestone initialization*
+*Last updated: 2026-07-02 after Phase 18 recommendation and acceptance gates*

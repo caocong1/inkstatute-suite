@@ -21,6 +21,7 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 - Existing Hermes router, skills, gates, MCP tools, model gateway, and session storage remain the operational baseline.
 - Phase 3 Hermes integration spike is complete: hook ordering is source-confirmed, AgentTurn strategy is documented, identifier/state/privacy/safety rules are defined, and non-happy-path fixtures validate through the contract-test-suite.
 - Phase 4 Hermes shadow event layer is complete: repo-owned hook artifact, mapper, JSONL writer, and event-stream replay fixtures validate without live Hermes mutation.
+- v1.2 conversational context and memory foundation is complete: ordinary WeCom continuation/start flows reach runtime run creation, pending clarification resumes remain interrupt-based, bounded context/memory metadata is reference-first, and external memory providers remain optional sanitized-spike candidates.
 
 ### Active
 
@@ -96,15 +97,32 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 | Keep Hermes one-shot as the default backend lane after Phase 11 | The `/v1/runs` parity spike is implemented but intentionally reports route mismatch evidence; API runs remain default-off behind `INKSTATUTE_HERMES_API_RUNS_ENABLED` until parity and later human gates approve | Verified in Phase 11 on 2026-06-29 |
 | Phase 12 channel/client surface is default-off, remote/thin, and not live acceptance across WeCom wrapper, Web/SSE, platform API, SDK, and web chat | The platform channel lane is an embeddable building block, not a production UI; live cutover remains a separate human gate | Verified in Phase 12 on 2026-06-29 |
 | Web chat renderer emits DOM-free RenderRecord objects, not HTML strings; host view layer maps records to framework primitives | Eliminates XSS-via-string-concatenation class; forces hosts to use React/Preact/lit-html/raw DOM/server template primitives | Decided 2026-06-29 |
+| Start milestone v1.2 "Conversational Context and Memory Foundation" before live promotion | Ordinary users must be able to talk continuously without agent commands, while skill clarification, feedback, and memory stay bounded and privacy-safe | Decided 2026-06-30 |
+| Make session continuation automatic rather than user-command-driven | Target users do not understand agent sessions; WeCom should infer whether to continue, resume, or start a new task | Decided 2026-06-30 |
+| Build platform-native memory first and evaluate Mem0/Zep as optional adapters | Legal privacy, tenant isolation, deletion/export, and raw-payload rules must be proven before external memory services enter production | Decided 2026-06-30 |
+| Treat memory indexes and summaries as derived/cacheable state, not the authority | Contract logs and reference stores remain the audit source; memory is context assembly support | Decided 2026-06-30 |
+| Model skill clarification as runtime interrupts | The one-shot conversation path loses ask-user flows; pausing and resuming runs preserves skill questions across user replies | Decided 2026-06-30 |
+| Keep platform-native memory as the lawyer-assistant default and route Zep/Hindsight, OpenViking/ReMe, and Mem0 through future sanitized spikes | The component study favors different providers for graph/audit, file-auditable, and PoC use cases, but live legal memory still needs privacy, deletion/export, residency, security, review, benchmark, and license gates | Decided 2026-07-02 |
 
-## Next Milestone — Platform Foundation (v1.1)
+## Last Completed Milestone: v1.2 Conversational Context and Memory Foundation
 
-The active development focus is now milestone **v1.1 (Platform Foundation)**, GSD **Phase 09–13**, a refactor that extracts an InkStatute-owned platform core (channels, backends, solutions, runtime) beside the running lawyer bot (strangler-fig; new lanes default-OFF until parity).
+**Shipped:** 2026-07-02
 
-- North Star architecture: `.planning/drafts/agent-platform-north-star.md`
-- Execution plan: `.planning/drafts/agent-platformization-plan-v5.md`
-- The V1.0 lawyer trial (Phase 8) remains a parallel human gate and is not a dependency of Phase 09.
-- V2 PRD remains source of truth only for not-regressing existing lawyer-bot behavior; the North Star doc is authoritative for platform shape.
+**Goal achieved:** Ordinary WeCom users can continuously talk to InkStatute without knowing agent/session commands, while the platform provides bounded short-term context, privacy-safe long-term memory, recoverable skill clarification, and feedback-informed context assembly.
+
+**Target features:**
+- Automatic session/thread resolution for WeCom and platform channels, including active task and pending clarification recovery.
+- Bounded short-term context assembly with recent turns, rolling summaries, artifacts, feedback corrections, and deterministic trimming.
+- Backend-neutral memory contracts and a platform-native `MemoryStore` with privacy, TTL, source refs, confidence, and deletion metadata.
+- Runtime interrupt/resume flow for skill clarification and waiting-for-user states.
+- Feedback learning policy that feeds corrections into current context and creates human-reviewed memory/routing candidates.
+- Mem0/Zep-style external memory adapter research and synthetic adapter spike, without making either mandatory for legal production.
+
+**Artifacts:**
+- Requirements archive: `.planning/milestones/v1.2-REQUIREMENTS.md`
+- Roadmap archive: `.planning/milestones/v1.2-ROADMAP.md`
+- Audit archive: `.planning/milestones/v1.2-MILESTONE-AUDIT.md`
+- Research summary: `.planning/research/SUMMARY.md`
 
 ## Current State
 
@@ -127,12 +145,31 @@ v1.1 delivered the four-contract North Star platform architecture with 5 phases,
 
 **Archive:** [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) | [v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md)
 
+**Milestone v1.2 — Conversational Context and Memory Foundation: SHIPPED (2026-07-02)**
+
+v1.2 delivered automatic WeCom session continuity, interrupt resume, bounded short-term context, platform-native memory, feedback-informed context/candidate behavior, external-memory adapter evaluation, and Phase 19 closure of the runtime E2E wiring gap. Audit status: `tech_debt` accepted, with no remaining critical requirement, integration, or flow blockers.
+
+**What shipped:**
+- Backend-neutral memory/context/interrupt schemas and sanitized fixture coverage
+- Scoped session resolver and interrupt lifecycle/runtime resume support
+- Deterministic short-term context assembly with budget trimming and protected refs
+- Platform-native memory store plus feedback learning policy with human review gates
+- Sanitized external memory adapter contract, fixture evidence, and recommendation
+- WeCom session runtime create-run handoff plus pure ingress orchestration boundary
+
+**Accepted v1.2 debt:**
+- Missing/partial Nyquist validation artifacts for Phases 14, 15, 16, 18, and 19
+- Service-level feedback-to-memory automation is future integration work
+- Live WeCom UAT and five-workday lawyer trial remain human gates
+
+**Archive:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md) | [v1.2-MILESTONE-AUDIT.md](milestones/v1.2-MILESTONE-AUDIT.md)
+
 ## Next Milestone Goals
 
-Placeholder — define via `/gsd-new-milestone`.
+Current focus is defining the next milestone.
 
 Potential directions:
-- Live cutover of v1.1 platform lanes (human gate)
+- Live cutover of v1.1/v1.2 platform lanes (human gate)
 - Phase 8 lawyer trial acceptance (human gate)
 - Codex adapter prototype (M2 scope)
 - Direct provider-model adapter prototype (M2 scope)
@@ -156,4 +193,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-06-30 after v1.1 milestone archive (Platform Foundation shipped)*
+*Last updated: 2026-07-02 after v1.2 milestone archive*

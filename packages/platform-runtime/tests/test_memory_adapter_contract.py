@@ -115,6 +115,110 @@ def zep_style_manifest() -> MemoryStoreCapabilityManifest:
     )
 
 
+def hindsight_style_manifest() -> MemoryStoreCapabilityManifest:
+    return manifest(
+        adapter_id="hindsight-style-sanitized",
+        provider="hindsight",
+        deployment_model="self_hosted_or_cloud",
+        source_refs=(
+            "https://hindsight.vectorize.io",
+            "https://github.com/vectorize-io/hindsight",
+            "律师助理 Bot 的 Agent 记忆组件选型研究.md",
+        ),
+        supports_memory_candidates=False,
+        supports_memory_uses=False,
+        supports_ttl=False,
+        supports_delete=True,
+        supports_export=True,
+        supports_tenant_isolation=True,
+        supports_metadata_filters=True,
+        supports_raw_payload_blocking=True,
+        supports_human_review_gate=True,
+        network_required=True,
+        requires_secrets=True,
+        sanitized_fixture_only=True,
+        default_for_legal_memory=False,
+        approved_for_live_legal_memory=False,
+        data_residency="requires_review",
+        deletion_model="provider_delete_plus_adapter_tombstone_required",
+        export_model="provider_export_plus_contract_memory_export_required",
+        metadata={
+            "privacy": "sanitized_fixture_only",
+            "candidate_role": "audit_focused_recall_retain_reflect_spike",
+        },
+    )
+
+
+def openviking_style_manifest() -> MemoryStoreCapabilityManifest:
+    return manifest(
+        adapter_id="openviking-style-sanitized",
+        provider="openviking",
+        deployment_model="local_or_object_storage",
+        source_refs=(
+            "https://openviking.ai",
+            "https://github.com/volcengine/OpenViking",
+            "律师助理 Bot 的 Agent 记忆组件选型研究.md",
+        ),
+        supports_memory_candidates=False,
+        supports_memory_uses=False,
+        supports_ttl=False,
+        supports_delete=False,
+        supports_export=True,
+        supports_tenant_isolation=True,
+        supports_metadata_filters=True,
+        supports_raw_payload_blocking=True,
+        supports_human_review_gate=True,
+        network_required=False,
+        requires_secrets=False,
+        sanitized_fixture_only=True,
+        default_for_legal_memory=False,
+        approved_for_live_legal_memory=False,
+        data_residency="adapter_controlled",
+        deletion_model="requires_fine_grained_delete_review",
+        export_model="snapshot_or_pack_export_requires_contract_mapping",
+        metadata={
+            "privacy": "sanitized_fixture_only",
+            "candidate_role": "local_file_context_spike",
+            "license_gate": "required_before_commercial_distribution",
+        },
+    )
+
+
+def reme_style_manifest() -> MemoryStoreCapabilityManifest:
+    return manifest(
+        adapter_id="reme-style-sanitized",
+        provider="reme",
+        deployment_model="local_files",
+        source_refs=(
+            "https://reme.agentscope.io",
+            "https://github.com/agentscope-ai/ReMe",
+            "律师助理 Bot 的 Agent 记忆组件选型研究.md",
+        ),
+        supports_memory_candidates=False,
+        supports_memory_uses=False,
+        supports_ttl=False,
+        supports_delete=True,
+        supports_export=True,
+        supports_tenant_isolation=True,
+        supports_metadata_filters=True,
+        supports_raw_payload_blocking=True,
+        supports_human_review_gate=True,
+        network_required=False,
+        requires_secrets=False,
+        sanitized_fixture_only=True,
+        default_for_legal_memory=False,
+        approved_for_live_legal_memory=False,
+        data_residency="adapter_controlled",
+        deletion_model="file_delete_plus_adapter_tombstone_required",
+        export_model="markdown_tree_export_requires_contract_mapping",
+        metadata={
+            "privacy": "sanitized_fixture_only",
+            "candidate_role": "human_auditable_markdown_memory_spike",
+            "concurrency_gate": "required_before_team_use",
+        },
+    )
+
+
 def make_memory() -> MemoryRecord:
     return MemoryRecord(
         memory_id="memory-adapter-001",
@@ -145,7 +249,14 @@ class MemoryAdapterContractTests(unittest.TestCase):
         self.assertTrue(evaluation.is_live_legal_ready)
 
     def test_mem0_and_zep_style_manifests_are_sanitized_spike_only(self) -> None:
-        for candidate in (mem0_style_manifest(), zep_style_manifest()):
+        candidates = (
+            mem0_style_manifest(),
+            zep_style_manifest(),
+            hindsight_style_manifest(),
+            openviking_style_manifest(),
+            reme_style_manifest(),
+        )
+        for candidate in candidates:
             with self.subTest(provider=candidate.provider):
                 evaluation = evaluate_memory_adapter_manifest(candidate)
 
@@ -153,6 +264,26 @@ class MemoryAdapterContractTests(unittest.TestCase):
                 self.assertFalse(evaluation.is_live_legal_ready)
                 self.assertIn("live_legal_memory_gate", evaluation.required_gates)
                 self.assertFalse(candidate.default_for_legal_memory)
+
+    def test_lawyer_memory_research_candidates_keep_provider_specific_gates(self) -> None:
+        candidates = {
+            "hindsight": hindsight_style_manifest(),
+            "openviking": openviking_style_manifest(),
+            "reme": reme_style_manifest(),
+        }
+
+        self.assertEqual(
+            candidates["hindsight"].metadata["candidate_role"],
+            "audit_focused_recall_retain_reflect_spike",
+        )
+        self.assertIn(
+            "license_gate",
+            candidates["openviking"].metadata,
+        )
+        self.assertIn(
+            "concurrency_gate",
+            candidates["reme"].metadata,
+        )
 
     def test_external_default_for_legal_without_approval_is_rejected(self) -> None:
         candidate = replace(

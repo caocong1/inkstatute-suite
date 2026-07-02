@@ -27,11 +27,16 @@ OPTIONAL_OBJECT_SCHEMA_BY_KEY = {
     "channel_message": "channel_message",
     "run": "run",
     "channel_delivery": "channel_delivery",
+    "context_bundle": "context_bundle",
+    "run_interrupt": "run_interrupt",
 }
 OPTIONAL_ARRAY_SCHEMA_BY_KEY = {
     "run_steps": "run_step",
     "run_events": "run_event",
     "artifact_records": "artifact_record",
+    "memory_records": "memory_record",
+    "memory_candidates": "memory_candidate",
+    "memory_uses": "memory_use",
 }
 KNOWN_FIXTURE_KEYS = (
     set(EVENT_SCHEMA_BY_KEY)

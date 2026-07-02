@@ -12,6 +12,7 @@ from .active_task_router import (
     route_active_task_turn,
 )
 from .idempotency import wecom_idempotency_key
+from .ingress_runtime import WeComRuntimeIngress
 from .normalization import normalize_wecom_feedback_callback, normalize_wecom_turn
 from .delivery_guard import DeliveryCompletionAssessment, assess_delivery_completion
 from .output_policy import OutputPolicyDecision, apply_output_policy
@@ -71,6 +72,7 @@ __all__ = [
     "WeComSessionRuntime",
     "WeComSessionRuntimeAction",
     "WeComSessionRuntimeOutcome",
+    "WeComRuntimeIngress",
     "ack_response",
     "apply_output_policy",
     "append_runtime_audit",

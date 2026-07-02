@@ -1,38 +1,34 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.2
-milestone_name: — Conversational Context and Memory Foundation
-status: executing
-stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-07-01T15:57:51.753Z"
-last_activity: 2026-07-01 -- Phase 18 Plan 18-01 complete
+milestone_name: Conversational Context and Memory Foundation
+status: Awaiting next milestone
+stopped_at: Milestone v1.2 archived
+last_updated: "2026-07-02T10:34:25+08:00"
+last_activity: 2026-07-02 — Milestone v1.2 completed and archived
 progress:
-  total_phases: 14
-  completed_phases: 13
-  total_plans: 45
-  completed_plans: 43
-  percent: 93
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 16
+  completed_plans: 16
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-30)
+See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 18 - External Memory Adapter Evaluation and Acceptance Gates
+**Current focus:** Await next milestone definition; v1.2 is archived with accepted validation/operational tech debt.
 
 ## Current Position
 
-Milestone: v1.2 — Conversational Context and Memory Foundation
-Phase: 18
-Plan: 18-02
-Status: Executing
-Next action: Execute `18-02-PLAN.md`
-Last activity: 2026-07-01 -- Phase 18 Plan 18-01 complete
-
-Progress (v1.2): [░░░░░░░░░░] 0% of milestone phases (0/5)
+Phase: Milestone v1.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-02 — Milestone v1.2 completed and archived
 
 ### Parallel Human Gate (v1.0)
 
@@ -121,6 +117,10 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 15 P03 | 5h20m | 2 tasks | 6 files |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 19 added: Close gap: v1.2 WeCom session runtime E2E wiring
 
 ### Decisions
 
@@ -232,7 +232,7 @@ None yet.
 
 ## Deferred Items
 
-Items acknowledged and carried forward from previous milestone close:
+Items acknowledged and carried forward from milestone closes:
 
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
@@ -241,15 +241,24 @@ Items acknowledged and carried forward from previous milestone close:
 | Human gate | Phase 5 live WeCom UAT (fixture-satisfied, operator confirmation needed) | Deferred (human gate) | v1.1 archive |
 | v1.2 follow-up | Production external memory service adoption (Mem0/Zep or similar) | Deferred until adapter evaluation and legal privacy gates pass | v1.2 initialization |
 | v1.2 follow-up | User-facing memory management UI | Deferred beyond v1.2 | v1.2 initialization |
+| Human gate | Phase 08 UAT artifact audit item (08-UAT.md passed; live lawyer trial still human-gated) | Acknowledged at close | v1.2 archive |
+| Human gate | Phase 05 verification item (05-VERIFICATION.md human_needed for live WeCom UAT) | Deferred (operator/live confirmation) | v1.2 archive |
+| Validation debt | Missing/partial Nyquist validation artifacts for phases 14, 15, 16, 18, and 19 | Deferred; run `$gsd-validate-phase` per phase when needed | v1.2 archive |
+| Operational follow-up | Service-level feedback-to-memory-to-next-context automation | Deferred to future integration phase | v1.2 archive |
 
 ## Session Continuity
 
-Last session: 2026-07-01T15:57:51.743Z
-Stopped at: Completed 18-01-PLAN.md
+Last session: 2026-07-02T10:34:25+08:00
+Stopped at: Milestone v1.2 completed and archived
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/ROADMAP.md
-Requirements: .planning/REQUIREMENTS.md
+Requirements archive: .planning/milestones/v1.2-REQUIREMENTS.md
 Research summary: .planning/research/SUMMARY.md
 Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
 v1.1 archive: .planning/milestones/v1.1-ROADMAP.md
+v1.2 archive: .planning/milestones/v1.2-ROADMAP.md
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

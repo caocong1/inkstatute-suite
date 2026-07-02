@@ -32,7 +32,19 @@ FIXED_NOW = "2026-06-29T03:00:00Z"
 @dataclass(slots=True)
 class RecordingRuntime:
     calls: list[tuple[str, SessionScope, RunRequest, str | None]] = field(default_factory=list)
+    created: list[RunRequest] = field(default_factory=list)
     interrupt_store: InMemoryInterruptStore | None = None
+
+    async def create_run(self, req: RunRequest) -> Run:
+        self.created.append(req)
+        run_id = f"created-{len(self.created):03d}"
+        return Run(
+            run_id=run_id,
+            status=AsyncTaskState.RUNNING,
+            turn_id=req.turn.turn_id,
+            solution_id=req.solution.solution_id,
+            metadata={"session_id": req.session_id},
+        )
 
     async def resume_interrupt(
         self,
@@ -97,6 +109,7 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(outcome.decision.interrupt_id, pending.event.interrupt_id)
         self.assertEqual(outcome.run_id, "resumed-001")
         self.assertEqual(len(runtime.calls), 1)
+        self.assertEqual(runtime.created, [])
         self.assertEqual(runtime.calls[0][0], pending.event.interrupt_id)
         self.assertFalse(outcome.evidence["session_command_required"])
         self.assertEqual(outcome.evidence["ordinary_user_command_surface"], "none")
@@ -124,6 +137,8 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(outcome.action, WeComSessionRuntimeAction.START_NEW_SESSION)
         self.assertEqual(runtime.calls, [])
+        self.assertEqual(len(runtime.created), 1)
+        self.assertEqual(outcome.run_id, "created-001")
         self.assertEqual(outcome.evidence["scope_isolation"], "tenant_workspace_channel_user_bot_session_thread")
 
     async def test_mismatched_turn_and_scope_is_rejected_before_resume(self) -> None:
@@ -151,7 +166,7 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_active_task_precedence_routes_fast_control_plane(self) -> None:
         runtime = RecordingRuntime()
-        helper = WeComSessionRuntime(runtime=runtime, id_factory=FakeIdFactory())
+        helper = WeComSessionRuntime(runtime=runtime, clock=FakeRuntimeClock(start=FIXED_NOW), id_factory=FakeIdFactory())
 
         outcome = await helper.handle_turn(
             turn=self.turn("turn-followup-001", "现在进度怎么样了？"),
@@ -166,7 +181,82 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(outcome.active_task_route.route, ActiveTaskRoute.STATUS_REQUEST)
         self.assertEqual(outcome.active_task_route.reason, "status_query_answered_by_fast_control_plane")
         self.assertEqual(runtime.calls, [])
+        self.assertEqual(runtime.created, [])
         self.assertEqual(outcome.evidence["active_task_route"], "status_request")
+
+    async def test_continue_session_submits_create_run_with_context_refs(self) -> None:
+        runtime = RecordingRuntime()
+        helper = WeComSessionRuntime(runtime=runtime, clock=FakeRuntimeClock(start=FIXED_NOW), id_factory=FakeIdFactory())
+
+        outcome = await helper.handle_turn(
+            turn=self.turn("turn-continue-001", "继续刚才的问题"),
+            scope=self.scope,
+            run_request=self.run_request_with_metadata(
+                "turn-continue-001",
+                "继续刚才的问题",
+                metadata={
+                    "recent_turn_refs": ("fixture://turns/recent-001",),
+                    "memory_refs": ("fixture://memory/approved-001",),
+                    "feedback_correction_refs": ("fixture://feedback/correction-001",),
+                    "artifact_refs": ("fixture://artifacts/prior.docx",),
+                    "output_policy_ref": "fixture://output-policy/lawyer-assistant",
+                },
+            ),
+            recent_session=self.recent_session(),
+            idempotency_key="idem-continue-001",
+        )
+
+        self.assertEqual(outcome.action, WeComSessionRuntimeAction.CONTINUE_SESSION)
+        self.assertEqual(outcome.run_id, "created-001")
+        self.assertEqual(runtime.calls, [])
+        self.assertEqual(len(runtime.created), 1)
+        created = runtime.created[0]
+        self.assertEqual(created.session_id, "session-recent-001")
+        self.assertEqual(created.metadata["source"], "wecom_session_runtime")
+        self.assertEqual(created.metadata["session_resolution_action"], "continue_session")
+        self.assertEqual(created.metadata["current_turn_ref"], "fixture://phase15/payloads/turn-continue-001")
+        self.assertIn("fixture://phase15/payloads/turn-continue-001", created.metadata["raw_payload_refs"])
+        self.assertEqual(created.metadata["memory_refs"], ["fixture://memory/approved-001"])
+        self.assertTrue(outcome.evidence["runtime_create_called"])
+
+    async def test_start_new_session_submits_create_run_with_decision_session(self) -> None:
+        runtime = RecordingRuntime()
+        helper = WeComSessionRuntime(runtime=runtime, id_factory=FakeIdFactory())
+
+        outcome = await helper.handle_turn(
+            turn=self.turn("turn-start-001", "新任务：起草一个通知"),
+            scope=self.scope,
+            run_request=self.run_request("turn-start-001", "新任务：起草一个通知"),
+            recent_session=self.recent_session(),
+            idempotency_key="idem-start-001",
+        )
+
+        self.assertEqual(outcome.action, WeComSessionRuntimeAction.START_NEW_SESSION)
+        self.assertEqual(outcome.run_id, "created-001")
+        self.assertEqual(runtime.calls, [])
+        self.assertEqual(len(runtime.created), 1)
+        self.assertEqual(runtime.created[0].session_id, outcome.decision.session_id)
+        self.assertEqual(runtime.created[0].metadata["session_resolution_reason"], "new_task_signal")
+
+    async def test_duplicate_continue_turn_does_not_submit_second_create_run(self) -> None:
+        runtime = RecordingRuntime()
+        helper = WeComSessionRuntime(runtime=runtime, clock=FakeRuntimeClock(start=FIXED_NOW), id_factory=FakeIdFactory())
+        kwargs = {
+            "turn": self.turn("turn-duplicate-create", "继续"),
+            "scope": self.scope,
+            "run_request": self.run_request("turn-duplicate-create", "继续"),
+            "recent_session": self.recent_session(),
+            "idempotency_key": "idem-create-duplicate",
+        }
+
+        first = await helper.handle_turn(**kwargs)
+        duplicate = await helper.handle_turn(**kwargs)
+
+        self.assertEqual(first.action, WeComSessionRuntimeAction.CONTINUE_SESSION)
+        self.assertEqual(duplicate.action, WeComSessionRuntimeAction.DUPLICATE_ANSWER_IGNORED)
+        self.assertEqual(duplicate.run_id, first.run_id)
+        self.assertEqual(len(runtime.created), 1)
+        self.assertFalse(duplicate.evidence["runtime_create_called"])
 
     async def test_stale_terminal_and_new_task_start_new_session(self) -> None:
         helper = WeComSessionRuntime(runtime=RecordingRuntime(), id_factory=FakeIdFactory())
@@ -378,6 +468,25 @@ class WeComSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
             bot_instance_id=resolved_scope.bot_instance_id,
             session_id="session-waiting-001",
             metadata={"request_ref": f"runtime://phase15/requests/{turn_id}"},
+        )
+
+    def run_request_with_metadata(
+        self,
+        turn_id: str,
+        content: str,
+        *,
+        scope: SessionScope | None = None,
+        metadata: dict[str, object] | None = None,
+    ) -> RunRequest:
+        base = self.run_request(turn_id, content, scope=scope)
+        return RunRequest(
+            turn=base.turn,
+            solution=base.solution,
+            tenant_id=base.tenant_id,
+            workspace_id=base.workspace_id,
+            bot_instance_id=base.bot_instance_id,
+            session_id=base.session_id,
+            metadata={**base.metadata, **dict(metadata or {})},
         )
 
     def recent_session(self) -> SessionSnapshot:

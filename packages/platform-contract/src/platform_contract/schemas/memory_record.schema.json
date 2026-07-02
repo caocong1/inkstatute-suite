@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/memory_record.schema.json",
+  "title": "MemoryRecord",
+  "description": "Privacy-safe derived memory record used for context assembly.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "memory_id",
+    "tenant_id",
+    "workspace_id",
+    "scope",
+    "status",
+    "sensitivity",
+    "created_at",
+    "updated_at",
+    "source_refs"
+  ],
+  "properties": {
+    "memory_id": {
+      "type": "string"
+    },
+    "tenant_id": {
+      "type": "string"
+    },
+    "workspace_id": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "session",
+        "user",
+        "workspace",
+        "tenant"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "candidate",
+        "active",
+        "suppressed",
+        "deleted"
+      ]
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": [
+        "public",
+        "internal",
+        "confidential",
+        "restricted"
+      ]
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "updated_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "related_user_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "raw_payload_ref": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "ttl_expires_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "deleted_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "deletion_reason": {
+      "type": "string"
+    },
+    "industry_context": {
+      "$ref": "common.schema.json#/$defs/industry_context"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

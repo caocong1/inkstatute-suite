@@ -64,7 +64,7 @@ class Phase18ExternalMemoryAdapterAcceptanceTests(unittest.TestCase):
         self.assertEqual(manifests["platform_native"]["decision"], "accepted_for_current_legal_use")
         self.assertTrue(manifests["platform_native"]["default_for_legal_memory"])
 
-        for provider in ("mem0", "zep"):
+        for provider in ("mem0", "zep", "hindsight", "openviking", "reme"):
             with self.subTest(provider=provider):
                 manifest = manifests[provider]
                 self.assertEqual(manifest["decision"], "accepted_for_sanitized_spike")
@@ -104,7 +104,21 @@ class Phase18ExternalMemoryAdapterAcceptanceTests(unittest.TestCase):
 
         self.assertIn("https://docs.mem0.ai/api-reference", source_text)
         self.assertIn("https://help.getzep.com/quick-start-guide", source_text)
+        self.assertIn("https://hindsight.vectorize.io", source_text)
+        self.assertIn("https://openviking.ai", source_text)
+        self.assertIn("https://reme.agentscope.io", source_text)
+        self.assertIn("律师助理 Bot 的 Agent 记忆组件选型研究.md", source_text)
         self.assertIn("packages/platform-runtime/src/platform_runtime/memory_adapters.py", source_text)
+
+    def test_lawyer_research_candidates_keep_explicit_roles_and_gates(self) -> None:
+        manifests = {item["provider"]: item for item in self.fixture["metadata"]["adapter_manifests"]}
+
+        self.assertEqual(
+            manifests["hindsight"]["candidate_role"],
+            "audit_focused_recall_retain_reflect_spike",
+        )
+        self.assertIn("license_review", manifests["openviking"]["required_gates"])
+        self.assertIn("concurrency_permission_review", manifests["reme"]["required_gates"])
 
     def test_fixture_is_reference_first_and_privacy_safe(self) -> None:
         text = json.dumps(self.fixture, ensure_ascii=False, sort_keys=True)

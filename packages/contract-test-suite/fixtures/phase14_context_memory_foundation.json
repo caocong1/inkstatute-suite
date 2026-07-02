@@ -1,0 +1,208 @@
+{
+  "fixture_id": "phase14-context-memory-foundation-001",
+  "description": "Contract-test-suite coverage for Phase 14 context and memory records.",
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase14-001",
+      "conversation_id": "conversation-phase14-001",
+      "channel": "web",
+      "user_id": "user-phase14-001",
+      "message_type": "text",
+      "received_at": "2026-06-30T09:00:00Z",
+      "content": "Synthetic non-legal context assembly request.",
+      "industry_context": {},
+      "metadata": {
+        "raw_payload_ref": "fixture://raw/phase14-turn-001"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase14-001",
+      "turn_id": "turn-phase14-001",
+      "primary_skill": "synthetic_context_bundle",
+      "confidence": 0.9,
+      "mode": "matched",
+      "created_at": "2026-06-30T09:00:01Z",
+      "supporting_skills": [],
+      "gates_before": [],
+      "gates_after": [],
+      "required_tools": [],
+      "industry_context": {},
+      "metadata": {}
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase14-001",
+      "turn_id": "turn-phase14-001",
+      "started_at": "2026-06-30T09:00:02Z",
+      "ended_at": "2026-06-30T09:00:04Z",
+      "active_skill_name": "synthetic_context_bundle",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-06-30T09:00:04Z",
+      "ingested_at": "2026-06-30T09:00:05Z",
+      "seq": 0,
+      "steps": [],
+      "tool_calls": [],
+      "artifacts_written": [
+        "artifact-phase14-001"
+      ],
+      "route_decision": {
+        "route_decision_id": "route-phase14-001",
+        "turn_id": "turn-phase14-001",
+        "primary_skill": "synthetic_context_bundle",
+        "confidence": 0.9,
+        "mode": "matched",
+        "created_at": "2026-06-30T09:00:01Z",
+        "supporting_skills": [],
+        "gates_before": [],
+        "gates_after": [],
+        "required_tools": [],
+        "industry_context": {},
+        "metadata": {}
+      },
+      "gates": [],
+      "errors": [],
+      "industry_context": {},
+      "metadata": {}
+    },
+    "agent_result": {
+      "result_id": "result-phase14-001",
+      "turn_id": "turn-phase14-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic context bundle assembled.",
+      "artifacts": [
+        {
+          "artifact_id": "artifact-phase14-001",
+          "kind": "json",
+          "name": "phase14-context-bundle.json",
+          "uri": "fixture://artifacts/phase14-context-bundle.json",
+          "source_refs": [
+            "fixture://contract/phase14-context-memory-foundation-001"
+          ],
+          "metadata": {}
+        }
+      ],
+      "feedback_target": "result-phase14-001",
+      "industry_context": {},
+      "metadata": {
+        "run_id": "run-phase14-001"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase14-001",
+      "turn_id": "turn-phase14-001",
+      "conversation_id": "conversation-phase14-001",
+      "user_id": "user-phase14-001",
+      "source": "admin_annotation",
+      "event_type": "skill_candidate",
+      "status": "pending",
+      "created_at": "2026-06-30T09:01:00Z",
+      "result_id": "result-phase14-001",
+      "feedback_target": "result-phase14-001",
+      "action": "needs_fix",
+      "related_route_decision": "route-phase14-001",
+      "raw_payload_ref": "fixture://raw/phase14-feedback-001",
+      "industry_context": {},
+      "metadata": {}
+    },
+    "context_bundle": {
+      "context_bundle_id": "context-bundle-phase14-001",
+      "tenant_id": "tenant-phase14-001",
+      "workspace_id": "workspace-phase14-001",
+      "session_id": "session-phase14-001",
+      "created_at": "2026-06-30T09:00:02Z",
+      "budget_tokens": 1800,
+      "run_id": "run-phase14-001",
+      "turn_id": "turn-phase14-001",
+      "recent_turn_refs": [
+        "fixture://turns/turn-phase14-001"
+      ],
+      "summary_ref": "fixture://summaries/session-phase14-001",
+      "active_task_refs": [],
+      "artifact_refs": [
+        "artifact-phase14-001"
+      ],
+      "memory_refs": [
+        "memory-record-phase14-001"
+      ],
+      "trim_strategy": "budgeted_recent_turns",
+      "raw_payload_refs": [
+        "fixture://raw/phase14-turn-001"
+      ],
+      "industry_context": {},
+      "metadata": {}
+    },
+    "run_interrupt": {
+      "interrupt_id": "interrupt-phase14-001",
+      "run_id": "run-phase14-001",
+      "session_id": "session-phase14-001",
+      "status": "resolved",
+      "reason": "clarification_answered",
+      "created_at": "2026-06-30T09:00:03Z",
+      "prompt_ref": "fixture://prompts/interrupt-phase14-001",
+      "resume_state_ref": "fixture://resume/interrupt-phase14-001",
+      "resolved_at": "2026-06-30T09:00:20Z",
+      "resolved_turn_id": "turn-phase14-002",
+      "metadata": {}
+    },
+    "memory_records": [
+      {
+        "memory_id": "memory-record-phase14-001",
+        "tenant_id": "tenant-phase14-001",
+        "workspace_id": "workspace-phase14-001",
+        "scope": "session",
+        "status": "active",
+        "sensitivity": "internal",
+        "created_at": "2026-06-30T08:59:00Z",
+        "updated_at": "2026-06-30T08:59:00Z",
+        "source_refs": [
+          "fixture://summaries/session-phase14-001"
+        ],
+        "summary": "Synthetic session-level preference summary.",
+        "subject": "session_context",
+        "session_id": "session-phase14-001",
+        "raw_payload_ref": "fixture://raw/phase14-memory-source-001",
+        "confidence": 0.8,
+        "industry_context": {},
+        "metadata": {}
+      }
+    ],
+    "memory_candidates": [
+      {
+        "candidate_id": "memory-candidate-phase14-001",
+        "tenant_id": "tenant-phase14-001",
+        "workspace_id": "workspace-phase14-001",
+        "status": "pending",
+        "source_refs": [
+          "feedback-phase14-001"
+        ],
+        "created_at": "2026-06-30T09:01:05Z",
+        "proposed_scope": "workspace",
+        "proposed_sensitivity": "internal",
+        "proposed_action": "routing_candidate",
+        "reason": "Synthetic repeated feedback candidate.",
+        "confidence": 0.6,
+        "requires_human_review": true,
+        "raw_payload_ref": "fixture://raw/phase14-feedback-001",
+        "industry_context": {},
+        "metadata": {}
+      }
+    ],
+    "memory_uses": [
+      {
+        "use_id": "memory-use-phase14-001",
+        "memory_id": "memory-record-phase14-001",
+        "context_bundle_id": "context-bundle-phase14-001",
+        "used_at": "2026-06-30T09:00:02Z",
+        "purpose": "context_assembly",
+        "run_id": "run-phase14-001",
+        "turn_id": "turn-phase14-001",
+        "relevance_score": 0.72,
+        "policy_result": "allowed_reference_only",
+        "source_refs": [
+          "fixture://summaries/session-phase14-001"
+        ],
+        "metadata": {}
+      }
+    ]
+  }
+}

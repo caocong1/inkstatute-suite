@@ -26,6 +26,7 @@ image_cache/
 output/
 tmp/
 temp/
+.omo/
 
 # Legal/customer documents must be deliberately added, never swept in by default
 *.doc
@@ -65,4 +66,3 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-

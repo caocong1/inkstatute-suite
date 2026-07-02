@@ -25,12 +25,13 @@ class FixtureReplayTests(unittest.TestCase):
         cls.schemas = load_schemas()
         cls.fixtures = load_contract_fixtures()
 
-    def test_load_fixture_paths_defaults_to_phase_one_fixtures(self) -> None:
+    def test_load_fixture_paths_defaults_to_platform_fixtures(self) -> None:
         paths = load_fixture_paths()
 
         self.assertEqual(
             [path.name for path in paths],
             [
+                "context_memory_foundation.json",
                 "legal_wecom_contract_review.json",
                 "non_legal_engineering_task.json",
                 "platform_foundation_non_legal_run.json",
@@ -46,6 +47,7 @@ class FixtureReplayTests(unittest.TestCase):
         self.assertEqual(
             [item.fixture["fixture_id"] for item in loaded],
             [
+                "context-memory-foundation-001",
                 "legal-wecom-contract-review-001",
                 "non-legal-engineering-task-001",
                 "platform-foundation-non-legal-run-001",
@@ -57,14 +59,14 @@ class FixtureReplayTests(unittest.TestCase):
         report = replay_fixtures(schemas=self.schemas)
 
         self.assertIsInstance(report, ReplayReport)
-        self.assertEqual(report.fixture_count, 3)
+        self.assertEqual(report.fixture_count, 4)
         self.assertGreater(report.relationship_check_count, 0)
         self.assertEqual(report.broken_relationship_count, 0)
         self.assertEqual(report.breakage_rate, 0.0)
         self.assertEqual(report.issues, [])
 
     def test_malformed_fixture_reports_path_and_schema_context(self) -> None:
-        fixture = copy.deepcopy(self.fixtures[0])
+        fixture = copy.deepcopy(self._legal_fixture())
         del fixture["events"]["agent_turn"]["turn_id"]
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -119,7 +121,7 @@ class FixtureReplayTests(unittest.TestCase):
 
         for relationship, path, replacement, expected_message in cases:
             with self.subTest(relationship=relationship):
-                fixture = copy.deepcopy(self.fixtures[0])
+                fixture = copy.deepcopy(self._legal_fixture())
                 self._set_path(fixture, path, replacement)
 
                 with self.assertRaisesRegex(
@@ -129,7 +131,7 @@ class FixtureReplayTests(unittest.TestCase):
                     self._assert_single_fixture_integrity(fixture)
 
     def test_unreferenced_execution_trace_artifact_fails_relationship_integrity(self) -> None:
-        fixture = copy.deepcopy(self.fixtures[0])
+        fixture = copy.deepcopy(self._legal_fixture())
         fixture["events"]["execution_trace"]["artifacts_written"].append("artifact-unreferenced")
 
         with self.assertRaisesRegex(
@@ -139,7 +141,7 @@ class FixtureReplayTests(unittest.TestCase):
             self._assert_single_fixture_integrity(fixture)
 
     def test_replay_calculates_breakage_rate_and_enforces_five_percent_tolerance(self) -> None:
-        fixture = copy.deepcopy(self.fixtures[0])
+        fixture = copy.deepcopy(self._legal_fixture())
         fixture["events"]["feedback_event"]["result_id"] = "result-broken"
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -185,6 +187,13 @@ class FixtureReplayTests(unittest.TestCase):
             path = Path(tmpdir) / "broken.json"
             path.write_text(json.dumps(fixture), encoding="utf-8")
             assert_relationship_integrity([path], schemas=self.schemas)
+
+    def _legal_fixture(self) -> dict:
+        return next(
+            fixture
+            for fixture in self.fixtures
+            if fixture["fixture_id"] == "legal-wecom-contract-review-001"
+        )
 
     @staticmethod
     def _set_path(value: dict, path: tuple[str | int, ...], replacement: object) -> None:

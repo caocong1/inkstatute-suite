@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/memory_use.schema.json",
+  "title": "MemoryUse",
+  "description": "Audit record showing that a memory was selected into a context bundle.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "use_id",
+    "memory_id",
+    "context_bundle_id",
+    "used_at",
+    "purpose"
+  ],
+  "properties": {
+    "use_id": {
+      "type": "string"
+    },
+    "memory_id": {
+      "type": "string"
+    },
+    "context_bundle_id": {
+      "type": "string"
+    },
+    "used_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "relevance_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "policy_result": {
+      "type": "string"
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}
