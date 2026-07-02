@@ -5,28 +5,15 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from platform_contract.utils import find_forbidden_key
+
 
 FORBIDDEN_RAW_PAYLOAD_KEY = "raw_payload"
 
 
 def find_forbidden_raw_payload_path(value: Any, path: str = "") -> str | None:
     """Return the first exact raw payload key path, if one is present."""
-
-    if isinstance(value, Mapping):
-        for key, child in value.items():
-            key_text = str(key)
-            child_path = f"{path}.{key_text}" if path else key_text
-            if key_text == FORBIDDEN_RAW_PAYLOAD_KEY:
-                return child_path
-            found = find_forbidden_raw_payload_path(child, child_path)
-            if found is not None:
-                return found
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
-            found = find_forbidden_raw_payload_path(child, f"{path}[{index}]")
-            if found is not None:
-                return found
-    return None
+    return find_forbidden_key(value, FORBIDDEN_RAW_PAYLOAD_KEY, path)
 
 
 def scrub_contract_payload(value: Any) -> Any:
@@ -48,4 +35,3 @@ __all__ = [
     "find_forbidden_raw_payload_path",
     "scrub_contract_payload",
 ]
-

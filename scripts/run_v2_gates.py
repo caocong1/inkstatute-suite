@@ -74,12 +74,12 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "conversation-read-view",
             (py, "-m", "unittest", "discover", "services/conversation-read-view/tests"),
-            (read_view_src, feedback_src, contract_src),
+            (read_view_src, feedback_src, platform_src, contract_src),
         ),
         Gate(
             "feedback-service",
             (py, "-m", "unittest", "discover", "services/feedback-service/tests"),
-            (feedback_src, wecom_src, contract_src),
+            (feedback_src, wecom_src, platform_src, contract_src),
         ),
         Gate(
             "phase7-privacy-boundary",

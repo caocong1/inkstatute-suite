@@ -36,6 +36,18 @@ from .events import (
     RouteDecision,
     SkillCandidate,
 )
+from .utils import (
+    coerce_datetime,
+    coerce_str,
+    feedback_event_type,
+    find_forbidden_key,
+    format_timestamp,
+    json_clone,
+    mapping_or_empty,
+    sha256_short,
+    stable_id,
+    timestamp_bucket,
+)
 
 __all__ = [
     "AdapterCapabilitySet",
@@ -67,5 +79,15 @@ __all__ = [
     "RouteMode",
     "SkillCandidate",
     "SkillCandidateSource",
+    "coerce_datetime",
+    "coerce_str",
+    "feedback_event_type",
+    "find_forbidden_key",
+    "format_timestamp",
+    "json_clone",
+    "mapping_or_empty",
+    "sha256_short",
+    "stable_id",
+    "timestamp_bucket",
     "validate_agent_backend_manifest",
 ]

@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Iterable, Mapping
+
+from platform_contract.utils import (
+    coerce_str,
+    find_forbidden_key,
+    json_clone,
+    sha256_short,
+    timestamp_bucket,
+)
 
 from .classification import FeedbackClassification, classify_feedback_event
 from .wecom_normalizer import normalize_wecom_feedback_records
@@ -106,12 +112,12 @@ def dedupe_feedback_events(events: Iterable[Mapping[str, Any]]) -> list[dict[str
 def build_pending_feedback_queue(events: Iterable[Mapping[str, Any]], status: str = "pending") -> list[dict[str, Any]]:
     indexed_events = list(enumerate(dedupe_feedback_events(events)))
     filtered = [(index, event) for index, event in indexed_events if event.get("status") == status]
-    filtered.sort(key=lambda item: (_string(item[1].get("created_at")) or "", _seq(item[1]), item[0]))
+    filtered.sort(key=lambda item: (coerce_str(item[1].get("created_at")) or "", _seq(item[1]), item[0]))
     return [FeedbackQueueItem(event=event, classification=classify_feedback_event(event)).to_dict() for _, event in filtered]
 
 
 def _canonical_event(idempotency_key: str, events: list[dict[str, Any]]) -> dict[str, Any]:
-    canonical = _json_clone(events[0])
+    canonical = json_clone(events[0])
     metadata = dict(canonical.get("metadata", {})) if isinstance(canonical.get("metadata"), Mapping) else {}
     duplicate_count = sum(_duplicate_count(event) for event in events)
     metadata.update(
@@ -130,32 +136,23 @@ def _canonical_event(idempotency_key: str, events: list[dict[str, Any]]) -> dict
 def _idempotency_key(event: Mapping[str, Any]) -> str:
     metadata = event.get("metadata")
     if isinstance(metadata, Mapping):
-        key = _string(metadata.get("idempotency_key"))
+        key = coerce_str(metadata.get("idempotency_key"))
         if key is not None:
             return key
 
-    target = _string(event.get("feedback_target"))
-    action = _string(event.get("action"))
-    user_id = _string(event.get("user_id"))
-    created_at = _string(event.get("created_at"))
+    target = coerce_str(event.get("feedback_target"))
+    action = coerce_str(event.get("action"))
+    user_id = coerce_str(event.get("user_id"))
+    created_at = coerce_str(event.get("created_at"))
     if target is not None and action is not None and user_id is not None and created_at is not None:
-        return ":".join((target, action, user_id, _timestamp_bucket(created_at)))
+        return ":".join((target, action, user_id, timestamp_bucket(created_at)))
 
-    feedback_id = _string(event.get("feedback_id"))
+    feedback_id = coerce_str(event.get("feedback_id"))
     if feedback_id is not None:
         return feedback_id
 
-    digest = hashlib.sha256(json.dumps(event, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
+    digest = sha256_short(json.dumps(event, sort_keys=True, ensure_ascii=False))
     return f"feedback-event:{digest}"
-
-
-def _timestamp_bucket(created_at: str) -> str:
-    try:
-        parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-    except ValueError:
-        return created_at[:16]
-    normalized = parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
-    return normalized.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
 
 
 def _duplicate_count(event: Mapping[str, Any]) -> int:
@@ -168,7 +165,7 @@ def _duplicate_count(event: Mapping[str, Any]) -> int:
 
 
 def _duplicate_feedback_ids(events: list[Mapping[str, Any]]) -> list[str]:
-    return [item for item in (_string(event.get("feedback_id")) for event in events) if item is not None]
+    return [item for item in (coerce_str(event.get("feedback_id")) for event in events) if item is not None]
 
 
 def _duplicate_callback_refs(events: list[Mapping[str, Any]]) -> list[str]:
@@ -178,7 +175,7 @@ def _duplicate_callback_refs(events: list[Mapping[str, Any]]) -> list[str]:
         if isinstance(metadata, Mapping) and isinstance(metadata.get("duplicate_callback_refs"), list):
             refs.extend(str(item) for item in metadata["duplicate_callback_refs"])
         else:
-            ref = _string(event.get("raw_payload_ref") or event.get("feedback_id"))
+            ref = coerce_str(event.get("raw_payload_ref") or event.get("feedback_id"))
             if ref is not None:
                 refs.append(ref)
     return refs
@@ -191,38 +188,10 @@ def _seq(event: Mapping[str, Any]) -> int:
 
 
 def _privacy_checked_clone(event: Mapping[str, Any]) -> dict[str, Any]:
-    forbidden_path = _find_exact_key(event, "raw_payload")
+    forbidden_path = find_forbidden_key(event, "raw_payload")
     if forbidden_path is not None:
         raise ValueError(f"feedback events must use raw_payload_ref instead of raw_payload at {forbidden_path}")
-    return _json_clone(event)
-
-
-def _json_clone(value: Mapping[str, Any]) -> dict[str, Any]:
-    return json.loads(json.dumps(value, ensure_ascii=False, sort_keys=True))
-
-
-def _find_exact_key(value: Any, needle: str, path: str = "") -> str | None:
-    if isinstance(value, Mapping):
-        for key, child in value.items():
-            child_path = f"{path}.{key}" if path else str(key)
-            if key == needle:
-                return child_path
-            found = _find_exact_key(child, needle, child_path)
-            if found is not None:
-                return found
-    elif isinstance(value, list):
-        for index, child in enumerate(value):
-            found = _find_exact_key(child, needle, f"{path}[{index}]")
-            if found is not None:
-                return found
-    return None
-
-
-def _string(value: Any) -> str | None:
-    if value is None:
-        return None
-    text = str(value)
-    return text if text else None
+    return json_clone(event)
 
 
 __all__ = [

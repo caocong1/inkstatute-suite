@@ -23,11 +23,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-import hashlib
 from enum import StrEnum
 from typing import Any, Iterable
 
 from platform_contract import AsyncTaskState
+from platform_contract.utils import coerce_datetime, sha256_short
 
 
 JsonObject = dict[str, Any]
@@ -156,7 +156,7 @@ def summarize_task_input(
     text_value = str(text or "")
     media_types_tuple = tuple(str(item or "unknown") for item in media_types)
     return TaskInputSummary(
-        text_sha256_16=_sha16(text_value),
+        text_sha256_16=sha256_short(text_value),
         text_length=len(text_value),
         media_count=len(media_types_tuple) if media_count is None else int(media_count),
         media_types=media_types_tuple,
@@ -177,7 +177,7 @@ def create_task_flow(
 ) -> TaskFlow:
     """Create a task for one already-aggregated WeCom turn."""
 
-    current = _coerce_datetime(now)
+    current = coerce_datetime(now)
     cfg = config or TaskFlowConfig()
     input_summary = summarize_task_input(text=text, media_types=media_types, raw_payload_ref=raw_payload_ref)
     identity = ":".join(
@@ -190,13 +190,13 @@ def create_task_flow(
             str(input_summary.media_count),
         ]
     )
-    task_id = f"wecom-task-{_sha16(identity)}"
-    trace_id = f"trace-{_sha16(task_id + ':trace')}"
+    task_id = f"wecom-task-{sha256_short(identity)}"
+    trace_id = f"trace-{sha256_short(task_id + ':trace')}"
     task = TaskFlow(
         task_id=task_id,
         trace_id=trace_id,
         conversation_id=str(conversation_id),
-        user_id_hash=_sha16(str(user_id)),
+        user_id_hash=sha256_short(str(user_id)),
         input_summary=input_summary,
         config=cfg,
         created_at=current,
@@ -229,7 +229,7 @@ def record_stage(
     """Append a minimized task-stage event and update in-memory task state."""
 
     task_stage = WeComTaskStage(str(stage))
-    current = _coerce_datetime(now)
+    current = coerce_datetime(now)
     seq = len(task.stage_records) + 1
     async_state = TASK_STAGE_TO_ASYNC_STATE[task_stage]
     stage_metadata: JsonObject = {
@@ -270,13 +270,13 @@ def progress_notice_due(task: TaskFlow, *, now: datetime | str | None = None) ->
     interval = max(0.0, task.config.progress_interval_seconds)
     if interval == 0:
         return False
-    current = _coerce_datetime(now)
+    current = coerce_datetime(now)
     baseline = task.last_progress_notice_at or _last_stage_time(task, WeComTaskStage.RUNNING) or task.created_at
     return current >= baseline + timedelta(seconds=interval)
 
 
 def deadline_exceeded(task: TaskFlow, *, now: datetime | str | None = None) -> bool:
-    return _coerce_datetime(now) >= task.deadline_at
+    return coerce_datetime(now) >= task.deadline_at
 
 
 def task_stage_idempotency_key(task_id: str, stage: WeComTaskStage | str, seq: int) -> str:
@@ -305,22 +305,8 @@ def task_snapshot(task: TaskFlow) -> JsonObject:
 def _last_stage_time(task: TaskFlow, stage: WeComTaskStage) -> datetime | None:
     for record in reversed(task.stage_records):
         if record.stage is stage:
-            return _coerce_datetime(record.occurred_at)
+            return coerce_datetime(record.occurred_at)
     return None
-
-
-def _coerce_datetime(value: datetime | str | None) -> datetime:
-    if value is None:
-        return datetime.now(timezone.utc)
-    if isinstance(value, datetime):
-        return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
-    text = value.replace("Z", "+00:00")
-    parsed = datetime.fromisoformat(text)
-    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
-
-
-def _sha16(value: str) -> str:
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
 
 
 __all__ = [

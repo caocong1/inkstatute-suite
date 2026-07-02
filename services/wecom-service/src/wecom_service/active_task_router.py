@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-import hashlib
 import re
 from typing import Any, Mapping
+
+from platform_contract.utils import sha256_short
 
 
 JsonObject = dict[str, Any]
@@ -78,7 +79,7 @@ def route_active_task_turn(
     content = str(text or "")
     task_id = str(active_task.get("task_id") or "unknown-task")
     intent = _classify_intent(content)
-    text_sha = _sha16(content)
+    text_sha = sha256_short(content)
     capability_metadata = capabilities.as_metadata()
 
     if intent == ActiveTaskRoute.STATUS_REQUEST:
@@ -181,10 +182,6 @@ def _classify_intent(text: str) -> ActiveTaskRoute:
 _STATUS_RE = re.compile(r"(进度|状态|好了没|完成了吗|还要多久|处理到哪|怎么样了|status|progress|done yet)")
 _CANCEL_RE = re.compile(r"(取消|停止|不用处理|先别|算了|cancel|stop)")
 _NEW_TASK_RE = re.compile(r"(另外|另一个|新任务|再帮我|同时|顺便|another|new task|separate task)")
-
-
-def _sha16(value: str) -> str:
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
 
 
 __all__ = [

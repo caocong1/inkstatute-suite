@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from datetime import datetime, timezone
 from typing import Any, Mapping
+
+from platform_contract.utils import coerce_str, format_timestamp
 
 from .ids import stable_hash_id
 
@@ -34,13 +35,13 @@ def map_agent_end_context(
 ) -> OrderedDict[str, dict[str, Any]]:
     """Return AgentTurn, RouteDecision, ExecutionTrace, and AgentResult payloads."""
 
-    timestamp = _timestamp(now)
+    timestamp = format_timestamp(now)
     session_id = _string(context.get("session_id"), "unknown-session")
     user_id = _string(context.get("user_id"), "unknown-user")
     chat_id = _string(context.get("chat_id"), "unknown-chat")
-    message = _string_or_none(context.get("message"))
-    response = _string_or_none(context.get("response"))
-    message_id = _string_or_none(context.get("message_id"))
+    message = coerce_str(context.get("message"))
+    response = coerce_str(context.get("response"))
+    message_id = coerce_str(context.get("message_id"))
     raw_payload_ref = _raw_payload_ref(context, session_id=session_id)
 
     turn_id = stable_hash_id("turn", session_id, user_id, message_id or message, timestamp)
@@ -50,7 +51,7 @@ def map_agent_end_context(
 
     channel, channel_metadata = _normalize_channel(context.get("platform"))
     message_type, message_type_metadata = _normalize_message_type(context.get("message_type"))
-    primary_skill = _string_or_none(context.get("active_skill_name") or context.get("skill_name"))
+    primary_skill = coerce_str(context.get("active_skill_name") or context.get("skill_name"))
     route_mode = _route_mode(context, primary_skill)
     matched_registered_skill = route_mode == "matched" and primary_skill is not None
     route_mismatch = bool(context.get("route_mismatch")) or route_mode == "zero_match"
@@ -119,8 +120,8 @@ def map_agent_end_context(
     execution_trace = {
         "trace_id": trace_id,
         "turn_id": turn_id,
-        "started_at": _timestamp(context.get("started_at") or timestamp),
-        "ended_at": _timestamp(context.get("ended_at") or timestamp),
+        "started_at": format_timestamp(context.get("started_at") or timestamp),
+        "ended_at": format_timestamp(context.get("ended_at") or timestamp),
         "active_skill_name": primary_skill,
         "matched_registered_skill": matched_registered_skill,
         "occurred_at": timestamp,
@@ -179,17 +180,6 @@ def map_agent_end_context(
     )
 
 
-def _timestamp(value: datetime | str | Any) -> str:
-    if isinstance(value, datetime):
-        normalized = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-        return normalized.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
-    if isinstance(value, str):
-        if value.endswith("+00:00"):
-            return value[:-6] + "Z"
-        return value
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-
-
 def _string(value: Any, default: str) -> str:
     if value is None:
         return default
@@ -197,15 +187,8 @@ def _string(value: Any, default: str) -> str:
     return text if text else default
 
 
-def _string_or_none(value: Any) -> str | None:
-    if value is None:
-        return None
-    text = str(value)
-    return text if text else None
-
-
 def _normalize_channel(value: Any) -> tuple[str, dict[str, Any]]:
-    raw = _string_or_none(value)
+    raw = coerce_str(value)
     normalized = (raw or "").lower().replace("-", "_")
     aliases = {
         "wechat_work": "wecom",
@@ -220,7 +203,7 @@ def _normalize_channel(value: Any) -> tuple[str, dict[str, Any]]:
 
 
 def _normalize_message_type(value: Any) -> tuple[str, dict[str, Any]]:
-    raw = _string_or_none(value)
+    raw = coerce_str(value)
     normalized = (raw or "").lower()
     if normalized in MESSAGE_TYPES:
         return normalized, {"message_type_source_status": "source_confirmed"}
@@ -228,7 +211,7 @@ def _normalize_message_type(value: Any) -> tuple[str, dict[str, Any]]:
 
 
 def _route_mode(context: Mapping[str, Any], primary_skill: str | None) -> str:
-    explicit = _string_or_none(context.get("route_mode"))
+    explicit = coerce_str(context.get("route_mode"))
     if explicit in ROUTE_MODES:
         return explicit
     if context.get("route_mismatch") or context.get("route_error") or context.get("zero_match"):
@@ -259,7 +242,7 @@ def _route_reason(route_mode: str, matched_registered_skill: bool) -> str:
 
 
 def _result_status(context: Mapping[str, Any], *, route_mismatch: bool) -> str:
-    raw = _string_or_none(context.get("status") or context.get("result_status"))
+    raw = coerce_str(context.get("status") or context.get("result_status"))
     if raw in RESULT_STATUSES:
         return raw
     if context.get("error") or context.get("errors"):
@@ -270,7 +253,7 @@ def _result_status(context: Mapping[str, Any], *, route_mismatch: bool) -> str:
 
 
 def _reply_type(context: Mapping[str, Any], *, status: str) -> str:
-    raw = _string_or_none(context.get("reply_type"))
+    raw = coerce_str(context.get("reply_type"))
     if status == "failed":
         return "status_update"
     if raw in REPLY_TYPES:
@@ -280,15 +263,15 @@ def _reply_type(context: Mapping[str, Any], *, status: str) -> str:
 
 def _received_at(context: Mapping[str, Any], fallback: str) -> str:
     if "received_at" in context:
-        return _timestamp(context.get("received_at"))
+        return format_timestamp(context.get("received_at"))
     return fallback
 
 
 def _raw_payload_ref(context: Mapping[str, Any], *, session_id: str) -> str:
-    raw_ref = _string_or_none(context.get("raw_payload_ref"))
+    raw_ref = coerce_str(context.get("raw_payload_ref"))
     if raw_ref:
         return raw_ref
-    turn_ref = _string_or_none(context.get("message_id") or context.get("message_ref") or context.get("trace_id"))
+    turn_ref = coerce_str(context.get("message_id") or context.get("message_ref") or context.get("trace_id"))
     if turn_ref:
         return f"hermes://session/{session_id}/turn/{turn_ref}"
     return f"hermes://session/{session_id}/turn/unavailable"
@@ -328,10 +311,10 @@ def _steps(context: Mapping[str, Any], *, status: str) -> list[dict[str, Any]]:
     if isinstance(raw_states, list):
         for index, item in enumerate(raw_states):
             if isinstance(item, dict):
-                state = _string_or_none(item.get("state"))
+                state = coerce_str(item.get("state"))
                 name = _string(item.get("name"), f"async_state_{index}")
             else:
-                state = _string_or_none(item)
+                state = coerce_str(item)
                 name = f"async_state_{index}"
             if state in ASYNC_TASK_STATES:
                 steps.append({"name": name, "state": state})
@@ -377,7 +360,7 @@ def _error_info(error: Mapping[str, Any], *, raw_payload_ref: str) -> dict[str, 
         "details": {"raw_payload_ref": raw_payload_ref},
     }
     for key in ("code", "message", "stage"):
-        value = _string_or_none(error.get(key))
+        value = coerce_str(error.get(key))
         if value:
             info[key] = value[:240]
     if isinstance(error.get("retryable"), bool):
