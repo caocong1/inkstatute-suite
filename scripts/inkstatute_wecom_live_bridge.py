@@ -40,7 +40,12 @@ HERMES_PYTHON = Path(
         "/home/sorawatcher/.hermes/hermes-agent/venv/bin/python",
     )
 )
-RUNTIME_DIR = Path(os.environ.get("INKSTATUTE_WECOM_RUNTIME_DIR", "/tmp/inkstatute-wecom-live"))
+RUNTIME_DIR = Path(
+    os.environ.get(
+        "INKSTATUTE_WECOM_RUNTIME_DIR",
+        str(Path.home() / ".inkstatute" / "wecom-live"),
+    )
+)
 
 sys.path.insert(0, str(HERMES_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "services/wecom-service/src"))
@@ -650,7 +655,7 @@ def main() -> int:
     _load_env_file(Path("/home/sorawatcher/.hermes/.env"))
 
     runtime_dir = RUNTIME_DIR
-    runtime_dir.mkdir(parents=True, exist_ok=True)
+    runtime_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
     _setup_logging(runtime_dir / "bridge.log")
     audit_path = Path(args.audit_path) if args.audit_path else runtime_dir / "runtime-audit.jsonl"
     audit_full_payloads = parse_bool_env(os.environ.get("INKSTATUTE_WECOM_AUDIT_FULL_PAYLOADS"), default=True)
@@ -1137,11 +1142,15 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+_SECRET_ENV_HINTS = ("secret", "token", "key", "password", "authorization", "credential")
+
+
 def _redact(value: str) -> str:
     text = value or ""
-    for secret_name in ("WECOM_SECRET", "WECOM_BOT_ID", "OPENAI_API_KEY", "ANTHROPIC_AUTH_TOKEN"):
-        secret = os.environ.get(secret_name, "")
-        if secret:
+    for name, secret in os.environ.items():
+        if not secret or len(secret) < 8:
+            continue
+        if any(hint in name.lower() for hint in _SECRET_ENV_HINTS):
             text = text.replace(secret, "[REDACTED]")
     return text
 
