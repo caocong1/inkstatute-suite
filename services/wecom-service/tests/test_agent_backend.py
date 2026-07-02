@@ -40,6 +40,71 @@ class AgentBackendSelectorTests(unittest.TestCase):
         with self.assertRaises(AgentBackendSelectionError):
             select_agent_backend({"agent_backend": {"mode": "unknown"}}, [])
 
+    def test_no_manifest_found_for_mode_raises(self) -> None:
+        manifest = self.manifest(AgentBackendMode.CODEX, no_channel_io=True)
+
+        with self.assertRaises(AgentBackendSelectionError) as ctx:
+            select_agent_backend({"agent_backend": {"mode": "hermes"}}, [manifest])
+
+        self.assertIn("no adapter manifest", str(ctx.exception))
+
+    def test_invalid_manifest_raises_with_codes(self) -> None:
+        manifest = AgentBackendManifest(
+            adapter_name="",
+            adapter_version="0.1.0",
+            mode=AgentBackendMode.HERMES,
+            backend_version="hermes-fixture-1",
+            capabilities=AdapterCapabilitySet(
+                invocation_mode="sync",
+                no_channel_io=True,
+            ),
+            metadata={},
+        )
+
+        with self.assertRaises(AgentBackendSelectionError) as ctx:
+            select_agent_backend({"agent_backend": {"mode": "hermes"}}, [manifest])
+
+        self.assertIn("invalid adapter manifest", str(ctx.exception))
+
+    def test_non_hermes_production_ready_allows_live_acceptance(self) -> None:
+        manifest = self.manifest(AgentBackendMode.CODEX, no_channel_io=True, production_ready=True)
+
+        selection = select_agent_backend({"agent_backend": {"mode": "codex"}}, [manifest])
+
+        self.assertTrue(selection.live_acceptance_allowed)
+
+    def test_missing_mode_config_raises(self) -> None:
+        with self.assertRaises(AgentBackendSelectionError) as ctx:
+            select_agent_backend({}, [])
+
+        self.assertIn("missing agent_backend.mode", str(ctx.exception))
+
+    def test_dot_notation_mode_config(self) -> None:
+        manifest = self.manifest(AgentBackendMode.HERMES, no_channel_io=True)
+
+        selection = select_agent_backend({"agent_backend.mode": "hermes"}, [manifest])
+
+        self.assertEqual(selection.mode, "hermes")
+
+    def test_dict_manifest_selection(self) -> None:
+        manifest = {
+            "adapter_name": "hermes-adapter",
+            "adapter_version": "0.1.0",
+            "mode": "hermes",
+            "backend_version": "hermes-fixture-1",
+            "capabilities": {
+                "hook_event_support": ["agent:end"],
+                "invocation_mode": "sync",
+                "no_channel_io": True,
+            },
+            "metadata": {"production_ready": True},
+        }
+
+        selection = select_agent_backend({"agent_backend": {"mode": "hermes"}}, [manifest])
+
+        self.assertEqual(selection.mode, "hermes")
+        self.assertTrue(selection.live_acceptance_allowed)
+
     def manifest(
         self,
         mode: AgentBackendMode,

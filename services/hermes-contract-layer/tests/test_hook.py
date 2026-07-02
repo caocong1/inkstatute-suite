@@ -160,5 +160,125 @@ class HookBoundaryTests(unittest.TestCase):
         self.assertEqual({key: context[key] for key in hook.OUTBOUND_CONTEXT_KEYS}, before)
 
 
+class InvokeWriterBranchTests(unittest.TestCase):
+    def test_writer_with_append_many_method(self) -> None:
+        class AppendManyWriter:
+            def __init__(self) -> None:
+                self.called = False
+
+            def append_many(self, events: object) -> int:
+                self.called = True
+                return 3
+
+        writer = AppendManyWriter()
+
+        result = hook.record_contract_result(
+            "agent:end",
+            sample_context(),
+            writer=writer,
+            log_path="fixture://log.jsonl",
+            clock=lambda: FIXED_NOW,
+        )
+
+        self.assertEqual(result.status, "recorded")
+        self.assertEqual(result.event_count, 3)
+        self.assertTrue(writer.called)
+
+    def test_writer_with_write_events_method(self) -> None:
+        class WriteEventsWriter:
+            def __init__(self) -> None:
+                self.called = False
+
+            def write_events(self, events: object, *, log_path: object, clock: object) -> int:
+                self.called = True
+                return 2
+
+        writer = WriteEventsWriter()
+
+        result = hook.record_contract_result(
+            "agent:end",
+            sample_context(),
+            writer=writer,
+            log_path="fixture://log.jsonl",
+            clock=lambda: FIXED_NOW,
+        )
+
+        self.assertEqual(result.status, "recorded")
+        self.assertEqual(result.event_count, 2)
+        self.assertTrue(writer.called)
+
+    def test_writer_that_is_not_callable_and_lacks_methods_raises(self) -> None:
+        writer = object()
+
+        with self.assertRaises(TypeError):
+            hook.record_contract_result(
+                "agent:end",
+                sample_context(),
+                writer=writer,
+                log_path="fixture://log.jsonl",
+                clock=lambda: FIXED_NOW,
+            )
+
+    def test_callable_writer_returning_hook_result(self) -> None:
+        expected = hook.HookRecordingResult(status="recorded", event_count=7)
+
+        def writer(events, *, log_path, clock):
+            return expected
+
+        result = hook.record_contract_result(
+            "agent:end",
+            sample_context(),
+            writer=writer,
+            log_path="fixture://log.jsonl",
+            clock=lambda: FIXED_NOW,
+        )
+
+        self.assertEqual(result.event_count, 7)
+
+    def test_callable_writer_returning_none(self) -> None:
+        def writer(events, *, log_path, clock):
+            return None
+
+        result = hook.record_contract_result(
+            "agent:end",
+            sample_context(),
+            writer=writer,
+            log_path="fixture://log.jsonl",
+            clock=lambda: FIXED_NOW,
+        )
+
+        self.assertEqual(result.event_count, 0)
+
+    def test_callable_writer_returning_non_len_non_int(self) -> None:
+        def writer(events, *, log_path, clock):
+            return True
+
+        result = hook.record_contract_result(
+            "agent:end",
+            sample_context(),
+            writer=writer,
+            log_path="fixture://log.jsonl",
+            clock=lambda: FIXED_NOW,
+        )
+
+        self.assertEqual(result.event_count, 1)
+
+
+class OutboundContextRestoreTests(unittest.TestCase):
+    def test_restore_removes_keys_that_did_not_originally_exist(self) -> None:
+        context = {"internal_state": {"data": True}}
+
+        def mutating_recorder(event_type, ctx):
+            for key in hook.OUTBOUND_CONTEXT_KEYS:
+                ctx[key] = f"injected-{key}"
+            return hook.HookRecordingResult(status="recorded", event_count=1)
+
+        with patch.object(hook, "record_contract_result", side_effect=mutating_recorder):
+            hook.handle("agent:end", context)
+
+        for key in hook.OUTBOUND_CONTEXT_KEYS:
+            self.assertNotIn(key, context)
+
+
 if __name__ == "__main__":
     unittest.main()
