@@ -45,11 +45,13 @@ v1.3 turns the v1.2 memory foundation into a production-capable native memory lo
   4. Delete, tombstone, retention expiry, and export workflows are represented by code and tests.
   5. Existing in-memory tests still pass, and the durable store can be used without changing `RunRuntime` or WeCom channel contracts.
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] TBD (run `$gsd-plan-phase 20` to break down)
+- [ ] 20-01-PLAN.md — SQLiteMemoryStore durable core
+- [ ] 20-02-PLAN.md — Durable query, retention, export, and adapter conformance
+- [ ] 20-03-PLAN.md — Phase 20 contract fixture and validation sign-off
 
 ### Phase 21: Rolling Summary Pipeline
 
@@ -157,7 +159,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 20. Durable Native Memory Store | v1.3 | 0/TBD | Not started | - |
+| 20. Durable Native Memory Store | v1.3 | 0/3 | Not started | - |
 | 21. Rolling Summary Pipeline | v1.3 | 0/TBD | Not started | - |
 | 22. Recall Orchestrator and Context Injection | v1.3 | 0/TBD | Not started | - |
 | 23. Feedback-to-Memory Review Loop | v1.3 | 0/TBD | Not started | - |
