@@ -24,7 +24,7 @@ v1.3 turns the v1.2 memory foundation into a production-capable native memory lo
 - Decimal phases (20.1, 20.2): Urgent insertions after planning.
 
 - [x] **Phase 20: Durable Native Memory Store** - Implement the production-capable platform-native memory store, privacy guard, deletion/export, and baseline tests.
-- [ ] **Phase 21: Rolling Summary Pipeline** - Generate and persist safe summary refs for bounded long-running conversations.
+- [x] **Phase 21: Rolling Summary Pipeline** - Generate and persist safe summary refs for bounded long-running conversations.
 - [ ] **Phase 22: Recall Orchestrator and Context Injection** - Retrieve approved memory and summary refs before backend submission and attach bounded context to WeCom runtime flows.
 - [ ] **Phase 23: Feedback-to-Memory Review Loop** - Convert feedback into same-session corrections and human-reviewed durable memory candidates.
 - [ ] **Phase 24: Memory Evaluation Harness and Privacy Gates** - Build the sanitized benchmark and gates that prove recall quality, isolation, deletion, and safety.
@@ -78,11 +78,11 @@ Plans:
 
 **Wave 1**
 
-- [ ] 21-01-PLAN.md — RollingSummaryPolicy, RollingSummaryTrigger, and RollingSummaryProducer core
+- [x] 21-01-PLAN.md — RollingSummaryPolicy, RollingSummaryTrigger, and RollingSummaryProducer core
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 21-02-PLAN.md — Phase 21 contract fixture and validation sign-off
+- [x] 21-02-PLAN.md — Phase 21 contract fixture and validation sign-off
 
 ### Phase 22: Recall Orchestrator and Context Injection
 

@@ -1,0 +1,196 @@
+{
+  "fixture_id": "phase21-rolling-summary-pipeline-001",
+  "description": "Synthetic Phase 21 fixture proving rolling summary pipeline: policy-driven trigger, source-ref-only summary production, no raw text in ContextBundle metadata, and fail-closed privacy behavior.",
+  "metadata": {
+    "phase": "21",
+    "requirements": [
+      "SUM-01",
+      "SUM-02",
+      "SUM-03",
+      "SUM-04"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "no_live_external_invocation": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "summary_pipeline_evidence": {
+      "trigger_reason": "turn_count",
+      "turn_count_at_trigger": 20,
+      "budget_tokens": 4096,
+      "estimated_tokens_at_trigger": 2100,
+      "source_refs_count": 5,
+      "summary_text_embedded_in_bundle": false,
+      "raw_text_rejected_by_producer": true,
+      "empty_source_refs_rejected": true,
+      "wrong_ref_prefix_rejected": true
+    },
+    "rolling_summary": {
+      "summary_ref": "summary://phase21/session-phase21-001/v1",
+      "session_id": "session-phase21-001",
+      "source_refs": [
+        "turn://turn-phase21-001",
+        "turn://turn-phase21-002",
+        "turn://turn-phase21-003",
+        "turn://turn-phase21-004",
+        "turn://turn-phase21-005"
+      ],
+      "task_intent_refs": [
+        "intent://phase21/task-citation-review"
+      ],
+      "user_constraint_refs": [
+        "constraint://phase21/brevity-rule"
+      ],
+      "unanswered_question_refs": [
+        "question://phase21/open-question-001"
+      ],
+      "artifact_refs": [
+        "artifact://phase21/draft-brief-001"
+      ],
+      "outcome_refs": [
+        "outcome://phase21/citation-corrected-001"
+      ],
+      "text_sha256_16": "f3e1a9c2b4d60875",
+      "text_length": 287,
+      "created_at": "2026-07-02T08:05:00Z",
+      "updated_at": "2026-07-02T08:20:00Z",
+      "trigger_reason": "turn_count",
+      "privacy": "no_raw_payload_or_legal_text_stored"
+    },
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_rolling_summary.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase21_rolling_summary_pipeline.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest discover -s packages/platform-runtime/tests"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase21-020",
+      "conversation_id": "conversation-phase21-001",
+      "channel": "wecom",
+      "user_id": "user-phase21-001",
+      "message_type": "text",
+      "received_at": "2026-07-02T08:20:00Z",
+      "content": "Synthetic turn 20 triggering rolling summary generation.",
+      "metadata": {
+        "content_sha256_16": "b1d3e7f9a2c40658",
+        "content_length": 54,
+        "raw_payload_ref": "fixture://phase21/turns/turn-phase21-020/raw",
+        "turn_count": 20
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase21-001",
+      "turn_id": "turn-phase21-020",
+      "primary_skill": "synthetic_rolling_summary_pipeline",
+      "confidence": 0.87,
+      "mode": "matched",
+      "created_at": "2026-07-02T08:20:01Z",
+      "supporting_skills": [
+        "synthetic_context_assembly"
+      ],
+      "matched_rule": "fixture://phase21/routing/rolling-summary-trigger",
+      "reason": "Synthetic route for Phase 21 rolling summary pipeline evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase21/route/route-phase21-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase21-001",
+      "turn_id": "turn-phase21-020",
+      "started_at": "2026-07-02T08:20:01Z",
+      "ended_at": "2026-07-02T08:20:03Z",
+      "active_skill_name": "synthetic_rolling_summary_pipeline",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-02T08:20:03Z",
+      "ingested_at": "2026-07-02T08:20:04Z",
+      "seq": 20,
+      "steps": [
+        {
+          "step_id": "step-phase21-trigger-check",
+          "state": "succeeded",
+          "memory_refs": [],
+          "raw_payload_ref": "fixture://phase21/trace/step-trigger-check"
+        },
+        {
+          "step_id": "step-phase21-summary-produce",
+          "state": "succeeded",
+          "memory_refs": [],
+          "raw_payload_ref": "fixture://phase21/trace/step-summary-produce"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "bundle-phase21-001",
+        "trigger_reason": "turn_count",
+        "summary_ref": "summary://phase21/session-phase21-001/v1",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase21-001",
+      "turn_id": "turn-phase21-020",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic response summary ref: result://phase21/result-phase21-001/summary",
+      "feedback_target": "delivery-phase21-001",
+      "metadata": {
+        "trace_id": "trace-phase21-001",
+        "context_bundle_id": "bundle-phase21-001",
+        "visible_text_sha256_16": "c5d7a3b1e9f20487",
+        "visible_text_length": 70,
+        "raw_payload_ref": "fixture://phase21/results/result-phase21-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase21-001",
+      "turn_id": "turn-phase21-020",
+      "result_id": "result-phase21-001",
+      "conversation_id": "conversation-phase21-001",
+      "user_id": "user-phase21-001",
+      "source": "card_button",
+      "event_type": "rating",
+      "status": "resolved",
+      "created_at": "2026-07-02T08:21:00Z",
+      "feedback_target": "delivery-phase21-001",
+      "action": "up",
+      "labels": ["rating"],
+      "raw_payload_ref": "fixture://phase21/feedback/feedback-phase21-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase21:rating:001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "bundle-phase21-001",
+      "tenant_id": "tenant-phase21-001",
+      "workspace_id": "workspace-phase21-001",
+      "session_id": "session-phase21-001",
+      "created_at": "2026-07-02T08:20:01Z",
+      "budget_tokens": 4096,
+      "run_id": "run-phase21-001",
+      "turn_id": "turn-phase21-020",
+      "summary_ref": "summary://phase21/session-phase21-001/v1",
+      "recent_turn_refs": [
+        "turn://turn-phase21-016",
+        "turn://turn-phase21-017",
+        "turn://turn-phase21-018",
+        "turn://turn-phase21-019",
+        "turn://turn-phase21-020"
+      ],
+      "memory_refs": [],
+      "metadata": {
+        "privacy": "refs_hashes_lengths_statuses_only",
+        "rolling_summary": {
+          "summary_ref": "summary://phase21/session-phase21-001/v1",
+          "task_intent_refs": ["intent://phase21/task-citation-review"],
+          "user_constraint_refs": ["constraint://phase21/brevity-rule"],
+          "unanswered_question_refs": ["question://phase21/open-question-001"],
+          "artifact_refs": ["artifact://phase21/draft-brief-001"],
+          "outcome_refs": ["outcome://phase21/citation-corrected-001"],
+          "text_sha256_16": "f3e1a9c2b4d60875",
+          "text_length": 287
+        }
+      }
+    }
+  }
+}

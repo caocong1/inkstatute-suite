@@ -8,10 +8,10 @@ last_updated: "2026-07-02T08:25:20.086Z"
 last_activity: 2026-07-02 — Milestone v1.3 requirements and roadmap defined
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 17
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
+  percent: 33
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 21 (Rolling Summary Pipeline) — next to execute
+Phase: 22 (Recall Orchestrator and Context Injection) — next to execute
 Plan: —
-Status: Phase 20 complete; autonomous execution proceeding
-Last activity: 2026-07-02 — Phase 20 Durable Native Memory Store complete (3 plans, 117 runtime tests pass, 12 contract tests pass)
+Status: Phases 20 and 21 complete; autonomous execution proceeding
+Last activity: 2026-07-02 — Phase 21 Rolling Summary Pipeline complete (2 plans, 138 runtime tests pass, 8 contract tests pass)
 
 ### Parallel Human Gate (v1.0)
 

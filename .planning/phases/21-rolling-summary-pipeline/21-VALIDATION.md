@@ -1,10 +1,11 @@
 ---
 phase: 21
 slug: rolling-summary-pipeline
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-07-02
+verified: 2026-07-02
 ---
 
 # Phase 21 - Validation Strategy
@@ -30,25 +31,25 @@ created: 2026-07-02
 
 | Task ID | Plan | Wave | Requirement | Behavior | Test Type | Status |
 |---------|------|------|-------------|----------|-----------|--------|
-| 21-01-01 | 01 | 1 | SUM-04 | SummaryPrivacyError and RollingSummaryPolicy safe defaults | unit | pending |
-| 21-01-02 | 01 | 1 | SUM-03 | RollingSummaryTrigger evaluates all four trigger modes correctly | unit | pending |
-| 21-01-03 | 01 | 1 | SUM-01, SUM-02, SUM-04 | RollingSummaryProducer creates records, fails closed on missing source_refs and forbidden metadata | unit | pending |
-| 21-01-04 | 01 | 1 | SUM-01..SUM-04 | All exports, 13 test cases pass, no raw text in ContextBundle metadata | unit | pending |
-| 21-02-01 | 02 | 2 | SUM-01..SUM-04 | Synthetic fixture with trigger reason and source_refs, no raw text | contract | pending |
-| 21-02-02 | 02 | 2 | SUM-01..SUM-04 | Contract tests pass, schema validation updated | contract | pending |
+| 21-01-01 | 01 | 1 | SUM-04 | SummaryPrivacyError and RollingSummaryPolicy safe defaults | unit | green |
+| 21-01-02 | 01 | 1 | SUM-03 | RollingSummaryTrigger evaluates all four trigger modes correctly | unit | green |
+| 21-01-03 | 01 | 1 | SUM-01, SUM-02, SUM-04 | RollingSummaryProducer creates records, fails closed on missing source_refs and forbidden metadata | unit | green |
+| 21-01-04 | 01 | 1 | SUM-01..SUM-04 | All exports, 21 test cases pass, no raw text in ContextBundle metadata | unit | green |
+| 21-02-01 | 02 | 2 | SUM-01..SUM-04 | Synthetic fixture with trigger reason and source_refs, no raw text | contract | green |
+| 21-02-02 | 02 | 2 | SUM-01..SUM-04 | Contract tests pass, schema validation updated | contract | green |
 
 ## Wave 0 Requirements
 
-- [ ] `packages/platform-runtime/tests/test_rolling_summary.py` - 13 tests covering all SUM requirements
-- [ ] `packages/contract-test-suite/fixtures/phase21_rolling_summary_pipeline.json` - synthetic fixture
-- [ ] `packages/contract-test-suite/tests/test_phase21_rolling_summary_pipeline.py` - contract tests
-- [ ] `packages/contract-test-suite/tests/test_schema_validation.py` - include phase21-rolling-summary-pipeline-001
+- [x] `packages/platform-runtime/tests/test_rolling_summary.py` - 21 tests covering all SUM requirements
+- [x] `packages/contract-test-suite/fixtures/phase21_rolling_summary_pipeline.json` - synthetic fixture
+- [x] `packages/contract-test-suite/tests/test_phase21_rolling_summary_pipeline.py` - contract tests
+- [x] `packages/contract-test-suite/tests/test_schema_validation.py` - include phase21-rolling-summary-pipeline-001
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verify commands
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30 seconds
-- [ ] `nyquist_compliant: true` set in frontmatter before phase verification
+- [x] All tasks have automated verify commands
+- [x] No watch-mode flags
+- [x] Feedback latency < 30 seconds
+- [x] `nyquist_compliant: true` set in frontmatter before phase verification
 
-**Approval:** pending
+**Approval:** green — all 6 tasks verified; 138 runtime tests pass; 8 contract fixture tests pass; schema validation updated
