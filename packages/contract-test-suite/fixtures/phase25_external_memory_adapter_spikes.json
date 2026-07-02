@@ -1,0 +1,219 @@
+{
+  "fixture_id": "phase25-external-memory-adapter-spikes-001",
+  "description": "Synthetic Phase 25 fixture proving external memory adapter spike evaluation and final recommendation. Three candidates (Zep/graph-audit, ReMe/file-auditable, Mem0/PoC) evaluated against native baseline; final recommendation defers all external adoption with evidence.",
+  "metadata": {
+    "phase": "25",
+    "requirements": [
+      "XMEM-01",
+      "XMEM-02",
+      "XMEM-03",
+      "XMEM-04",
+      "XMEM-05"
+    ],
+    "evidence_kind": "synthetic_local_fixture",
+    "not_live_acceptance": true,
+    "no_live_external_invocation": true,
+    "privacy": "refs_hashes_lengths_statuses_only",
+    "spike_evaluation_evidence": {
+      "xmem_01_zep_style_evaluated_via_adapter_boundary": true,
+      "xmem_02_reme_style_evaluated_via_adapter_boundary": true,
+      "xmem_03_mem0_style_poc_not_legal_production_default": true,
+      "xmem_04_all_manifests_document_required_fields": true,
+      "xmem_05_recommendation_produced_with_evidence": true,
+      "native_baseline_score": 1.0,
+      "recommended_default": "defer_all_external",
+      "all_spike_specs_sanitized_fixture_only": true
+    },
+    "native_baseline": {
+      "score": 1.0,
+      "scenarios_passed": 6,
+      "hard_gate_failures": []
+    },
+    "spike_comparisons": [
+      {
+        "candidate_id": "zep_style_graph",
+        "display_name": "Zep/Graph-Audit Style",
+        "deployment_model": "cloud_managed",
+        "data_residency": "vendor_cloud",
+        "secrets_required": true,
+        "tenant_isolation": "namespace_per_tenant",
+        "raw_payload_blocked": false,
+        "human_review_support": false,
+        "delete_export_support": true,
+        "source_refs_support": false,
+        "spike_baseline_score": 0.75,
+        "native_baseline": 1.0,
+        "delta": -0.25,
+        "recommended_action": "keep_native",
+        "rationale": "FAIL raw_payload_blocked=False; delta=-0.2500; action=keep_native",
+        "notes": "Raw payload blocking not built-in; human review not supported. Deferred."
+      },
+      {
+        "candidate_id": "reme_style_file_auditable",
+        "display_name": "ReMe/File-Auditable Style",
+        "deployment_model": "self_hosted_docker",
+        "data_residency": "customer_k8s",
+        "secrets_required": false,
+        "tenant_isolation": "row_level",
+        "raw_payload_blocked": true,
+        "human_review_support": true,
+        "delete_export_support": true,
+        "source_refs_support": true,
+        "spike_baseline_score": 1.0,
+        "native_baseline": 1.0,
+        "delta": 0.0,
+        "recommended_action": "defer_external",
+        "rationale": "Passes all hard gates; delta=+0.0000; requires scale/load testing before gating",
+        "notes": "Passes all hard gate requirements. delta=0.0 means no improvement over native in synthetic eval. Deferred for load/scale spiking."
+      },
+      {
+        "candidate_id": "mem0_style_quick_poc",
+        "display_name": "Mem0/Quick-PoC Style",
+        "deployment_model": "in_process",
+        "data_residency": "same_process",
+        "secrets_required": false,
+        "tenant_isolation": "no_built_in",
+        "raw_payload_blocked": false,
+        "human_review_support": false,
+        "delete_export_support": true,
+        "source_refs_support": false,
+        "spike_baseline_score": 0.3333,
+        "native_baseline": 1.0,
+        "delta": -0.6667,
+        "recommended_action": "keep_native",
+        "rationale": "FAIL raw_payload_blocked=False; FAIL no tenant isolation; delta=-0.6667; action=keep_native",
+        "notes": "Confirmed PoC-only per XMEM-03. No tenant isolation or scope support."
+      }
+    ],
+    "final_recommendation": {
+      "recommended_default": "defer_all_external",
+      "rationale": "Candidates require further spiking before production gating. Platform-native memory remains the default.",
+      "evidence_refs": [
+        "spike://phase25/zep_style_graph/eval-000",
+        "spike://phase25/reme_style_file_auditable/eval-001",
+        "spike://phase25/mem0_style_quick_poc/eval-002"
+      ]
+    },
+    "verification_commands": [
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest packages/platform-runtime/tests/test_memory_adapter_spikes.py",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_phase25_external_memory_adapter_spikes.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/contract-test-suite/src python -m unittest discover -s packages/contract-test-suite/tests -p 'test_schema_validation.py'",
+      "PYTHONPATH=packages/platform-contract/src:packages/platform-runtime/src python -m unittest discover -s packages/platform-runtime/tests"
+    ]
+  },
+  "events": {
+    "agent_turn": {
+      "turn_id": "turn-phase25-001",
+      "conversation_id": "conversation-phase25-001",
+      "channel": "wecom",
+      "user_id": "user-phase25-001",
+      "message_type": "text",
+      "received_at": "2026-07-02T18:00:00Z",
+      "content": "Synthetic adapter spike evaluation turn for Phase 25 evidence.",
+      "metadata": {
+        "content_sha256_16": "a2b4c6d8e0f11379",
+        "content_length": 62,
+        "raw_payload_ref": "fixture://phase25/turns/turn-phase25-001/raw"
+      }
+    },
+    "route_decision": {
+      "route_decision_id": "route-phase25-001",
+      "turn_id": "turn-phase25-001",
+      "primary_skill": "synthetic_adapter_spike_evaluation",
+      "confidence": 0.94,
+      "mode": "matched",
+      "created_at": "2026-07-02T18:00:01Z",
+      "supporting_skills": [],
+      "matched_rule": "fixture://phase25/routing/adapter-spike-eval",
+      "reason": "Synthetic route for Phase 25 external adapter spike evaluation evidence.",
+      "metadata": {
+        "raw_payload_ref": "fixture://phase25/route/route-phase25-001/raw"
+      }
+    },
+    "execution_trace": {
+      "trace_id": "trace-phase25-001",
+      "turn_id": "turn-phase25-001",
+      "started_at": "2026-07-02T18:00:01Z",
+      "ended_at": "2026-07-02T18:00:03Z",
+      "active_skill_name": "synthetic_adapter_spike_evaluation",
+      "matched_registered_skill": true,
+      "occurred_at": "2026-07-02T18:00:03Z",
+      "ingested_at": "2026-07-02T18:00:04Z",
+      "seq": 1,
+      "steps": [
+        {
+          "step_id": "step-phase25-spike-eval",
+          "state": "succeeded",
+          "memory_refs": [],
+          "raw_payload_ref": "fixture://phase25/trace/step-spike-eval"
+        }
+      ],
+      "metadata": {
+        "context_bundle_id": "bundle-phase25-001",
+        "candidates_evaluated": 3,
+        "native_baseline_score": 1.0,
+        "recommended_default": "defer_all_external",
+        "hard_gate_failures_per_candidate": {
+          "zep_style_graph": ["raw_payload_blocked=False"],
+          "reme_style_file_auditable": [],
+          "mem0_style_quick_poc": ["raw_payload_blocked=False", "tenant_isolation=no_built_in"]
+        },
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "agent_result": {
+      "result_id": "result-phase25-001",
+      "turn_id": "turn-phase25-001",
+      "status": "success",
+      "reply_type": "text",
+      "content": "Synthetic spike eval result: result://phase25/result-phase25-001/summary",
+      "feedback_target": "delivery-phase25-001",
+      "metadata": {
+        "trace_id": "trace-phase25-001",
+        "context_bundle_id": "bundle-phase25-001",
+        "visible_text_sha256_16": "d6e8a0b2c4f51379",
+        "visible_text_length": 68,
+        "raw_payload_ref": "fixture://phase25/results/result-phase25-001/raw"
+      }
+    },
+    "feedback_event": {
+      "feedback_id": "feedback-phase25-001",
+      "turn_id": "turn-phase25-001",
+      "result_id": "result-phase25-001",
+      "conversation_id": "conversation-phase25-001",
+      "user_id": "user-phase25-001",
+      "source": "card_button",
+      "event_type": "rating",
+      "status": "resolved",
+      "created_at": "2026-07-02T18:01:00Z",
+      "feedback_target": "delivery-phase25-001",
+      "action": "up",
+      "labels": ["rating"],
+      "raw_payload_ref": "fixture://phase25/feedback/feedback-phase25-001/raw",
+      "metadata": {
+        "idempotency_key": "feedback:phase25:rating:001",
+        "privacy": "refs_hashes_lengths_statuses_only"
+      }
+    },
+    "context_bundle": {
+      "context_bundle_id": "bundle-phase25-001",
+      "tenant_id": "tenant-phase25-001",
+      "workspace_id": "workspace-phase25-001",
+      "session_id": "session-phase25-001",
+      "created_at": "2026-07-02T18:00:01Z",
+      "budget_tokens": 4096,
+      "run_id": "run-phase25-001",
+      "turn_id": "turn-phase25-001",
+      "summary_ref": "summary://phase25/session-phase25-001/placeholder",
+      "recent_turn_refs": [
+        "turn://turn-phase25-001"
+      ],
+      "memory_refs": [],
+      "metadata": {
+        "privacy": "refs_hashes_lengths_statuses_only",
+        "adapter_recommendation": "defer_all_external",
+        "candidates_evaluated": 3
+      }
+    }
+  }
+}

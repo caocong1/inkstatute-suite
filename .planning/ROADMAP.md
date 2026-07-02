@@ -28,7 +28,7 @@ v1.3 turns the v1.2 memory foundation into a production-capable native memory lo
 - [x] **Phase 22: Recall Orchestrator and Context Injection** - Retrieve approved memory and summary refs before backend submission and attach bounded context to WeCom runtime flows.
 - [x] **Phase 23: Feedback-to-Memory Review Loop** - Convert feedback into same-session corrections and human-reviewed durable memory candidates.
 - [x] **Phase 24: Memory Evaluation Harness and Privacy Gates** - Build the sanitized benchmark and gates that prove recall quality, isolation, deletion, and safety.
-- [ ] **Phase 25: External Memory Adapter Spikes and Final Recommendation** - Evaluate Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates behind the adapter boundary.
+- [x] **Phase 25: External Memory Adapter Spikes and Final Recommendation** - Evaluate Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates behind the adapter boundary.
 
 ## Phase Details
 

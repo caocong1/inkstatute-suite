@@ -55,6 +55,7 @@ class SchemaValidationTests(unittest.TestCase):
                 "phase22-recall-orchestrator-context-injection-001",
                 "phase23-feedback-to-memory-review-loop-001",
                 "phase24-memory-evaluation-harness-privacy-gates-001",
+                "phase25-external-memory-adapter-spikes-001",
             },
         )
 
