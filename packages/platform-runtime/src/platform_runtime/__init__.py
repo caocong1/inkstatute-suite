@@ -60,6 +60,13 @@ from .memory import (
     MemorySearchResult,
     MemoryStorePolicy,
 )
+from .memory_adapter_spikes import (
+    AdapterComparisonResult,
+    ExternalAdapterSpikeRunner,
+    ExternalAdapterSpikeSpec,
+    MemoryAdapterRecommendation,
+    canonical_spike_specs,
+)
 from .memory_eval import (
     MemoryEvalGateError,
     MemoryEvalReport,
@@ -156,8 +163,12 @@ __all__ = [
     "MemoryQuery",
     "MemorySearchResult",
     "MemoryStorePolicy",
+    "AdapterComparisonResult",
+    "ExternalAdapterSpikeRunner",
+    "ExternalAdapterSpikeSpec",
     "InMemoryMemoryCandidateReviewStore",
     "MemoryAdapterDecision",
+    "MemoryAdapterRecommendation",
     "MemoryEvalGateError",
     "MemoryEvalReport",
     "MemoryEvalResult",
@@ -173,6 +184,7 @@ __all__ = [
     "MemoryStoreCapabilityManifest",
     "OrchestratorIsolationError",
     "ReviewDeciderError",
+    "canonical_spike_specs",
     "PendingInterruptSnapshot",
     "RawInbound",
     "Run",
