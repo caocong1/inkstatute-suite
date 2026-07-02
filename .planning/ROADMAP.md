@@ -175,11 +175,21 @@ Plans:
   5. Evaluation and contract evidence covers durable native memory, rolling summaries, recall, feedback learning, privacy gates, and external spike recommendations with synthetic/sanitized fixtures only.
   6. `VERIFICATION.md` exists for phases 20-25 and validation artifacts exist or are explicitly normalized for phases 22-25.
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] TBD (run `$gsd-plan-phase 25.1` to break down)
+**Wave 1**
+
+- [ ] 25.1-01-PLAN.md — WeCom/runtime memory recall injection and MemoryUse evidence failure policy
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 25.1-02-PLAN.md — Feedback-service memory wiring and human-review-safe candidate flow
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 25.1-03-PLAN.md — Evaluation hardening plus validation, verification, audit, and traceability closure
 
 ## Carried Gates
 
@@ -198,4 +208,4 @@ Plans:
 | 23. Feedback-to-Memory Review Loop | v1.3 | 0/TBD | Not started | - |
 | 24. Memory Evaluation Harness and Privacy Gates | v1.3 | 0/TBD | Not started | - |
 | 25. External Memory Adapter Spikes and Final Recommendation | v1.3 | 0/TBD | Not started | - |
-| 25.1. Close gap: memory runtime and feedback wiring | v1.3 | 0/TBD | Not started | - |
+| 25.1. Close gap: memory runtime and feedback wiring | v1.3 | 0/3 | Planned | - |
