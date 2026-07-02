@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Production Memory System and Evaluation Spikes
-status: ready_for_audit
-stopped_at: Milestone v1.3 phases 20-25 and 25.1 closure complete; awaiting milestone audit and completion
+status: shipped
+stopped_at: Milestone v1.3 completed and archived; awaiting next milestone definition
 last_updated: "2026-07-02T16:15:00Z"
-last_activity: 2026-07-02 — Phase 25.1 plans 01-05 complete; v1.3 requirements, artifacts, and roadmap updated
+last_activity: 2026-07-02 — Milestone v1.3 completed and archived
 progress:
   total_phases: 7
   completed_phases: 7
@@ -25,10 +25,22 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 25.1 (close-gap-v1-3-memory-runtime-and-feedback-wiring)
+Phase: Milestone v1.3 complete
 Plan: —
-Status: Complete — all 5 closure plans shipped; v1.3 requirements, verification/validation artifacts, audit file, and roadmap are closed
-Last activity: 2026-07-02 — Phase 25.1 plans 01-05 complete; v1.3 awaiting milestone audit and completion
+Status: Awaiting next milestone
+Last activity: 2026-07-02 — Milestone v1.3 completed and archived
+
+### Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-07-02:
+
+| Category | Item | Status |
+|----------|------|--------|
+| uat_gap | Phase 08 lawyer-trial UAT | passed (0 open scenarios; human gate remains carried) |
+| verification_gap | Phase 05 shadow-loop verification | human_needed (pre-existing v1.0 gate, not a v1.3 blocker) |
+| tech_debt | Phase 20 SQLite file-backed db_path production injection | deployment configuration step |
+| tech_debt | Phase 24 MemoryEvalRunner in-memory vs SQLite baseline | both modes tested and documented |
+| tech_debt | Phase 25 external adapter spikes | sanitized simulations only; no live provider integration |
 
 ### Parallel Human Gate (v1.0)
 

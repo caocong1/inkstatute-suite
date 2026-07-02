@@ -181,17 +181,32 @@ v1.2 delivered automatic WeCom session continuity, interrupt resume, bounded sho
 
 **Archive:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md) | [v1.2-MILESTONE-AUDIT.md](milestones/v1.2-MILESTONE-AUDIT.md)
 
-**Milestone v1.3 — Production Memory System and Evaluation Spikes: ACTIVE**
+**Milestone v1.3 — Production Memory System and Evaluation Spikes: SHIPPED (2026-07-02)**
 
-v1.3 makes platform-native memory production-capable before any external memory service can handle live legal data. It builds durable memory storage, rolling summaries, recall orchestration, feedback review, evaluation gates, and sanitized external adapter spikes. External providers remain candidates, not defaults.
+v1.3 made platform-native memory production-capable before any external memory service can handle live legal data. It built durable memory storage, rolling summaries, recall orchestration wired into ordinary WeCom/runtime flows, feedback-to-memory service wiring, evaluation gates with durable SQLite baseline/export evidence, and sanitized external adapter spikes. External providers remain deferred candidates, not defaults. Audit status: `closed`.
 
-**What must ship:**
-- Durable native memory store and deletion/export/tombstone behavior
-- Rolling summary pipeline and safe summary refs
-- Pre-run recall orchestration and bounded context injection
-- Feedback-to-memory human review flow
-- Memory evaluation harness and privacy gates
-- External memory adapter spike report and final recommendation
+**What shipped:**
+- Durable native memory store (`SQLiteMemoryStore`) with ref-first privacy, deletion/export/tombstone behavior, and scoped query.
+- Rolling summary pipeline and safe summary refs integrated into bounded context assembly.
+- Pre-run recall orchestration injected into ordinary WeCom continue/start flows with MemoryUse evidence fail-closed policy.
+- Feedback-to-memory human review flow at the service level: correction refs, pending candidates, explicit review actions, and no-auto-modify for high-risk legal/route/skill candidates.
+- Memory evaluation harness with hard gates, native baseline, and durable SQLite baseline/export evidence.
+- External memory adapter spike report and final `defer_all_external` recommendation.
+- Phase 20-25 verification artifacts and Phase 22-25/25.1 validation artifacts; deterministic v1.3 audit closure script.
+
+**Accepted v1.3 debt:**
+- Phase 20: file-backed `SQLiteMemoryStore` requires host `db_path` injection in production (deployment configuration).
+- Phase 24: `MemoryEvalRunner` supports both in-memory fast CI and SQLite durable baseline modes.
+- Phase 25: external adapter spikes remain sanitized manifest/spec simulations; no live provider integration claimed.
+- Live WeCom UAT and five-workday lawyer trial remain human gates, not v1.3 dependencies.
+
+**Archive:** [v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) | [v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md) | [v1.3-MILESTONE-AUDIT.md](milestones/v1.3-MILESTONE-AUDIT.md)
+
+## Current State
+
+- **Last shipped:** v1.3 Production Memory System and Evaluation Spikes (2026-07-02).
+- **Next step:** Define the next milestone (v1.4 or later) via `/gsd-new-milestone`.
+- **Carried human gates:** Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial remain operator-confirmed human gates.
 
 ## Evolution
 

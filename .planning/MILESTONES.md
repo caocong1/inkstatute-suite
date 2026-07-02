@@ -1,23 +1,33 @@
 # Project Milestones: 墨律 InkStatute
 
-## v1.3 Production Memory System and Evaluation Spikes (Active)
+## v1.3 Production Memory System and Evaluation Spikes (Shipped: 2026-07-02)
 
-**Goal:** Make platform-native memory production-capable first, then evaluate external memory candidates through sanitized adapter spikes.
+**Delivered:** Platform-native memory is production-capable, rolling summaries are safe and reference-first, recall orchestration is wired into ordinary WeCom/runtime flows, feedback-to-memory learning is wired at the service level, evaluation gates prove durable SQLite baseline and export evidence, and external memory adapters are evaluated as sanitized spikes with a defer-all recommendation.
 
-**Planned phases:** 20-25
+**Phases completed:** 20-25, 25.1 (7 phases, 19 plans, 18 summaries)
 
-**Artifacts:** [REQUIREMENTS.md](REQUIREMENTS.md) | [ROADMAP.md](ROADMAP.md) | [production-memory-system-strategy.md](../docs/architecture/memory/production-memory-system-strategy.md)
+**Archive:** [v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) | [v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md) | [v1.3-MILESTONE-AUDIT.md](milestones/v1.3-MILESTONE-AUDIT.md)
 
-**Planned outcomes:**
+**Key accomplishments:**
 
-- Durable native memory store with ref-first privacy, TTL/deletion/export, review state, and scoped query behavior.
+- Durable native memory store (`SQLiteMemoryStore`) with ref-first privacy, TTL/deletion/export, review state, and scoped query behavior.
 - Policy-driven rolling summaries stored as refs, hashes, lengths, and structured evidence.
-- Pre-run recall orchestration that attaches approved memory refs to bounded context for WeCom/runtime flows.
-- Feedback-to-memory review loop with same-session corrections and human-reviewed durable candidates.
-- Repeatable memory evaluation harness for recall quality, deletion/export, tenant isolation, privacy, latency, and token impact.
-- Sanitized adapter spikes for Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates, with a final production recommendation.
+- Pre-run recall orchestration wired into WeCom/runtime ordinary continue/start flows, with interrupt/active-task behavior preserved and MemoryUse evidence fail-closed in legal production mode.
+- Feedback-to-memory review loop at the service level: same-session correction refs, repeated-negative pending candidates, explicit human review actions, and no auto-modify for high-risk legal/route/skill candidates.
+- Repeatable memory evaluation harness with hard gates, native baseline, and durable SQLite baseline/export evidence.
+- Sanitized adapter spikes for Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates, with a final `defer_all_external` recommendation.
+- Formal verification artifacts for phases 20-25 and validation artifacts for phases 22-25 and 25.1; deterministic audit closure script.
 
-**Current decision:** Native memory remains the legal default unless an external provider passes all gates and clearly beats or complements the native baseline.
+**Audit result:** `closed`. 28/28 requirements satisfied; 6/6 phase verification reports present; 7/7 cross-phase integration flows verified; 0 broken flows.
+
+**Known deferred items at close:**
+
+- Phase 20: file-backed `SQLiteMemoryStore` requires host `db_path` injection in production (deployment configuration, not code gap).
+- Phase 24: `MemoryEvalRunner` can use fast in-memory or durable SQLite baseline; both modes are tested.
+- Phase 25: external adapter spikes remain sanitized manifest/spec simulations; no live provider integration claimed.
+- Phase 8 (Lawyer Trial Acceptance) and Phase 5 live WeCom UAT remain parallel human gates, not v1.3 dependencies.
+
+**Follow-up:** Next milestone to be defined via `/gsd-new-milestone`.
 
 ---
 
