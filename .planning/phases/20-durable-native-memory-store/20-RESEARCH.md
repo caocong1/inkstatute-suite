@@ -340,17 +340,17 @@ exported = store.export_records(
 | A2 | A deterministic semantic detector for "full legal/customer text" is not present in the repo; Phase 20 should enforce structural guards, secret patterns, and summary length/policy controls. | Anti-Patterns / Pitfalls | Planner may need a human/legal decision if semantic raw legal text detection is required now. |
 | A3 | SQL coarse filters plus Python post-filter/ranking are sufficient for Phase 20 scale. | Common Pitfalls | Very large memory volumes may require more indexes, FTS, or Postgres in a later phase. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should Phase 20 add explicit schema fields for tombstone/export evidence?**
-   - What we know: `MemoryRecord` already has `status`, `deleted_at`, and `deletion_reason`; metadata can carry refs and audit details. [VERIFIED: packages/platform-contract/src/platform_contract/events.py]
-   - What's unclear: Whether the platform contract should get a separate tombstone/export event in a later phase. [ASSUMED]
-   - Recommendation: Do not change schemas in Phase 20 unless tests prove metadata is insufficient; use record metadata and fixture evidence first. [VERIFIED: .planning/phases/17-long-term-memory-and-feedback-learning/17-CONTEXT.md]
+1. **RESOLVED: Phase 20 will not add explicit platform schema fields for tombstone/export evidence.**
+   - Resolution: Use existing `MemoryRecord.status`, `deleted_at`, and `deletion_reason` for tombstone state; use reference-first metadata, source refs, and Phase 20 fixture evidence for export/delete audit details. [VERIFIED: packages/platform-contract/src/platform_contract/events.py]
+   - Scope guard: Do not add a new tombstone event schema, export event schema, or top-level platform contract field in Phase 20. A later phase can revisit separate tombstone/export event contracts only with an explicit requirement. [VERIFIED: .planning/REQUIREMENTS.md]
+   - Test implication: Runtime and contract-suite tests must prove tombstones remain exportable through `MemoryRecord` evidence and do not require new schema fields. [VERIFIED: .planning/phases/20-durable-native-memory-store/20-VALIDATION.md]
 
-2. **Should `MemoryQuery` grow first-class `sensitivity`, `include_deleted`, or confidence range fields?**
-   - What we know: `MemoryQuery` currently has tenant/workspace/session/user/text/labels/source_refs/now/max_results/metadata, while `MemoryStorePolicy` carries allowed sensitivities and minimum confidence. [VERIFIED: packages/platform-runtime/src/platform_runtime/memory.py]
-   - What's unclear: MEM-04 names sensitivity, confidence, TTL, and deletion-status filters directly; policy may be enough for some but not all test cases. [VERIFIED: .planning/REQUIREMENTS.md]
-   - Recommendation: Add minimal backward-compatible query fields only where tests need caller-controlled filtering; keep old constructor usages valid. [ASSUMED]
+2. **RESOLVED: `MemoryQuery` will grow only minimal backward-compatible caller-controlled filters required by MEM-04 tests.**
+   - Resolution: Add defaulted `MemoryQuery` fields for sensitivities, statuses, minimum confidence, TTL before/after bounds, and include-deleted/include-expired behavior so callers can test sensitivity, status, confidence, TTL, and deletion filters directly. [VERIFIED: .planning/REQUIREMENTS.md]
+   - Compatibility guard: Preserve old constructor usages by giving every new field a default and keeping `MemoryStorePolicy` as the default recall policy boundary. [VERIFIED: packages/platform-runtime/src/platform_runtime/memory.py]
+   - Privacy implication: `_validate_query` must validate the new fields, and both SQLite query and export paths must reject forbidden or secret-like query metadata before SQL/export processing. [VERIFIED: packages/platform-runtime/src/platform_runtime/memory.py]
 
 ## Environment Availability
 
