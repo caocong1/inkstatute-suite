@@ -14,6 +14,7 @@ from platform_runtime import (
     InMemoryInterruptStore,
     Memory,
     MemoryOrchestrator,
+    RetryableMemory,
     Run,
     RunRequest,
     RunRuntime,
@@ -112,7 +113,7 @@ class WeComSessionRuntime:
         self.interrupt_store = interrupt_store
         self.policy = policy or SessionResolutionPolicy()
         self.memory_orchestrator = memory_orchestrator
-        self.memory = memory
+        self.memory = RetryableMemory(memory) if memory is not None and not isinstance(memory, RetryableMemory) else memory
         self.memory_policy = memory_policy
         self.feedback_correction_ref_provider = feedback_correction_ref_provider
         self.clock = clock

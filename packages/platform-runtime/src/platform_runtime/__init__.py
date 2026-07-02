@@ -102,12 +102,26 @@ from .memory_review import (
     MemoryCandidateReviewDecision,
     ReviewDeciderError,
 )
+from .memory_errors import (
+    MemoryFailureCategory,
+    MemoryOperationError,
+    classify_exception,
+)
+from .memory_events import (
+    InMemoryMemoryObserver,
+    MemoryObserver,
+    MemoryOperationEvent,
+)
 from .memory_orchestrator import (
     MemoryUseEvidenceError,
     MemoryUseEvidenceFailureMode,
     MemoryOrchestrator,
     MemoryOrchestratorPolicy,
     OrchestratorIsolationError,
+)
+from .retryable_memory import (
+    RetryPolicy,
+    RetryableMemory,
 )
 from .rolling_summary import (
     RollingSummaryPolicy,
@@ -223,6 +237,14 @@ __all__ = [
     "MemoryUseEvidenceFailureMode",
     "MemoryOrchestrator",
     "MemoryOrchestratorPolicy",
+    "MemoryFailureCategory",
+    "MemoryOperationError",
+    "classify_exception",
+    "MemoryObserver",
+    "MemoryOperationEvent",
+    "InMemoryMemoryObserver",
+    "RetryPolicy",
+    "RetryableMemory",
     "MemoryStoreAdapter",
     "MemoryStoreCapabilityManifest",
     "OrchestratorIsolationError",

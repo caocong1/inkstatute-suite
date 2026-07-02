@@ -7,10 +7,10 @@ last_updated: "2026-07-03T03:00:00.000Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 0
   completed_plans: 0
-  percent: 67
+  percent: 83
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 30 (Error Handling and Observability)
+Phase: 31 (Real-Provider Validation and Regression Gates)
 Plan: —
 Status: Planning
-Last activity: 2026-07-03 — Phase 29 completed, memory wired into WeCom runtime
+Last activity: 2026-07-03 — Phase 30 completed, retry + observability shipped
 
 ### Deferred Items
 
