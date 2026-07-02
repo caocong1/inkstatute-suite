@@ -12,6 +12,8 @@ from platform_runtime import (
     DefaultRunRuntime,
     InMemoryMemoryStore,
     InMemoryRollingSummaryStore,
+    MemoryUseEvidenceError,
+    MemoryUseEvidenceFailureMode,
     MemoryOrchestrator,
     MemoryOrchestratorPolicy,
     MemoryQuery,
@@ -195,6 +197,80 @@ class MemoryOrchestratorIsolationTests(unittest.TestCase):
 
 
 class MemoryOrchestratorMemoryUseTests(unittest.TestCase):
+    def test_fail_closed_mode_raises_when_memory_use_recording_fails(self) -> None:
+        """REC-04: fail-closed policy blocks context assembly if evidence cannot be recorded."""
+        store = FailingMemoryUseStore()
+        store.upsert(make_memory("mem-fail-closed-001"))
+
+        orchestrator = MemoryOrchestrator(
+            memory_store=store,
+            policy=MemoryOrchestratorPolicy(
+                record_memory_use=True,
+                memory_use_evidence_failure_mode=MemoryUseEvidenceFailureMode.FAIL_CLOSED,
+            ),
+            clock=lambda: FIXED_NOW,
+        )
+
+        with self.assertRaises(MemoryUseEvidenceError) as raised:
+            orchestrator.recall_and_assemble(
+                scope=SCOPE,
+                session_id="session-phase22-001",
+                turn_id="turn-phase22-001",
+                current_turn_ref="turn://turn-phase22-001",
+            )
+
+        self.assertEqual(raised.exception.code, "memory_use_evidence_record_failed")
+        self.assertEqual(raised.exception.memory_ids, ("mem-fail-closed-001",))
+
+    def test_degraded_mode_reports_visible_evidence_metadata(self) -> None:
+        """REC-04: degraded policy returns explicit evidence status metadata."""
+        store = FailingMemoryUseStore()
+        store.upsert(make_memory("mem-degraded-001"))
+
+        orchestrator = MemoryOrchestrator(
+            memory_store=store,
+            policy=MemoryOrchestratorPolicy(
+                record_memory_use=True,
+                memory_use_evidence_failure_mode=MemoryUseEvidenceFailureMode.DEGRADED,
+            ),
+            clock=lambda: FIXED_NOW,
+        )
+        result = orchestrator.recall_and_assemble(
+            scope=SCOPE,
+            session_id="session-phase22-001",
+            turn_id="turn-phase22-001",
+            current_turn_ref="turn://turn-phase22-001",
+        )
+
+        self.assertEqual(result.metadata["memory_use_evidence_status"], "degraded")
+        self.assertEqual(result.metadata["memory_use_evidence_error_code"], "memory_use_evidence_record_failed")
+        self.assertEqual(result.metadata["memory_use_evidence_error_class"], "RuntimeError")
+        self.assertEqual(result.metadata["memory_use_evidence_failed_count"], 1)
+        self.assertEqual(result.metadata["memory_use_evidence_memory_ids"], ["mem-degraded-001"])
+        self.assertNotIn("synthetic sink failure", str(result.metadata))
+
+    def test_unsupported_in_memory_store_reports_evidence_metadata(self) -> None:
+        """REC-04: unsupported stores remain usable but visible in result metadata."""
+        store = InMemoryMemoryStore()
+        store.upsert(make_memory("mem-in-memory-unsupported-001"))
+
+        orchestrator = MemoryOrchestrator(
+            memory_store=store,
+            policy=MemoryOrchestratorPolicy(record_memory_use=True),
+            clock=lambda: FIXED_NOW,
+        )
+        result = orchestrator.recall_and_assemble(
+            scope=SCOPE,
+            session_id="session-phase22-001",
+            turn_id="turn-phase22-001",
+            current_turn_ref="turn://turn-phase22-001",
+        )
+
+        self.assertEqual(result.metadata["memory_use_evidence_status"], "unsupported")
+        self.assertEqual(result.metadata["memory_use_evidence_selected_count"], 1)
+        self.assertEqual(result.metadata["memory_use_evidence_recorded_count"], 0)
+        self.assertEqual(result.metadata["memory_use_evidence_privacy"], "refs_ids_counts_statuses_only")
+
     def test_memory_use_recorded_in_sqlite_store(self) -> None:
         """REC-04: MemoryUse evidence is recorded for each selected memory."""
         store = SQLiteMemoryStore()
@@ -222,6 +298,8 @@ class MemoryOrchestratorMemoryUseTests(unittest.TestCase):
         use = uses[0]
         self.assertEqual(use.memory_id, "mem-rec-001")
         self.assertEqual(use.purpose, "context_assembly")
+        self.assertEqual(result.metadata["memory_use_evidence_status"], "recorded")
+        self.assertEqual(result.metadata["memory_use_evidence_recorded_count"], len(result.bundle.memory_refs))
         store.close()
 
     def test_memory_use_has_no_raw_text_fields(self) -> None:
@@ -291,6 +369,11 @@ class MemoryOrchestratorContractTests(unittest.TestCase):
         orchestrator = MemoryOrchestrator(memory_store=store)
         self.assertIsNotNone(orchestrator)
 
+    def test_evidence_failure_types_are_exported(self) -> None:
+        """REC-04: evidence failure policy and exception are public platform_runtime exports."""
+        self.assertEqual(MemoryUseEvidenceFailureMode.FAIL_CLOSED.value, "fail_closed")
+        self.assertTrue(issubclass(MemoryUseEvidenceError, RuntimeError))
+
     def test_budget_pressure_trim_occurs_within_assembler(self) -> None:
         """ContextAssembler trims when bundle exceeds budget — orchestrator does not bypass this."""
         store = InMemoryMemoryStore()
@@ -319,3 +402,8 @@ class MemoryOrchestratorContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FailingMemoryUseStore(InMemoryMemoryStore):
+    def record_memory_use(self, _use: object) -> None:
+        raise RuntimeError("synthetic sink failure with possible payload-like details")
