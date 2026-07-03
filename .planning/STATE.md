@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Long-Term Memory Productization
-status: archived
-last_updated: "2026-07-03T11:05:00.000Z"
+milestone: v1.5
+milestone_name: V2 Acceptance Closure
+status: planning
+last_updated: "2026-07-03T04:22:01.662Z"
 last_activity: 2026-07-03
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
-status: archived
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: —
+Phase: Not started (defining requirements)
 Plan: —
-Status: Milestone v1.4 archived; v1.4 tech debt closure complete
-Last activity: 2026-07-03 — v1.4 tech debt closure: REQUIREMENTS.md traceability updated (TD-03), SUMMARY.md written for phases 26-32 (TD-04), STATE.md plan counts corrected 14→7 (TD-05), Nyquist VALIDATION.md added for phases 26-32 (TD-06). Ready for next milestone.
+Status: Defining requirements
+Last activity: 2026-07-03 — Milestone v1.5 started
 
 ### Deferred Items
 

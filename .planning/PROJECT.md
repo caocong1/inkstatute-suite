@@ -10,16 +10,15 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: v1.4 Long-Term Memory Productization
+## Current Milestone: v1.5 V2 Acceptance Closure
 
-**Goal:** Replace the evaluation-only memory approach with a single, productized long-term memory layer. The bot feels like one continuous companion: it focuses on the current task, yet remembers facts, preferences, and personality across days and tasks, without exposing the user to sessions, context windows, or fallback modes.
+**Goal:** Audit all unchecked V2 Active requirements against the actual codebase, close every code gap found, mark validated requirements in PROJECT.md, and produce a final V2 acceptance readiness report so that only the Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial human gates remain before V2 is formally accepted.
 
 **Target features:**
-- Re-evaluate and select the best 2026 external long-term memory provider for seamless, personalized recall.
-- Define a unified `Memory` interface (retain/recall/reflect) and implement it with the selected provider as the primary backend.
-- Wire the memory layer into the ordinary WeCom/runtime flow so recall happens before the agent turn and retention happens after the reply.
-- Implement clear internal error handling and observability without exposing fallback modes to the user.
-- Validate with real provider calls and keep the existing V2 gate suite passing.
+- V2 Active requirement audit — systematically verify each unchecked requirement in PROJECT.md against the shipped code (services, packages, tests, fixtures).
+- Code gap closure — implement any missing V2 code work identified by the audit (WeCom service completeness, output boundary, feedback normalization, conversation-read-view, CI composability, observability/replay/privacy baselines).
+- PROJECT.md traceability update — move validated requirements from Active to Validated with phase references; update stale sections.
+- V2 acceptance readiness report — formal document summarizing what's done, what code gaps were closed, and exactly which human gates remain for V2 acceptance.
 
 ## Requirements
 
@@ -116,108 +115,42 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 | Keep platform-native memory as the lawyer-assistant default and route Zep/Hindsight, OpenViking/ReMe, and Mem0 through future sanitized spikes | The component study favors different providers for graph/audit, file-auditable, and PoC use cases, but live legal memory still needs privacy, deletion/export, residency, security, review, benchmark, and license gates | Decided 2026-07-02 |
 | Build v1.3 as native production memory first, with external providers as measured adapter spikes | A legal-memory system needs deletion/export, tenant isolation, human review, traceability, and raw-payload controls before provider convenience; external tools must beat or complement the native baseline through sanitized evidence | Decided 2026-07-02 |
 
-## Last Completed Milestone: v1.2 Conversational Context and Memory Foundation
+## Shipped Milestones
 
-**Shipped:** 2026-07-02
+### v1.4 Long-Term Memory Productization (Shipped: 2026-07-03)
 
-**Goal achieved:** Ordinary WeCom users can continuously talk to InkStatute without knowing agent/session commands, while the platform provides bounded short-term context, privacy-safe long-term memory, recoverable skill clarification, and feedback-informed context assembly.
+Replaced the evaluation-only memory approach with a single, productized long-term memory layer (Hindsight backend). Unified `Memory` interface, Hindsight adapter, focus/retention policies, WeCom runtime integration, retry/observability, singleton wiring, and contract event observability. Audit passed 20/20.
 
-**Target features:**
-- Automatic session/thread resolution for WeCom and platform channels, including active task and pending clarification recovery.
-- Bounded short-term context assembly with recent turns, rolling summaries, artifacts, feedback corrections, and deterministic trimming.
-- Backend-neutral memory contracts and a platform-native `MemoryStore` with privacy, TTL, source refs, confidence, and deletion metadata.
-- Runtime interrupt/resume flow for skill clarification and waiting-for-user states.
-- Feedback learning policy that feeds corrections into current context and creates human-reviewed memory/routing candidates.
-- Mem0/Zep-style external memory adapter research and synthetic adapter spike, without making either mandatory for legal production.
+**Archive:** [v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md) | [v1.4-REQUIREMENTS.md](milestones/v1.4-REQUIREMENTS.md) | [v1.4-MILESTONE-AUDIT.md](milestones/v1.4-MILESTONE-AUDIT.md)
 
-**Artifacts:**
-- Requirements archive: `.planning/milestones/v1.2-REQUIREMENTS.md`
-- Roadmap archive: `.planning/milestones/v1.2-ROADMAP.md`
-- Audit archive: `.planning/milestones/v1.2-MILESTONE-AUDIT.md`
-- Research summary: `.planning/research/SUMMARY.md`
+### v1.3 Production Memory System and Evaluation Spikes (Shipped: 2026-07-02)
 
-## Current Milestone: v1.3 Production Memory System and Evaluation Spikes
-
-**Goal:** Turn the v1.2 memory foundation into a production-capable platform-native memory loop, while evaluating external memory systems only through sanitized adapter spikes.
-
-**Target features:**
-- Durable platform-native memory storage with ref-first privacy, scope isolation, TTL/deletion/export, review state, and deterministic query behavior.
-- Policy-driven rolling summaries that preserve intent, constraints, open questions, artifacts, and outcomes through refs, hashes, and lengths rather than raw legal text.
-- Memory recall orchestration before backend submission so WeCom continuation/start flows can automatically attach approved memory refs and summary refs to bounded context.
-- Feedback-to-memory review workflow where safe corrections affect current context and repeated negative feedback creates human-reviewed memory candidates.
-- Sanitized memory evaluation harness covering recall quality, false recall, tenant isolation, deletion/export, privacy gates, and token/latency impact.
-- External adapter spikes for Zep/Hindsight, OpenViking/ReMe, and Mem0-style candidates, measured against the native baseline without live legal/customer payloads.
-
-**Strategy:** `docs/architecture/memory/production-memory-system-strategy.md`
-**Requirements:** `.planning/REQUIREMENTS.md`
-**Roadmap:** `.planning/ROADMAP.md`
-
-## Current State
-
-**Milestone v1.1 — Platform Foundation: SHIPPED (2026-06-30)**
-
-v1.1 delivered the four-contract North Star platform architecture with 5 phases, 20 plans, 99 commits, 195 files, and 25,368 lines added. All 287 V2 gate tests pass. Audit status: passed.
-
-**What shipped:**
-- Four North Star contracts (ChannelAdapter, BackendAdapter, SolutionLoader, RunRuntime) as independently swappable seams
-- Embeddable DefaultRunRuntime with output boundary and default-off feature flags
-- Hermes BackendAdapter (subprocess one-shot + capability probe + /v1/runs parity spike)
-- Channel interface (WeCom wrapper + Web/SSE channel) + Platform API server + TypeScript SDK + embeddable web chat renderer
-- SolutionLoader with lawfirm solution (sanitizing Hermes materializer) and demo_non_legal solution
-- All new lanes default-OFF; live cutover is a separate human gate
-
-**Parallel human gates (not autonomous-completable):**
-- Phase 8 (Lawyer Trial Acceptance) — 5-workday live WeCom trial pending
-- Phase 5 live WeCom UAT — fixture-satisfied, operator confirmation needed
-- All v1.1 runtime lanes — default-OFF, live promotion is a human gate
-
-**Archive:** [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) | [v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md)
-
-**Milestone v1.2 — Conversational Context and Memory Foundation: SHIPPED (2026-07-02)**
-
-v1.2 delivered automatic WeCom session continuity, interrupt resume, bounded short-term context, platform-native memory, feedback-informed context/candidate behavior, external-memory adapter evaluation, and Phase 19 closure of the runtime E2E wiring gap. Audit status: `tech_debt` accepted, with no remaining critical requirement, integration, or flow blockers.
-
-**What shipped:**
-- Backend-neutral memory/context/interrupt schemas and sanitized fixture coverage
-- Scoped session resolver and interrupt lifecycle/runtime resume support
-- Deterministic short-term context assembly with budget trimming and protected refs
-- Platform-native memory store plus feedback learning policy with human review gates
-- Sanitized external memory adapter contract, fixture evidence, and recommendation
-- WeCom session runtime create-run handoff plus pure ingress orchestration boundary
-
-**Accepted v1.2 debt:**
-- Missing/partial Nyquist validation artifacts for Phases 14, 15, 16, 18, and 19
-- Service-level feedback-to-memory automation is future integration work
-- Live WeCom UAT and five-workday lawyer trial remain human gates
-
-**Archive:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md) | [v1.2-MILESTONE-AUDIT.md](milestones/v1.2-MILESTONE-AUDIT.md)
-
-**Milestone v1.3 — Production Memory System and Evaluation Spikes: SHIPPED (2026-07-02)**
-
-v1.3 made platform-native memory production-capable before any external memory service can handle live legal data. It built durable memory storage, rolling summaries, recall orchestration wired into ordinary WeCom/runtime flows, feedback-to-memory service wiring, evaluation gates with durable SQLite baseline/export evidence, and sanitized external adapter spikes. External providers remain deferred candidates, not defaults. Audit status: `closed`.
-
-**What shipped:**
-- Durable native memory store (`SQLiteMemoryStore`) with ref-first privacy, deletion/export/tombstone behavior, and scoped query.
-- Rolling summary pipeline and safe summary refs integrated into bounded context assembly.
-- Pre-run recall orchestration injected into ordinary WeCom continue/start flows with MemoryUse evidence fail-closed policy.
-- Feedback-to-memory human review flow at the service level: correction refs, pending candidates, explicit review actions, and no-auto-modify for high-risk legal/route/skill candidates.
-- Memory evaluation harness with hard gates, native baseline, and durable SQLite baseline/export evidence.
-- External memory adapter spike report and final `defer_all_external` recommendation.
-- Phase 20-25 verification artifacts and Phase 22-25/25.1 validation artifacts; deterministic v1.3 audit closure script.
-
-**Accepted v1.3 debt:**
-- Phase 20: file-backed `SQLiteMemoryStore` requires host `db_path` injection in production (deployment configuration).
-- Phase 24: `MemoryEvalRunner` supports both in-memory fast CI and SQLite durable baseline modes.
-- Phase 25: external adapter spikes remain sanitized manifest/spec simulations; no live provider integration claimed.
-- Live WeCom UAT and five-workday lawyer trial remain human gates, not v1.3 dependencies.
+Durable native memory store, rolling summaries, recall orchestration wired into WeCom/runtime flows, feedback-to-memory service wiring, evaluation gates with SQLite baseline/export evidence, and sanitized external adapter spikes with `defer_all_external` recommendation. Audit status: `closed`.
 
 **Archive:** [v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) | [v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md) | [v1.3-MILESTONE-AUDIT.md](milestones/v1.3-MILESTONE-AUDIT.md)
 
+### v1.2 Conversational Context and Memory Foundation (Shipped: 2026-07-02)
+
+Automatic WeCom session continuity, interrupt resume, bounded short-term context, platform-native memory, feedback-informed context/candidate behavior, external-memory adapter evaluation, and Phase 19 E2E session-runtime closure. Audit status: `tech_debt` accepted.
+
+**Archive:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md) | [v1.2-MILESTONE-AUDIT.md](milestones/v1.2-MILESTONE-AUDIT.md)
+
+### v1.1 Platform Foundation (Shipped: 2026-06-30)
+
+Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, SolutionLoader, RunRuntime) with embeddable runtime, Hermes backend adapter, multi-channel interface, and backend-portable solution loader — all default-OFF. 5 phases, 20 plans, 99 commits, 195 files, 25,368 lines. Audit: passed.
+
+**Archive:** [v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md) | [v1.1-REQUIREMENTS.md](milestones/v1.1-REQUIREMENTS.md) | [v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md)
+
 ## Current State
 
-- **Last shipped:** v1.3 Production Memory System and Evaluation Spikes (2026-07-02).
-- **Next step:** Define the next milestone (v1.4 or later) via `/gsd-new-milestone`.
-- **Carried human gates:** Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial remain operator-confirmed human gates.
+- **Last shipped:** v1.4 Long-Term Memory Productization (2026-07-03).
+- **Active milestone:** v1.5 V2 Acceptance Closure — audit unchecked V2 Active requirements, close code gaps, produce readiness report.
+- **V2 gate status:** All gates green (424 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite).
+- **Carried human gates (not autonomous-completable):**
+  - Phase 5 live WeCom UAT — fixture-satisfied, operator confirmation needed.
+  - Phase 8 five-workday lawyer trial — live evidence required.
+  - All v1.1+ runtime lanes — default-OFF, live promotion is a human gate.
+- **Next after v1.5:** M2 scope per V2-PRD §11 (Codex/provider_model adapter prototypes, Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot loop) — gated on V2 acceptance.
 
 ## Evolution
 
@@ -237,4 +170,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-07-02 after v1.3 milestone definition*
+*Last updated: 2026-07-03 after v1.5 milestone definition*
