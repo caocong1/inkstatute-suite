@@ -36,6 +36,17 @@ class AgentBackendSelectorTests(unittest.TestCase):
         self.assertTrue(selection.contract_compatible)
         self.assertFalse(selection.live_acceptance_allowed)
 
+    def test_non_hermes_manifest_production_ready_bypass_is_blocked(self) -> None:
+        for mode in (AgentBackendMode.CODEX, AgentBackendMode.PROVIDER_MODEL):
+            with self.subTest(mode=mode):
+                manifest = self.manifest(mode, no_channel_io=True, production_ready=True)
+
+                selection = select_agent_backend({"agent_backend": {"mode": mode.value}}, [manifest])
+
+                self.assertEqual(selection.mode, mode.value)
+                self.assertTrue(selection.contract_compatible)
+                self.assertFalse(selection.live_acceptance_allowed)
+
     def test_unknown_mode_raises_selection_error(self) -> None:
         with self.assertRaises(AgentBackendSelectionError):
             select_agent_backend({"agent_backend": {"mode": "unknown"}}, [])

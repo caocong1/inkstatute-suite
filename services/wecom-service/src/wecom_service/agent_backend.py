@@ -47,8 +47,6 @@ def select_agent_backend(
     metadata = _metadata(manifest)
     production_ready = bool(metadata.get("production_ready", requested_mode == AgentBackendMode.HERMES.value))
     live_acceptance_allowed = production_ready and requested_mode == AgentBackendMode.HERMES.value
-    if requested_mode != AgentBackendMode.HERMES.value and metadata.get("production_ready") is True:
-        live_acceptance_allowed = True
 
     return AgentBackendSelection(
         mode=requested_mode,
