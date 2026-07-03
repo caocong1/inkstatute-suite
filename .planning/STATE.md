@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: V2 Acceptance Closure
 status: planning
-last_updated: "2026-07-03T04:22:01.662Z"
+last_updated: "2026-07-03T14:30:00.000Z"
 last_activity: 2026-07-03
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-02)
+See: .planning/PROJECT.md (updated 2026-07-03)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.4 archived (20/20 audit passed). v1.4 tech debt closure complete. Next milestone TBD — start with `/gsd-new-milestone` (likely M2 scope per V2-PRD §11).
+**Current focus:** v1.5 V2 Acceptance Closure — roadmap created (3 phases, 23 requirements). Audit all unchecked V2 Active requirements against code, close gaps, update traceability, produce readiness report. Next: `/gsd-plan-phase 33`.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 33 (V2 Requirement Audit & Traceability Infrastructure) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-03 — Milestone v1.5 started
+Status: Roadmap created, ready for planning
+Last activity: 2026-07-03 — Roadmap created for v1.5 (Phases 33-35)
 
 ### Deferred Items
 
@@ -145,6 +145,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 - Phase 19 added: Close gap: v1.2 WeCom session runtime E2E wiring
 - Phase 25.1 inserted after Phase 25: Close gap: v1.3 memory runtime and feedback wiring (URGENT)
 - Phase 32 added: v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability (closes MEM-07 and MEM-16 audit gaps)
+- v1.5 roadmap created: Phases 33-35 (V2 Requirement Audit → Code Gap Closure → Acceptance Readiness Report & Traceability Update)
 
 ### Decisions
 
@@ -272,17 +273,19 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-02T15:29:24.461Z
-Stopped at: Milestone v1.2 completed and archived
+Last session: 2026-07-03T14:30:00.000Z
+Stopped at: Roadmap created for v1.5 V2 Acceptance Closure (Phases 33-35)
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/ROADMAP.md
-Requirements archive: .planning/milestones/v1.2-REQUIREMENTS.md
+Requirements: .planning/REQUIREMENTS.md
 Research summary: .planning/research/SUMMARY.md
 Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
 v1.1 archive: .planning/milestones/v1.1-ROADMAP.md
 v1.2 archive: .planning/milestones/v1.2-ROADMAP.md
+v1.3 archive: .planning/milestones/v1.3-ROADMAP.md
+v1.4 archive: .planning/milestones/v1.4-ROADMAP.md
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start Phase 33 planning with `/gsd-plan-phase 33`
