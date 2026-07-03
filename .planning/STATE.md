@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Long-Term Memory Productization
 status: executing
-last_updated: "2026-07-03T03:00:00.000Z"
+last_updated: "2026-07-03T08:50:00.000Z"
 last_activity: 2026-07-03
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
   total_plans: 0
   completed_plans: 0
-  percent: 100
-status: complete
+  percent: 86
+status: executing
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-07-02)
 
 ## Current Position
 
-Phase: 31 (Real-Provider Validation and Regression Gates)
+Phase: 32 (v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability)
 Plan: —
-Status: Complete
-Last activity: 2026-07-03 — Phase 31 completed; milestone v1.4 shipped
+Status: Not started
+Last activity: 2026-07-03 — Phase 32 added to close v1.4 audit gaps (MEM-07, MEM-16)
 
 ### Deferred Items
 
@@ -134,6 +134,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 
 - Phase 19 added: Close gap: v1.2 WeCom session runtime E2E wiring
 - Phase 25.1 inserted after Phase 25: Close gap: v1.3 memory runtime and feedback wiring (URGENT)
+- Phase 32 added: v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability (closes MEM-07 and MEM-16 audit gaps)
 
 ### Decisions
 

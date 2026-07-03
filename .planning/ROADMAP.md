@@ -22,10 +22,11 @@
 - [x] **Phase 29: WeCom/Runtime Integration** - Wire memory into the ordinary WeCom/runtime flow before and after agent turns.
 - [x] **Phase 30: Error Handling and Observability** - Add retry, graceful degradation, and contract events for memory operations.
 - [x] **Phase 31: Real-Provider Validation and Regression Gates** - Validate with live Hindsight, add automated tests, and keep V2 gates green.
+- [ ] **Phase 32: v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability** - Close audit gaps: wire singleton HindsightMemory into deployment entrypoint and wire MemoryObserver to contract log.
 
 ## Milestone v1.4 Status
 
-**Status:** COMPLETE — all 6 phases shipped.
+**Status:** IN PROGRESS — 6 of 7 phases shipped; Phase 32 closes audit gaps (MEM-07, MEM-16).
 
 ## Phase Details
 
@@ -45,9 +46,11 @@
 
 Plans:
 **Wave 1**
+
 - 26-01-PLAN.md — Desk research and provider comparison matrix
 
 **Wave 2**
+
 - 26-02-PLAN.md — Live smoke test and final selection artifact
 
 ### Phase 27: Unified Memory Interface and Hindsight Adapter
@@ -67,12 +70,15 @@ Plans:
 
 Plans:
 **Wave 1**
+
 - 27-01-PLAN.md — Memory interface design and contract tests
 
 **Wave 2**
+
 - 27-02-PLAN.md — Hindsight adapter implementation
 
 **Wave 3**
+
 - 27-03-PLAN.md — Remove SQLite default path and single-instance wiring
 
 ### Phase 28: Memory Semantics: Focus vs Retention
@@ -91,9 +97,11 @@ Plans:
 
 Plans:
 **Wave 1**
+
 - 28-01-PLAN.md — Retention policy and durable vs transient classification
 
 **Wave 2**
+
 - 28-02-PLAN.md — Recall policy and relevance scoring
 
 ### Phase 29: WeCom/Runtime Integration
@@ -112,9 +120,11 @@ Plans:
 
 Plans:
 **Wave 1**
+
 - 29-01-PLAN.md — Pre-turn recall wiring
 
 **Wave 2**
+
 - 29-02-PLAN.md — Post-turn retention wiring and output policy preservation
 
 ### Phase 30: Error Handling and Observability
@@ -133,9 +143,11 @@ Plans:
 
 Plans:
 **Wave 1**
+
 - 30-01-PLAN.md — Retry, failure classification, and graceful degradation
 
 **Wave 2**
+
 - 30-02-PLAN.md — Memory operation contract events and observability
 
 ### Phase 31: Real-Provider Validation and Regression Gates
@@ -154,10 +166,33 @@ Plans:
 
 Plans:
 **Wave 1**
+
 - 31-01-PLAN.md — Live provider validation and fixture-based CI tests
 
 **Wave 2**
+
 - 31-02-PLAN.md — V2 gate regression and deployment docs
+
+### Phase 32: v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability
+
+**Goal:** Close the two partial requirements identified in the v1.4 milestone audit: (1) wire a singleton `HindsightMemory` instance into the WeCom deployment entrypoint so the memory layer is initialized once per deployment and shared across all sessions (MEM-07), and (2) wire a `MemoryObserver` implementation to `RetryableMemory` in the WeCom session runtime so memory operation events are recorded to the contract log in production (MEM-16).
+**Depends on:** Phase 31
+**Requirements:** MEM-07, MEM-16
+**Success Criteria** (what must be TRUE):
+
+1. A deployment entrypoint or factory constructs a single `HindsightMemory` instance from environment configuration (`HINDSIGHT_BASE_URL`, `HINDSIGHT_API_KEY`) and injects it into `WeComSessionRuntime` via `WeComRuntimeIngress`.
+2. The same memory instance is shared across all sessions within a deployment (no per-session memory construction).
+3. A `MemoryObserver` implementation records `MemoryOperationEvent` entries (retain, recall, failure) to the contract log or an equivalent durable store.
+4. The observer is wired to `RetryableMemory` in the WeCom session runtime initialization.
+5. Tests verify that memory operations produce observable events in the contract log.
+6. The existing V2 gate suite (`scripts/run_v2_gates.py`) still passes.
+7. Deployment docs are updated with the singleton initialization pattern and observer wiring.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 32 to break down)
 
 ## Next Milestone
 
