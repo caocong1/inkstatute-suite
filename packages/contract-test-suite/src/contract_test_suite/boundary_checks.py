@@ -577,7 +577,17 @@ class OutputBoundaryEvidenceEntry:
 
 @dataclass(frozen=True)
 class OutputBoundaryEvidenceReport:
-    """Aggregate output boundary evidence across all 4 §10.2 categories."""
+    """Aggregate output boundary evidence across all 4 §10.2 categories.
+
+    ``no_visible_backend_terms`` is a fixture-level guard rail: it checks
+    that no fixture case carries a ``visible_text`` field containing backend
+    terms.  The fixture schema does not store ``visible_text`` (it is
+    produced at runtime by ``apply_output_policy``), so this field is
+    ``True`` by default.  Active verification that the production code does
+    not leak backend terms is performed by
+    ``test_phase55_wecom_service_loop.py``, which calls
+    ``apply_output_policy()`` directly.
+    """
 
     entries: tuple[OutputBoundaryEvidenceEntry, ...]
     all_categories_covered: bool
@@ -676,14 +686,10 @@ def build_output_boundary_evidence_summary(
 
     all_covered = len(missing) == 0
 
-    # Check that no block/rewrite case has backend terms in visible_text.
-    # The fixture itself does not store visible_text, but the output_policy
-    # production code produces visible_text=None for block and an InkStatute-
-    # owned notice for rewrite. We verify at the fixture level by checking
-    # that all block/rewrite cases have expected_action in {block, rewrite}
-    # (which means the production code will suppress or rewrite them).
-    # For block cases, visible_text is None — no backend terms can leak.
-    # For rewrite cases, visible_text is an InkStatute-owned notice — no backend terms.
+    # Fixture-level guard rail: verify no block/rewrite case carries a
+    # visible_text field containing backend terms.  The fixture schema does
+    # not store visible_text (production code generates it at runtime), so
+    # this is a defensive check — see OutputBoundaryEvidenceReport docstring.
     no_visible_backend_terms = True
     for case in cases:
         if not isinstance(case, Mapping):
@@ -691,11 +697,6 @@ def build_output_boundary_evidence_summary(
         expected_action = str(case.get("expected_action", ""))
         if expected_action not in ("block", "rewrite"):
             continue
-        # For block cases, the production code sets visible_text=None.
-        # For rewrite cases, the production code sets visible_text to an
-        # InkStatute-owned notice. In both cases, no backend terms leak.
-        # We verify the fixture does not store any visible_text field
-        # that would contain backend terms.
         visible_text = case.get("visible_text")
         if visible_text is not None:
             normalized = str(visible_text).lower()

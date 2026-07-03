@@ -1,131 +1,159 @@
-# Phase 34 Plan Review — V2 Code Gap Closure
+---
+phase: 34-v2-code-gap-closure
+reviewed: 2026-07-03T16:30:00Z
+depth: standard
+files_reviewed: 10
+files_reviewed_list:
+  - packages/contract-test-suite/fixtures/phase55_output_policy_cases.json
+  - packages/contract-test-suite/src/contract_test_suite/coverage_report.py
+  - packages/contract-test-suite/src/contract_test_suite/boundary_checks.py
+  - packages/contract-test-suite/tests/test_gap_evidence_reports.py
+  - packages/contract-test-suite/tests/test_audit_v2_requirements.py
+  - scripts/generate_gap_evidence_reports.py
+  - scripts/run_v2_gates.py
+  - scripts/audit_v2_requirements.py
+  - acceptance/v2-composability-coverage.json
+  - acceptance/v2-output-boundary-evidence.json
+findings:
+  critical: 0
+  warning: 2
+  info: 1
+  total: 3
+status: issues_found
+---
 
-**Phase:** 34
-**Milestone:** v1.5 V2 Acceptance Closure
-**Reviewer:** gsd-plan-checker (automated)
-**Date:** 2026-07-03
-**Scope:** `.planning/phases/34-v2-code-gap-closure/34-PLAN.md`, `34-RESEARCH.md`
+# Phase 34: Code Review Report
+
+**Reviewed:** 2026-07-03T16:30:00Z
+**Depth:** standard
+**Files Reviewed:** 10
+**Status:** issues_found
 
 ## Summary
 
-The plan correctly identifies that the Phase 33 audit found 0 genuine code gaps (9 satisfied, 0 partial, 0 gap, 1 human_gate) and focuses Phase 34 work on the two differentiator deliverables (GAP-08 composability coverage report, GAP-09 output boundary evidence summary) plus a spot-check fixture gap closure. The plan is well-grounded: all 23 referenced file paths exist on disk, all function names are consistent with existing code, and the proposed new fixture cases were verified against the production `output_policy.py` patterns. The plan respects all constraints (stdlib-only, in-place edits, no new services, test-first).
+Phase 34 closes the V2 code gap by adding two fixture cases (update + meta categories), a composability coverage report function (GAP-08), an output boundary evidence summary function (GAP-09), a stdlib-only generator script, 17 new tests, and two generated JSON sidecars. Additional changes improve the audit script's robustness (exception handling in probe execution, multi-probe aggregation) and clean up audit tests (backup/restore pattern for sidecar, stdout suppression in gap simulation).
 
-**Verdict: PASS** — 0 blocking findings, 0 moderate findings, 2 low informational notes.
+**Verification performed:**
+- All 17 new tests pass; all 9 V2 gates pass green (465 total tests, 0 failures).
+- Fixture cases verified against production `apply_output_policy()` — all 5 cases produce the expected action (`allow`/`rewrite`/`block`) with correct `visible_text`.
+- Generator output is deterministic: two consecutive runs produce byte-identical JSON sidecars.
+- `--check` flag exits 0 when coverage is complete.
+- No hardcoded secrets, no `eval`/`exec` usage, no injection vectors, no unsafe deserialization.
+- All new code is stdlib-only (argparse, json, sys, pathlib, dataclasses, typing, collections.abc, re, ast).
 
-## Requirement Coverage
+**Key concerns:** The `no_visible_backend_terms` field in the output boundary evidence report is functionally inert — it checks for a `visible_text` field that doesn't exist in the fixture schema. A test contains dead code from iterative development. The `--check` flag writes files before checking, which could fail in read-only CI environments.
 
-| REQ-ID | Task(s) | Covered | Notes |
-|--------|---------|---------|-------|
-| GAP-01 | Task 1 | YES | Spot-check confirms WECOM-01 satisfied — no code gaps |
-| GAP-02 | Task 1 | YES | Spot-check confirms OUTPUT-01 satisfied — no code gaps |
-| GAP-03 | Task 1 | YES | Spot-check confirms FEEDBACK-01 satisfied — no code gaps |
-| GAP-04 | Task 1 | YES | Spot-check confirms READVIEW-01 satisfied — no code gaps |
-| GAP-05 | Task 1 | YES | Spot-check confirms COMPOSE-01 satisfied — no code gaps |
-| GAP-06 | Task 1 | YES | Spot-check confirms OBSERVE-01 satisfied — no code gaps |
-| GAP-07 | Task 8 | YES | Full 9-gate regression check after all changes |
-| GAP-08 | Task 3, 5, 6, 7 | YES | Composability coverage report + tests + generated sidecar |
-| GAP-09 | Task 2, 4, 5, 6, 7 | YES | Fixture gap closure + evidence summary + tests + generated sidecar |
+## Warnings
 
-All 9 requirements are covered by at least one task with clear verification.
+### WR-01: Dead code with missing assertion in test_output_boundary_missing_category_detected
 
-## Success Criteria Alignment
+**File:** `packages/contract-test-suite/tests/test_gap_evidence_reports.py:127-144`
+**Issue:** The first half of the test creates `modified_cases` (removing only `block-meta-tool-progress`), writes it to `modified_path`, calls `build_output_boundary_evidence_summary(fixture_path=modified_path, repo_root=REPO_ROOT)`, and stores the result in `report` — but `report` is never asserted on. Only `report_2` (from a second modified fixture that removes both `block-meta-tool-progress` and `block-command-debug-stack`) is checked. The comments on lines 146-149 are stream-of-consciousness debugging notes ("Actually, block-command-debug-stack matches meta keywords too. Let's remove both meta-specific cases.") that should have been cleaned up before committing. The dead code and missing assertion make the test harder to maintain and could mask a regression if someone modifies the first half expecting it to be verified.
+**Fix:** Remove the first modified fixture block (lines 127-144) and the debugging comments (lines 146-149). Keep only the second block that removes both cases and asserts on `report_2`:
 
-| ROADMAP Success Criterion | Plan Coverage | Status |
-|--------------------------|---------------|--------|
-| SC1: All genuine code gaps closed with tests | Task 1 (spot-check: no gaps for GAP-01-06) + Task 2 (close output boundary fixture gap) | ALIGNED |
-| SC2: All 7 V2 gate suites pass green, no regressions | Task 8 (full 9-gate regression check) | ALIGNED |
-| SC3: Composability fixture coverage report (§10.3 task types) | Task 3 (report function) + Task 6 (generator script) + Task 7 (sidecar) | ALIGNED |
-| SC4: Privacy/output-boundary fixture evidence summary (§10.2 categories) | Task 4 (summary function) + Task 6 (generator script) + Task 7 (sidecar) | ALIGNED |
+```python
+def test_output_boundary_missing_category_detected(self) -> None:
+    """Removing meta and command cases causes all_categories_covered=False."""
+    fixture_path = LOCAL_FIXTURE_ROOT / "phase55_output_policy_cases.json"
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
 
-## Source Grounding Verification
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Remove both meta-matching cases to ensure meta category is missing.
+        # block-command-debug-stack matches both command and meta keywords,
+        # so both must be removed to make meta truly uncovered.
+        modified_cases = [
+            c for c in fixture["cases"]
+            if c["id"] not in ("block-meta-tool-progress", "block-command-debug-stack")
+        ]
+        modified_fixture = {
+            "fixture_id": fixture["fixture_id"],
+            "cases": modified_cases,
+        }
+        modified_path = Path(tmpdir) / "modified_cases.json"
+        modified_path.write_text(
+            json.dumps(modified_fixture, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
 
-### File Path Grounding (23 paths checked)
+        report = build_output_boundary_evidence_summary(
+            fixture_path=modified_path, repo_root=REPO_ROOT
+        )
 
-All 23 file paths referenced in the plan were verified to exist on disk:
+        self.assertFalse(report.all_categories_covered)
+        self.assertIn("meta", report.missing_categories)
+        self.assertIn("command", report.missing_categories)
+```
 
-- **Evidence producers:** `coverage_report.py`, `boundary_checks.py` — exist and contain the functions referenced
-- **Fixtures (§10.3 mapping):** All 16 fixture files referenced in the `SYNTHETIC_TASK_TYPES` registry exist
-- **Output boundary fixture:** `phase55_output_policy_cases.json` — exists with 3 cases (pre-gap-closure)
-- **Scripts:** `run_v2_gates.py`, `audit_v2_requirements.py` — exist and match described structure
-- **Production code:** `output_policy.py` — exists with `apply_output_policy()` and block/rewrite patterns
-- **Traceability:** `acceptance/v2-traceability.json` — exists with 10 requirements
+### WR-02: no_visible_backend_terms check is functionally inert
 
-### Function Name Grounding
+**File:** `packages/contract-test-suite/src/contract_test_suite/boundary_checks.py:688-705`
+**Issue:** The `no_visible_backend_terms` check iterates all fixture cases looking for a `visible_text` field containing backend terms (`_BACKEND_VISIBLE_TERMS`). However, the fixture schema (`phase55_output_policy_cases.json`) does not include a `visible_text` field — `visible_text` is generated at runtime by the production `apply_output_policy()` function. The check at line 699 (`visible_text = case.get("visible_text")`) will always return `None` for every case, so `no_visible_backend_terms` will always be `True`. The field name implies active verification that backend terms don't leak to user-visible text, but the actual verification happens in `test_phase55_wecom_service_loop.py` which runs the production code. This could give false confidence to future maintainers who see `no_visible_backend_terms: true` in the evidence report and assume it means the production output was verified. The extensive comments (lines 694-698) acknowledge this but the code structure still misleads.
+**Fix:** Either (a) rename the field to `fixture_has_no_visible_text_field` to accurately describe what's checked, or (b) add a comment in `to_dict()` output clarifying that this is a fixture-level guard rail, not a production-output verification, or (c) integrate with the production `apply_output_policy()` to actually verify `visible_text` output:
 
-| Referenced Function | Module | Verified |
-|---------------------|--------|----------|
-| `apply_output_policy()` | `wecom_service/output_policy.py` | YES — line 21 |
-| `build_composability_coverage_report()` (new) | `coverage_report.py` | NEW — consistent with existing `summarize_*` pattern |
-| `build_output_boundary_evidence_summary()` (new) | `boundary_checks.py` | NEW — consistent with existing `assert_*` pattern |
-| `BoundaryAllowlistPolicy` | `boundary_checks.py` | YES — line 90 |
+```python
+# Option (c): Actually verify production output for block/rewrite cases.
+from wecom_service.output_policy import apply_output_policy  # deferred import
 
-### Fixture Case Verification
+no_visible_backend_terms = True
+for case in cases:
+    if not isinstance(case, Mapping):
+        continue
+    expected_action = str(case.get("expected_action", ""))
+    if expected_action not in ("block", "rewrite"):
+        continue
+    decision = apply_output_policy(str(case.get("input", "")))
+    if decision.visible_text is not None:
+        normalized = decision.visible_text.lower()
+        for term in _BACKEND_VISIBLE_TERMS:
+            if term in normalized:
+                no_visible_backend_terms = False
+                break
+```
 
-The two proposed new fixture cases were tested against the production `output_policy.py`:
+Note: Option (c) would add a cross-package dependency from `contract_test_suite` to `wecom_service`, which may conflict with the thin-layer boundary constraints. Option (a) or (b) is safer.
 
-| Case | Input | Expected Action | Actual Action | Visible Text |
-|------|-------|-----------------|---------------|--------------|
-| block-self-update-notice | "Self-update available: run /update now..." | block | block | None |
-| block-meta-tool-progress | "tool progress: memory sync complete..." | block | block | None |
+## Info
 
-Both cases produce `block` with `visible_text=None` — no backend terms leak to user-visible WeCom text. The fixture gap closure is grounded in production behavior.
+### IN-01: --check flag writes files before checking
 
-## Constraint Compliance
+**File:** `scripts/generate_gap_evidence_reports.py:52-66`
+**Issue:** The `--check` flag is described as "suitable for CI gates" but the script always writes JSON sidecars (lines 52-66) before running the check logic (lines 80-101). In a read-only CI environment, the write would fail with a permission error even when coverage is complete. Since the output is deterministic and byte-identical to committed files, this won't create spurious diffs in writable environments, but the `--check` path should ideally be read-only.
+**Fix:** Consider skipping the write when `--check` is passed, or wrapping the write in a try/except that tolerates permission errors in check mode:
 
-| Constraint | Status | Evidence |
-|------------|--------|----------|
-| Stdlib-only (no new dependencies) | PASS | Plan specifies only `argparse, json, pathlib, re, sys, dataclasses, typing` — all stdlib |
-| In-place edits to existing services/packages | PASS | Modifies `coverage_report.py`, `boundary_checks.py`, `phase55_output_policy_cases.json`, `run_v2_gates.py` — all existing files |
-| No new services, databases, or queues | PASS | New files are: 1 script, 1 test file, 2 generated JSON sidecars — no runtime infrastructure |
-| Test-first approach | PASS | Task 5 (12+ tests) is sequenced before Task 6 (generator script) and Task 7 (sidecar generation) |
-| Full gate-suite regression check | PASS | Task 8 runs all 9 V2 gates post-change |
-| AGENTS rule: no new runtime dependency | PASS | No new imports beyond stdlib in any production or script code |
+```python
+if not args.check:
+    comp_path.write_text(...)
+    ob_path.write_text(...)
+else:
+    # In check mode, only write if the content differs (or skip entirely).
+    pass
+```
 
-## Findings
+---
 
-### F1 [LOW, INFORMATIONAL] — §10.3 task type mapping is manually curated
+## Fix Applied (Iteration 1/3)
 
-**Location:** `34-PLAN.md` Task 3, `SYNTHETIC_TASK_TYPES` registry
-**Note:** The 7 §10.3 task type → fixture mappings are manually curated in a static registry rather than auto-discovered. This is consistent with the Phase 33 audit script pattern (which also uses a static `REQUIREMENT_REGISTRY`), but means new fixtures won't automatically appear in the coverage report.
-**Severity rationale:** Low — the registry is explicitly reviewed and tested; auto-discovery would introduce brittleness. The PRD text is in Chinese and task type identification requires semantic judgment.
-**Action:** No change needed — static registry is the right design for traceability evidence.
+**Status:** WR-01 and WR-02 fixed. IN-01 deferred (Info severity, not in default fix scope).
 
-### F2 [LOW, INFORMATIONAL] — Output boundary category classification uses keyword matching
+### WR-01 Fix: Dead code removed
 
-**Location:** `34-PLAN.md` Task 4, `OUTPUT_BOUNDARY_CATEGORIES` keyword patterns
-**Note:** The 4 §10.2 categories (gateway/update/command/meta) are classified by keyword patterns in fixture input text. A fixture case could match multiple categories (e.g., the existing `block-command-debug-stack` case matches both "command" and "meta" keywords). The plan handles this by allowing a case to satisfy multiple categories.
-**Severity rationale:** Low — the keyword patterns are specific enough to avoid false positives, and the report explicitly lists which fixture case proves each category.
-**Action:** No change needed — keyword classification is sufficient for fixture evidence reporting.
+**File:** `packages/contract-test-suite/tests/test_gap_evidence_reports.py:121-150`
+**Change:** Removed the first modified-fixture block (dead code with missing assertion on `report`) and stream-of-consciousness debugging comments. The test now has a single clean block that removes both meta-matching cases (`block-meta-tool-progress` and `block-command-debug-stack`) and asserts on the result. Test passes.
 
-## Risk Assessment
+### WR-02 Fix: Clarifying docstring added
 
-| Risk | Mitigation | Adequate? |
-|------|------------|-----------|
-| Adding fixture cases breaks existing test | New cases use `block` which is already in expected actions set | YES — verified |
-| Report generator PYTHONPATH issue | Script uses `sys.path.insert(0, ...)` for standalone runs | YES |
-| Determinism breaks from file ordering | `sort_keys=True`, sorted lists in all output | YES |
-| §10.3 mapping subjectivity | Each task type has distinguishing features verified in fixture content | YES |
+**File:** `packages/contract-test-suite/src/contract_test_suite/boundary_checks.py:578-590`
+**Change:** Added a class-level docstring to `OutputBoundaryEvidenceReport` explaining that `no_visible_backend_terms` is a fixture-level guard rail, not a production-output verification. Cleaned up redundant inline comments in `build_output_boundary_evidence_summary()`. No output change — generated JSON sidecars are byte-identical to pre-fix versions.
 
-## Task Sequencing Check
+### Post-Fix Verification
 
-| Task | Depends On | Sequencing Valid? |
-|------|-----------|-------------------|
-| Task 1 (spot-check) | None | YES — verification only |
-| Task 2 (close fixture gap) | None | YES — independent fixture edit |
-| Task 3 (composability report fn) | None | YES — new function in existing module |
-| Task 4 (output boundary summary fn) | Task 2 (fixture must have all 4 categories) | YES — Task 2 before Task 4 |
-| Task 5 (tests) | Task 3, Task 4 | YES — tests reference both functions |
-| Task 6 (generator script) | Task 3, Task 4 | YES — script calls both functions |
-| Task 7 (generate sidecars) | Task 6 | YES — script must exist first |
-| Task 8 (regression check) | All previous tasks | YES — final verification |
+- All 17 gap evidence tests pass.
+- All 9 V2 gates pass green (465 total tests, 0 failures).
+- Generator output is deterministic (byte-identical across runs).
+- No new findings introduced by fixes.
 
-## Definition of Done Check
+---
 
-All 12 DoD items in the plan are specific, measurable, and traceable to a requirement:
-- 6 items for GAP-01–06 (spot-check verification)
-- 1 item for GAP-07 (gate suite green)
-- 5 items for GAP-08–09 (report functions, sidecars, tests, script, compileall)
-
-## Result
-
-**PASS** — The plan is well-grounded, covers all 9 requirements, aligns with all 4 ROADMAP success criteria, respects all constraints, and has adequate risk mitigations. The 2 informational findings require no changes. The plan is ready for implementation.
+_Reviewed: 2026-07-03T16:30:00Z_
+_Reviewer: Claude (gsd-code-reviewer)_
+_Depth: standard_

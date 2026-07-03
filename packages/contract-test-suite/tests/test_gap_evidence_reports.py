@@ -119,15 +119,17 @@ class OutputBoundaryEvidenceReportTests(unittest.TestCase):
         self.assertTrue(report.no_visible_backend_terms)
 
     def test_output_boundary_missing_category_detected(self) -> None:
-        """Removing a category case causes all_categories_covered=False."""
-        # Load the real fixture and remove the meta case to simulate a gap.
+        """Removing meta and command cases causes all_categories_covered=False."""
         fixture_path = LOCAL_FIXTURE_ROOT / "phase55_output_policy_cases.json"
         fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Remove the block-meta-tool-progress case.
+            # Remove both meta-matching cases to ensure the meta category is
+            # truly uncovered. block-command-debug-stack matches both command
+            # and meta keywords, so both must be removed to make meta missing.
             modified_cases = [
-                c for c in fixture["cases"] if c["id"] != "block-meta-tool-progress"
+                c for c in fixture["cases"]
+                if c["id"] not in ("block-meta-tool-progress", "block-command-debug-stack")
             ]
             modified_fixture = {
                 "fixture_id": fixture["fixture_id"],
@@ -143,31 +145,9 @@ class OutputBoundaryEvidenceReportTests(unittest.TestCase):
                 fixture_path=modified_path, repo_root=REPO_ROOT
             )
 
-            # meta should be missing (block-command-debug-stack still matches meta
-            # keywords, so let's also remove that to ensure meta is truly missing).
-            # Actually, block-command-debug-stack matches meta keywords too.
-            # Let's remove both meta-specific cases.
-            modified_cases_2 = [
-                c for c in fixture["cases"]
-                if c["id"] not in ("block-meta-tool-progress", "block-command-debug-stack")
-            ]
-            modified_fixture_2 = {
-                "fixture_id": fixture["fixture_id"],
-                "cases": modified_cases_2,
-            }
-            modified_path_2 = Path(tmpdir) / "modified_cases_2.json"
-            modified_path_2.write_text(
-                json.dumps(modified_fixture_2, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
-
-            report_2 = build_output_boundary_evidence_summary(
-                fixture_path=modified_path_2, repo_root=REPO_ROOT
-            )
-
-            self.assertFalse(report_2.all_categories_covered)
-            self.assertIn("meta", report_2.missing_categories)
-            self.assertIn("command", report_2.missing_categories)
+            self.assertFalse(report.all_categories_covered)
+            self.assertIn("meta", report.missing_categories)
+            self.assertIn("command", report.missing_categories)
 
     def test_output_boundary_report_serializes_to_json(self) -> None:
         """to_dict() produces valid JSON with expected structure."""
