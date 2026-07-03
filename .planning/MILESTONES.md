@@ -1,5 +1,38 @@
 # Project Milestones: 墨律 InkStatute
 
+## v1.4 Long-Term Memory Productization (Shipped: 2026-07-03)
+
+**Delivered:** Replaced the evaluation-only memory approach with a single, productized long-term memory layer (Hindsight backend) so the bot feels like one continuous companion. The unified `Memory` interface, Hindsight adapter, focus/retention policies, WeCom runtime integration, retry/observability, and live validation are all shipped. Singleton memory wiring and contract event observability closed via Phase 32 gap closure.
+
+**Phases completed:** 26-32 (7 phases, 1 gap closure)
+
+**Archive:** [v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md) | [v1.4-REQUIREMENTS.md](milestones/v1.4-REQUIREMENTS.md) | [v1.4-MILESTONE-AUDIT.md](milestones/v1.4-MILESTONE-AUDIT.md)
+
+**Key accomplishments:**
+
+- Evaluated 7 external memory providers (Hindsight, Mem0, Zep, Letta, LangMem, Supermemory, Honcho) and selected Hindsight with documented rationale and live smoke test.
+- Defined a backend-agnostic `Memory` Protocol with async `aretain`/`arecall`/`areflect` operations and privacy-safe metadata validation.
+- Implemented `HindsightMemory` adapter using `hindsight-client` with BGE-M3 embeddings and BGE-Reranker-V2-M3.
+- Implemented deterministic `MemoryContentClassifier` and `MemoryRetentionPolicy`/`MemoryFocusPolicy` for durable vs transient classification (LLM-free, CI-safe).
+- Wired pre-turn recall and post-turn retention into `WeComSessionRuntime` with fail-open graceful degradation.
+- Added `RetryableMemory` with exponential backoff, failure classification (`MemoryFailureCategory`), and `MemoryOperationEvent` contract events.
+- Validated with live Hindsight multi-turn tests (preference retention, cross-task recall) and CI-safe skip when provider unreachable.
+- Closed audit gaps: `build_memory_from_env()` singleton factory, `ContractLogMemoryObserver` for production observability, `WeComRuntimeIngress` memory/observer pass-through.
+- Fixed V2 gate PYTHONPATH regression (v1.2-v1.4) that was hiding 3 broken gates.
+
+**Audit result:** `passed`. 20/20 requirements satisfied; 10/10 integration points confirmed; 2/2 flows complete.
+
+**Known deferred items at close:**
+
+- Live Hindsight test fails when Gemini API free-tier quota is exhausted (429) — external quota issue, not a code defect.
+- REQUIREMENTS.md traceability table was not updated during execution (fixed during audit).
+- No SUMMARY.md files for v1.4 phases (only CONTEXT/PLAN/VERIFICATION produced).
+- Phase 8 (Lawyer Trial Acceptance) and Phase 5 live WeCom UAT remain parallel human gates, not v1.4 dependencies.
+
+**Follow-up:** Next milestone to be defined via `/gsd-new-milestone`.
+
+---
+
 ## v1.3 Production Memory System and Evaluation Spikes (Shipped: 2026-07-02)
 
 **Delivered:** Platform-native memory is production-capable, rolling summaries are safe and reference-first, recall orchestration is wired into ordinary WeCom/runtime flows, feedback-to-memory learning is wired at the service level, evaluation gates prove durable SQLite baseline and export evidence, and external memory adapters are evaluated as sanitized spikes with a defer-all recommendation.
