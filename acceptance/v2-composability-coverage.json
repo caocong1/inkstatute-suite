@@ -1,0 +1,79 @@
+{
+  "all_covered": true,
+  "covered_count": 7,
+  "entries": [
+    {
+      "covered": true,
+      "evidence": "route_decision.mode=simple_qa; short-task event stream with AgentTurn/AgentResult pair",
+      "fixtures": [
+        "packages/contract-test-suite/fixtures/phase4_simple_qa_event_stream.jsonl",
+        "packages/contract-test-suite/fixtures/phase3_non_legal_wild_task_contract_fixture.json"
+      ],
+      "prd_label": "简单法律问答（短任务）",
+      "task_type": "simple_legal_qa"
+    },
+    {
+      "covered": true,
+      "evidence": "primary_skill=lawfirm.contract_review; artifacts_written; long-task success event stream",
+      "fixtures": [
+        "packages/contract-test-suite/fixtures/phase4_success_event_stream.jsonl",
+        "packages/platform-contract/fixtures/legal_wecom_contract_review.json"
+      ],
+      "prd_label": "合同审查（长任务 + skill + gate + Artifact）",
+      "task_type": "contract_review"
+    },
+    {
+      "covered": true,
+      "evidence": "primary_skill=lawfirm.legal_retrieval; tool_calls=[law-database]; MCP tool trace evidence",
+      "fixtures": [
+        "packages/contract-test-suite/fixtures/phase5_wecom_contract_stream.jsonl"
+      ],
+      "prd_label": "法律检索（MCP tool trace）",
+      "task_type": "legal_retrieval"
+    },
+    {
+      "covered": true,
+      "evidence": "route_mismatch=true; action=route_wrong; feedback event with human-review safety",
+      "fixtures": [
+        "packages/contract-test-suite/fixtures/phase3_route_error_contract_fixture.json",
+        "packages/contract-test-suite/fixtures/phase5_wecom_feedback_sample.jsonl",
+        "packages/contract-test-suite/fixtures/phase6_read_feedback_bundle.json"
+      ],
+      "prd_label": "路由错误模拟（route_mismatch）",
+      "task_type": "route_error"
+    },
+    {
+      "covered": true,
+      "evidence": "feedback_event with feedback_target linking; template-card → FeedbackEvent normalization",
+      "fixtures": [
+        "packages/contract-test-suite/fixtures/phase5_wecom_feedback_loop_fixture.json",
+        "packages/contract-test-suite/fixtures/phase3_repeated_feedback_clicks_contract_fixture.json"
+      ],
+      "prd_label": "WeCom 反馈（模板卡片 → FeedbackEvent）",
+      "task_type": "wecom_feedback"
+    },
+    {
+      "covered": true,
+      "evidence": "state=failed; errors=[runtime_error]; long-task failure event stream",
+      "fixtures": [
+        "packages/contract-test-suite/fixtures/phase3_long_task_failure_contract_fixture.json",
+        "packages/contract-test-suite/fixtures/phase4_failed_long_task_event_stream.jsonl"
+      ],
+      "prd_label": "长任务失败（AsyncTask.status=failed）",
+      "task_type": "long_task_failure"
+    },
+    {
+      "covered": true,
+      "evidence": "industry_context.domain in {finance_tax, engineering, education}; non-legal synthetic tasks",
+      "fixtures": [
+        "packages/contract-test-suite/fixtures/non_legal_finance_tax_task.json",
+        "packages/contract-test-suite/fixtures/non_legal_education_task.json",
+        "packages/platform-contract/fixtures/non_legal_engineering_task.json",
+        "packages/contract-test-suite/fixtures/platform_foundation_non_legal_run.json"
+      ],
+      "prd_label": "非法律合成任务（财税、工程、教育）",
+      "task_type": "non_legal_synthetic"
+    }
+  ],
+  "missing_count": 0
+}

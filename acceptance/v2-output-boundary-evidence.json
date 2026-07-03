@@ -1,0 +1,31 @@
+{
+  "all_categories_covered": true,
+  "entries": [
+    {
+      "action": "rewrite",
+      "category": "gateway",
+      "fixture_case_id": "rewrite-gateway-lifecycle",
+      "proof": "Fixture case 'rewrite-gateway-lifecycle' has expected_action='rewrite' and input matches gateway keywords: gateway"
+    },
+    {
+      "action": "block",
+      "category": "update",
+      "fixture_case_id": "block-self-update-notice",
+      "proof": "Fixture case 'block-self-update-notice' has expected_action='block' and input matches update keywords: update, self-update, /update"
+    },
+    {
+      "action": "block",
+      "category": "command",
+      "fixture_case_id": "block-command-debug-stack",
+      "proof": "Fixture case 'block-command-debug-stack' has expected_action='block' and input matches command keywords: /help"
+    },
+    {
+      "action": "block",
+      "category": "meta",
+      "fixture_case_id": "block-meta-tool-progress",
+      "proof": "Fixture case 'block-meta-tool-progress' has expected_action='block' and input matches meta keywords: tool progress, memory sync, insights"
+    }
+  ],
+  "missing_categories": [],
+  "no_visible_backend_terms": true
+}
