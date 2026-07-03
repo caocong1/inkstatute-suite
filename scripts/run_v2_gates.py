@@ -103,6 +103,10 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src),
         ),
         Gate(
+            "v2-acceptance-traceability",
+            (py, "scripts/audit_v2_requirements.py", "--check-gaps"),
+        ),
+        Gate(
             "compileall",
             (
                 py,
@@ -116,6 +120,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "services/feedback-service/src",
                 "services/conversation-read-view/src",
                 "scripts/run_v2_gates.py",
+                "scripts/audit_v2_requirements.py",
             ),
         ),
     )
