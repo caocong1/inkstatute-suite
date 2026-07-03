@@ -21,7 +21,7 @@ import json
 import re
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -996,14 +996,27 @@ def collect_evidence(req: RequirementSpec, repo_root: Path) -> dict[str, Any]:
 def run_verification(
     req: RequirementSpec, repo_root: Path
 ) -> dict[str, dict[str, Any]]:
-    """Run all probes for a requirement and return the verification result."""
+    """Run all probes for a requirement and return the verification result.
+
+    A level is considered passed only when *every* probe at that level passes.
+    If a probe's checker raises, the probe is treated as failed (and thus the
+    level fails) so a single unreadable file cannot abort the whole audit.
+    """
     levels: dict[int, dict[str, Any]] = {}
     for probe in req.probes:
-        passed, evidence = probe.checker(repo_root)
-        levels[probe.level] = {
-            "passed": passed,
-            "evidence": evidence,
-        }
+        try:
+            passed, evidence = probe.checker(repo_root)
+        except Exception as exc:  # noqa: BLE001 - audit must not crash the gate
+            passed, evidence = False, f"{probe.kind} probe error: {exc}"
+        prior = levels.get(probe.level)
+        if prior is None:
+            levels[probe.level] = {"passed": passed, "evidence": evidence}
+        else:
+            # Aggregate: all probes at a level must pass.
+            levels[probe.level] = {
+                "passed": prior["passed"] and passed,
+                "evidence": f"{prior['evidence']}; {evidence}",
+            }
     return {
         "level_1_schema": levels.get(1, {"passed": False, "evidence": "no level-1 probe"}),
         "level_2_library": levels.get(2, {"passed": False, "evidence": "no level-2 probe"}),

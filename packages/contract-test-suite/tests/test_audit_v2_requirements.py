@@ -18,7 +18,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -62,25 +61,23 @@ class TestAuditJsonSidecar(unittest.TestCase):
     """2. test_audit_produces_json_sidecar"""
 
     def test_audit_produces_json_sidecar(self):
-        with tempfile.TemporaryDirectory(dir=REPO_ROOT) as tmpdir:
-            sidecar_rel = "acceptance/v2-traceability.json"
-            sidecar_path = REPO_ROOT / sidecar_rel
-            # Use the real acceptance dir but clean up after
+        sidecar_path = REPO_ROOT / "acceptance" / "v2-traceability.json"
+        backup = sidecar_path.read_bytes() if sidecar_path.exists() else None
+        try:
             data = audit.build_traceability_json(REPO_ROOT)
             written_path = audit.write_sidecar(data, REPO_ROOT)
-            try:
-                self.assertTrue(written_path.exists())
-                self.assertEqual(written_path, sidecar_path)
-                loaded = json.loads(written_path.read_text(encoding="utf-8"))
-                self.assertEqual(loaded["schema_version"], "1.0")
-            finally:
-                # Clean up if it was newly created
-                if sidecar_path.exists():
-                    sidecar_path.unlink()
-                    # Remove acceptance dir if empty
-                    accept_dir = REPO_ROOT / "acceptance"
-                    if accept_dir.exists() and not any(accept_dir.iterdir()):
-                        accept_dir.rmdir()
+            self.assertTrue(written_path.exists())
+            self.assertEqual(written_path, sidecar_path)
+            loaded = json.loads(written_path.read_text(encoding="utf-8"))
+            self.assertEqual(loaded["schema_version"], "1.0")
+        finally:
+            if backup is not None:
+                sidecar_path.write_bytes(backup)
+            else:
+                sidecar_path.unlink(missing_ok=True)
+                accept_dir = REPO_ROOT / "acceptance"
+                if accept_dir.exists() and not any(accept_dir.iterdir()):
+                    accept_dir.rmdir()
 
 
 class TestAuditDeterminism(unittest.TestCase):
@@ -95,32 +92,39 @@ class TestAuditDeterminism(unittest.TestCase):
 
     def test_audit_deterministic_via_subprocess(self):
         """Verify byte-identical output across two subprocess runs."""
-        env = os.environ.copy()
-        result1 = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--json"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            env=env,
-        )
         sidecar_path = REPO_ROOT / "acceptance" / "v2-traceability.json"
-        content1 = sidecar_path.read_text(encoding="utf-8")
-        result2 = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--json"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            env=env,
-        )
-        content2 = sidecar_path.read_text(encoding="utf-8")
-        self.assertEqual(content1, content2, "Two subprocess runs produced different JSON")
-        # Clean up
-        sidecar_path.unlink()
-        accept_dir = REPO_ROOT / "acceptance"
-        if accept_dir.exists() and not any(accept_dir.iterdir()):
-            accept_dir.rmdir()
+        backup = sidecar_path.read_bytes() if sidecar_path.exists() else None
+        env = os.environ.copy()
+        try:
+            result1 = subprocess.run(
+                [sys.executable, str(SCRIPT_PATH), "--json"],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                env=env,
+            )
+            content1 = sidecar_path.read_text(encoding="utf-8")
+            result2 = subprocess.run(
+                [sys.executable, str(SCRIPT_PATH), "--json"],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=30,
+                env=env,
+            )
+            content2 = sidecar_path.read_text(encoding="utf-8")
+            self.assertEqual(result1.returncode, 0)
+            self.assertEqual(result2.returncode, 0)
+            self.assertEqual(content1, content2, "Two subprocess runs produced different JSON")
+        finally:
+            if backup is not None:
+                sidecar_path.write_bytes(backup)
+            else:
+                sidecar_path.unlink(missing_ok=True)
+                accept_dir = REPO_ROOT / "acceptance"
+                if accept_dir.exists() and not any(accept_dir.iterdir()):
+                    accept_dir.rmdir()
 
 
 class TestAuditCoversAllRequirements(unittest.TestCase):
@@ -370,6 +374,9 @@ class TestAuditCheckGapsMode(unittest.TestCase):
 
     def test_check_gaps_exits_nonzero_on_gap(self):
         """Simulate a gap by patching the classify function to return gap for one req."""
+        import io
+        from contextlib import redirect_stdout
+
         original_classify = audit.classify
 
         def mock_classify(req, verification):
@@ -377,7 +384,7 @@ class TestAuditCheckGapsMode(unittest.TestCase):
                 return "gap"
             return original_classify(req, verification)
 
-        with patch.object(audit, "classify", mock_classify):
+        with patch.object(audit, "classify", mock_classify), redirect_stdout(io.StringIO()):
             exit_code = audit.main(["--check-gaps"])
         self.assertEqual(exit_code, 1)
 

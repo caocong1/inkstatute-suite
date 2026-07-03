@@ -17,7 +17,7 @@ Operator can run a deterministic audit that maps every unchecked V2 Active requi
 - [x] Three-level verification classifies each requirement as satisfied/partial/gap/human_gate
 - [x] `acceptance/v2-traceability.json` exists with correct schema and PRD Section 10 mapping
 - [x] `scripts/run_v2_gates.py` includes 9th gate `v2-acceptance-traceability`
-- [x] 9th gate fails when any requirement is `gap` or evidence is missing
+- [x] 9th gate fails when any requirement is classified as `gap` (does not fail on `partial` or `human_gate`, by design)
 - [x] Audit is deterministic — two runs produce byte-identical JSON
 - [x] All audit script tests pass (24 test cases)
 - [x] All 9 V2 gates pass green (8 existing + 1 new)
@@ -160,7 +160,7 @@ compileall
 - The 9th gate (`v2-acceptance-traceability`) fails only on `gap` status, not `partial` or `human_gate`. This is by design: `partial` requirements are expected at this phase (Phase 34 closes partials), and `human_gate` requirements (lawyer trial) are deferred to manual acceptance.
 - The lawyer trial requirement (TRIAL-01) is classified as `human_gate`, not `gap`, because the infrastructure (`trial_acceptance.py`) exists but the actual 5-workday trial requires human execution.
 - All output is deterministic: `generated_at: "deterministic"` placeholder, sorted keys, sorted lists, no timestamps. Same input codebase produces same output byte-for-byte.
-- The script is stdlib-only: uses `pathlib`, `re`, `json`, `ast`, `argparse`, `dataclasses`, `subprocess`, `sys`, `importlib` — no new dependencies introduced.
+- The script is stdlib-only: uses `argparse`, `ast`, `json`, `re`, `sys`, `dataclasses`, `pathlib`, `collections.abc`, `typing` — no new dependencies introduced. (The test module additionally uses `importlib`, `subprocess`, `unittest.mock`.)
 
 ## Result
 
