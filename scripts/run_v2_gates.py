@@ -122,6 +122,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "scripts/run_v2_gates.py",
                 "scripts/audit_v2_requirements.py",
                 "scripts/generate_gap_evidence_reports.py",
+                "scripts/generate_v2_readiness_report.py",
             ),
         ),
     )
