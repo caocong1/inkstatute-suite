@@ -64,7 +64,7 @@
 | MEM-04 | Phase 27 | Not started |
 | MEM-05 | Phase 27 | Not started |
 | MEM-06 | Phase 27 | Not started |
-| MEM-07 | Phase 27 | Not started |
+| MEM-07 | Phase 27, Phase 32 | Satisfied (Phase 32 closure) |
 | MEM-08 | Phase 28 | Not started |
 | MEM-09 | Phase 28 | Not started |
 | MEM-10 | Phase 28 | Not started |
@@ -73,7 +73,7 @@
 | MEM-13 | Phase 29 | Not started |
 | MEM-14 | Phase 30 | Not started |
 | MEM-15 | Phase 30 | Not started |
-| MEM-16 | Phase 30 | Not started |
+| MEM-16 | Phase 30, Phase 32 | Satisfied (Phase 32 closure) |
 | MEM-17 | Phase 31 | Not started |
 | MEM-18 | Phase 31 | Not started |
 | MEM-19 | Phase 31 | Not started |

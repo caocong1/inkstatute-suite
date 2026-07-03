@@ -22,11 +22,11 @@
 - [x] **Phase 29: WeCom/Runtime Integration** - Wire memory into the ordinary WeCom/runtime flow before and after agent turns.
 - [x] **Phase 30: Error Handling and Observability** - Add retry, graceful degradation, and contract events for memory operations.
 - [x] **Phase 31: Real-Provider Validation and Regression Gates** - Validate with live Hindsight, add automated tests, and keep V2 gates green.
-- [ ] **Phase 32: v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability** - Close audit gaps: wire singleton HindsightMemory into deployment entrypoint and wire MemoryObserver to contract log.
+- [x] **Phase 32: v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability** - Close audit gaps: wire singleton HindsightMemory into deployment entrypoint and wire MemoryObserver to contract log.
 
 ## Milestone v1.4 Status
 
-**Status:** IN PROGRESS — 6 of 7 phases shipped; Phase 32 closes audit gaps (MEM-07, MEM-16).
+**Status:** COMPLETE — all 7 phases shipped (6 original + 1 gap closure).
 
 ## Phase Details
 
@@ -188,11 +188,11 @@ Plans:
 6. The existing V2 gate suite (`scripts/run_v2_gates.py`) still passes.
 7. Deployment docs are updated with the singleton initialization pattern and observer wiring.
 
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-
-- [ ] TBD (run /gsd-plan-phase 32 to break down)
+**Wave 1**
+- 32-01-PLAN.md — Contract log observer, ingress memory wiring, memory factory, tests, docs
 
 ## Next Milestone
 
