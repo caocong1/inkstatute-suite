@@ -32,6 +32,15 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 - Phase 3 Hermes integration spike is complete: hook ordering is source-confirmed, AgentTurn strategy is documented, identifier/state/privacy/safety rules are defined, and non-happy-path fixtures validate through the contract-test-suite.
 - Phase 4 Hermes shadow event layer is complete: repo-owned hook artifact, mapper, JSONL writer, and event-stream replay fixtures validate without live Hermes mutation.
 - v1.2 conversational context and memory foundation is complete: ordinary WeCom continuation/start flows reach runtime run creation, pending clarification resumes remain interrupt-based, bounded context/memory metadata is reference-first, and external memory providers remain optional sanitized-spike candidates.
+- [WECOM-01] Build InkStatute-owned WeCom service for receive/send, ACK, message normalization, text/file/card delivery, feedback callbacks, idempotency, retry, and output policy. — Phases 5, 55 (v1.0); audited Phase 33; verified Phase 34.
+- [ADAPTER-01] Define and implement the agent backend adapter contract and runtime selector, with Hermes as the first supported mode and Codex/provider-model modes preserved as contract-compatible future modes. — Phases 5, 55 (v1.0); audited Phase 33; verified Phase 34.
+- [HERMES-01] Build a reproducible Hermes agent adapter bootstrap path from a sanitized lawfirm profile bundle, version/capability matrix, external secrets/env, and health checks. — Phase 55 (v1.0); audited Phase 33; verified Phase 34.
+- [OUTPUT-01] Add an assistant output boundary so ordinary WeCom users see only InkStatute lawyer-assistant output, not Hermes gateway/update/command/meta notices. — Phase 55 (v1.0); audited Phase 33; verified Phase 34.
+- [LOOP-01] Preserve and validate the WeCom task-to-agent-to-reply-to-card-to-feedback loop through InkStatute WeCom service. — Phases 5, 55 (v1.0); audited Phase 33; verified Phase 34.
+- [FEEDBACK-01] Normalize Hermes feedback into FeedbackEvent records with dedupe, classification, and human-reviewed skill candidates. — Phase 6 (v1.0); audited Phase 33; verified Phase 34.
+- [READVIEW-01] Build read-only conversation/task/feedback APIs from contract logs. — Phase 7 (v1.0); audited Phase 33; verified Phase 34.
+- [OBSERVE-01] Enforce observability, replay, privacy, and legal safety baselines. — Phase 7 (v1.0); audited Phase 33; verified Phase 34.
+- [COMPOSE-01] Enforce composability and industry-neutral contract behavior in CI. — Phase 8 (v1.0); audited Phase 33; verified Phase 34.
 
 ### Active
 
@@ -40,15 +49,6 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 - [x] Build a contract test suite before production Hermes hook work.
 - [x] Resolve Hermes integration risks before production hook implementation.
 - [x] Add a thin hook-based Hermes shadow contract layer that does not alter legal/business outbound behavior.
-- [ ] Build InkStatute-owned WeCom service for receive/send, ACK, message normalization, text/file/card delivery, feedback callbacks, idempotency, retry, and output policy.
-- [ ] Define and implement the agent backend adapter contract and runtime selector, with Hermes as the first supported mode and Codex/provider-model modes preserved as contract-compatible future modes.
-- [ ] Build a reproducible Hermes agent adapter bootstrap path from a sanitized lawfirm profile bundle, version/capability matrix, external secrets/env, and health checks.
-- [ ] Add an assistant output boundary so ordinary WeCom users see only InkStatute lawyer-assistant output, not Hermes gateway/update/command/meta notices.
-- [ ] Preserve and validate the WeCom task-to-agent-to-reply-to-card-to-feedback loop through InkStatute WeCom service.
-- [ ] Normalize Hermes feedback into FeedbackEvent records with dedupe, classification, and human-reviewed skill candidates.
-- [ ] Build read-only conversation/task/feedback APIs from contract logs.
-- [ ] Enforce observability, replay, privacy, and legal safety baselines.
-- [ ] Enforce composability and industry-neutral contract behavior in CI.
 - [ ] Complete the five-workday lawyer trial acceptance criteria.
 
 ### Out of Scope
@@ -144,11 +144,13 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 ## Current State
 
 - **Last shipped:** v1.4 Long-Term Memory Productization (2026-07-03).
-- **Active milestone:** v1.5 V2 Acceptance Closure — audit unchecked V2 Active requirements, close code gaps, produce readiness report.
-- **V2 gate status:** All gates green (424 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite).
+- **Active milestone:** v1.5 V2 Acceptance Closure — Phase 35 complete; readiness report generated at `.planning/milestones/v1.5-V2-ACCEPTANCE-READINESS.md`.
+- **V2 gate status:** All 9 gates green (465 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall).
+- **Autonomous code closure:** READY — 9/9 code requirements satisfied, 0 code gaps, 7/7 composability task types, 4/4 output boundary categories.
+- **V2 acceptance:** BLOCKED ON HUMAN GATES — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence.
 - **Carried human gates (not autonomous-completable):**
   - Phase 5 live WeCom UAT — fixture-satisfied, operator confirmation needed.
-  - Phase 8 five-workday lawyer trial — live evidence required.
+  - Phase 8 five-workday lawyer trial — live evidence required (TRIAL-01 remains `[ ]` in Active).
   - All v1.1+ runtime lanes — default-OFF, live promotion is a human gate.
 - **Next after v1.5:** M2 scope per V2-PRD §11 (Codex/provider_model adapter prototypes, Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot loop) — gated on V2 acceptance.
 
@@ -170,4 +172,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-07-03 after v1.5 milestone definition*
+*Last updated: 2026-07-03 after Phase 35 — V2 acceptance readiness report generated, 9 requirements moved to Validated*
