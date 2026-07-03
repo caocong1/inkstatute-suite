@@ -159,7 +159,7 @@ from remaining human gates.
 ### Autonomous Code Closure: **{AUTONOMOUS_CLOSURE_STATUS}**
 
 - **{satisfied_count}/{satisfied_count + human_gate_count}** code requirements satisfied (all non-human-gate requirements pass)
-- **465 tests** across **9 V2 gates** — all green
+- **479 tests** across **9 V2 gates** — all green
 - Composability coverage: **{comp_covered}/{comp_total}** task types covered ({'all covered' if comp_all else 'gaps remain'})
 - Output boundary: **{ob_count}/{ob_total}** categories covered ({'all covered' if ob_all else 'gaps remain'})
 - No open code gaps remain from the Phase 33 audit

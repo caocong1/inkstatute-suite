@@ -145,7 +145,7 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 - **Last shipped:** v1.4 Long-Term Memory Productization (2026-07-03).
 - **Active milestone:** v1.5 V2 Acceptance Closure — Phase 35 complete; readiness report generated at `.planning/milestones/v1.5-V2-ACCEPTANCE-READINESS.md`.
-- **V2 gate status:** All 9 gates green (465 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall).
+- **V2 gate status:** All 9 gates green (479 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall).
 - **Autonomous code closure:** READY — 9/9 code requirements satisfied, 0 code gaps, 7/7 composability task types, 4/4 output boundary categories.
 - **V2 acceptance:** BLOCKED ON HUMAN GATES — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence.
 - **Carried human gates (not autonomous-completable):**
