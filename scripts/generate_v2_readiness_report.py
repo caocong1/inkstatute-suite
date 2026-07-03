@@ -144,6 +144,8 @@ def _section_executive_summary(
     comp_total = comp_covered + comp_coverage.get("missing_count", 0)
     ob_all = ob_evidence.get("all_categories_covered", False)
     ob_count = len(ob_evidence.get("entries", []))
+    ob_missing = len(ob_evidence.get("missing_categories", []))
+    ob_total = ob_count + ob_missing
 
     human_gate_ids = ", ".join(r.get("req_id", "?") for r in human_gates)
 
@@ -159,7 +161,7 @@ from remaining human gates.
 - **{satisfied_count}/{satisfied_count + human_gate_count}** code requirements satisfied (all non-human-gate requirements pass)
 - **465 tests** across **9 V2 gates** — all green
 - Composability coverage: **{comp_covered}/{comp_total}** task types covered ({'all covered' if comp_all else 'gaps remain'})
-- Output boundary: **{ob_count}/{ob_count}** categories covered ({'all covered' if ob_all else 'gaps remain'})
+- Output boundary: **{ob_count}/{ob_total}** categories covered ({'all covered' if ob_all else 'gaps remain'})
 - No open code gaps remain from the Phase 33 audit
 
 ### V2 Acceptance: **{V2_ACCEPTANCE_STATUS}**
@@ -506,7 +508,7 @@ def write_report(repo_root: Path) -> Path:
     milestones_dir = repo_root / ".planning" / "milestones"
     milestones_dir.mkdir(parents=True, exist_ok=True)
     report_path = milestones_dir / REPORT_FILENAME
-    report_path.write_text(report_text, encoding="utf-8")
+    report_path.write_text(report_text, encoding="utf-8", newline="\n")
     return report_path
 
 
