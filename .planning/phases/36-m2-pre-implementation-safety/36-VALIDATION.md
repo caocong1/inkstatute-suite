@@ -2,7 +2,7 @@
 phase: 36
 slug: m2-pre-implementation-safety
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-04
 ---
@@ -39,11 +39,11 @@ created: 2026-07-04
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 36-01-01 | 01 | 1 | SAFETY-01 | T-36-01 | Non-Hermes modes cannot bypass live_acceptance gate | unit | `pytest services/wecom-service/tests/test_agent_backend.py -k bypass` | ❌ W0 | ⬜ pending |
-| 36-01-02 | 01 | 1 | SAFETY-02 | T-36-02 | Contract method/field counts frozen at v1.5 baseline | unit | `pytest packages/contract-test-suite/tests/test_contract_count_freeze.py` | ❌ W0 | ⬜ pending |
-| 36-01-03 | 01 | 1 | SAFETY-03 | T-36-03 | 11 forbidden keys unified, scrub applied to all API paths | unit | `pytest packages/platform-runtime/tests/test_privacy_keys.py` + `pytest services/conversation-read-view/tests/test_privacy_scrub.py` | ❌ W0 | ⬜ pending |
-| 36-01-04 | 01 | 1 | SAFETY-04 | — | 6 M2 feature flags default False | unit | `pytest packages/platform-runtime/tests/test_feature_flags.py -k m2` | ❌ W0 | ⬜ pending |
-| 36-01-05 | 01 | 1 | SAFETY-05 | T-36-05 | Provider/model noise blocked, legal text allowed | unit+fixture | `pytest packages/platform-runtime/tests/test_output_boundary.py -k provider` | ❌ W0 | ⬜ pending |
-| 36-01-06 | 01 | 1 | SAFETY-06 | T-36-06 | Contract schema hash matches v1.5 baseline | unit | `pytest packages/contract-test-suite/tests/test_contract_freeze.py` | ❌ W0 | ⬜ pending |
+| 36-01-02 | 01 | 1 | SAFETY-04 | — | 6 M2 feature flags default False | unit | `pytest packages/platform-runtime/tests/test_feature_flags.py -k m2` | ❌ W0 | ⬜ pending |
+| 36-02-01 | 02 | 1 | SAFETY-02 | T-36-02 | Contract method/field counts frozen at v1.5 baseline | unit | `pytest packages/contract-test-suite/tests/test_contract_count_freeze.py` | ❌ W0 | ⬜ pending |
+| 36-02-02 | 02 | 1 | SAFETY-06 | T-36-06 | Contract schema hash matches v1.5 baseline | unit | `pytest packages/contract-test-suite/tests/test_contract_freeze.py` | ❌ W0 | ⬜ pending |
+| 36-03-01 | 03 | 2 | SAFETY-03 | T-36-03 | 11 forbidden keys unified, scrub applied to all API paths | unit | `pytest packages/platform-runtime/tests/test_privacy_keys.py` + `pytest services/conversation-read-view/tests/test_privacy_scrub.py` | ❌ W0 | ⬜ pending |
+| 36-03-02 | 03 | 2 | SAFETY-05 | T-36-05 | Provider/model noise blocked, legal text allowed | unit+fixture | `pytest packages/platform-runtime/tests/test_output_boundary.py -k provider` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -75,6 +75,6 @@ created: 2026-07-04
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-07-04
