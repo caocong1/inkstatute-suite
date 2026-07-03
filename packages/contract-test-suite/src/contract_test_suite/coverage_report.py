@@ -9,6 +9,7 @@ from typing import Any
 
 from .event_stream_replay import load_event_stream, replay_event_streams
 from .fixture_replay import replay_fixtures
+from .paths import REPO_ROOT
 
 
 @dataclass(frozen=True)
@@ -219,10 +220,168 @@ def _string(value: Any) -> str | None:
     return text if text else None
 
 
+# ---------------------------------------------------------------------------
+# Composability fixture coverage report (GAP-08)
+# ---------------------------------------------------------------------------
+
+#: Static registry mapping V2-PRD §10.3 synthetic task types to fixture paths.
+#: Each entry is (task_type, prd_label, fixture_paths, evidence_description).
+SYNTHETIC_TASK_TYPES: tuple[tuple[str, str, tuple[str, ...], str], ...] = (
+    (
+        "simple_legal_qa",
+        "简单法律问答（短任务）",
+        (
+            "packages/contract-test-suite/fixtures/phase4_simple_qa_event_stream.jsonl",
+            "packages/contract-test-suite/fixtures/phase3_non_legal_wild_task_contract_fixture.json",
+        ),
+        "route_decision.mode=simple_qa; short-task event stream with AgentTurn/AgentResult pair",
+    ),
+    (
+        "contract_review",
+        "合同审查（长任务 + skill + gate + Artifact）",
+        (
+            "packages/contract-test-suite/fixtures/phase4_success_event_stream.jsonl",
+            "packages/platform-contract/fixtures/legal_wecom_contract_review.json",
+        ),
+        "primary_skill=lawfirm.contract_review; artifacts_written; long-task success event stream",
+    ),
+    (
+        "legal_retrieval",
+        "法律检索（MCP tool trace）",
+        (
+            "packages/contract-test-suite/fixtures/phase5_wecom_contract_stream.jsonl",
+        ),
+        "primary_skill=lawfirm.legal_retrieval; tool_calls=[law-database]; MCP tool trace evidence",
+    ),
+    (
+        "route_error",
+        "路由错误模拟（route_mismatch）",
+        (
+            "packages/contract-test-suite/fixtures/phase3_route_error_contract_fixture.json",
+            "packages/contract-test-suite/fixtures/phase5_wecom_feedback_sample.jsonl",
+            "packages/contract-test-suite/fixtures/phase6_read_feedback_bundle.json",
+        ),
+        "route_mismatch=true; action=route_wrong; feedback event with human-review safety",
+    ),
+    (
+        "wecom_feedback",
+        "WeCom 反馈（模板卡片 → FeedbackEvent）",
+        (
+            "packages/contract-test-suite/fixtures/phase5_wecom_feedback_loop_fixture.json",
+            "packages/contract-test-suite/fixtures/phase3_repeated_feedback_clicks_contract_fixture.json",
+        ),
+        "feedback_event with feedback_target linking; template-card → FeedbackEvent normalization",
+    ),
+    (
+        "long_task_failure",
+        "长任务失败（AsyncTask.status=failed）",
+        (
+            "packages/contract-test-suite/fixtures/phase3_long_task_failure_contract_fixture.json",
+            "packages/contract-test-suite/fixtures/phase4_failed_long_task_event_stream.jsonl",
+        ),
+        "state=failed; errors=[runtime_error]; long-task failure event stream",
+    ),
+    (
+        "non_legal_synthetic",
+        "非法律合成任务（财税、工程、教育）",
+        (
+            "packages/contract-test-suite/fixtures/non_legal_finance_tax_task.json",
+            "packages/contract-test-suite/fixtures/non_legal_education_task.json",
+            "packages/platform-contract/fixtures/non_legal_engineering_task.json",
+            "packages/contract-test-suite/fixtures/platform_foundation_non_legal_run.json",
+        ),
+        "industry_context.domain in {finance_tax, engineering, education}; non-legal synthetic tasks",
+    ),
+)
+
+
+@dataclass(frozen=True)
+class ComposabilityCoverageEntry:
+    """Coverage status for a single §10.3 synthetic task type."""
+
+    task_type: str
+    prd_label: str
+    covered: bool
+    fixtures: tuple[str, ...]
+    evidence: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "task_type": self.task_type,
+            "prd_label": self.prd_label,
+            "covered": self.covered,
+            "fixtures": list(self.fixtures),
+            "evidence": self.evidence,
+        }
+
+
+@dataclass(frozen=True)
+class ComposabilityCoverageReport:
+    """Aggregate composability fixture coverage across all §10.3 task types."""
+
+    entries: tuple[ComposabilityCoverageEntry, ...]
+    covered_count: int
+    missing_count: int
+    all_covered: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "entries": [entry.to_dict() for entry in self.entries],
+            "covered_count": self.covered_count,
+            "missing_count": self.missing_count,
+            "all_covered": self.all_covered,
+        }
+
+
+def build_composability_coverage_report(
+    repo_root: str | Path = REPO_ROOT,
+) -> ComposabilityCoverageReport:
+    """Map §10.3 synthetic task types to fixtures and report coverage.
+
+    A task type is ``covered=True`` when at least one listed fixture file
+    exists on disk and is non-empty.
+    """
+    root = Path(repo_root)
+    entries: list[ComposabilityCoverageEntry] = []
+    covered_count = 0
+
+    for task_type, prd_label, fixture_paths, evidence in SYNTHETIC_TASK_TYPES:
+        existing: list[str] = []
+        for rel_path in fixture_paths:
+            abs_path = root / rel_path
+            if abs_path.exists() and abs_path.stat().st_size > 0:
+                existing.append(rel_path)
+        covered = len(existing) > 0
+        if covered:
+            covered_count += 1
+        entries.append(
+            ComposabilityCoverageEntry(
+                task_type=task_type,
+                prd_label=prd_label,
+                covered=covered,
+                fixtures=tuple(existing),
+                evidence=evidence,
+            )
+        )
+
+    total = len(entries)
+    missing_count = total - covered_count
+    return ComposabilityCoverageReport(
+        entries=tuple(entries),
+        covered_count=covered_count,
+        missing_count=missing_count,
+        all_covered=missing_count == 0,
+    )
+
+
 __all__ = [
+    "ComposabilityCoverageEntry",
+    "ComposabilityCoverageReport",
     "CoverageReport",
     "CoverageSourceReport",
+    "SYNTHETIC_TASK_TYPES",
     "assert_coverage_thresholds",
+    "build_composability_coverage_report",
     "format_coverage_summary",
     "summarize_event_stream_coverage",
     "summarize_fixture_bundle_coverage",
