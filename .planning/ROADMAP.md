@@ -22,7 +22,7 @@
 - [ ] **Phase 34: V2 Code Gap Closure** - Close every genuine code gap identified by the audit in existing services/packages with tests, keeping all V2 gate suites green.
 - [ ] **Phase 35: V2 Acceptance Readiness Report & Traceability Update** - Update PROJECT.md traceability honestly and produce the final V2 acceptance readiness report with human-gate documentation.
 
-## Milestone v1.5 Status
+## Status
 
 **Status:** PLANNING — 3 phases defined (33-35), 23 requirements mapped.
 
