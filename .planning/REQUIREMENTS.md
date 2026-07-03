@@ -83,25 +83,25 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| SAFETY-01 | TBD | Not started |
-| SAFETY-02 | TBD | Not started |
-| SAFETY-03 | TBD | Not started |
-| SAFETY-04 | TBD | Not started |
-| SAFETY-05 | TBD | Not started |
-| SAFETY-06 | TBD | Not started |
-| ADAPTER-01 | TBD | Not started |
-| ADAPTER-02 | TBD | Not started |
-| ADAPTER-03 | TBD | Not started |
-| ROUTER-01 | TBD | Not started |
-| ROUTER-02 | TBD | Not started |
-| SKILL-01 | TBD | Not started |
-| SKILL-02 | TBD | Not started |
-| READVIEW-01 | TBD | Not started |
-| READVIEW-02 | TBD | Not started |
-| READVIEW-03 | TBD | Not started |
-| ADMIN-01 | TBD | Not started |
-| ADMIN-02 | TBD | Not started |
-| QQBOT-01 | TBD | Not started |
-| QQBOT-02 | TBD | Not started |
-| QQBOT-03 | TBD | Not started |
-| GATE-01 | TBD | Not started |
+| SAFETY-01 | 36 | Not started |
+| SAFETY-02 | 36 | Not started |
+| SAFETY-03 | 36 | Not started |
+| SAFETY-04 | 36 | Not started |
+| SAFETY-05 | 36 | Not started |
+| SAFETY-06 | 36 | Not started |
+| ADAPTER-01 | 39 | Not started |
+| ADAPTER-02 | 40 | Not started |
+| ADAPTER-03 | 40 | Not started |
+| ROUTER-01 | 38 | Not started |
+| ROUTER-02 | 38 | Not started |
+| SKILL-01 | 37 | Not started |
+| SKILL-02 | 37 | Not started |
+| READVIEW-01 | 41 | Not started |
+| READVIEW-02 | 41 | Not started |
+| READVIEW-03 | 41 | Not started |
+| ADMIN-01 | 42 | Not started |
+| ADMIN-02 | 42 | Not started |
+| QQBOT-01 | 43 | Not started |
+| QQBOT-02 | 43 | Not started |
+| QQBOT-03 | 43 | Not started |
+| GATE-01 | 44 | Not started |

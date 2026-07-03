@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-07-03T13:25:35.995Z"
 last_activity: 2026-07-03
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-03)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.5 V2 Acceptance Closure — COMPLETE. All 3 phases shipped (33-35), 23/23 requirements satisfied, 479 tests green across 9 V2 gates. Autonomous code closure READY; V2 acceptance BLOCKED ON HUMAN GATES (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial). Next: archive v1.5, then human gate execution or M2.
+**Current focus:** v1.6 M2 Multi-Backend & Platform Extensions — PLANNING. 9 phases defined (36-44), 22 requirements mapped across 8 categories (SAFETY, ADAPTER, ROUTER, SKILL, READVIEW, ADMIN, QQBOT, GATE). Roadmap created; ready for phase execution starting with Phase 36 (Pre-Implementation Safety). V2 human gates (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial) remain carried in parallel.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 36 (M2 Pre-Implementation Safety) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-03 — Milestone v1.6 started
+Status: Roadmap defined, ready for execution
+Last activity: 2026-07-03 — v1.6 roadmap created (phases 36-44, 22 requirements mapped)
 
 ### Deferred Items
 
@@ -146,6 +146,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 - Phase 25.1 inserted after Phase 25: Close gap: v1.3 memory runtime and feedback wiring (URGENT)
 - Phase 32 added: v1.4 Gap Closure: Singleton Memory Wiring and Contract Event Observability (closes MEM-07 and MEM-16 audit gaps)
 - v1.5 roadmap created: Phases 33-35 (V2 Requirement Audit → Code Gap Closure → Acceptance Readiness Report & Traceability Update)
+- v1.6 roadmap created: Phases 36-44 (M2 Pre-Implementation Safety → Skill Registry → Router Service → Codex Adapter → Provider Model Adapter → Read-View Completion → Admin Console API → QQBot Channel Loop → Gate Integration)
 
 ### Decisions
 
