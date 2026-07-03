@@ -8,6 +8,7 @@ from typing import Any, Protocol, runtime_checkable
 from platform_contract.events import JsonObject
 
 from .memory_errors import MemoryFailureCategory
+from .ports import ContractLogStore
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,3 +58,24 @@ class InMemoryMemoryObserver:
 
     def clear(self) -> None:
         self.events.clear()
+
+
+class ContractLogMemoryObserver:
+    """Production observer that writes memory events to a ContractLogStore.
+
+    This wires MEM-16: memory operation events (retain, recall, failure)
+    are recorded to the contract log so behavior is observable, replayable,
+    and debuggable in production.
+    """
+
+    def __init__(
+        self,
+        contract_log_store: ContractLogStore,
+        *,
+        event_key: str = "memory_operation",
+    ) -> None:
+        self._contract_log_store = contract_log_store
+        self._event_key = event_key
+
+    def on_memory_event(self, event: MemoryOperationEvent) -> None:
+        self._contract_log_store.append(self._event_key, event.as_json())

@@ -166,6 +166,53 @@ PYTHONPATH=$(find packages services -name src -type d | tr '\n' ':') \
 
 Tests auto-skip when Hindsight is not reachable.
 
+## Singleton Initialization (MEM-07)
+
+The memory layer must be initialized **once per deployment** and shared across all sessions. Use the `build_memory_from_env()` factory to construct a singleton `HindsightMemory` at startup, then inject it into `WeComRuntimeIngress`:
+
+```python
+from wecom_service.memory_factory import build_memory_from_env
+from wecom_service.ingress_runtime import WeComRuntimeIngress
+from platform_runtime import ContractLogMemoryObserver
+
+# 1. Construct singleton memory once at deployment startup
+memory = build_memory_from_env()  # reads HINDSIGHT_BASE_URL, HINDSIGHT_API_KEY
+
+# 2. (Optional) Wire a contract log observer for MEM-16 observability
+#    The observer records retain/recall/failure events to the contract log.
+# observer = ContractLogMemoryObserver(contract_log_store)
+
+# 3. Inject into the WeCom ingress — shared across all sessions
+ingress = WeComRuntimeIngress(
+    runtime=runtime,
+    solution=solution,
+    tenant_id="...",
+    workspace_id="...",
+    bot_instance_id="...",
+    memory=memory,             # MEM-07: singleton shared across sessions
+    memory_observer=observer,  # MEM-16: contract event observability
+)
+```
+
+When `HINDSIGHT_BASE_URL` is not set, `build_memory_from_env()` returns `None` and the runtime operates without long-term memory (graceful opt-out).
+
+## Contract Event Observability (MEM-16)
+
+`RetryableMemory` emits `MemoryOperationEvent` for every retain, recall, and failure attempt. To record these events to the contract log in production, wire a `ContractLogMemoryObserver`:
+
+```python
+from platform_runtime import ContractLogMemoryObserver
+
+observer = ContractLogMemoryObserver(
+    contract_log_store,           # any ContractLogStore implementation
+    event_key="memory_operation",  # contract log event key
+)
+
+# Pass to WeComRuntimeIngress via memory_observer=observer
+```
+
+Events are written as JSON with `operation`, `bank_id`, `status`, `category`, `latency_ms`, `retry_count`, and `error_code` fields.
+
 ## Production Considerations
 
 - Use a dedicated PostgreSQL instance for Hindsight data instead of the embedded store.

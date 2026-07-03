@@ -9,6 +9,8 @@ from typing import Any
 from platform_contract.events import AgentTurn, AttachmentRef, JsonObject, OutputConstraints
 from platform_runtime import (
     InMemoryInterruptStore,
+    Memory,
+    MemoryObserver,
     RunRequest,
     RunRuntime,
     SessionResolutionPolicy,
@@ -43,6 +45,9 @@ class WeComRuntimeIngress:
         interrupt_store: InMemoryInterruptStore | None = None,
         policy: SessionResolutionPolicy | None = None,
         memory_orchestrator: MemoryOrchestrator | None = None,
+        memory: Memory | None = None,
+        memory_policy: Any | None = None,
+        memory_observer: MemoryObserver | None = None,
         feedback_correction_ref_provider: FeedbackCorrectionRefProvider | None = None,
         clock: Any | None = None,
         id_factory: Any | None = None,
@@ -61,6 +66,9 @@ class WeComRuntimeIngress:
             interrupt_store=interrupt_store,
             policy=policy,
             memory_orchestrator=memory_orchestrator,
+            memory=memory,
+            memory_policy=memory_policy,
+            memory_observer=memory_observer,
             feedback_correction_ref_provider=feedback_correction_ref_provider,
             clock=clock,
             id_factory=id_factory,

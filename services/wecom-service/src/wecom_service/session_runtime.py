@@ -13,6 +13,7 @@ from platform_contract.events import JsonObject
 from platform_runtime import (
     InMemoryInterruptStore,
     Memory,
+    MemoryObserver,
     MemoryOrchestrator,
     RetryableMemory,
     Run,
@@ -105,6 +106,7 @@ class WeComSessionRuntime:
         memory_orchestrator: MemoryOrchestrator | None = None,
         memory: Memory | None = None,
         memory_policy: Any | None = None,
+        memory_observer: MemoryObserver | None = None,
         feedback_correction_ref_provider: FeedbackCorrectionRefProvider | None = None,
         clock: Any | None = None,
         id_factory: Any | None = None,
@@ -113,7 +115,10 @@ class WeComSessionRuntime:
         self.interrupt_store = interrupt_store
         self.policy = policy or SessionResolutionPolicy()
         self.memory_orchestrator = memory_orchestrator
-        self.memory = RetryableMemory(memory) if memory is not None and not isinstance(memory, RetryableMemory) else memory
+        if memory is not None and not isinstance(memory, RetryableMemory):
+            self.memory = RetryableMemory(memory, observer=memory_observer)
+        else:
+            self.memory = memory
         self.memory_policy = memory_policy
         self.feedback_correction_ref_provider = feedback_correction_ref_provider
         self.clock = clock

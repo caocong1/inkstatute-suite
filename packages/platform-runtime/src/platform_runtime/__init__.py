@@ -108,6 +108,7 @@ from .memory_errors import (
     classify_exception,
 )
 from .memory_events import (
+    ContractLogMemoryObserver,
     InMemoryMemoryObserver,
     MemoryObserver,
     MemoryOperationEvent,
@@ -243,6 +244,7 @@ __all__ = [
     "MemoryObserver",
     "MemoryOperationEvent",
     "InMemoryMemoryObserver",
+    "ContractLogMemoryObserver",
     "RetryPolicy",
     "RetryableMemory",
     "MemoryStoreAdapter",
