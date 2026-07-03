@@ -87,6 +87,9 @@ _HARD_BLOCK_RULES: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
         ("internal_path", r"(?:^|\s)(?:/[^ \n\t]+){2,}"),
         ("internal_path", r"[a-z]:\\[^ \n\t]+"),
         ("debug_trace", r"\b(?:admin_notice|stack trace|traceback|delivery debug|runtime detail)\b"),
+        ("provider_leak", r"\b(?:model[:\s]|provider[:\s]|api[_-]?key|quota|token[_\s-]?usage)(?!\w)"),
+        ("api_error", r"\b(?:api key invalid|quota exceeded|rate limit retry|insufficient quota)\b"),
+        ("function_trace", r"\b(?:function call|tool output|token usage report|function_call_result)\b"),
     )
 )
 
@@ -104,6 +107,8 @@ _REWRITE_RULES: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
         ("tool_progress", r"\b(?:tool progress|internal retrieval|memory sync|tool call)\b"),
         ("approval_request", r"\b(?:dangerous command|approval required|requires approval)\b"),
         ("debug_trace", r"\b(?:debug|diagnostic)\b"),
+        ("rate_limit_notice", r"\b(?:rate[_ ]?limit(?:ed|ing)?|too many requests|retrying(?: after)? \d+)\b"),
+        ("context_window", r"\b(?:context (?:window|length) (?:exceeded|limit)|maximum context|token limit)\b"),
     )
 )
 

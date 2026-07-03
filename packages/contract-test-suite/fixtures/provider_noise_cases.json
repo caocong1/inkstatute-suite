@@ -1,0 +1,22 @@
+{
+  "hard_block": [
+    "The model: glm-5.2 generated a response",
+    "Provider: ollama-cloud, API key: sk-xxx",
+    "Token usage: 1500 tokens consumed",
+    "Quota exceeded for this request",
+    "Function call: web_search(query='legal precedent')",
+    "Tool output: {\"result\": \"...\"}",
+    "Token usage report: input=500, output=1000",
+    "API key invalid, please check credentials"
+  ],
+  "rewrite": [
+    "Rate limit exceeded, retrying after 30 seconds",
+    "Context window exceeded, please reduce input length",
+    "Too many requests, please wait"
+  ],
+  "allow": [
+    "The supplier must cure the breach within 30 days.",
+    "Under the contract, the buyer may terminate for material breach.",
+    "The model clause requires notice before termination."
+  ]
+}

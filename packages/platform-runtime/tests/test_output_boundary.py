@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import unittest
 
@@ -10,6 +11,7 @@ from platform_runtime import DefaultRunRuntime, RunRequest, RuntimeFeatureDisabl
 from platform_runtime.fakes import FakeBackendAdapter
 
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXED_NOW = "2026-06-29T03:00:00Z"
 
 
@@ -94,6 +96,45 @@ class DefaultAssistantOutputBoundaryTests(unittest.TestCase):
         for forbidden in ("Hermes", "WeCom", "lawfirm", "gateway", ".hermes"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden.lower(), source_text.lower())
+
+    def test_blocks_provider_model_name_leakage(self) -> None:
+        fixture_path = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures" / "provider_noise_cases.json"
+        cases = json.loads(fixture_path.read_text(encoding="utf-8"))
+        boundary = DefaultAssistantOutputBoundary()
+        for sample in cases["hard_block"]:
+            with self.subTest(sample=sample):
+                decision = boundary.apply("ordinary_user", text=sample)
+                self.assertEqual(decision.action, BoundaryAction.BLOCK)
+
+    def test_rewrites_rate_limit_and_context_window_notices(self) -> None:
+        fixture_path = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures" / "provider_noise_cases.json"
+        cases = json.loads(fixture_path.read_text(encoding="utf-8"))
+        boundary = DefaultAssistantOutputBoundary()
+        for sample in cases["rewrite"]:
+            with self.subTest(sample=sample):
+                decision = boundary.apply("ordinary_user", text=sample)
+                self.assertEqual(decision.action, BoundaryAction.REWRITE)
+                self.assertNotIn("rate", decision.visible_text.lower())
+                self.assertNotIn("context", decision.visible_text.lower())
+
+    def test_blocks_function_call_traces(self) -> None:
+        fixture_path = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures" / "provider_noise_cases.json"
+        cases = json.loads(fixture_path.read_text(encoding="utf-8"))
+        boundary = DefaultAssistantOutputBoundary()
+        for sample in cases["hard_block"]:
+            if "function" in sample.lower() or "tool" in sample.lower() or "token usage" in sample.lower():
+                with self.subTest(sample=sample):
+                    decision = boundary.apply("ordinary_user", text=sample)
+                    self.assertEqual(decision.action, BoundaryAction.BLOCK)
+
+    def test_legal_business_text_still_allowed_with_new_rules(self) -> None:
+        fixture_path = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures" / "provider_noise_cases.json"
+        cases = json.loads(fixture_path.read_text(encoding="utf-8"))
+        boundary = DefaultAssistantOutputBoundary()
+        for sample in cases["allow"]:
+            with self.subTest(sample=sample):
+                decision = boundary.apply("ordinary_user", text=sample)
+                self.assertEqual(decision.action, BoundaryAction.ALLOW)
 
 
 class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
