@@ -14,6 +14,7 @@ from platform_contract.enums import AgentResultStatus, AsyncTaskState, Interrupt
 from platform_contract.events import JsonObject, RunInterrupt
 
 from .session_resolver import SessionScope
+from .privacy_keys import ALL_FORBIDDEN_KEYS
 from .store import ContractLogPrivacyError
 
 
@@ -504,10 +505,8 @@ def _json_clone(value: Mapping[str, Any]) -> JsonObject:
 
 def _reject_forbidden_payload_storage(event: Mapping[str, Any]) -> None:
     for path, key in _walk_keys(event):
-        if key == "raw_payload":
-            raise ContractLogPrivacyError(f"interrupt event contains forbidden raw_payload at {path}")
-        if key in _FORBIDDEN_FULL_TEXT_KEYS:
-            raise ContractLogPrivacyError(f"interrupt event contains forbidden full-text payload field at {path}")
+        if key in ALL_FORBIDDEN_KEYS:
+            raise ContractLogPrivacyError(f"interrupt event contains forbidden {key} at {path}")
 
 
 def _walk_keys(value: Any, path: str = "$") -> Iterable[tuple[str, str]]:
@@ -520,16 +519,6 @@ def _walk_keys(value: Any, path: str = "$") -> Iterable[tuple[str, str]]:
     elif isinstance(value, list):
         for index, nested in enumerate(value):
             yield from _walk_keys(nested, f"{path}[{index}]")
-
-
-_FORBIDDEN_FULL_TEXT_KEYS = {
-    "case_facts",
-    "customer_document_text",
-    "document_text",
-    "full_text",
-    "payload_text",
-    "raw_text",
-}
 
 
 __all__ = [

@@ -14,6 +14,7 @@ from typing import Any
 from platform_contract.events import JsonObject
 
 from .ports import ContractLogStore
+from .privacy_keys import ALL_FORBIDDEN_KEYS
 from .store import ContractLogPrivacyError
 
 
@@ -526,12 +527,8 @@ def _safe_metadata(value: Mapping[str, Any]) -> JsonObject:
 
 def _reject_forbidden_payload_storage(event: Mapping[str, Any]) -> None:
     for path, key in _walk_keys(event):
-        if key == "raw_payload":
-            raise ContractLogPrivacyError(f"contract log event contains forbidden raw_payload at {path}")
-        if key in _FORBIDDEN_FULL_TEXT_KEYS:
-            raise ContractLogPrivacyError(
-                f"contract log event contains forbidden full-text payload field at {path}"
-            )
+        if key in ALL_FORBIDDEN_KEYS:
+            raise ContractLogPrivacyError(f"contract log event contains forbidden {key} at {path}")
 
 
 def _walk_keys(value: Any, path: str = "$") -> Any:
@@ -596,16 +593,6 @@ def _status_key(value: str) -> str:
 
 def _sha16(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
-
-
-_FORBIDDEN_FULL_TEXT_KEYS = {
-    "case_facts",
-    "customer_document_text",
-    "document_text",
-    "full_text",
-    "payload_text",
-    "raw_text",
-}
 
 
 __all__ = [

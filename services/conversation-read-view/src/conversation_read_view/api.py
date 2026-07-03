@@ -91,7 +91,8 @@ def _split_path_query(path: str, query: str | Mapping[str, str] | None) -> tuple
 
 
 def _with_contract_metadata(body: dict[str, Any]) -> dict[str, Any]:
-    response = dict(body)
+    scrubbed = scrub_contract_payload(body)
+    response = dict(scrubbed) if isinstance(scrubbed, dict) else {"data": scrubbed}
     metadata = dict(response.get("metadata", {})) if isinstance(response.get("metadata"), Mapping) else {}
     metadata["derived_from_contract_log"] = True
     response["metadata"] = metadata

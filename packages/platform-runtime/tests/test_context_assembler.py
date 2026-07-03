@@ -184,7 +184,7 @@ class ContextAssemblyContractTests(unittest.TestCase):
                     make_summary(metadata={key: "sensitive text"}).as_event()
 
         store = InMemoryRollingSummaryStore(clock=lambda: FIXED_NOW)
-        with self.assertRaisesRegex(ValueError, "full-text payload"):
+        with self.assertRaisesRegex(ValueError, "forbidden payload_text"):
             store.upsert(make_summary(metadata={"payload_text": "sensitive text"}))
 
 

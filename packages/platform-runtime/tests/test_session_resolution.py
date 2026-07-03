@@ -248,7 +248,7 @@ class InMemorySessionResolutionStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "forbidden raw_payload"):
             store.upsert_session(make_session(scope=scope, metadata={"raw_payload": "secret"}))
 
-        with self.assertRaisesRegex(ValueError, "full-text payload"):
+        with self.assertRaisesRegex(ValueError, "forbidden payload_text"):
             store.upsert_pending_interrupt(
                 PendingInterruptSnapshot(
                     scope=scope,
@@ -270,7 +270,7 @@ class InMemorySessionResolutionStoreTests(unittest.TestCase):
         )
         unsafe_decision = replace(decision, metadata={"full_text": "secret"})
 
-        with self.assertRaisesRegex(ValueError, "full-text payload"):
+        with self.assertRaisesRegex(ValueError, "forbidden full_text"):
             store.record_decision(unsafe_decision)
 
 
