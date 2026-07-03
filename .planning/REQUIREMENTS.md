@@ -1,87 +1,107 @@
-# Milestone v1.5: V2 Acceptance Closure — Requirements
+# Milestone v1.6: M2 Multi-Backend & Platform Extensions — Requirements
 
 **Defined:** 2026-07-03
-**Milestone:** v1.5 V2 Acceptance Closure
-**Goal:** Audit all unchecked V2 Active requirements against the actual codebase, close every code gap found, mark validated requirements in PROJECT.md, and produce a final V2 acceptance readiness report so that only the Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial human gates remain before V2 is formally accepted.
+**Milestone:** v1.6 M2 Multi-Backend & Platform Extensions
+**Goal:** Extend the platform beyond Hermes-only by proving agent-backend-neutral contracts (Codex + provider_model prototypes), normalizing routing as an independent service, exposing skill metadata and operational read views, completing conversation-read-view, and adding a second channel (QQBot) to prove ChannelAdapter portability — while keeping all 9 existing V2 gates green and V2 human-gate evidence stable.
 
 ## Requirements
 
-### Audit Infrastructure (AUDIT)
+### Pre-Implementation Safety (SAFETY)
 
-- [x] **AUDIT-01**: Operator can run a traceability audit that maps each unchecked V2 Active requirement to concrete code evidence (file paths, test modules, gate names, schema IDs) with phase references.
-- [x] **AUDIT-02**: Operator can view a per-requirement evidence bundle showing which files implement each requirement, which tests cover it, which gate suite proves it, and which fixtures exercise it.
-- [x] **AUDIT-03**: Operator can run a gap analysis that classifies each unchecked requirement as `satisfied`, `partial`, `gap`, or `human_gate` against actual code using three-level verification (schema → library surface → production wiring).
-- [x] **AUDIT-04**: CI runs a 9th V2 gate (`v2-acceptance-traceability`) that fails when any requirement is `status: gap` or evidence is missing.
-- [x] **AUDIT-05**: Operator can read a machine-readable JSON traceability sidecar (`acceptance/v2-traceability.json`) mapping requirement IDs to evidence and status.
-- [x] **AUDIT-06**: Operator can re-run the entire requirement-to-code audit deterministically via `scripts/audit_v2_requirements.py` and reproduce the same matrix and gap list.
-- [x] **AUDIT-07**: Operator can view a PRD §10 criterion-to-test mapping showing which specific test(s) and fixture(s) prove each §10.1–10.4 acceptance criterion.
+- [ ] **SAFETY-01**: Operator can verify that `select_agent_backend` enforces `live_acceptance_allowed=False` for all non-Hermes modes regardless of `production_ready` metadata, preventing prototype adapters from serving live WeCom turns during V2 human gates.
+- [ ] **SAFETY-02**: Operator can run a contract-count assertion test that fails if `BackendAdapter` Protocol method count, `AdapterCapabilitySet` field count, or `ChannelAdapter` Protocol method count changes from the v1.5 baseline, preventing contract drift during M2.
+- [ ] **SAFETY-03**: Operator can verify that `_FORBIDDEN_FULL_TEXT_KEYS` is unified between `store.py` and `privacy.py`, includes new backend field names (`prompt_content`, `completion_text`, `function_call_result`, `tool_output`), and that `scrub_contract_payload` is applied to every API response path.
+- [ ] **SAFETY-04**: Operator can verify that all M2 feature flags (`router_service_enabled`, `skill_registry_enabled`, `admin_api_enabled`, `qqbot_channel_enabled`, `codex_backend_enabled`, `provider_model_backend_enabled`) default to `False` in `RuntimeFeatureFlags`.
+- [ ] **SAFETY-05**: Operator can run output boundary fixture tests proving provider/model name leakage, API error messages, and rate-limit notices are blocked or rewritten for each new backend.
+- [ ] **SAFETY-06**: Operator can run a "contract freeze" baseline hash test comparing `packages/platform-contract/` schema files against the v1.5 baseline, failing if any schema file is modified during the V2 human gate period.
 
-### Gap Closure (GAP)
+### Multi-Backend Adapters (ADAPTER)
 
-- [x] **GAP-01**: All genuine code gaps identified by the audit in WeCom service (receive/send, ACK, normalization, delivery, feedback callbacks, idempotency, retry, output policy) are closed with tests.
-- [x] **GAP-02**: All genuine code gaps in the assistant output boundary (blocking/rewriting Hermes gateway/update/command/meta notices) are closed with tests.
-- [x] **GAP-03**: All genuine code gaps in feedback normalization (FeedbackEvent dedupe, classification, human-reviewed skill candidates) are closed with tests.
-- [x] **GAP-04**: All genuine code gaps in conversation-read-view (read-only APIs from contract logs) are closed with tests.
-- [x] **GAP-05**: All genuine code gaps in CI composability (industry-neutral contract behavior, synthetic task coverage) are closed with tests.
-- [x] **GAP-06**: All genuine code gaps in observability/replay/privacy baselines are closed with tests.
-- [x] **GAP-07**: All 7 existing V2 gate suites (424+ tests) pass green after gap closure with no regressions.
-- [x] **GAP-08**: Operator can view a composability fixture coverage report showing which §10.3 synthetic task types are covered by fixtures and which are missing.
-- [x] **GAP-09**: Operator can view a privacy/output-boundary fixture evidence summary proving gateway/update/command/meta samples are blocked or rewritten per §10.2.
+- [ ] **ADAPTER-01**: Operator can configure `agent_backend.mode=codex` and the runtime selector routes to a Codex adapter prototype that returns a valid `AgentBackendManifest`, passes capability probe, and completes a minimal `submit_run → AgentResult` flow via `codex exec --json` subprocess.
+- [ ] **ADAPTER-02**: Operator can configure `agent_backend.mode=provider_model` and the runtime selector routes to a direct provider_model adapter prototype that returns a valid `AgentBackendManifest`, passes capability probe, and completes a minimal `submit_run → AgentResult` flow via `AsyncOpenAI` lazy SDK import.
+- [ ] **ADAPTER-03**: Operator can run output boundary fixture tests proving Codex and provider_model backend noise (function call traces, model names, API errors) is blocked or rewritten before delivery to any channel.
 
-### Traceability and Documentation (DOC)
+### Router Service (ROUTER)
 
-- [x] **DOC-01**: PROJECT.md Active requirements are updated — validated requirements move to Validated with phase references; stale sections updated.
-- [x] **DOC-02**: Operator can read a V2 acceptance readiness report (`.planning/milestones/v1.5-V2-ACCEPTANCE-READINESS.md`) mirroring PRD §10.1–10.4 structure with satisfied criteria, closed gaps, and remaining human gates.
-- [x] **DOC-03**: Operator can read Phase 5 live WeCom UAT documentation including pre-UAT fixture evidence summary, operator checklist, and pass/fail criteria.
-- [x] **DOC-04**: Operator can read Phase 8 five-workday lawyer trial documentation including trial protocol, metric-collection template, §10.4 thresholds, and trial-log template.
-- [x] **DOC-05**: The readiness report uses a two-tier status model: autonomous closure READY vs V2 acceptance BLOCKED ON HUMAN GATES — never conflating code closure with formal acceptance.
-- [x] **DOC-06**: Human-gate requirements (Phase 5 live WeCom UAT, Phase 8 five-workday lawyer trial) remain unchecked in PROJECT.md until real evidence exists.
-- [x] **DOC-07**: The readiness report classifies each V2-PRD §13 residual risk as source-resolved, implementation-resolved, or live-evidence-pending.
+- [ ] **ROUTER-01**: Operator can inject a standalone router library into `hermes-contract-layer/mapper.py` that produces `RouteDecision` events with the same JSONL shape as the inline implementation, with a `None` default that preserves in-process fallback behavior.
+- [ ] **ROUTER-02**: Operator can configure `RouteMode.RULE` and `RouteMode.SKILL` routing modes in the router service, with stateless skill lookup from the Skill Registry and intent classification via keyword/regex, producing normalized `RouteDecision` records.
 
-## Future Requirements (Deferred)
+### Skill Registry (SKILL)
 
-- **FUTURE-01**: Automated re-audit on PR via CI integration (M2+ scope)
-- **FUTURE-02**: Real-time acceptance dashboard (M2+ admin console scope)
-- **FUTURE-03**: Full requirements database with drift detection (M2+ scope)
-- **FUTURE-04**: Gap-closure change log as structured per-requirement changelog (derivable from git log for v1.5)
+- [ ] **SKILL-01**: Operator can query a read-only Skill Registry that exposes Hermes skill metadata as `NeutralSkillDescriptor` records with `list_skills`, `get_skill`, and `search` operations (filter by tag, category, name substring).
+- [ ] **SKILL-02**: Operator can fetch `/.well-known/agent-skills/index.json` from the Skill Registry exposing skill name, description, and URL for discovery per the Cloudflare agent-skills-discovery convention.
+
+### Conversation Read-View (READVIEW)
+
+- [ ] **READVIEW-01**: Operator can query `conversation-read-view` with cursor-based pagination, time-range filters (`from`, `to`), and dimension filters (`user_id`, `channel`, `status`) on list endpoints, with enforced max result limits.
+- [ ] **READVIEW-02**: Operator can query `conversation-read-view` by `trace_id` and receive all related events (AgentTurn, RouteDecision, ExecutionTrace, AgentResult, FeedbackEvent) reconstructed in occurrence order.
+- [ ] **READVIEW-03**: Operator can export conversation-read-view query results as CSV or JSON, and verify that all new endpoints apply read-time privacy scrubbing to response payloads.
+
+### Admin Console API (ADMIN)
+
+- [ ] **ADMIN-01**: Operator can authenticate to a read-only Admin Console API via a static token from env, and query sessions, tasks, feedback, gates, and health views with filtering and pagination.
+- [ ] **ADMIN-02**: Operator can verify that Admin Console API health/status views use a field allowlist that excludes secret reference names, config paths, `secret_refs_configured` maps, and `api_base_url` values.
+
+### QQBot Channel (QQBOT)
+
+- [ ] **QQBOT-01**: Operator can verify that channel-generic logic (idempotency, delivery guard, active task router, output policy) is extracted from `wecom-service` into a shared package, and that QQBot does not import directly from `wecom_service`.
+- [ ] **QQBOT-02**: Operator can configure `channel=qqbot` and the runtime routes to a QQBot channel adapter that implements `ChannelAdapter` Protocol (6 methods), handles receive (single mode), send (text), and callback verification.
+- [ ] **QQBOT-03**: Operator can run a fixture-driven QQBot loop proof showing receive → ACK → adapter → reply → card → FeedbackEvent end-to-end with idempotency, proving ChannelAdapter portability beyond WeCom.
+
+### Gate Safety (GATE)
+
+- [ ] **GATE-01**: Operator can run a V2 gate suite that includes new gates for each M2 package/service (codex, provider_model, router-service, skill-registry, admin-console-api, qqbot), with all 9 existing gates staying green and a meta-test asserting every `packages/*/src` and `services/*/src` directory is covered by a gate.
+
+## Future Requirements (Deferred to M3+)
+
+- Streaming event support for Codex/provider_model adapters
+- Artifact return support for adapters
+- Session memory support for adapters (Hindsight integration)
+- Multi-provider support for provider_model adapter (Anthropic, Ollama)
+- Model-based and hybrid routing with confidence scoring
+- Route mismatch detection and feedback learning
+- Skill Registry write operations (publish, update, delete)
+- Skill usage statistics and health status
+- Full-text search across conversations
+- Refined view with outcome classification
+- OTEL trace correlation
+- Admin Console metrics aggregation, alerting, audit log
+- QQBot dual receive mode (webhook + WebSocket)
+- QQBot rich media (voice, video, stickers), group @mention, scheduled push, STT/TTS
 
 ## Out of Scope
 
-- **Automated lawyer trial execution** — Phase 8 five-workday lawyer trial is a human gate requiring live evidence; v1.5 documents the trial protocol but does not execute the trial.
-- **Live WeCom UAT automation** — Phase 5 live WeCom UAT is a human gate requiring operator confirmation; v1.5 documents the UAT checklist but does not execute live UAT.
-- **M2 scope expansion** — Codex/provider_model adapter prototypes, Router Service, Skill Registry read, Admin Console API, QQBot loop are M2 per V2-PRD §11, gated on V2 acceptance.
-- **Rebuilding shipped milestones** — v1.1–v1.4 code is the baseline; gap closure is in-place edits, not rebuilds.
-- **New runtime dependencies** — The codebase is deliberately dependency-free; acceptance-closure tooling is stdlib-only.
-- **New services, databases, or queues** — AGENTS rule forbids new runtime infrastructure unless PRD or active GSD plan requires it.
+- Production cutover for Codex, provider_model, or QQBot — M2 delivers prototypes proving contract portability, not production-ready backends/channels. Live promotion remains a human gate.
+- V2 human gate execution (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial) — these run in parallel with M2 but are not M2 deliverables. M2 must not invalidate V2 human gate evidence.
+- Rebuilding Hermes core, session storage, router, skill registry, MCP registry, or model gateway — M2 extends the platform around Hermes, not forks it.
+- New independent authoritative conversation database — M2 read views derive from contract logs, with Hermes sessions only as a fallback adapter.
+- Automatic legal skill synthesis or modification — Skill Registry is read-only; `skill_candidate` remains human-reviewed.
+- Storing raw customer legal payloads in contract logs — logs prefer references and minimized sensitive data.
+- M3 scope: Multi-Agent Runtime Adapter productization, MCP Connector Registry, Model Provider Gateway, Web UI, security/compliance system (data residency, encryption, multi-tenant, RBAC, retention/destruction).
 
 ## Traceability
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| AUDIT-01 | 33 | Complete |
-| AUDIT-02 | 33 | Complete |
-| AUDIT-03 | 33 | Complete |
-| AUDIT-04 | 33 | Complete |
-| AUDIT-05 | 33 | Complete |
-| AUDIT-06 | 33 | Complete |
-| AUDIT-07 | 33 | Complete |
-| GAP-01 | 34 | Complete |
-| GAP-02 | 34 | Complete |
-| GAP-03 | 34 | Complete |
-| GAP-04 | 34 | Complete |
-| GAP-05 | 34 | Complete |
-| GAP-06 | 34 | Complete |
-| GAP-07 | 34 | Complete |
-| GAP-08 | 34 | Complete |
-| GAP-09 | 34 | Complete |
-| DOC-01 | 35 | Complete |
-| DOC-02 | 35 | Complete |
-| DOC-03 | 35 | Complete |
-| DOC-04 | 35 | Complete |
-| DOC-05 | 35 | Complete |
-| DOC-06 | 35 | Complete |
-| DOC-07 | 35 | Complete |
-
----
-*Requirements defined: 2026-07-03*
-*Total: 23 requirements (7 AUDIT + 9 GAP + 7 DOC)*
+| SAFETY-01 | TBD | Not started |
+| SAFETY-02 | TBD | Not started |
+| SAFETY-03 | TBD | Not started |
+| SAFETY-04 | TBD | Not started |
+| SAFETY-05 | TBD | Not started |
+| SAFETY-06 | TBD | Not started |
+| ADAPTER-01 | TBD | Not started |
+| ADAPTER-02 | TBD | Not started |
+| ADAPTER-03 | TBD | Not started |
+| ROUTER-01 | TBD | Not started |
+| ROUTER-02 | TBD | Not started |
+| SKILL-01 | TBD | Not started |
+| SKILL-02 | TBD | Not started |
+| READVIEW-01 | TBD | Not started |
+| READVIEW-02 | TBD | Not started |
+| READVIEW-03 | TBD | Not started |
+| ADMIN-01 | TBD | Not started |
+| ADMIN-02 | TBD | Not started |
+| QQBOT-01 | TBD | Not started |
+| QQBOT-02 | TBD | Not started |
+| QQBOT-03 | TBD | Not started |
+| GATE-01 | TBD | Not started |
