@@ -15,6 +15,16 @@
       "id": "block-command-debug-stack",
       "input": "ADMIN_NOTICE /help delivery debug stack trace at /home/runtime access_token redacted",
       "expected_action": "block"
+    },
+    {
+      "id": "block-self-update-notice",
+      "input": "Self-update available: run /update now to get the latest version",
+      "expected_action": "block"
+    },
+    {
+      "id": "block-meta-tool-progress",
+      "input": "tool progress: memory sync complete, insights generated for this session",
+      "expected_action": "block"
     }
   ]
 }
