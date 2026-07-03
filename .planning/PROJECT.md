@@ -10,15 +10,24 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: v1.5 V2 Acceptance Closure
+## Current Milestone: v1.6 M2 Multi-Backend & Platform Extensions
 
-**Goal:** Audit all unchecked V2 Active requirements against the actual codebase, close every code gap found, mark validated requirements in PROJECT.md, and produce a final V2 acceptance readiness report so that only the Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial human gates remain before V2 is formally accepted.
+**Goal:** Extend the platform beyond Hermes-only by proving agent-backend-neutral contracts (Codex + provider_model prototypes), normalizing routing as an independent service, exposing skill metadata and operational read views, completing conversation-read-view, and adding a second channel (QQBot) to prove ChannelAdapter portability.
 
 **Target features:**
-- V2 Active requirement audit — systematically verify each unchecked requirement in PROJECT.md against the shipped code (services, packages, tests, fixtures).
-- Code gap closure — implement any missing V2 code work identified by the audit (WeCom service completeness, output boundary, feedback normalization, conversation-read-view, CI composability, observability/replay/privacy baselines).
-- PROJECT.md traceability update — move validated requirements from Active to Validated with phase references; update stale sections.
-- V2 acceptance readiness report — formal document summarizing what's done, what code gaps were closed, and exactly which human gates remain for V2 acceptance.
+- Codex adapter prototype + direct provider_model adapter prototype — prove the agent-backend-neutral contract beyond Hermes (new `packages/backends/codex`, `packages/backends/provider_model`).
+- Independent Router Service — normalize routing decisions as a standalone service (new `services/router-service/`); currently routing is embedded in platform-runtime.
+- Skill Registry read — expose Hermes skill metadata as a read-only registry (new `packages/skill-registry/` or `services/skill-registry/`).
+- conversation-read-view completion — extend existing `services/conversation-read-view/` to full PRD-spec read-only views with pagination, filtering, and trace queries.
+- Admin Console API (read-only) — new `services/admin-console-api/` exposing read-only operational views (sessions, tasks, feedback, gates, health) for operators.
+- QQBot complete loop — new `packages/channels/qqbot/` plus WeCom-equivalent receive/send/feedback loop for QQ Bot channel; second channel proving ChannelAdapter portability.
+
+**Key context:**
+- PRD §11 dependency on V2 acceptance ACCEPTED AS RISK by user (2026-07-03) — V2 human gates (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial) remain open in parallel; M2 code work proceeds autonomously regardless.
+- All v1.1+ runtime lanes remain default-OFF; live promotion is a human gate.
+- Hermes remains the first production backend; Codex/provider_model are prototypes proving contract portability, not production-ready backends.
+- QQBot is the second channel proving ChannelAdapter portability, not a production cutover.
+- 9 existing V2 gates must stay green throughout (no regressions).
 
 ## Requirements
 
@@ -49,7 +58,14 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 - [x] Build a contract test suite before production Hermes hook work.
 - [x] Resolve Hermes integration risks before production hook implementation.
 - [x] Add a thin hook-based Hermes shadow contract layer that does not alter legal/business outbound behavior.
-- [ ] Complete the five-workday lawyer trial acceptance criteria.
+- [ ] Complete the five-workday lawyer trial acceptance criteria. (human gate — carried, not M2 scope)
+- [ ] M2-01: Codex adapter prototype proving agent-backend-neutral contract beyond Hermes.
+- [ ] M2-02: Direct provider_model adapter prototype proving contract-compatible direct LLM provider mode.
+- [ ] M2-03: Independent Router Service normalizing routing decisions as a standalone service.
+- [ ] M2-04: Skill Registry read exposing Hermes skill metadata as a read-only registry.
+- [ ] M2-05: conversation-read-view completion with full PRD-spec read-only views, pagination, and filtering.
+- [ ] M2-06: Admin Console API (read-only) exposing operational views for operators.
+- [ ] M2-07: QQBot complete loop as second channel proving ChannelAdapter portability.
 
 ### Out of Scope
 
@@ -114,6 +130,7 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 | Model skill clarification as runtime interrupts | The one-shot conversation path loses ask-user flows; pausing and resuming runs preserves skill questions across user replies | Decided 2026-06-30 |
 | Keep platform-native memory as the lawyer-assistant default and route Zep/Hindsight, OpenViking/ReMe, and Mem0 through future sanitized spikes | The component study favors different providers for graph/audit, file-auditable, and PoC use cases, but live legal memory still needs privacy, deletion/export, residency, security, review, benchmark, and license gates | Decided 2026-07-02 |
 | Build v1.3 as native production memory first, with external providers as measured adapter spikes | A legal-memory system needs deletion/export, tenant isolation, human review, traceability, and raw-payload controls before provider convenience; external tools must beat or complement the native baseline through sanitized evidence | Decided 2026-07-02 |
+| Start M2 (v1.6) before formal V2 acceptance, accepting the PRD §11 dependency violation as risk | V2 code closure is READY (9/9 code reqs, 479 tests, 0 gaps); the only remaining V2 gates are human (Phase 5 live WeCom UAT + Phase 8 lawyer trial) which run in parallel. Blocking all M2 code work on human gates would waste autonomous capacity. Risk accepted: M2 features are contract-compatible extensions, not V2-acceptance-critical paths. | Decided 2026-07-03 |
 
 ## Shipped Milestones
 
@@ -143,16 +160,15 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v1.4 Long-Term Memory Productization (2026-07-03).
-- **Active milestone:** v1.5 V2 Acceptance Closure — Phase 35 complete; readiness report generated at `.planning/milestones/v1.5-V2-ACCEPTANCE-READINESS.md`.
-- **V2 gate status:** All 9 gates green (479 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall).
-- **Autonomous code closure:** READY — 9/9 code requirements satisfied, 0 code gaps, 7/7 composability task types, 4/4 output boundary categories.
-- **V2 acceptance:** BLOCKED ON HUMAN GATES — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence.
+- **Last shipped:** v1.5 V2 Acceptance Closure (2026-07-03) — archived.
+- **Active milestone:** v1.6 M2 Multi-Backend & Platform Extensions — starting Phase 36.
+- **V2 gate status:** All 9 gates green (479 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall). Must stay green throughout v1.6.
+- **V2 acceptance:** BLOCKED ON HUMAN GATES (carried, parallel to v1.6) — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence. PRD §11 dependency accepted as risk by user 2026-07-03.
 - **Carried human gates (not autonomous-completable):**
   - Phase 5 live WeCom UAT — fixture-satisfied, operator confirmation needed.
   - Phase 8 five-workday lawyer trial — live evidence required (TRIAL-01 remains `[ ]` in Active).
   - All v1.1+ runtime lanes — default-OFF, live promotion is a human gate.
-- **Next after v1.5:** M2 scope per V2-PRD §11 (Codex/provider_model adapter prototypes, Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot loop) — gated on V2 acceptance.
+- **v1.6 scope:** M2 per V2-PRD §11 — Codex/provider_model adapter prototypes, Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot loop.
 
 ## Evolution
 
@@ -172,4 +188,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-07-03 after Phase 35 — V2 acceptance readiness report generated, 9 requirements moved to Validated*
+*Last updated: 2026-07-03 — milestone v1.6 M2 Multi-Backend & Platform Extensions started (PRD §11 dependency accepted as risk)*
