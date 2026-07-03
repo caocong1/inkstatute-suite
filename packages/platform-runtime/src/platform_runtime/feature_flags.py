@@ -17,6 +17,12 @@ class RuntimeFeatureFlags:
     approval_lane_enabled: bool = False
     contract_log_enabled: bool = False
     context_assembly_enabled: bool = False
+    router_service_enabled: bool = False
+    skill_registry_enabled: bool = False
+    admin_api_enabled: bool = False
+    qqbot_channel_enabled: bool = False
+    codex_backend_enabled: bool = False
+    provider_model_backend_enabled: bool = False
 
     def require_enabled(self, flag_name: str) -> None:
         known_flags = {field.name for field in fields(self)}
