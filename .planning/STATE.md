@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Long-Term Memory Productization
 status: archived
-last_updated: "2026-07-03T10:35:00.000Z"
+last_updated: "2026-07-03T11:05:00.000Z"
 last_activity: 2026-07-03
 progress:
   total_phases: 7
   completed_phases: 7
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 status: archived
 ---
@@ -21,18 +21,29 @@ status: archived
 See: .planning/PROJECT.md (updated 2026-07-02)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.3 Production Memory System and Evaluation Spikes. Build native production memory first, then evaluate external memory candidates through sanitized adapter spikes.
+**Current focus:** v1.4 archived (20/20 audit passed). v1.4 tech debt closure complete. Next milestone TBD — start with `/gsd-new-milestone` (likely M2 scope per V2-PRD §11).
 
 ## Current Position
 
 Phase: —
 Plan: —
-Status: Milestone v1.4 archived
-Last activity: 2026-07-03 — Milestone v1.4 archived. All 7 phases complete (26-32). Audit passed (20/20). Ready for next milestone.
+Status: Milestone v1.4 archived; v1.4 tech debt closure complete
+Last activity: 2026-07-03 — v1.4 tech debt closure: REQUIREMENTS.md traceability updated (TD-03), SUMMARY.md written for phases 26-32 (TD-04), STATE.md plan counts corrected 14→7 (TD-05), Nyquist VALIDATION.md added for phases 26-32 (TD-06). Ready for next milestone.
 
 ### Deferred Items
 
 Items acknowledged and deferred at milestone close on 2026-07-02:
+
+#### v1.4 Tech Debt — Closed 2026-07-03
+
+| ID | Item | Closure |
+|----|------|---------|
+| TD-03 | REQUIREMENTS.md traceability table never updated (all 20 rows showed "Not started") | Closed — all 20 requirements marked satisfied in `milestones/v1.4-REQUIREMENTS.md` |
+| TD-04 | No SUMMARY.md files for v1.4 phases 26-31 | Closed — SUMMARY.md written for phases 26-32 |
+| TD-05 | STATE.md plan counts showed 0/0 (later 14, incorrect) | Closed — corrected to 7/7 (one PLAN.md per phase 26-32) |
+| TD-06 | No Nyquist VALIDATION.md for any v1.4 phase (6/6 missing) | Closed — VALIDATION.md added for phases 26-32 |
+
+#### Remaining Deferred Items (carried forward)
 
 | Category | Item | Status |
 |----------|------|--------|
