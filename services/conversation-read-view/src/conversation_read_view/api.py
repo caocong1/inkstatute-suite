@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any, Mapping
 from urllib.parse import parse_qs
 
+from .export import csv_metadata, export_csv, export_json
 from .pagination import clamp_limit, resolve_max_result_limit, slice_page
 from .privacy import scrub_contract_payload
 
@@ -50,6 +51,9 @@ def handle_get(
         if reconstruction is None:
             return 404, not_found_response("trace", trace_id)
         return 200, _with_contract_metadata(reconstruction)
+
+    if route_path == "/export":
+        return _handle_export(route_query, read_model)
 
     if route_path == "/feedback":
         status = route_query.get("status", "pending")
@@ -113,6 +117,92 @@ def _handle_list_tasks(
         status=filters.get("status"),
     )
     return _list_response(items, query, max_limit, filters)
+
+
+_EXPORT_ALLOWED_FILTERS = {"from", "to", "user_id", "channel", "status"}
+
+
+def _handle_export(
+    query: dict[str, str],
+    read_model: Any,
+) -> tuple[int, dict[str, Any]]:
+    resource = query.get("resource", "")
+    if resource not in ("conversations", "tasks"):
+        return 400, {
+            "error": {
+                "code": "unsupported_resource",
+                "message": "resource must be 'conversations' or 'tasks'",
+                "resource": resource,
+            },
+            "metadata": {"derived_from_contract_log": True},
+        }
+
+    fmt = query.get("format", "json")
+    if fmt not in ("csv", "json"):
+        return 400, {
+            "error": {
+                "code": "unsupported_format",
+                "message": "format must be 'csv' or 'json'",
+                "format": fmt,
+            },
+            "metadata": {"derived_from_contract_log": True},
+        }
+
+    filters, error = _parse_list_filters(
+        {k: v for k, v in query.items() if k not in ("resource", "format")},
+        _EXPORT_ALLOWED_FILTERS,
+    )
+    if error is not None:
+        return 400, _filter_error_response(error, query)
+
+    max_limit = resolve_max_result_limit()
+    limit = clamp_limit(query.get("limit"), max_limit)
+
+    if resource == "conversations":
+        items = read_model.list_conversations(
+            time_from=filters.get("from"),
+            time_to=filters.get("to"),
+            user_id=filters.get("user_id"),
+            channel=filters.get("channel"),
+        )
+    else:
+        items = read_model.list_tasks(
+            time_from=filters.get("from"),
+            time_to=filters.get("to"),
+            user_id=filters.get("user_id"),
+            channel=filters.get("channel"),
+            status=filters.get("status"),
+        )
+
+    page_tuples = items[:limit]
+    if fmt == "json":
+        scrubbed_items = [scrub_contract_payload(item) for _, _, item in page_tuples]
+        return 200, {
+            "items": scrubbed_items,
+            "count": len(scrubbed_items),
+            "metadata": {
+                "derived_from_contract_log": True,
+                "format": "json",
+                "resource": resource,
+                "limit": limit,
+                "max_result_limit": max_limit,
+                "filters": filters,
+            },
+        }
+
+    # CSV: enrich items with occurred_at for flat projection
+    enriched_items: list[dict[str, Any]] = []
+    for _, occurred_at, item in page_tuples:
+        enriched = dict(item)
+        enriched["occurred_at"] = occurred_at
+        enriched_items.append(scrub_contract_payload(enriched))
+
+    csv_string = export_csv(enriched_items, resource)
+    metadata = csv_metadata(resource)
+    metadata["limit"] = limit
+    metadata["max_result_limit"] = max_limit
+    metadata["filters"] = filters
+    return 200, {"data": csv_string, "metadata": metadata}
 
 
 def _list_response(

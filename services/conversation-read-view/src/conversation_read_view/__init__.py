@@ -1,6 +1,13 @@
 """Read-only operator views derived from InkStatute V2 contract logs."""
 
 from .api import handle_get, parse_query_string
+from .export import (
+    CONVERSATION_CSV_COLUMNS,
+    TASK_CSV_COLUMNS,
+    csv_metadata,
+    export_csv,
+    export_json,
+)
 from .models import (
     ConversationTurnView,
     ConversationView,
@@ -19,16 +26,21 @@ from .privacy import find_forbidden_key_path, find_forbidden_raw_payload_path, s
 from .read_model import ContractLogReadModel, build_read_model, load_records_from_jsonl
 
 __all__ = [
+    "CONVERSATION_CSV_COLUMNS",
     "ContractLogReadModel",
     "ConversationTurnView",
     "ConversationView",
     "EventReference",
     "ReadModelIssue",
+    "TASK_CSV_COLUMNS",
     "TaskView",
     "build_read_model",
     "clamp_limit",
+    "csv_metadata",
     "decode_cursor",
     "encode_cursor",
+    "export_csv",
+    "export_json",
     "find_forbidden_key_path",
     "find_forbidden_raw_payload_path",
     "handle_get",
