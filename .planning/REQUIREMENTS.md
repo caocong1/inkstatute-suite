@@ -18,8 +18,8 @@
 ### Multi-Backend Adapters (ADAPTER)
 
 - [x] **ADAPTER-01**: Operator can configure `agent_backend.mode=codex` and the runtime selector routes to a Codex adapter prototype that returns a valid `AgentBackendManifest`, passes capability probe, and completes a minimal `submit_run → AgentResult` flow via `codex exec --json` subprocess.
-- [ ] **ADAPTER-02**: Operator can configure `agent_backend.mode=provider_model` and the runtime selector routes to a direct provider_model adapter prototype that returns a valid `AgentBackendManifest`, passes capability probe, and completes a minimal `submit_run → AgentResult` flow via `AsyncOpenAI` lazy SDK import.
-- [ ] **ADAPTER-03**: Operator can run output boundary fixture tests proving Codex and provider_model backend noise (function call traces, model names, API errors) is blocked or rewritten before delivery to any channel.
+- [x] **ADAPTER-02**: Operator can configure `agent_backend.mode=provider_model` and the runtime selector routes to a direct provider_model adapter prototype that returns a valid `AgentBackendManifest`, passes capability probe, and completes a minimal `submit_run → AgentResult` flow via `AsyncOpenAI` lazy SDK import.
+- [x] **ADAPTER-03**: Operator can run output boundary fixture tests proving Codex and provider_model backend noise (function call traces, model names, API errors) is blocked or rewritten before delivery to any channel.
 
 ### Router Service (ROUTER)
 
