@@ -61,6 +61,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     demo_non_legal_solution_src = repo_root / "solutions" / "demo_non_legal" / "src"
     skill_registry_src = repo_root / "packages" / "skill-registry" / "src"
     router_service_src = repo_root / "packages" / "router-service" / "src"
+    codex_backend_src = repo_root / "packages" / "backends" / "codex" / "src"
 
     return (
         Gate(
@@ -94,6 +95,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (router_service_src, platform_src, skill_registry_src),
         ),
         Gate(
+            "codex-backend",
+            (py, "-m", "unittest", "discover", "-s", "packages/backends/codex/tests"),
+            (codex_backend_src, platform_src, platform_runtime_src, wecom_src),
+        ),
+        Gate(
             "feedback-service",
             (py, "-m", "unittest", "discover", "services/feedback-service/tests"),
             (feedback_src, wecom_src, contract_src, platform_src, platform_runtime_src),
@@ -112,7 +118,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src),
         ),
         Gate(
             "v2-acceptance-traceability",
@@ -129,6 +135,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/platform-runtime/src",
                 "packages/skill-registry/src",
                 "packages/router-service/src",
+                "packages/backends/codex/src",
                 "services/wecom-service/src",
                 "services/hermes-contract-layer/src",
                 "services/feedback-service/src",
