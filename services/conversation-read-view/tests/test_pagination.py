@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import unittest
 
 from conversation_read_view.pagination import (
@@ -13,6 +14,12 @@ from conversation_read_view.pagination import (
     resolve_max_result_limit,
     slice_page,
 )
+from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+FIXTURE_ROOT = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures"
+PHASE5_STREAM = FIXTURE_ROOT / "phase5_wecom_contract_stream.jsonl"
 
 
 class PaginationTests(unittest.TestCase):
@@ -113,6 +120,93 @@ class PaginationTests(unittest.TestCase):
         page2, _, _ = slice_page(items, cursor, 1)
 
         self.assertEqual(page1, page2)
+
+
+class ListEndpointsTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.model = build_read_model(load_records_from_jsonl(PHASE5_STREAM))
+
+    def test_list_conversations_returns_all_conversations(self) -> None:
+        items = self.model.list_conversations()
+
+        self.assertGreaterEqual(len(items), 1)
+        for entry in items:
+            self.assertEqual(len(entry), 3)
+            sort_key, occurred_at, conversation_dict = entry
+            self.assertIsInstance(sort_key, str)
+            self.assertIsInstance(occurred_at, str)
+            self.assertIn("conversation_id", conversation_dict)
+
+    def test_list_conversations_filters_by_user_id(self) -> None:
+        items = self.model.list_conversations(user_id="phase5-lawyer-001")
+
+        self.assertGreaterEqual(len(items), 1)
+        for _, _, conversation_dict in items:
+            self.assertIn("phase5-lawyer-001", conversation_dict["user_ids"])
+
+    def test_list_conversations_filters_by_channel(self) -> None:
+        items = self.model.list_conversations(channel="wecom")
+
+        self.assertGreaterEqual(len(items), 1)
+        for _, _, conversation_dict in items:
+            channels = {
+                turn.get("agent_turn", {}).get("channel")
+                for turn in conversation_dict.get("turns", [])
+            }
+            self.assertIn("wecom", channels)
+
+    def test_list_conversations_time_range_filter(self) -> None:
+        items = self.model.list_conversations(
+            time_from="2026-06-28T00:00:00Z",
+            time_to="2026-06-29T00:00:00Z",
+        )
+
+        for _, occurred_at, _ in items:
+            self.assertGreaterEqual(occurred_at, "2026-06-28T00:00:00Z")
+            self.assertLessEqual(occurred_at, "2026-06-29T00:00:00Z")
+
+    def test_list_conversations_time_from_excludes_earlier(self) -> None:
+        items = self.model.list_conversations(time_from="2026-06-29T00:00:00Z")
+
+        for _, occurred_at, _ in items:
+            self.assertGreaterEqual(occurred_at, "2026-06-29T00:00:00Z")
+
+    def test_list_tasks_returns_unique_tasks(self) -> None:
+        items = self.model.list_tasks()
+
+        task_ids = [item[0] for item in items]
+        self.assertEqual(len(task_ids), len(set(task_ids)))
+
+    def test_list_tasks_filters_by_status(self) -> None:
+        items = self.model.list_tasks(status="success")
+
+        for _, _, task_dict in items:
+            self.assertEqual(task_dict["status"], "success")
+
+    def test_list_tasks_filters_by_user_id(self) -> None:
+        items = self.model.list_tasks(user_id="phase5-lawyer-001")
+
+        self.assertGreaterEqual(len(items), 1)
+        for _, _, task_dict in items:
+            self.assertEqual(task_dict["conversation_id"], "phase5-conv-retrieval-001")
+
+    def test_list_tasks_combined_filters_and_semantics(self) -> None:
+        items = self.model.list_tasks(status="success", channel="wecom")
+
+        for _, _, task_dict in items:
+            self.assertEqual(task_dict["status"], "success")
+
+    def test_list_conversations_sorted_by_conversation_id(self) -> None:
+        items = self.model.list_conversations()
+
+        sort_keys = [item[0] for item in items]
+        self.assertEqual(sort_keys, sorted(sort_keys))
+
+    def test_list_tasks_sorted_by_task_id(self) -> None:
+        items = self.model.list_tasks()
+
+        sort_keys = [item[0] for item in items]
+        self.assertEqual(sort_keys, sorted(sort_keys))
 
 
 if __name__ == "__main__":

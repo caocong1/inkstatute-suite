@@ -138,6 +138,123 @@ class ContractLogReadModel:
         task_id = self._trace_to_task_id.get(trace_id)
         return self.get_task(task_id) if task_id is not None else None
 
+    def list_conversations(
+        self,
+        *,
+        time_from: str | None = None,
+        time_to: str | None = None,
+        user_id: str | None = None,
+        channel: str | None = None,
+    ) -> list[tuple[str, str, JsonObject]]:
+        """Return filtered, sorted conversations as ``(sort_key, occurred_at, dict)`` tuples.
+
+        Filters combine with AND semantics. Time-range filters are inclusive on
+        both ends. Sort key is ``conversation_id`` for deterministic ordering.
+        """
+
+        results: list[tuple[str, str, JsonObject]] = []
+        for conversation in self._conversations.values():
+            occurred_at = _conversation_occurred_at(conversation)
+            if time_from is not None and occurred_at < time_from:
+                continue
+            if time_to is not None and occurred_at > time_to:
+                continue
+            if user_id is not None and not _conversation_has_user(conversation, user_id):
+                continue
+            if channel is not None and not _conversation_has_channel(conversation, channel):
+                continue
+            results.append((conversation.conversation_id, occurred_at, conversation.to_dict()))
+        results.sort(key=lambda entry: (entry[0], entry[1]))
+        return results
+
+    def list_tasks(
+        self,
+        *,
+        time_from: str | None = None,
+        time_to: str | None = None,
+        user_id: str | None = None,
+        channel: str | None = None,
+        status: str | None = None,
+    ) -> list[tuple[str, str, JsonObject]]:
+        """Return filtered, sorted, deduplicated tasks as ``(sort_key, occurred_at, dict)`` tuples.
+
+        The internal ``_tasks`` dict is keyed by both ``task_id`` and ``turn_id``
+        (aliases). This method emits each unique task once (keyed by
+        ``task_id``). Filters combine with AND semantics.
+        """
+
+        seen: set[str] = set()
+        results: list[tuple[str, str, JsonObject]] = []
+        for task in self._tasks.values():
+            if task.task_id in seen:
+                continue
+            seen.add(task.task_id)
+            occurred_at = _task_occurred_at(task)
+            if time_from is not None and occurred_at < time_from:
+                continue
+            if time_to is not None and occurred_at > time_to:
+                continue
+            task_dict = task.to_dict()
+            if user_id is not None and not _task_has_user(task, user_id):
+                continue
+            if channel is not None and not _task_has_channel(task, channel):
+                continue
+            if status is not None and task_dict.get("status") != status:
+                continue
+            results.append((task.task_id, occurred_at, task_dict))
+        results.sort(key=lambda entry: (entry[0], entry[1]))
+        return results
+
+
+def _conversation_occurred_at(conversation: ConversationView) -> str:
+    """Compute the occurred_at timestamp for a conversation from its first turn."""
+
+    if conversation.turns:
+        first_turn = conversation.turns[0]
+        received_at = _string(first_turn.agent_turn.get("received_at"))
+        if received_at is not None:
+            return received_at
+        ref_times = [ref.occurred_at for ref in first_turn.event_refs if ref.occurred_at]
+        if ref_times:
+            return min(ref_times)
+    return ""
+
+
+def _conversation_has_user(conversation: ConversationView, user_id: str) -> bool:
+    return any(
+        _string(turn.agent_turn.get("user_id")) == user_id
+        for turn in conversation.turns
+    )
+
+
+def _conversation_has_channel(conversation: ConversationView, channel: str) -> bool:
+    return any(
+        _string(turn.agent_turn.get("channel")) == channel
+        for turn in conversation.turns
+    )
+
+
+def _task_occurred_at(task: TaskView) -> str:
+    """Compute the occurred_at timestamp for a task from its turn."""
+
+    turn = task.turn
+    if turn.event_refs:
+        ref_times = [ref.occurred_at for ref in turn.event_refs if ref.occurred_at]
+        if ref_times:
+            return min(ref_times)
+    received_at = _string(turn.agent_turn.get("received_at"))
+    if received_at is not None:
+        return received_at
+    return ""
+
+
+def _task_has_user(task: TaskView, user_id: str) -> bool:
+    return _string(task.turn.agent_turn.get("user_id")) == user_id
+
+
+def _task_has_channel(task: TaskView, channel: str) -> bool:
+    return _string(task.turn.agent_turn.get("channel")) == channel
+
 
 def build_read_model(records: Iterable[Any]) -> ContractLogReadModel:
     return ContractLogReadModel.from_records(records)
