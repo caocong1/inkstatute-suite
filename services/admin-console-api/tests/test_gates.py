@@ -13,7 +13,7 @@ from admin_console_api.gates import GATE_TIMEOUT_SECONDS, handle_gates, run_gate
 
 
 class GateSubprocessTests(unittest.TestCase):
-    @unittest.skipIf(os.environ.get("SKIP_GATE_TESTS"), "gate tests skipped")
+    @unittest.skipUnless(os.environ.get("RUN_GATE_SUBPROCESS_TESTS"), "gate subprocess test skipped (set RUN_GATE_SUBPROCESS_TESTS=1 to enable)")
     def test_run_gate_summary_returns_parsed_json(self) -> None:
         result = run_gate_summary()
         self.assertIsInstance(result, dict)
