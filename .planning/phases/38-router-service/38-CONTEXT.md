@@ -21,7 +21,7 @@ created: 2026-07-04
 ## Success Criteria (from ROADMAP.md)
 
 1. Operator can inject the standalone router library into `hermes-contract-layer/mapper.py` and verify that `RouteDecision` events retain the same JSONL shape as the inline implementation, with a `None` default that preserves in-process fallback behavior and all 9 V2 gates staying green.
-2. Operator can configure `RouteMode.RULE` and `RouteMode.SKILL` routing modes in the router service, with stateless skill lookup from the Skill Registry and intent classification via keyword/regex, producing normalized `RouteDecision` records.
+2. Operator can configure `RouterStrategy.RULE` and `RouterStrategy.SKILL` routing strategies in the router service, with stateless skill lookup from the Skill Registry and intent classification via keyword/regex, producing normalized `RouteDecision` records. (Note: RULE/SKILL are router-service-internal strategies, NOT new RouteMode enum values — RouteMode enum is frozen per SAFETY-06.)
 3. Operator can verify that `router_service_enabled` defaults to `False` and that the router is injectable as a `RouterPort` Protocol with fallback policy for router unavailable.
 
 ## Decisions
