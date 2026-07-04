@@ -10,7 +10,54 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: v1.6 M2 Multi-Backend & Platform Extensions
+## Current State: v1.6 M2 Multi-Backend & Platform Extensions — SHIPPED
+
+**Shipped:** 2026-07-04
+**Status:** COMPLETE — 9/9 phases shipped (36-44), 22/22 requirements satisfied, 19/19 V2 gates green (969 tests).
+
+The v1.6 milestone extended the platform beyond Hermes-only by proving agent-backend-neutral contracts (Codex + provider_model prototypes), normalizing routing as an independent service, exposing skill metadata and operational read views, completing conversation-read-view, and adding a second channel (QQBot) to prove ChannelAdapter portability — while keeping all existing V2 gates green and V2 human-gate evidence stable.
+
+**Key deliverables shipped:**
+- Codex adapter prototype (`packages/backends/codex`) — proves BackendAdapter contract portability via `codex exec --json` subprocess.
+- Provider model adapter prototype (`packages/backends/provider_model`) — direct LLM provider mode via `AsyncOpenAI` lazy SDK import.
+- Independent Router Service (`packages/router-service`) — standalone router library with RULE and SKILL modes, injectable into hermes-contract-layer mapper.
+- Skill Registry read (`packages/skill-registry`) — read-only registry exposing Hermes skill metadata as `NeutralSkillDescriptor` records with list/get/search + `/.well-known/agent-skills/index.json`.
+- Conversation Read-View completion (`services/conversation-read-view`) — cursor-based pagination, time-range/dimension filters, trace reconstruction by `trace_id`, CSV/JSON export, read-time privacy scrubbing.
+- Admin Console API (`services/admin-console-api`) — read-only admin API with static token auth, sessions/tasks/feedback/gates/health views, field allowlist excluding secrets.
+- QQBot channel loop (`packages/channels/qqbot` + `packages/channel-core`) — channel-generic logic extracted into shared package, QQBot ChannelAdapter implements 6-method Protocol, fixture-driven loop proof.
+- Gate coverage meta-test (`packages/contract-test-suite/tests/test_gate_coverage.py`) — enforces every `packages/*/src` and `services/*/src` directory is covered by a gate. 19 gates, 969 tests.
+
+**Safety preserved:**
+- Contract freeze maintained (`packages/platform-contract/` unchanged during M2).
+- All 6 M2 feature flags default to `False` (`router_service_enabled`, `skill_registry_enabled`, `admin_api_enabled`, `qqbot_channel_enabled`, `codex_backend_enabled`, `provider_model_backend_enabled`).
+- BackendAdapter Protocol (9 methods) and ChannelAdapter Protocol (6 methods) frozen — no method count changes.
+- Output boundary enforced for all new backends (model names, API errors, function call traces blocked/rewritten).
+- V2 human gate evidence stable (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial remain open in parallel).
+
+**Archive:** [v1.6-ROADMAP.md](milestones/v1.6-ROADMAP.md) | [v1.6-REQUIREMENTS.md](milestones/v1.6-REQUIREMENTS.md) | [v1.6-MILESTONE-AUDIT.md](milestones/v1.6-MILESTONE-AUDIT.md)
+
+## Next Milestone Goals
+
+Next milestone has not been defined. Run `/gsd-new-milestone` to start the next milestone cycle (questioning → research → requirements → roadmap).
+
+Candidate M3 scope (from v1.6 deferred requirements):
+- Multi-Agent Runtime Adapter productization
+- MCP Connector Registry
+- Model Provider Gateway
+- Web UI
+- Security/compliance system (data residency, encryption, multi-tenant, RBAC, retention/destruction)
+- Streaming event support for adapters
+- Artifact return support for adapters
+- Session memory support for adapters (Hindsight integration)
+- Multi-provider support for provider_model adapter (Anthropic, Ollama)
+- Model-based and hybrid routing with confidence scoring
+- Skill Registry write operations
+- QQBot dual receive mode (webhook + WebSocket) and rich media
+
+<details>
+<summary>Previous: v1.6 M2 Target Features (historical)</summary>
+
+## Previous: v1.6 M2 Multi-Backend & Platform Extensions (Target)
 
 **Goal:** Extend the platform beyond Hermes-only by proving agent-backend-neutral contracts (Codex + provider_model prototypes), normalizing routing as an independent service, exposing skill metadata and operational read views, completing conversation-read-view, and adding a second channel (QQBot) to prove ChannelAdapter portability.
 
@@ -28,6 +75,8 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 - Hermes remains the first production backend; Codex/provider_model are prototypes proving contract portability, not production-ready backends.
 - QQBot is the second channel proving ChannelAdapter portability, not a production cutover.
 - 9 existing V2 gates must stay green throughout (no regressions).
+
+</details>
 
 ## Requirements
 
@@ -59,13 +108,14 @@ Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records
 - [x] Resolve Hermes integration risks before production hook implementation.
 - [x] Add a thin hook-based Hermes shadow contract layer that does not alter legal/business outbound behavior.
 - [ ] Complete the five-workday lawyer trial acceptance criteria. (human gate — carried, not M2 scope)
-- [ ] M2-01: Codex adapter prototype proving agent-backend-neutral contract beyond Hermes.
-- [ ] M2-02: Direct provider_model adapter prototype proving contract-compatible direct LLM provider mode.
-- [ ] M2-03: Independent Router Service normalizing routing decisions as a standalone service.
-- [ ] M2-04: Skill Registry read exposing Hermes skill metadata as a read-only registry.
-- [ ] M2-05: conversation-read-view completion with full PRD-spec read-only views, pagination, and filtering.
-- [ ] M2-06: Admin Console API (read-only) exposing operational views for operators.
-- [ ] M2-07: QQBot complete loop as second channel proving ChannelAdapter portability.
+- [x] M2-01: Codex adapter prototype proving agent-backend-neutral contract beyond Hermes. — Phase 39 (v1.6)
+- [x] M2-02: Direct provider_model adapter prototype proving contract-compatible direct LLM provider mode. — Phase 40 (v1.6)
+- [x] M2-03: Independent Router Service normalizing routing decisions as a standalone service. — Phase 38 (v1.6)
+- [x] M2-04: Skill Registry read exposing Hermes skill metadata as a read-only registry. — Phase 37 (v1.6)
+- [x] M2-05: conversation-read-view completion with full PRD-spec read-only views, pagination, and filtering. — Phase 41 (v1.6)
+- [x] M2-06: Admin Console API (read-only) exposing operational views for operators. — Phase 42 (v1.6)
+- [x] M2-07: QQBot complete loop as second channel proving ChannelAdapter portability. — Phase 43 (v1.6)
+- [x] M2-08: Gate coverage meta-test enforcing every packages/*/src and services/*/src directory is covered by a V2 gate. — Phase 44 (v1.6)
 
 ### Out of Scope
 
