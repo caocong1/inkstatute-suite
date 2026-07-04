@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
+from conversation_read_view.api import handle_get
 from conversation_read_view.pagination import (
     DEFAULT_MAX_RESULT_LIMIT,
     DEFAULT_PAGE_SIZE,
@@ -15,6 +16,7 @@ from conversation_read_view.pagination import (
     slice_page,
 )
 from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
+from feedback_service.queue import build_pending_feedback_queue, load_jsonl_records, normalize_feedback_inputs
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -207,6 +209,156 @@ class ListEndpointsTests(unittest.TestCase):
 
         sort_keys = [item[0] for item in items]
         self.assertEqual(sort_keys, sorted(sort_keys))
+
+
+class ListRouteTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.read_model = build_read_model(load_records_from_jsonl(PHASE5_STREAM))
+        feedback_events = normalize_feedback_inputs(
+            compatibility_feedback_records=load_jsonl_records(
+                FIXTURE_ROOT / "phase5_wecom_feedback_sample.jsonl"
+            ),
+            compatibility_preview_records=load_jsonl_records(
+                FIXTURE_ROOT / "phase5_wecom_pending_previews_sample.jsonl"
+            ),
+        )
+        self.feedback_queue = build_pending_feedback_queue(feedback_events) + [
+            {
+                "feedback_id": "resolved-feedback",
+                "status": "resolved",
+            }
+        ]
+
+    def test_list_conversations_returns_200_with_items(self) -> None:
+        status, body = handle_get("/conversations", "", self.read_model)
+
+        self.assertEqual(status, 200)
+        self.assertIn("items", body)
+        self.assertIn("count", body)
+        self.assertIn("next_cursor", body)
+        self.assertIn("has_more", body)
+        self.assertIn("metadata", body)
+        self.assertTrue(body["metadata"]["derived_from_contract_log"])
+        self.assertEqual(body["metadata"]["max_result_limit"], 100)
+
+    def test_list_conversations_with_limit(self) -> None:
+        status, body = handle_get("/conversations?limit=1", "", self.read_model)
+
+        self.assertEqual(status, 200)
+        self.assertLessEqual(body["count"], 1)
+        self.assertEqual(body["metadata"]["limit"], 1)
+
+    def test_list_conversations_limit_clamped_to_max(self) -> None:
+        status, body = handle_get("/conversations?limit=99999", "", self.read_model)
+
+        self.assertEqual(status, 200)
+        self.assertLessEqual(body["metadata"]["limit"], body["metadata"]["max_result_limit"])
+
+    def test_list_conversations_pagination_roundtrip(self) -> None:
+        status1, body1 = handle_get("/conversations?limit=1", "", self.read_model)
+
+        if body1["has_more"]:
+            cursor = body1["next_cursor"]
+            status2, body2 = handle_get(
+                f"/conversations?limit=1&cursor={cursor}", "", self.read_model
+            )
+            self.assertEqual(status2, 200)
+            self.assertNotEqual(
+                body2["items"][0]["conversation_id"],
+                body1["items"][0]["conversation_id"],
+            )
+
+    def test_list_conversations_filter_by_channel(self) -> None:
+        status, body = handle_get("/conversations?channel=wecom", "", self.read_model)
+
+        self.assertEqual(status, 200)
+        for item in body["items"]:
+            channels = {
+                turn.get("agent_turn", {}).get("channel")
+                for turn in item.get("turns", [])
+            }
+            self.assertIn("wecom", channels)
+
+    def test_list_conversations_filter_by_user_id(self) -> None:
+        status, body = handle_get(
+            "/conversations?user_id=phase5-lawyer-001", "", self.read_model
+        )
+
+        self.assertEqual(status, 200)
+
+    def test_list_conversations_time_range(self) -> None:
+        status, body = handle_get(
+            "/conversations?from=2026-06-28T00:00:00Z&to=2026-06-29T00:00:00Z",
+            "",
+            self.read_model,
+        )
+
+        self.assertEqual(status, 200)
+
+    def test_list_conversations_unknown_filter_returns_400(self) -> None:
+        status, body = handle_get("/conversations?foo=bar", "", self.read_model)
+
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"]["code"], "unsupported_filter")
+
+    def test_list_conversations_invalid_time_returns_400(self) -> None:
+        status, body = handle_get("/conversations?from=not-a-date", "", self.read_model)
+
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"]["code"], "invalid_time_filter")
+
+    def test_list_tasks_returns_200_with_items(self) -> None:
+        status, body = handle_get("/tasks", "", self.read_model)
+
+        self.assertEqual(status, 200)
+        self.assertIn("items", body)
+        self.assertIn("count", body)
+
+    def test_list_tasks_filter_by_status(self) -> None:
+        status, body = handle_get("/tasks?status=success", "", self.read_model)
+
+        self.assertEqual(status, 200)
+        for item in body["items"]:
+            self.assertEqual(item["status"], "success")
+
+    def test_list_tasks_unknown_filter_returns_400(self) -> None:
+        status, body = handle_get("/tasks?foo=bar", "", self.read_model)
+
+        self.assertEqual(status, 400)
+
+    def test_list_tasks_pagination_next_cursor_null_when_no_more(self) -> None:
+        status, body = handle_get("/tasks?limit=1000", "", self.read_model)
+
+        self.assertEqual(status, 200)
+        self.assertFalse(body["has_more"])
+        self.assertIsNone(body["next_cursor"])
+
+    def test_existing_single_conversation_still_works(self) -> None:
+        status, body = handle_get(
+            "/conversations/phase5-conv-retrieval-001", "", self.read_model
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("conversation_id", body)
+        self.assertNotIn("items", body)
+
+    def test_existing_single_task_still_works(self) -> None:
+        status, body = handle_get(
+            "/tasks/turn-phase5-retrieval-001", "", self.read_model
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("task_id", body)
+        self.assertNotIn("items", body)
+
+    def test_existing_feedback_still_works(self) -> None:
+        status, body = handle_get(
+            "/feedback?status=pending", "", self.read_model, self.feedback_queue
+        )
+
+        self.assertEqual(status, 200)
+        self.assertIn("items", body)
+        self.assertIn("count", body)
 
 
 if __name__ == "__main__":
