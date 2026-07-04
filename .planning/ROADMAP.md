@@ -29,7 +29,7 @@
 - [x] **Phase 41: Conversation Read-View Completion** - Cursor-based pagination, time-range/dimension filters, trace reconstruction, CSV/JSON export, and read-time privacy scrubbing.
 - [x] **Phase 42: Admin Console API** - Read-only Admin Console API with static token auth, sessions/tasks/feedback/gates/health views, and field allowlist excluding secrets.
 - [x] **Phase 43: QQBot Channel Loop** - Channel-generic logic extraction, QQBot ChannelAdapter implementation, and fixture-driven receive→ACK→adapter→reply→card→feedback loop proof.
-- [ ] **Phase 44: M2 Gate Integration & Full Suite Verification** - New gates for all 6 M2 packages, meta-test for full directory coverage, and all 9 existing gates verified green.
+- [ ] **Phase 44: M2 Gate Integration & Full Suite Verification** - New gates for all 6 M2 packages, meta-test for full directory coverage, and all existing gates verified green.
 
 ## Status
 
@@ -153,7 +153,7 @@
 **Success Criteria** (what must be TRUE):
 
 1. Operator can run new V2 gates for each M2 package/service (codex, provider_model, router-service, skill-registry, admin-console-api, qqbot) and verify they pass with fixture-driven tests.
-2. Operator can run all 9 existing V2 gates and verify they stay green with no regressions after all M2 features are merged.
+2. Operator can run all existing V2 gates and verify they stay green with no regressions after all M2 features are merged.
 3. Operator can run a meta-test asserting every `packages/*/src` and `services/*/src` directory is covered by a gate, failing if any directory is uncovered.
 
 **Plans:** TBD
