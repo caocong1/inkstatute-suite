@@ -21,13 +21,28 @@ def classify_intent(message: str | None) -> str | None:
     """Classify *message* into an intent category via keyword matching.
 
     Returns the first intent whose any keyword appears as a case-insensitive
-    substring in *message*.  Returns ``None`` for empty/``None`` message or
-    when no keyword matches.
+    match in *message*.  Chinese keywords are matched as substrings; English
+    keywords are matched with word boundaries (``\\b``) to avoid false
+    substring matches (e.g. ``"is"`` inside ``"this"``).  Returns ``None``
+    for empty/``None`` message or when no keyword matches.
     """
     if not message:
         return None
     for intent, keywords in INTENT_KEYWORDS.items():
         for keyword in keywords:
-            if re.search(re.escape(keyword), message, re.IGNORECASE):
+            if _is_ascii(keyword):
+                pattern = rf"\b{re.escape(keyword)}\b"
+            else:
+                pattern = re.escape(keyword)
+            if re.search(pattern, message, re.IGNORECASE):
                 return intent
     return None
+
+
+def _is_ascii(text: str) -> bool:
+    """Return True if *text* contains only ASCII characters."""
+    try:
+        text.encode("ascii")
+        return True
+    except UnicodeEncodeError:
+        return False
