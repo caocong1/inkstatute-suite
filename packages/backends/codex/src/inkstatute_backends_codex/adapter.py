@@ -98,6 +98,7 @@ class CodexBackendAdapter:
             "raw_payload_ref": raw_payload_ref,
             "request_content_sha256": _content_sha256(req.turn.content),
             "codex_thread_id": result.thread_id,
+            "codex_usage": result.metadata.get("codex_usage", {}),
             "artifact_refs": list(result.artifact_refs),
             "runner_metadata": _sanitize_metadata(result.metadata),
         }

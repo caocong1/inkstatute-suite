@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"01999ce5-f229-7661-8570-53312bd47ea3"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"Here is the legal analysis you requested."}}
+{"type":"turn.completed","usage":{"input_tokens":1234,"cached_input_tokens":1024,"output_tokens":12,"reasoning_output_tokens":0}}
