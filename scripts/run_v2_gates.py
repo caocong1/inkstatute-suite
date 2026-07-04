@@ -66,6 +66,9 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     admin_api_src = repo_root / "services" / "admin-console-api" / "src"
     channel_core_src = repo_root / "packages" / "channel-core" / "src"
     qqbot_src = repo_root / "packages" / "channels" / "qqbot" / "src"
+    web_sse_src = repo_root / "packages" / "channels" / "web_sse" / "src"
+    wecom_channel_src = repo_root / "packages" / "channels" / "wecom" / "src"
+    sdk_ts_src = repo_root / "packages" / "platform-sdk-ts" / "src"
 
     return (
         Gate(
@@ -119,6 +122,21 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (qqbot_src, channel_core_src, platform_src, platform_runtime_src),
         ),
         Gate(
+            "web-sse-channel",
+            (py, "-m", "unittest", "discover", "-s", "packages/channels/web_sse/tests"),
+            (web_sse_src, channel_core_src, platform_src, contract_src, platform_runtime_src),
+        ),
+        Gate(
+            "wecom-channel",
+            (py, "-m", "unittest", "discover", "-s", "packages/channels/wecom/tests"),
+            (wecom_channel_src, channel_core_src, platform_src, contract_src, platform_runtime_src, wecom_src),
+        ),
+        Gate(
+            "platform-sdk-ts",
+            (py, "-m", "unittest", "discover", "-s", "packages/platform-sdk-ts/tests"),
+            (sdk_ts_src, platform_src, contract_src, platform_runtime_src),
+        ),
+        Gate(
             "feedback-service",
             (py, "-m", "unittest", "discover", "services/feedback-service/tests"),
             (feedback_src, wecom_src, channel_core_src, contract_src, platform_src, platform_runtime_src),
@@ -144,6 +162,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (py, "scripts/audit_v2_requirements.py", "--check-gaps"),
         ),
         Gate(
+            "gate-coverage-meta-test",
+            (py, "-m", "unittest", "packages/contract-test-suite/tests/test_gate_coverage.py"),
+            (contract_src, platform_src),
+        ),
+        Gate(
             "compileall",
             (
                 py,
@@ -163,6 +186,10 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "services/admin-console-api/src",
                 "packages/channel-core/src",
                 "packages/channels/qqbot/src",
+                "packages/backends/hermes/src",
+                "packages/solution-loader/src",
+                "solutions/lawfirm/src",
+                "solutions/demo_non_legal/src",
                 "scripts/run_v2_gates.py",
                 "scripts/audit_v2_requirements.py",
                 "scripts/generate_gap_evidence_reports.py",
