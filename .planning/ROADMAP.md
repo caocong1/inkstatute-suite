@@ -24,7 +24,7 @@
 - [x] **Phase 36: M2 Pre-Implementation Safety** - Cross-cutting safety measures (selection gate bypass fix, contract freeze, privacy scrub unification, feature flags, output boundary rules) before any M2 feature code.
 - [x] **Phase 37: Skill Registry Read** - Read-only Skill Registry exposing Hermes skill metadata as NeutralSkillDescriptor records with list/get/search and well-known discovery endpoint.
 - [x] **Phase 38: Router Service** - Standalone router library injected into hermes-contract-layer mapper, producing RouteDecision events with RULE and SKILL routing modes.
-- [ ] **Phase 39: Codex Adapter Prototype** - Codex backend adapter proving BackendAdapter contract portability via codex exec subprocess with manifest validation and minimal submit_run flow.
+- [x] **Phase 39: Codex Adapter Prototype** - Codex backend adapter proving BackendAdapter contract portability via codex exec subprocess with manifest validation and minimal submit_run flow.
 - [ ] **Phase 40: Provider Model Adapter Prototype** - Direct provider_model adapter via AsyncOpenAI lazy SDK import, plus output boundary fixture tests for both new backends.
 - [ ] **Phase 41: Conversation Read-View Completion** - Cursor-based pagination, time-range/dimension filters, trace reconstruction, CSV/JSON export, and read-time privacy scrubbing.
 - [ ] **Phase 42: Admin Console API** - Read-only Admin Console API with static token auth, sessions/tasks/feedback/gates/health views, and field allowlist excluding secrets.
@@ -165,7 +165,7 @@
 | 36. M2 Pre-Implementation Safety | 0/0 | Not started | — |
 | 37. Skill Registry Read | 0/0 | Not started | — |
 | 38. Router Service | 0/0 | Not started | — |
-| 39. Codex Adapter Prototype | 0/0 | Not started | — |
+| 39. Codex Adapter Prototype | 3/3 | Complete | 596 tests, 12 gates |
 | 40. Provider Model Adapter Prototype | 0/0 | Not started | — |
 | 41. Conversation Read-View Completion | 0/0 | Not started | — |
 | 42. Admin Console API | 0/0 | Not started | — |
