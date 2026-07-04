@@ -1,0 +1,207 @@
+{
+  "fixture_id": "phase43-qqbot-channel-loop-001",
+  "description": "Sanitized Phase 43 fixture evidence: QQBot ChannelAdapter end-to-end loop proof. Covers QQBot inbound message normalization, ACK, text delivery, card delivery, and feedback callback normalization. No network IO — fixture only.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "tenant": {
+    "tenant_id": "tenant-phase43-demo-001",
+    "workspace_id": "workspace-phase43-demo-001",
+    "channel_id": "qqbot",
+    "session_id": "session-phase43-qqbot-001"
+  },
+  "qqbot_inbound": {
+    "channel_id": "qqbot",
+    "payload_ref": "fixture://qqbot/phase43/inbound/message-001",
+    "received_at": "2026-07-04T00:00:00Z",
+    "idempotency_key": "qqbot-idem-001",
+    "metadata": {
+      "payload": {
+        "type": "message",
+        "conversation_id": "conv-phase43-qqbot-001",
+        "user_id": "user-phase43-qqbot-001",
+        "message_type": "text",
+        "turn_id": "turn-phase43-qqbot-001",
+        "content_ref": "fixture://qqbot/phase43/content/message-001",
+        "content_hash": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+        "industry_context": {
+          "domain": "legal",
+          "task_type": "legal_qa"
+        }
+      }
+    }
+  },
+  "ack": {
+    "accepted": true,
+    "status_code": 200,
+    "idempotency_key": "qqbot-idem-001",
+    "metadata": {
+      "channel_id": "qqbot",
+      "payload_ref": "fixture://qqbot/phase43/inbound/message-001",
+      "signature_status": "secret_ref_required",
+      "network_io": false
+    }
+  },
+  "agent_turn": {
+    "turn_id": "turn-phase43-qqbot-001",
+    "conversation_id": "conv-phase43-qqbot-001",
+    "channel": "qqbot",
+    "user_id": "user-phase43-qqbot-001",
+    "message_type": "text",
+    "received_at": "2026-07-04T00:00:00Z",
+    "industry_context": {
+      "domain": "legal",
+      "task_type": "legal_qa"
+    },
+    "metadata": {
+      "payload_ref": "fixture://qqbot/phase43/inbound/message-001",
+      "idempotency_key": "qqbot-idem-001",
+      "content_ref": "fixture://qqbot/phase43/content/message-001",
+      "content_hash": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+      "content_source_status": "reference_only",
+      "source_event": "qqbot_fixture",
+      "source_status": "sanitized_fixture",
+      "fixture_only": true
+    }
+  },
+  "text_delivery": {
+    "delivery_id": "delivery-phase43-qqbot-001",
+    "channel_id": "qqbot",
+    "run_id": "run-phase43-qqbot-001",
+    "result": {
+      "status": "succeeded"
+    },
+    "content": {
+      "delivery_type": "text",
+      "to_user": "user-phase43-qqbot-001",
+      "message": "fixture reply text"
+    },
+    "artifact_refs": [],
+    "metadata": {
+      "fixture_only": true
+    }
+  },
+  "text_delivery_result": {
+    "delivery_id": "delivery-phase43-qqbot-001",
+    "accepted": true,
+    "delivered_at": "2026-07-04T00:00:01Z",
+    "idempotency_key": "qqbot-delivery-idem-001",
+    "metadata": {
+      "channel_id": "qqbot",
+      "message_type": "text",
+      "output_policy_action": "allow",
+      "fixture_only": true,
+      "network_io": false
+    }
+  },
+  "card_delivery": {
+    "delivery_id": "delivery-phase43-qqbot-002",
+    "channel_id": "qqbot",
+    "run_id": "run-phase43-qqbot-001",
+    "result": {
+      "status": "succeeded"
+    },
+    "content": {
+      "delivery_type": "card",
+      "to_user": "user-phase43-qqbot-001",
+      "card_type": "feedback",
+      "card_data": {
+        "buttons": [
+          {
+            "id": "up",
+            "label": "good"
+          },
+          {
+            "id": "down",
+            "label": "needs_fix"
+          },
+          {
+            "id": "route_wrong",
+            "label": "route_wrong"
+          }
+        ]
+      }
+    },
+    "artifact_refs": [],
+    "metadata": {
+      "fixture_only": true
+    }
+  },
+  "card_delivery_result": {
+    "delivery_id": "delivery-phase43-qqbot-002",
+    "accepted": true,
+    "delivered_at": "2026-07-04T00:00:02Z",
+    "idempotency_key": "qqbot-delivery-idem-002",
+    "metadata": {
+      "channel_id": "qqbot",
+      "message_type": "card",
+      "output_policy_action": "allow",
+      "fixture_only": true,
+      "network_io": false
+    }
+  },
+  "qqbot_feedback_callback": {
+    "channel_id": "qqbot",
+    "payload_ref": "fixture://qqbot/phase43/inbound/feedback-001",
+    "received_at": "2026-07-04T00:00:03Z",
+    "idempotency_key": "qqbot-feedback-idem-001",
+    "metadata": {
+      "payload": {
+        "type": "feedback",
+        "feedback_id": "feedback-phase43-qqbot-001",
+        "conversation_id": "conv-phase43-qqbot-001",
+        "user_id": "user-phase43-qqbot-001",
+        "turn_id": "turn-phase43-qqbot-001",
+        "feedback_target": "result-phase43-qqbot-001",
+        "action": "up"
+      }
+    }
+  },
+  "feedback_event": {
+    "feedback_id": "feedback-phase43-qqbot-001",
+    "turn_id": "turn-phase43-qqbot-001",
+    "conversation_id": "conv-phase43-qqbot-001",
+    "user_id": "user-phase43-qqbot-001",
+    "source": "card_button",
+    "event_type": "rating",
+    "status": "pending",
+    "created_at": "2026-07-04T00:00:03Z",
+    "feedback_target": "result-phase43-qqbot-001",
+    "action": "up",
+    "rating": 1.0,
+    "industry_context": {},
+    "metadata": {
+      "payload_ref": "fixture://qqbot/phase43/inbound/feedback-001",
+      "idempotency_key": "qqbot-feedback-idem-001",
+      "source_event": "qqbot_fixture",
+      "source_status": "sanitized_fixture",
+      "fixture_only": true
+    }
+  },
+  "channel_capabilities": {
+    "supports_text": true,
+    "supports_files": false,
+    "supports_cards": true,
+    "supports_images": false,
+    "supports_voice": false,
+    "supports_streaming": false,
+    "ack_deadline_ms": 3000,
+    "idempotency_strategy": "qqbot_callback_metadata",
+    "metadata": {
+      "enabled": true,
+      "fixture_only": true,
+      "network_io": false
+    }
+  },
+  "channel_health": {
+    "ok": true,
+    "component_id": "qqbot-channel",
+    "checked_at": "2026-07-04T00:00:04Z",
+    "detail": "enabled",
+    "metadata": {
+      "fixture_only": true,
+      "network_io": false,
+      "secret_refs_configured": false
+    }
+  }
+}
