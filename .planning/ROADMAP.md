@@ -27,7 +27,7 @@
 - [x] **Phase 39: Codex Adapter Prototype** - Codex backend adapter proving BackendAdapter contract portability via codex exec subprocess with manifest validation and minimal submit_run flow.
 - [x] **Phase 40: Provider Model Adapter Prototype** - Direct provider_model adapter via AsyncOpenAI lazy SDK import, plus output boundary fixture tests for both new backends.
 - [x] **Phase 41: Conversation Read-View Completion** - Cursor-based pagination, time-range/dimension filters, trace reconstruction, CSV/JSON export, and read-time privacy scrubbing.
-- [ ] **Phase 42: Admin Console API** - Read-only Admin Console API with static token auth, sessions/tasks/feedback/gates/health views, and field allowlist excluding secrets.
+- [x] **Phase 42: Admin Console API** - Read-only Admin Console API with static token auth, sessions/tasks/feedback/gates/health views, and field allowlist excluding secrets.
 - [ ] **Phase 43: QQBot Channel Loop** - Channel-generic logic extraction, QQBot ChannelAdapter implementation, and fixture-driven receive→ACK→adapter→reply→card→feedback loop proof.
 - [ ] **Phase 44: M2 Gate Integration & Full Suite Verification** - New gates for all 6 M2 packages, meta-test for full directory coverage, and all 9 existing gates verified green.
 
@@ -168,7 +168,7 @@
 | 39. Codex Adapter Prototype | 3/3 | Complete | 596 tests, 12 gates |
 | 40. Provider Model Adapter Prototype | 3/3 | Complete | 641 tests, 13 gates |
 | 41. Conversation Read-View Completion | 3/3 | Complete | 747 tests, 13 gates |
-| 42. Admin Console API | 0/0 | Not started | — |
+| 42. Admin Console API | 3/3 | Complete | 860 tests, 14 gates |
 | 43. QQBot Channel Loop | 0/0 | Not started | — |
 | 44. M2 Gate Integration & Full Suite Verification | 0/0 | Not started | — |
 

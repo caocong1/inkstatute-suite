@@ -39,8 +39,8 @@
 
 ### Admin Console API (ADMIN)
 
-- [ ] **ADMIN-01**: Operator can authenticate to a read-only Admin Console API via a static token from env, and query sessions, tasks, feedback, gates, and health views with filtering and pagination.
-- [ ] **ADMIN-02**: Operator can verify that Admin Console API health/status views use a field allowlist that excludes secret reference names, config paths, `secret_refs_configured` maps, and `api_base_url` values.
+- [x] **ADMIN-01**: Operator can authenticate to a read-only Admin Console API via a static token from env, and query sessions, tasks, feedback, gates, and health views with filtering and pagination.
+- [x] **ADMIN-02**: Operator can verify that Admin Console API health/status views use a field allowlist that excludes secret reference names, config paths, `secret_refs_configured` maps, and `api_base_url` values.
 
 ### QQBot Channel (QQBOT)
 
