@@ -35,10 +35,14 @@ class ContractLogReadModel:
         tasks: dict[str, TaskView],
         trace_to_task_id: dict[str, str],
         issues: list[ReadModelIssue],
+        trace_events: dict[str, list["_Record"]] | None = None,
+        turn_to_trace: dict[str, str] | None = None,
     ) -> None:
         self._conversations = dict(conversations)
         self._tasks = dict(tasks)
         self._trace_to_task_id = dict(trace_to_task_id)
+        self._trace_events = dict(trace_events) if trace_events else {}
+        self._turn_to_trace = dict(turn_to_trace) if turn_to_trace else {}
         self.issues = list(issues)
 
     @classmethod
@@ -68,6 +72,7 @@ class ContractLogReadModel:
         turns_by_conversation: dict[str, list[ConversationTurnView]] = defaultdict(list)
         tasks: dict[str, TaskView] = {}
         trace_to_task_id: dict[str, str] = {}
+        trace_id_by_turn: dict[str, str] = {}
 
         for turn_id, event_groups in events_by_turn.items():
             agent_turn_items = event_groups.get("agent_turn", [])
@@ -119,12 +124,33 @@ class ContractLogReadModel:
                 trace_id = _string(agent_result["metadata"].get("trace_id"))  # type: ignore[index]
             if trace_id is not None:
                 trace_to_task_id[trace_id] = task_id
+                trace_id_by_turn[turn_id] = trace_id
 
         conversations = {
             conversation_id: ConversationView(conversation_id=conversation_id, turns=turns, issues=issues)
             for conversation_id, turns in turns_by_conversation.items()
         }
-        return cls(conversations=conversations, tasks=tasks, trace_to_task_id=trace_to_task_id, issues=issues)
+
+        trace_events: dict[str, list[_Record]] = defaultdict(list)
+        turn_to_trace: dict[str, str] = {}
+        for record in normalized:
+            event = record.event
+            turn_id = _string(event.get("turn_id"))
+            if turn_id is None:
+                continue
+            resolved_trace_id = trace_id_by_turn.get(turn_id)
+            if resolved_trace_id is not None:
+                trace_events[resolved_trace_id].append(record)
+                turn_to_trace[turn_id] = resolved_trace_id
+
+        return cls(
+            conversations=conversations,
+            tasks=tasks,
+            trace_to_task_id=trace_to_task_id,
+            issues=issues,
+            trace_events=dict(trace_events),
+            turn_to_trace=turn_to_trace,
+        )
 
     def get_conversation(self, conversation_id: str) -> JsonObject | None:
         conversation = self._conversations.get(conversation_id)
@@ -137,6 +163,62 @@ class ContractLogReadModel:
     def get_task_by_trace_id(self, trace_id: str) -> JsonObject | None:
         task_id = self._trace_to_task_id.get(trace_id)
         return self.get_task(task_id) if task_id is not None else None
+
+    def get_trace_reconstruction(self, trace_id: str) -> JsonObject | None:
+        """Reconstruct all events sharing ``trace_id`` in occurrence order.
+
+        Returns ``None`` when no events are found for the given ``trace_id``.
+        The response includes ``metadata.reconstruction_complete=True`` when an
+        ``execution_trace`` event is present in the reconstructed set.
+        """
+
+        records = self._trace_events.get(trace_id)
+        if not records:
+            task_id = self._trace_to_task_id.get(trace_id)
+            if task_id is None:
+                return None
+            resolved_trace_id = self._turn_to_trace.get(task_id)
+            if resolved_trace_id is not None:
+                records = self._trace_events.get(resolved_trace_id)
+            if not records:
+                return None
+
+        ordered = sorted(records, key=_record_sort_key)
+        turn_id = ""
+        task_id = ""
+        conversation_id = ""
+        agent_turn_record = next((r for r in ordered if r.event_key == "agent_turn"), None)
+        if agent_turn_record is not None:
+            turn_id = _string(agent_turn_record.event.get("turn_id")) or ""
+            conversation_id = _string(agent_turn_record.event.get("conversation_id")) or ""
+            task_id = self._trace_to_task_id.get(trace_id, turn_id)
+        else:
+            first = ordered[0]
+            turn_id = _string(first.event.get("turn_id")) or ""
+            task_id = self._trace_to_task_id.get(trace_id, turn_id)
+            conversation_id = _string(first.event.get("conversation_id")) or ""
+
+        has_execution_trace = any(r.event_key == "execution_trace" for r in ordered)
+        return {
+            "trace_id": trace_id,
+            "turn_id": turn_id,
+            "task_id": task_id,
+            "conversation_id": conversation_id,
+            "events": [
+                {
+                    "event_key": record.event_key,
+                    "occurred_at": record.occurred_at,
+                    "seq": record.seq,
+                    "event": record.event,
+                }
+                for record in ordered
+            ],
+            "metadata": {
+                "derived_from_contract_log": True,
+                "event_count": len(ordered),
+                "reconstruction_complete": has_execution_trace,
+            },
+        }
 
     def list_conversations(
         self,
