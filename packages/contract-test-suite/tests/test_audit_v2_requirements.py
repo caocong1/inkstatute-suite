@@ -419,7 +419,7 @@ class TestAuditSingleRequirementMode(unittest.TestCase):
 
 
 class TestAuditGateList(unittest.TestCase):
-    """Verify the 12 gates are registered in run_v2_gates.py."""
+    """Verify the 13 gates are registered in run_v2_gates.py."""
 
     def test_v2_gates_includes_traceability_gate(self):
         result = subprocess.run(
@@ -435,7 +435,8 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("skill-registry", gate_names)
         self.assertIn("router-service", gate_names)
         self.assertIn("codex-backend", gate_names)
-        self.assertEqual(len(gate_names), 12)
+        self.assertIn("provider-model-backend", gate_names)
+        self.assertEqual(len(gate_names), 13)
 
 
 if __name__ == "__main__":
