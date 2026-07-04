@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import dataclasses
 from collections import OrderedDict
 from datetime import datetime, timezone
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 
 from .ids import stable_hash_id
+
+if TYPE_CHECKING:
+    from inkstatute_router_service import RouterPort
 
 
 EVENT_KEYS = ("agent_turn", "route_decision", "execution_trace", "agent_result")
@@ -31,6 +35,7 @@ def map_agent_end_context(
     *,
     now: datetime | str,
     seq_start: int = 0,
+    router: "RouterPort | None" = None,
 ) -> OrderedDict[str, dict[str, Any]]:
     """Return AgentTurn, RouteDecision, ExecutionTrace, and AgentResult payloads."""
 
@@ -89,31 +94,23 @@ def map_agent_end_context(
     if "received_at" not in context:
         agent_turn["metadata"]["received_at_source_status"] = "unavailable_substituted_with_mapper_time"
 
-    route_decision = {
-        "route_decision_id": route_decision_id,
-        "turn_id": turn_id,
-        "primary_skill": primary_skill,
-        "supporting_skills": _string_list(context.get("supporting_skills")),
-        "gates_before": _string_list(context.get("gates_before")),
-        "gates_after": _string_list(context.get("gates_after")),
-        "required_tools": _string_list(context.get("required_tools")),
-        "confidence": route_confidence,
-        "reason": _route_reason(route_mode, matched_registered_skill),
-        "mode": route_mode,
-        "route_mismatch": route_mismatch,
-        "created_at": timestamp,
-        "industry_context": industry_context,
-        "metadata": {
-            "route_source": "hermes_hook_context",
-            "router_output_source_status": "unavailable",
-            "matched_registered_skill": matched_registered_skill,
-            "raw_payload_ref": raw_payload_ref,
-        },
-    }
-    if matched_registered_skill:
-        route_decision["matched_rule"] = _string(
-            context.get("matched_rule"),
-            f"hermes_active_skill:{primary_skill}",
+    if router is not None:
+        try:
+            decision = router.decide(context)
+            route_decision = _route_decision_to_dict(
+                decision, route_decision_id, turn_id, timestamp, raw_payload_ref, industry_context,
+            )
+        except Exception:
+            route_decision = _inline_route_decision(
+                context, route_decision_id, turn_id, primary_skill, route_mode,
+                matched_registered_skill, route_mismatch, route_confidence,
+                raw_payload_ref, industry_context, timestamp,
+            )
+    else:
+        route_decision = _inline_route_decision(
+            context, route_decision_id, turn_id, primary_skill, route_mode,
+            matched_registered_skill, route_mismatch, route_confidence,
+            raw_payload_ref, industry_context, timestamp,
         )
 
     execution_trace = {
@@ -177,6 +174,79 @@ def map_agent_end_context(
             ("agent_result", agent_result),
         )
     )
+
+
+def _inline_route_decision(
+    context: Mapping[str, Any],
+    route_decision_id: str,
+    turn_id: str,
+    primary_skill: str | None,
+    route_mode: str,
+    matched_registered_skill: bool,
+    route_mismatch: bool,
+    route_confidence: float,
+    raw_payload_ref: str | None,
+    industry_context: dict[str, Any],
+    timestamp: str,
+) -> dict[str, Any]:
+    """Construct the inline route_decision dict (preserves existing JSONL shape)."""
+    route_decision = {
+        "route_decision_id": route_decision_id,
+        "turn_id": turn_id,
+        "primary_skill": primary_skill,
+        "supporting_skills": _string_list(context.get("supporting_skills")),
+        "gates_before": _string_list(context.get("gates_before")),
+        "gates_after": _string_list(context.get("gates_after")),
+        "required_tools": _string_list(context.get("required_tools")),
+        "confidence": route_confidence,
+        "reason": _route_reason(route_mode, matched_registered_skill),
+        "mode": route_mode,
+        "route_mismatch": route_mismatch,
+        "created_at": timestamp,
+        "industry_context": industry_context,
+        "metadata": {
+            "route_source": "hermes_hook_context",
+            "router_output_source_status": "unavailable",
+            "matched_registered_skill": matched_registered_skill,
+            "raw_payload_ref": raw_payload_ref,
+        },
+    }
+    if matched_registered_skill:
+        route_decision["matched_rule"] = _string(
+            context.get("matched_rule"),
+            f"hermes_active_skill:{primary_skill}",
+        )
+    return route_decision
+
+
+def _route_decision_to_dict(
+    decision: Any,
+    route_decision_id: str,
+    turn_id: str,
+    timestamp: str,
+    raw_payload_ref: str | None,
+    industry_context: dict[str, Any],
+) -> dict[str, Any]:
+    """Convert a frozen ``RouteDecision`` dataclass to a dict matching the inline JSONL shape.
+
+    Overrides ``route_decision_id``, ``turn_id``, ``created_at`` with
+    mapper-computed values for event chain consistency.  Preserves the
+    dataclass ``metadata`` dict (includes ``router_strategy``,
+    ``router_service_version``).
+    """
+    route_dict = dataclasses.asdict(decision)
+    route_dict["route_decision_id"] = route_decision_id
+    route_dict["turn_id"] = turn_id
+    route_dict["created_at"] = timestamp
+    route_dict["industry_context"] = industry_context
+    route_dict["route_mismatch"] = bool(route_dict.get("route_mismatch"))
+    # Ensure required string fields are never None (schema expects strings)
+    if route_dict.get("reason") is None:
+        route_dict["reason"] = "Route decision produced by injected router."
+    route_dict["metadata"]["raw_payload_ref"] = raw_payload_ref
+    if route_dict.get("matched_rule") is None:
+        route_dict.pop("matched_rule", None)
+    return route_dict
 
 
 def _timestamp(value: datetime | str | Any) -> str:

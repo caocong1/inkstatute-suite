@@ -6,6 +6,7 @@ import unittest
 
 from contract_test_suite.schema_validation import validate_event
 from hermes_contract_layer.mapper import ASYNC_TASK_STATES, EVENT_KEYS, map_agent_end_context
+from platform_contract import RouteDecision
 
 
 FIXED_NOW = "2026-06-28T02:00:00Z"
@@ -160,6 +161,100 @@ class MapperTests(unittest.TestCase):
         elif isinstance(value, list):
             for child in value:
                 self.assert_no_raw_payload_key(child)
+
+
+class _FakeRouter:
+    """Fake RouterPort that returns a canned RouteDecision."""
+
+    def __init__(self, decision: RouteDecision | None = None) -> None:
+        self._decision = decision or RouteDecision(
+            route_decision_id="router-rd-001",
+            turn_id="router-turn-001",
+            primary_skill="lawfirm/custom_skill",
+            confidence=0.95,
+            mode="matched",
+            created_at=FIXED_NOW,
+            required_tools=["custom_tool"],
+            metadata={"router_strategy": "rule", "router_service_version": "0.1.0"},
+        )
+
+    def decide(self, context: Mapping[str, Any]) -> RouteDecision:
+        return self._decision
+
+
+class _RaisingRouter:
+    """Fake RouterPort that always raises an exception."""
+
+    def decide(self, context: Mapping[str, Any]) -> RouteDecision:
+        raise RuntimeError("router unavailable")
+
+
+class RouterInjectionTests(unittest.TestCase):
+    def test_map_with_router_none_uses_inline_inference(self) -> None:
+        """router=None must produce output identical to no router parameter."""
+        events_with_none = map_agent_end_context(normal_context(), now=FIXED_NOW, router=None)
+        events_without = map_agent_end_context(normal_context(), now=FIXED_NOW)
+        self.assertEqual(events_with_none, events_without)
+
+    def test_map_with_router_injected_uses_router_output(self) -> None:
+        """When a router is injected, route_decision reflects the router's output."""
+        events = map_agent_end_context(normal_context(), now=FIXED_NOW, router=_FakeRouter())
+        route = events["route_decision"]
+
+        self.assertEqual(route["primary_skill"], "lawfirm/custom_skill")
+        self.assertEqual(route["confidence"], 0.95)
+        self.assertEqual(route["metadata"]["router_strategy"], "rule")
+        self.assertEqual(route["metadata"]["router_service_version"], "0.1.0")
+
+        for event_key, event in events.items():
+            validate_event(event_key, event, fixture_id="phase4-mapper-router-injected")
+
+    def test_map_with_router_exception_falls_back_to_inline(self) -> None:
+        """When the router raises, the mapper falls back to inline inference."""
+        events_with_failing_router = map_agent_end_context(
+            normal_context(), now=FIXED_NOW, router=_RaisingRouter(),
+        )
+        events_inline = map_agent_end_context(normal_context(), now=FIXED_NOW)
+        self.assertEqual(events_with_failing_router, events_inline)
+
+    def test_map_with_router_preserves_jsonl_shape(self) -> None:
+        """All 4 events pass validate_event when a router is injected."""
+        events = map_agent_end_context(normal_context(), now=FIXED_NOW, router=_FakeRouter())
+
+        for event_key, event in events.items():
+            validate_event(event_key, event, fixture_id="phase4-mapper-router-shape")
+
+        route = events["route_decision"]
+        expected_keys = {
+            "route_decision_id", "turn_id", "primary_skill", "supporting_skills",
+            "gates_before", "gates_after", "required_tools", "confidence",
+            "reason", "mode", "route_mismatch", "created_at",
+            "industry_context", "metadata",
+        }
+        self.assertTrue(expected_keys.issubset(route.keys()))
+
+    def test_map_with_router_none_preserves_existing_tests(self) -> None:
+        """Existing test logic still holds when router=None is explicit."""
+        events = map_agent_end_context(normal_context(), now=FIXED_NOW, router=None)
+
+        self.assertEqual(tuple(events), EVENT_KEYS)
+        for event_key, event in events.items():
+            validate_event(event_key, event, fixture_id="phase4-mapper-normal")
+
+        turn = events["agent_turn"]
+        route = events["route_decision"]
+        trace = events["execution_trace"]
+        result = events["agent_result"]
+
+        self.assertEqual(route["turn_id"], turn["turn_id"])
+        self.assertEqual(trace["turn_id"], turn["turn_id"])
+        self.assertEqual(result["turn_id"], turn["turn_id"])
+        self.assertEqual(trace["route_decision"]["route_decision_id"], route["route_decision_id"])
+        self.assertEqual(result["metadata"]["trace_id"], trace["trace_id"])
+        self.assertEqual(result["metadata"]["route_decision_id"], route["route_decision_id"])
+        self.assertEqual(result["feedback_target"], "msg-001")
+        self.assertEqual(route["mode"], "matched")
+        self.assertTrue(trace["matched_registered_skill"])
 
 
 if __name__ == "__main__":
