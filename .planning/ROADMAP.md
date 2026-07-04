@@ -23,7 +23,7 @@
 
 - [x] **Phase 36: M2 Pre-Implementation Safety** - Cross-cutting safety measures (selection gate bypass fix, contract freeze, privacy scrub unification, feature flags, output boundary rules) before any M2 feature code.
 - [x] **Phase 37: Skill Registry Read** - Read-only Skill Registry exposing Hermes skill metadata as NeutralSkillDescriptor records with list/get/search and well-known discovery endpoint.
-- [ ] **Phase 38: Router Service** - Standalone router library injected into hermes-contract-layer mapper, producing RouteDecision events with RULE and SKILL routing modes.
+- [x] **Phase 38: Router Service** - Standalone router library injected into hermes-contract-layer mapper, producing RouteDecision events with RULE and SKILL routing modes.
 - [ ] **Phase 39: Codex Adapter Prototype** - Codex backend adapter proving BackendAdapter contract portability via codex exec subprocess with manifest validation and minimal submit_run flow.
 - [ ] **Phase 40: Provider Model Adapter Prototype** - Direct provider_model adapter via AsyncOpenAI lazy SDK import, plus output boundary fixture tests for both new backends.
 - [ ] **Phase 41: Conversation Read-View Completion** - Cursor-based pagination, time-range/dimension filters, trace reconstruction, CSV/JSON export, and read-time privacy scrubbing.
