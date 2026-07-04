@@ -162,9 +162,9 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 36. M2 Pre-Implementation Safety | 0/0 | Not started | — |
-| 37. Skill Registry Read | 0/0 | Not started | — |
-| 38. Router Service | 0/0 | Not started | — |
+| 36. M2 Pre-Implementation Safety | 3/3 | Complete | Safety gates, contract freeze, feature flags |
+| 37. Skill Registry Read | 3/3 | Complete | Skill Registry with list/get/search |
+| 38. Router Service | 3/3 | Complete | Router library with RULE/SKILL modes |
 | 39. Codex Adapter Prototype | 3/3 | Complete | 596 tests, 12 gates |
 | 40. Provider Model Adapter Prototype | 3/3 | Complete | 641 tests, 13 gates |
 | 41. Conversation Read-View Completion | 3/3 | Complete | 747 tests, 13 gates |
@@ -176,24 +176,24 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SAFETY-01 | 36 | Not started |
-| SAFETY-02 | 36 | Not started |
-| SAFETY-03 | 36 | Not started |
-| SAFETY-04 | 36 | Not started |
-| SAFETY-05 | 36 | Not started |
-| SAFETY-06 | 36 | Not started |
-| SKILL-01 | 37 | Not started |
-| SKILL-02 | 37 | Not started |
-| ROUTER-01 | 38 | Not started |
-| ROUTER-02 | 38 | Not started |
-| ADAPTER-01 | 39 | Not started |
-| ADAPTER-02 | 40 | Not started |
-| ADAPTER-03 | 40 | Not started |
-| READVIEW-01 | 41 | Not started |
-| READVIEW-02 | 41 | Not started |
-| READVIEW-03 | 41 | Not started |
-| ADMIN-01 | 42 | Not started |
-| ADMIN-02 | 42 | Not started |
+| SAFETY-01 | 36 | Satisfied |
+| SAFETY-02 | 36 | Satisfied |
+| SAFETY-03 | 36 | Satisfied |
+| SAFETY-04 | 36 | Satisfied |
+| SAFETY-05 | 36 | Satisfied |
+| SAFETY-06 | 36 | Satisfied |
+| SKILL-01 | 37 | Satisfied |
+| SKILL-02 | 37 | Satisfied |
+| ROUTER-01 | 38 | Satisfied |
+| ROUTER-02 | 38 | Satisfied |
+| ADAPTER-01 | 39 | Satisfied |
+| ADAPTER-02 | 40 | Satisfied |
+| ADAPTER-03 | 40 | Satisfied |
+| READVIEW-01 | 41 | Satisfied |
+| READVIEW-02 | 41 | Satisfied |
+| READVIEW-03 | 41 | Satisfied |
+| ADMIN-01 | 42 | Satisfied |
+| ADMIN-02 | 42 | Satisfied |
 | QQBOT-01 | 43 | Satisfied |
 | QQBOT-02 | 43 | Satisfied |
 | QQBOT-03 | 43 | Satisfied |
