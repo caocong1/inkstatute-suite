@@ -97,16 +97,25 @@ class RouterService:
         )
 
     def _decide_skill(self, context: Mapping[str, Any]) -> RouteDecision:
-        """SKILL strategy stub — full implementation in Plan 38-02."""
+        """SKILL strategy — stateless Skill Registry lookup.
+
+        Three paths:
+        1. Direct ``skill_id`` lookup via ``get_skill()``.
+        2. Intent-based ``search(category=<intent>)`` with name-substring
+           fallback when no ``skill_id`` is present.
+        3. ``zero_match`` when the registry is not configured.
+        """
         if self._registry is None:
             return self._build_decision(
                 context,
                 mode=RouteMode.ZERO_MATCH,
                 primary_skill=None,
                 confidence=0.0,
+                reason="Skill Registry not configured; router cannot perform skill lookup.",
                 metadata_extra={
                     "router_strategy": "skill",
                     "router_service_version": ROUTER_SERVICE_VERSION,
+                    "registry_not_configured": True,
                 },
             )
 
@@ -120,9 +129,57 @@ class RouterService:
                     primary_skill=descriptor.skill_id,
                     confidence=1.0,
                     required_tools=list(descriptor.required_tool_refs),
+                    matched_rule=f"skill:{descriptor.skill_id}",
+                    reason="Skill matched by exact skill_id lookup.",
                     metadata_extra={
                         "router_strategy": "skill",
                         "router_service_version": ROUTER_SERVICE_VERSION,
+                        "skill_lookup_method": "get_skill",
+                    },
+                )
+            return self._build_decision(
+                context,
+                mode=RouteMode.ZERO_MATCH,
+                primary_skill=None,
+                confidence=0.0,
+                metadata_extra={
+                    "router_strategy": "skill",
+                    "router_service_version": ROUTER_SERVICE_VERSION,
+                    "skill_lookup_method": "get_skill",
+                    "skill_not_found": True,
+                },
+            )
+
+        message = context.get("message")
+        if message is not None and isinstance(message, str):
+            results = self._search_by_message(message)
+            if len(results) == 1:
+                descriptor = results[0]
+                return self._build_decision(
+                    context,
+                    mode=RouteMode.MATCHED,
+                    primary_skill=descriptor.skill_id,
+                    confidence=0.7,
+                    required_tools=list(descriptor.required_tool_refs),
+                    matched_rule=f"skill:{descriptor.skill_id}",
+                    metadata_extra={
+                        "router_strategy": "skill",
+                        "router_service_version": ROUTER_SERVICE_VERSION,
+                        "skill_lookup_method": "search",
+                    },
+                )
+            if len(results) > 1:
+                return self._build_decision(
+                    context,
+                    mode=RouteMode.SIMPLE_QA,
+                    primary_skill=None,
+                    confidence=0.5,
+                    supporting_skills=[r.skill_id for r in results],
+                    metadata_extra={
+                        "router_strategy": "skill",
+                        "router_service_version": ROUTER_SERVICE_VERSION,
+                        "skill_lookup_method": "search",
+                        "ambiguous_matches": len(results),
                     },
                 )
 
@@ -134,8 +191,32 @@ class RouterService:
             metadata_extra={
                 "router_strategy": "skill",
                 "router_service_version": ROUTER_SERVICE_VERSION,
+                "skill_lookup_method": "search",
             },
         )
+
+    def _search_by_message(self, message: str) -> list:
+        """Search the registry by intent category and name substring.
+
+        Tries ``search(category=<intent>)`` first (if an intent is
+        classified), then falls back to ``search(name_substring=<first
+        word>)``.  Results are de-duplicated by ``skill_id``.
+        """
+        results: list = []
+        seen: set[str] = set()
+        intent = classify_intent(message)
+        if intent is not None:
+            for descriptor in self._registry.search(category=intent):
+                if descriptor.skill_id not in seen:
+                    seen.add(descriptor.skill_id)
+                    results.append(descriptor)
+        first_word = message.split()[0] if message.split() else message
+        if first_word:
+            for descriptor in self._registry.search(name_substring=first_word):
+                if descriptor.skill_id not in seen:
+                    seen.add(descriptor.skill_id)
+                    results.append(descriptor)
+        return results
 
     def _build_decision(
         self,
@@ -146,6 +227,7 @@ class RouterService:
         required_tools: list[str] | None = None,
         matched_rule: str | None = None,
         reason: str | None = None,
+        supporting_skills: list[str] | None = None,
         metadata_extra: dict[str, Any] | None = None,
     ) -> RouteDecision:
         """Construct a frozen ``RouteDecision`` from context defaults and provided values."""
@@ -156,7 +238,7 @@ class RouterService:
             confidence=confidence,
             mode=mode,
             created_at=context.get("created_at", ""),
-            supporting_skills=list(context.get("supporting_skills", [])),
+            supporting_skills=supporting_skills if supporting_skills is not None else list(context.get("supporting_skills", [])),
             gates_before=list(context.get("gates_before", [])),
             gates_after=list(context.get("gates_after", [])),
             required_tools=required_tools if required_tools is not None else [],
