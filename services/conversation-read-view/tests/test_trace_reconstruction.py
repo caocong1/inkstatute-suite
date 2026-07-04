@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import unittest
 
+from conversation_read_view.api import handle_get
 from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
 
 
@@ -190,6 +191,40 @@ class TraceReconstructionTests(unittest.TestCase):
         self.assertIn("execution_trace", event_keys)
         self.assertIn("agent_result", event_keys)
         self.assertTrue(result["metadata"]["reconstruction_complete"])
+
+
+class TraceRouteTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.read_model = build_read_model(load_records_from_jsonl(PHASE5_STREAM))
+
+    def test_trace_endpoint_returns_200(self) -> None:
+        status, body = handle_get("/traces/trace-phase5-retrieval-001", "", self.read_model)
+        self.assertEqual(status, 200)
+        self.assertIn("trace_id", body)
+        self.assertIn("events", body)
+        self.assertTrue(body["metadata"]["derived_from_contract_log"])
+
+    def test_trace_endpoint_returns_404_for_unknown(self) -> None:
+        status, body = handle_get("/traces/trace-nonexistent-999", "", self.read_model)
+        self.assertEqual(status, 404)
+        self.assertEqual(body["error"]["code"], "not_found")
+
+    def test_trace_endpoint_events_in_order(self) -> None:
+        status, body = handle_get("/traces/trace-phase5-retrieval-001", "", self.read_model)
+        self.assertEqual(status, 200)
+        events = body["events"]
+        pairs = [(e["occurred_at"], e["seq"]) for e in events]
+        self.assertEqual(pairs, sorted(pairs))
+
+    def test_trace_endpoint_has_reconstruction_complete(self) -> None:
+        status, body = handle_get("/traces/trace-phase5-retrieval-001", "", self.read_model)
+        self.assertEqual(status, 200)
+        self.assertTrue(body["metadata"]["reconstruction_complete"])
+
+    def test_trace_endpoint_includes_event_count(self) -> None:
+        status, body = handle_get("/traces/trace-phase5-retrieval-001", "", self.read_model)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["metadata"]["event_count"], len(body["events"]))
 
 
 if __name__ == "__main__":

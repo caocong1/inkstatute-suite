@@ -44,6 +44,13 @@ def handle_get(
             return 404, not_found_response("task", identifier)
         return 200, _with_contract_metadata(task)
 
+    if route_path.startswith("/traces/"):
+        trace_id = route_path.removeprefix("/traces/")
+        reconstruction = read_model.get_trace_reconstruction(trace_id)
+        if reconstruction is None:
+            return 404, not_found_response("trace", trace_id)
+        return 200, _with_contract_metadata(reconstruction)
+
     if route_path == "/feedback":
         status = route_query.get("status", "pending")
         if status != "pending":
