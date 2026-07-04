@@ -2,7 +2,7 @@
 phase: 37
 slug: skill-registry-read
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-07-04
 ---
@@ -38,14 +38,12 @@ created: 2026-07-04
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 37-01-01 | 01 | 1 | SKILL-01 | — | SkillRegistry list/get/search return NeutralSkillDescriptor | unit | `pytest packages/skill-registry/tests/test_registry.py` | ❌ W0 | ⬜ pending |
-| 37-01-02 | 01 | 1 | SKILL-01 | — | Manifest-to-descriptor mapper produces correct fields | unit | `pytest packages/skill-registry/tests/test_mapper.py` | ❌ W0 | ⬜ pending |
-| 37-01-03 | 01 | 1 | SKILL-01 | — | Read-only enforcement (no write methods) | unit | `pytest packages/skill-registry/tests/test_registry.py -k read_only` | ❌ W0 | ⬜ pending |
-| 37-02-01 | 02 | 1 | SKILL-02 | — | Discovery index follows Cloudflare RFC v0.2.0 format | unit | `pytest packages/skill-registry/tests/test_discovery.py` | ❌ W0 | ⬜ pending |
-| 37-02-02 | 02 | 1 | SKILL-02 | — | /.well-known/agent-skills/index.json route returns 200 | unit | `pytest packages/skill-registry/tests/test_discovery.py -k well_known` | ❌ W0 | ⬜ pending |
-| 37-02-03 | 02 | 1 | SKILL-01 | — | Feature flag default-off rejects requests when disabled | unit | `pytest packages/skill-registry/tests/test_api.py -k feature_flag` | ❌ W0 | ⬜ pending |
-| 37-03-01 | 03 | 2 | SKILL-01, SKILL-02 | — | V2 gate integration (new skill-registry gate + compileall update) | integration | `python scripts/run_v2_gates.py` | ❌ W0 | ⬜ pending |
-| 37-03-02 | 03 | 2 | — | — | Contract freeze not violated (existing freeze tests green) | unit | `pytest packages/contract-test-suite/tests/test_contract_freeze.py` | ✅ | ⬜ pending |
+| 37-01-01 | 01 | 1 | SKILL-01 | — | Package structure + manifest-to-descriptor mapper produces correct fields | unit | `PYTHONPATH=packages/skill-registry/src:packages/platform-contract/src python -m unittest discover -s packages/skill-registry/tests -p "test_mapper.py"` | ❌ W0 | ⬜ pending |
+| 37-01-02 | 01 | 1 | SKILL-01 | — | SkillRegistry list/get/search return NeutralSkillDescriptor + read-only enforcement (no write methods) | unit | `PYTHONPATH=packages/skill-registry/src:packages/platform-contract/src python -m unittest discover -s packages/skill-registry/tests -p "test_registry.py"` | ❌ W0 | ⬜ pending |
+| 37-02-01 | 02 | 2 | SKILL-02 | — | Discovery index follows Cloudflare RFC v0.2.0 format ($schema, skills[] with name/type/description/url/digest) | unit | `PYTHONPATH=packages/skill-registry/src:packages/platform-contract/src python -m unittest discover -s packages/skill-registry/tests -p "test_discovery.py"` | ❌ W0 | ⬜ pending |
+| 37-02-02 | 02 | 2 | SKILL-01, SKILL-02 | — | API handler returns 200 for /skills, /skills/{id}, /skills/search, /.well-known/agent-skills/index.json + feature flag default-off rejects requests | unit | `PYTHONPATH=packages/skill-registry/src:packages/platform-contract/src:packages/platform-runtime/src python -m unittest discover -s packages/skill-registry/tests -p "test_api.py"` | ❌ W0 | ⬜ pending |
+| 37-03-01 | 03 | 3 | SKILL-01, SKILL-02 | — | V2 gate integration (new skill-registry gate + compileall update) | integration | `python scripts/run_v2_gates.py` | ❌ W0 | ⬜ pending |
+| 37-03-02 | 03 | 3 | — | — | Contract freeze not violated (existing freeze tests green) | unit | `PYTHONPATH=packages/contract-test-suite/src:packages/platform-contract/src python -m unittest packages/contract-test-suite/tests/test_contract_freeze.py` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,15 +51,16 @@ created: 2026-07-04
 
 ## Wave 0 Requirements
 
-- [ ] `packages/skill-registry/pyproject.toml` — package definition
-- [ ] `packages/skill-registry/src/inkstatute_skill_registry/__init__.py` — package init
-- [ ] `packages/skill-registry/tests/test_registry.py` — stub for SkillRegistry tests
-- [ ] `packages/skill-registry/tests/test_mapper.py` — stub for manifest mapper tests
-- [ ] `packages/skill-registry/tests/test_api.py` — stub for API handler tests
-- [ ] `packages/skill-registry/tests/test_discovery.py` — stub for discovery endpoint tests
-- [ ] `packages/skill-registry/tests/fixtures/` — test manifest fixtures
+Wave 0 package structure is created as the first step of Plan 37-01 Task 01 (package structure + manifest mapper). The following files are created by that task:
 
-*Existing infrastructure (pytest, run_v2_gates.py) covers framework requirements.*
+- [ ] `packages/skill-registry/pyproject.toml` — package definition (Plan 37-01 Task 01)
+- [ ] `packages/skill-registry/src/inkstatute_skill_registry/__init__.py` — package init (Plan 37-01 Task 01)
+- [ ] `packages/skill-registry/tests/test_mapper.py` — mapper tests (Plan 37-01 Task 01)
+- [ ] `packages/skill-registry/tests/test_registry.py` — registry tests (Plan 37-01 Task 02)
+- [ ] `packages/skill-registry/tests/test_discovery.py` — discovery tests (Plan 37-02 Task 01)
+- [ ] `packages/skill-registry/tests/test_api.py` — API tests (Plan 37-02 Task 02)
+
+*No separate Wave 0 task needed — package structure is created inline by Plan 37-01 Task 01 as its first action step. Existing infrastructure (pytest, run_v2_gates.py) covers framework requirements.*
 
 ---
 
@@ -78,6 +77,6 @@ created: 2026-07-04
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < 70s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-07-04
