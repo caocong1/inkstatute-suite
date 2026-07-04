@@ -206,7 +206,7 @@ class SubprocessProviderModelRunner:  # actually OpenAIClientRunner
     async def invoke(self, req: RunRequest) -> ProviderModelExecResult:
         openai_module = importlib.import_module("openai")
         AsyncOpenAI = openai_module.AsyncOpenAI
-        client = AsyncOpenAI(api_key=self.config.api_key_ref, base_url=self.config.api_base_url)
+        client = AsyncOpenAI(api_key=cred, base_url=self.config.api_base_url)
         # ... call client.chat.completions.create(...)
 ```
 
