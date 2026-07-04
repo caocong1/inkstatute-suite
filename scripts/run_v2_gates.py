@@ -64,6 +64,8 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     codex_backend_src = repo_root / "packages" / "backends" / "codex" / "src"
     provider_model_backend_src = repo_root / "packages" / "backends" / "provider_model" / "src"
     admin_api_src = repo_root / "services" / "admin-console-api" / "src"
+    channel_core_src = repo_root / "packages" / "channel-core" / "src"
+    qqbot_src = repo_root / "packages" / "channels" / "qqbot" / "src"
 
     return (
         Gate(
@@ -74,7 +76,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "wecom-service",
             (py, "-m", "unittest", "discover", "-s", "services/wecom-service/tests"),
-            (wecom_src, platform_src, contract_src, platform_runtime_src),
+            (wecom_src, channel_core_src, platform_src, contract_src, platform_runtime_src),
         ),
         Gate(
             "hermes-contract-layer",
@@ -99,12 +101,12 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "codex-backend",
             (py, "-m", "unittest", "discover", "-s", "packages/backends/codex/tests"),
-            (codex_backend_src, platform_src, platform_runtime_src, wecom_src),
+            (codex_backend_src, platform_src, platform_runtime_src, wecom_src, channel_core_src),
         ),
         Gate(
             "provider-model-backend",
             (py, "-m", "unittest", "discover", "-s", "packages/backends/provider_model/tests"),
-            (provider_model_backend_src, platform_src, platform_runtime_src, wecom_src),
+            (provider_model_backend_src, platform_src, platform_runtime_src, wecom_src, channel_core_src),
         ),
         Gate(
             "admin-console-api",
@@ -112,9 +114,14 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (admin_api_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
         ),
         Gate(
+            "qqbot-channel",
+            (py, "-m", "unittest", "discover", "-s", "packages/channels/qqbot/tests"),
+            (qqbot_src, channel_core_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
             "feedback-service",
             (py, "-m", "unittest", "discover", "services/feedback-service/tests"),
-            (feedback_src, wecom_src, contract_src, platform_src, platform_runtime_src),
+            (feedback_src, wecom_src, channel_core_src, contract_src, platform_src, platform_runtime_src),
         ),
         Gate(
             "phase7-privacy-boundary",
@@ -130,7 +137,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, channel_core_src, qqbot_src),
         ),
         Gate(
             "v2-acceptance-traceability",
@@ -154,6 +161,8 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "services/feedback-service/src",
                 "services/conversation-read-view/src",
                 "services/admin-console-api/src",
+                "packages/channel-core/src",
+                "packages/channels/qqbot/src",
                 "scripts/run_v2_gates.py",
                 "scripts/audit_v2_requirements.py",
                 "scripts/generate_gap_evidence_reports.py",

@@ -132,6 +132,12 @@ def _check_library_surface(
                 for target in node.targets:
                     if isinstance(target, ast.Name):
                         found_names.add(target.id)
+            elif isinstance(node, ast.ImportFrom):
+                # Re-export shims import names from a shared package and
+                # re-export them — the imported names are part of the
+                # library surface even though they are not defined locally.
+                for alias in node.names:
+                    found_names.add(alias.asname or alias.name)
         missing = sorted(name for name in expected_names if name not in found_names)
         if missing:
             return False, f"{source_rel} missing expected names: {', '.join(missing)}"

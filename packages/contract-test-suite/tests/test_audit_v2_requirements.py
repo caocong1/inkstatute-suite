@@ -437,7 +437,8 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("codex-backend", gate_names)
         self.assertIn("provider-model-backend", gate_names)
         self.assertIn("admin-console-api", gate_names)
-        self.assertEqual(len(gate_names), 14)
+        self.assertIn("qqbot-channel", gate_names)
+        self.assertEqual(len(gate_names), 15)
 
 
 if __name__ == "__main__":
