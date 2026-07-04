@@ -63,6 +63,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     router_service_src = repo_root / "packages" / "router-service" / "src"
     codex_backend_src = repo_root / "packages" / "backends" / "codex" / "src"
     provider_model_backend_src = repo_root / "packages" / "backends" / "provider_model" / "src"
+    admin_api_src = repo_root / "services" / "admin-console-api" / "src"
 
     return (
         Gate(
@@ -106,6 +107,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (provider_model_backend_src, platform_src, platform_runtime_src, wecom_src),
         ),
         Gate(
+            "admin-console-api",
+            (py, "-m", "unittest", "discover", "-s", "services/admin-console-api/tests"),
+            (admin_api_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
             "feedback-service",
             (py, "-m", "unittest", "discover", "services/feedback-service/tests"),
             (feedback_src, wecom_src, contract_src, platform_src, platform_runtime_src),
@@ -124,7 +130,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src),
         ),
         Gate(
             "v2-acceptance-traceability",
@@ -147,6 +153,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "services/hermes-contract-layer/src",
                 "services/feedback-service/src",
                 "services/conversation-read-view/src",
+                "services/admin-console-api/src",
                 "scripts/run_v2_gates.py",
                 "scripts/audit_v2_requirements.py",
                 "scripts/generate_gap_evidence_reports.py",
