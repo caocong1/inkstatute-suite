@@ -1,0 +1,168 @@
+"""RouterService — concrete RouterPort implementation.
+
+The service is stateless with two strategies (RULE, SKILL).  The RULE
+strategy uses keyword/regex intent classification via ``classify_intent``.
+The SKILL strategy uses the skill registry for stateless skill lookup.
+
+When ``skill_registry`` is ``None``, the RULE strategy falls back to
+``SIMPLE_QA`` for matched intents and ``ZERO_MATCH`` for unmatched intents.
+The ``None`` default preserves inline inference behavior when no router
+is injected.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Mapping
+
+from platform_contract import RouteDecision, RouteMode
+
+from .classifier import classify_intent
+from .strategies import RouterStrategy
+
+if TYPE_CHECKING:
+    from inkstatute_skill_registry import SkillRegistryPort
+
+ROUTER_SERVICE_VERSION = "0.1.0"
+
+
+class RouterService:
+    """Stateless router with RULE and SKILL strategies.
+
+    The service implements the ``RouterPort`` Protocol via structural
+    subtyping.  It produces ``RouteDecision`` records with frozen
+    ``RouteMode`` values only; the strategy is recorded in
+    ``metadata["router_strategy"]``.
+    """
+
+    def __init__(
+        self,
+        skill_registry: "SkillRegistryPort | None" = None,
+        strategy: RouterStrategy = RouterStrategy.RULE,
+    ) -> None:
+        self._registry = skill_registry
+        self._strategy = strategy
+
+    def decide(self, context: Mapping[str, Any]) -> RouteDecision:
+        """Produce a ``RouteDecision`` from *context* using the active strategy."""
+        if self._strategy == RouterStrategy.SKILL:
+            return self._decide_skill(context)
+        return self._decide_rule(context)
+
+    def _decide_rule(self, context: Mapping[str, Any]) -> RouteDecision:
+        """RULE strategy: keyword/regex intent classification."""
+        message = context.get("message")
+        intent = classify_intent(message if isinstance(message, str) else None)
+
+        if intent is not None and self._registry is not None:
+            results = self._registry.search(category=intent)
+            if results:
+                descriptor = results[0]
+                return self._build_decision(
+                    context,
+                    mode=RouteMode.MATCHED,
+                    primary_skill=descriptor.skill_id,
+                    confidence=0.7,
+                    required_tools=list(descriptor.required_tool_refs),
+                    matched_rule=f"rule:{intent}",
+                    metadata_extra={
+                        "router_strategy": "rule",
+                        "router_service_version": ROUTER_SERVICE_VERSION,
+                        "classified_intent": intent,
+                    },
+                )
+
+        if intent is not None:
+            return self._build_decision(
+                context,
+                mode=RouteMode.SIMPLE_QA,
+                primary_skill=None,
+                confidence=0.5,
+                metadata_extra={
+                    "router_strategy": "rule",
+                    "router_service_version": ROUTER_SERVICE_VERSION,
+                    "classified_intent": intent,
+                },
+            )
+
+        return self._build_decision(
+            context,
+            mode=RouteMode.ZERO_MATCH,
+            primary_skill=None,
+            confidence=0.0,
+            metadata_extra={
+                "router_strategy": "rule",
+                "router_service_version": ROUTER_SERVICE_VERSION,
+                "classified_intent": intent,
+            },
+        )
+
+    def _decide_skill(self, context: Mapping[str, Any]) -> RouteDecision:
+        """SKILL strategy stub — full implementation in Plan 38-02."""
+        if self._registry is None:
+            return self._build_decision(
+                context,
+                mode=RouteMode.ZERO_MATCH,
+                primary_skill=None,
+                confidence=0.0,
+                metadata_extra={
+                    "router_strategy": "skill",
+                    "router_service_version": ROUTER_SERVICE_VERSION,
+                },
+            )
+
+        skill_id = context.get("skill_id")
+        if skill_id is not None:
+            descriptor = self._registry.get_skill(skill_id)
+            if descriptor is not None:
+                return self._build_decision(
+                    context,
+                    mode=RouteMode.MATCHED,
+                    primary_skill=descriptor.skill_id,
+                    confidence=1.0,
+                    required_tools=list(descriptor.required_tool_refs),
+                    metadata_extra={
+                        "router_strategy": "skill",
+                        "router_service_version": ROUTER_SERVICE_VERSION,
+                    },
+                )
+
+        return self._build_decision(
+            context,
+            mode=RouteMode.ZERO_MATCH,
+            primary_skill=None,
+            confidence=0.0,
+            metadata_extra={
+                "router_strategy": "skill",
+                "router_service_version": ROUTER_SERVICE_VERSION,
+            },
+        )
+
+    def _build_decision(
+        self,
+        context: Mapping[str, Any],
+        mode: RouteMode | str,
+        primary_skill: str | None,
+        confidence: float,
+        required_tools: list[str] | None = None,
+        matched_rule: str | None = None,
+        reason: str | None = None,
+        metadata_extra: dict[str, Any] | None = None,
+    ) -> RouteDecision:
+        """Construct a frozen ``RouteDecision`` from context defaults and provided values."""
+        return RouteDecision(
+            route_decision_id=context.get("route_decision_id", ""),
+            turn_id=context.get("turn_id", ""),
+            primary_skill=primary_skill,
+            confidence=confidence,
+            mode=mode,
+            created_at=context.get("created_at", ""),
+            supporting_skills=list(context.get("supporting_skills", [])),
+            gates_before=list(context.get("gates_before", [])),
+            gates_after=list(context.get("gates_after", [])),
+            required_tools=required_tools if required_tools is not None else [],
+            matched_rule=matched_rule,
+            reason=reason,
+            route_mismatch=context.get("route_mismatch"),
+            industry_context=dict(context.get("industry_context", {})),
+            metadata=metadata_extra if metadata_extra is not None else {},
+        )

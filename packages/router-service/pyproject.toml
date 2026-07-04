@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-router-service"
+version = "0.1.0"
+description = "Standalone router library producing normalized RouteDecision records."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.inkstatute]
+subsystem = "router-service"
+default_off_flag = "router_service_enabled"
