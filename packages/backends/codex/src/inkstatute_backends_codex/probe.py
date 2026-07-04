@@ -2,8 +2,8 @@
 
 The probe calls ``codex --version`` via an injectable transport (NOT a real
 subprocess in tests) and returns a :class:`CodexProbeReport` with a 14-field
-:class:`AdapterCapabilitySet`.  The probe must never invoke ``codex exec`` with
-a prompt — it is non-mutating.
+:class:`AdapterCapabilitySet`.  The probe must never invoke the Codex execution
+subcommand with a prompt — it is non-mutating.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ class CodexProbeReport:
 
 
 class CodexCapabilityProbe:
-    """Probe Codex capabilities without invoking ``codex exec``."""
+    """Probe Codex capabilities without invoking the execution subcommand."""
 
     def __init__(self, transport: CodexProbeTransport, config: CodexBackendConfig | None = None) -> None:
         self.transport = transport
