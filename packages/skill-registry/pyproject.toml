@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-skill-registry"
+version = "0.1.0"
+description = "Read-only Skill Registry exposing Hermes skill metadata as NeutralSkillDescriptor records."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.inkstatute]
+subsystem = "skill-registry"
+default_off_flag = "skill_registry_enabled"
