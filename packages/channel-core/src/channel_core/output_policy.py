@@ -22,6 +22,7 @@ def apply_output_policy(
     message: str,
     *,
     policy_name: str = "inkstatute_channel_output_boundary",
+    replacement_owner: str = "inkstatute_channel_service",
 ) -> OutputPolicyDecision:
     """Classify backend output before ordinary-user delivery."""
 
@@ -43,7 +44,7 @@ def apply_output_policy(
             visible_text=build_owned_notice("backend_lifecycle"),
             audit_metadata={
                 **_audit(text, rule="rewrite_backend_lifecycle", policy_name=policy_name),
-                "replacement_owner": "inkstatute_channel_service",
+                "replacement_owner": replacement_owner,
             },
         )
 
