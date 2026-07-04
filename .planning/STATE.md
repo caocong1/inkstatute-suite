@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: M2 Multi-Backend & Platform Extensions
-status: completed
-stopped_at: Roadmap created for v1.5 V2 Acceptance Closure (Phases 33-35)
-last_updated: "2026-07-04T09:31:44.192Z"
-last_activity: 2026-07-04 -- Phase 42 marked complete
+status: in_progress
+stopped_at: Phase 43 complete — Phase 44 (M2 Gate Integration) is next
+last_updated: "2026-07-04T20:50:00.000Z"
+last_activity: 2026-07-04 -- Phase 43 marked complete
 progress:
   total_phases: 9
-  completed_phases: 7
-  total_plans: 21
-  completed_plans: 24
-  percent: 78
+  completed_phases: 8
+  total_plans: 27
+  completed_plans: 27
+  percent: 89
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-03)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 42 — admin-console-api
+**Current focus:** Phase 44 — M2 Gate Integration & Full Suite Verification
 
 ## Current Position
 
-Phase: 42 — COMPLETE
-Plan: 1 of 3
-Status: Phase 42 complete
-Last activity: 2026-07-04 -- Phase 42 marked complete
+Phase: 43 — COMPLETE
+Plan: 3 of 3
+Status: Phase 43 complete — 15/15 V2 gates green, 921 tests passing
+Last activity: 2026-07-04 -- Phase 43 marked complete
 
 ### Deferred Items
 
