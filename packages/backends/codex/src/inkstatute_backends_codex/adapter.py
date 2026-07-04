@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass, field, replace
 from typing import Any, AsyncIterator, Protocol
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
 from platform_contract.enums import AgentResultStatus, AsyncTaskState
-from platform_contract.events import AgentResult, JsonObject, ReplyType
+from platform_contract.events import AgentResult, ErrorInfo, JsonObject, ReplyType
 from platform_runtime import (
     Approval,
     ArtifactRecord,
@@ -107,7 +108,7 @@ class CodexBackendAdapter:
             status=status,
             turn_id=req.turn.turn_id,
             solution_id=req.solution.solution_id,
-            result=result.result or _default_result(req, status),
+            result=_sanitize_result(result.result) or _default_result(req, status),
             metadata=run_metadata,
         )
         self._runs[run_id] = run
@@ -223,6 +224,47 @@ def _sanitize_value(value: Any) -> Any:
     if isinstance(value, list):
         return [_sanitize_value(item) for item in value]
     return value
+
+
+_URL_RE = re.compile(r"https?://\S+")
+_TOKEN_RE = re.compile(r"token=\S+")
+
+
+def _sanitize_text(text: str | None) -> str | None:
+    """Strip URLs and token-like patterns from a text string."""
+
+    if text is None:
+        return None
+    sanitized = _URL_RE.sub("[url_redacted]", text)
+    sanitized = _TOKEN_RE.sub("token=[redacted]", sanitized)
+    return sanitized
+
+
+def _sanitize_error_info(error: ErrorInfo | None) -> ErrorInfo | None:
+    """Return a new :class:`ErrorInfo` with sanitized message and details."""
+
+    if error is None:
+        return None
+    return ErrorInfo(
+        category=error.category,
+        code=error.code,
+        message=_sanitize_text(error.message),
+        stage=error.stage,
+        retryable=error.retryable,
+        details=_sanitize_metadata(error.details) if error.details else {},
+        metadata=_sanitize_metadata(error.metadata) if error.metadata else {},
+    )
+
+
+def _sanitize_result(result: AgentResult | None) -> AgentResult | None:
+    """Return a new :class:`AgentResult` with a sanitized :class:`ErrorInfo`."""
+
+    if result is None:
+        return None
+    sanitized_error = _sanitize_error_info(result.error)
+    if sanitized_error is result.error:
+        return result
+    return replace(result, error=sanitized_error)
 
 
 __all__ = ["CodexBackendAdapter", "CodexExecResult", "CodexExecRunner"]
