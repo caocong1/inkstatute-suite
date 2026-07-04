@@ -17,6 +17,8 @@ from platform_runtime.feature_flags import (
 )
 
 from .auth import check_auth_header, extract_auth_header, resolve_admin_token
+from .gates import handle_gates
+from .health import handle_health
 from .views import handle_feedback, handle_sessions, handle_tasks
 
 
@@ -78,20 +80,10 @@ def handle_admin_get(
         return handle_feedback(route_query, read_model, feedback_queue)
 
     if route_path == "/health":
-        return 501, {
-            "error": {
-                "code": "not_implemented",
-                "message": "health views are implemented in Wave 2",
-            },
-        }
+        return handle_health(feature_flags, read_model)
 
     if route_path == "/gates":
-        return 501, {
-            "error": {
-                "code": "not_implemented",
-                "message": "gate views are implemented in Wave 2",
-            },
-        }
+        return handle_gates()
 
     return 404, not_found_response("route", route_path)
 

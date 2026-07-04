@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import unittest
 from typing import Any
+from unittest.mock import patch
 
 from admin_console_api.api import handle_admin_get
 from platform_runtime.feature_flags import RuntimeFeatureFlags
@@ -90,19 +92,40 @@ class AdminApiAuthTests(unittest.TestCase):
         )
         self.assertEqual(status, 404)
 
-    def test_health_placeholder_returns_501(self) -> None:
+    def test_health_returns_200(self) -> None:
         status, body = handle_admin_get(
             "/health", "", self.headers, self.read_model,
             self.feedback_queue, self.feature_flags, self.env,
         )
-        self.assertEqual(status, 501)
+        self.assertEqual(status, 200)
+        self.assertIn("service", body)
 
-    def test_gates_placeholder_returns_501(self) -> None:
+    def test_health_excludes_secret_refs(self) -> None:
         status, body = handle_admin_get(
-            "/gates", "", self.headers, self.read_model,
+            "/health", "", self.headers, self.read_model,
             self.feedback_queue, self.feature_flags, self.env,
         )
-        self.assertEqual(status, 501)
+        self.assertNotIn("secret_refs_configured", body)
+
+    def test_health_has_secrets_configured_boolean(self) -> None:
+        status, body = handle_admin_get(
+            "/health", "", self.headers, self.read_model,
+            self.feedback_queue, self.feature_flags, self.env,
+        )
+        self.assertIn("secrets_configured", body)
+        self.assertIsInstance(body["secrets_configured"], bool)
+
+    @unittest.skipIf(os.environ.get("SKIP_GATE_TESTS"), "gate subprocess tests skipped")
+    def test_gates_returns_200(self) -> None:
+        with patch("admin_console_api.gates.run_gate_summary", return_value={
+            "passed": True, "gates": [{"name": "g1", "exit_code": 0}],
+        }):
+            status, body = handle_admin_get(
+                "/gates", "", self.headers, self.read_model,
+                self.feedback_queue, self.feature_flags, self.env,
+            )
+        self.assertEqual(status, 200)
+        self.assertIn("passed", body)
 
 
 if __name__ == "__main__":
