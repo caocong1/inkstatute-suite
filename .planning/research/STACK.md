@@ -1,300 +1,215 @@
-# Stack Research
+# Stack Research: M3 Platform Extensions
 
-**Domain:** M2 Multi-Backend & Platform Extensions — Codex adapter, direct provider_model adapter, Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot channel
-**Researched:** 2026-07-03
+**Domain:** M3 Platform Extensions — adapter productization, MCP registry, model gateway, multi-agent, skill write, hybrid routing, Web UI, RBAC, multi-tenant
+**Researched:** 2026-07-05
 **Confidence:** HIGH
 
-## Context
+## Architectural Constraints (Carried from v1.6)
 
-The v1.6 M2 milestone extends the platform beyond Hermes-only. Seven new features prove contract portability (Codex + provider_model backends, QQBot channel), normalize platform services (Router Service, Skill Registry, Admin Console API), and complete read views (conversation-read-view). This research covers ONLY the stack additions/changes needed for these M2 features.
+Every existing package and service declares `dependencies = []` in `pyproject.toml`. No package uses FastAPI, aiohttp, uvicorn, SQLAlchemy, or any third-party runtime library at import time. Services are pure-Python handler functions returning `(status_code, body)` tuples (see `services/conversation-read-view/src/conversation_read_view/api.py:handle_get`). Channel/backend adapters wrap "sanitized primitives" with `network_io: False`. The AGENTS rule is explicit: *"Do not introduce a new service, database, queue, or runtime dependency unless the V2 PRD or the active GSD plan requires it."*
 
-**Critical architectural constraint discovered:** Every existing package and service in the repo declares `dependencies = []` in `pyproject.toml`. No package uses FastAPI, aiohttp, uvicorn, SQLAlchemy, or any third-party runtime library. Services are pure-Python handler functions returning `(status_code, body)` tuples (see `services/conversation-read-view/src/conversation_read_view/api.py:handle_get`). Channel/backend adapters wrap "sanitized primitives" with `network_io: False` (see `packages/channels/wecom/src/inkstatute_channels_wecom/adapter.py`). The AGENTS rule is explicit: *"Do not introduce a new service, database, queue, or runtime dependency unless the V2 PRD or the active GSD plan requires it."* M2 features must follow this same pattern — dependency-free packages with optional runtime dependencies documented but not required.
+**M3 strategy:** New runtime dependencies are added ONLY as optional extras (`[project.optional-dependencies]`), imported lazily inside method bodies, so packages remain importable with `dependencies = []` in CI and contract tests. This mirrors the existing `provider_model` adapter pattern (lazy `AsyncOpenAI` import) and the `hindsight_memory.py` pattern (lazy `hindsight_client` import). The contract freeze (`packages/platform-contract/`), frozen Protocols (`BackendAdapter` 9 methods, `ChannelAdapter` 6 methods), and feature-flag-default-OFF strategy are preserved.
 
-## Recommended Stack
+---
 
-### Core Technologies
+## New Stack Additions
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Python stdlib `subprocess` + `json` | 3.11+ (CI floor) | Codex adapter: invoke `codex exec` as subprocess, parse JSONL/JSON output | Mirrors the existing Hermes adapter's `HermesOneShotRunner` Protocol and `oneshot_command: tuple[str, ...]` config pattern (`packages/backends/hermes/src/inkstatute_backends_hermes/config.py:23`). `codex exec --json` emits JSONL events; `--output-schema` returns JSON Schema-validated final output. No Python SDK needed — the adapter wraps subprocess I/O and maps to `AgentResult`/`ExecutionTrace` contract events. Keeps `dependencies = []`. |
-| `openai` Python SDK | 2.44.0 (Jun 2026) | Direct provider_model adapter: `AsyncOpenAI` client for OpenAI-compatible LLM endpoints | The official OpenAI Python library, async-first via `httpx`, Python 3.9+. Supports any OpenAI-compatible endpoint via `base_url` (including `ollama.com/v1` which Hermes already uses). `client.chat.completions.create(stream=True)` and `client.responses.create(stream=True)` provide SSE streaming that maps to `RunEvent` contract events. This is the minimal dependency for a direct-LLM mode without a full agent runtime. Add as optional dependency: `[project.optional-dependencies] provider_model = ["openai>=2.0"]`. |
-| `anthropic` Python SDK | 0.116.0 (Jul 2026) | Direct provider_model adapter: `AsyncAnthropic` client for Anthropic Claude endpoints | Optional second provider proving multi-provider contract portability. Async-first via `httpx`, Python 3.9+. `client.messages.create()` and `client.messages.stream()` map to the same `AgentResult`/`ExecutionTrace` contract. Add as optional dependency: `[project.optional-dependencies] anthropic = ["anthropic>=0.100"]`. Only needed if the prototype targets Anthropic; OpenAI-compatible alone suffices for the M2 contract-portability proof. |
-| `qq-botpy` (botpy) | 1.2.1 (Mar 2024) | QQBot channel: official Tencent QQ Bot Python SDK for WebSocket gateway, message receive/send | The official Tencent `tencent-connect/botpy` SDK, asyncio-based `botpy.Client`, Python 3.8+. Provides `on_at_message_create` / `on_message_create` event handlers and `message.reply()` / `api.post_c2c_messages()` send. Auth via AppID + AppSecret. Dependencies: `aiohttp>=3.7.4,<4`, `PyYAML`, `APScheduler`. The ChannelAdapter package itself stays `dependencies = []` (wraps sanitized primitives like WeCom); `qq-botpy` is an optional runtime dependency for live deployment: `[project.optional-dependencies] runtime = ["qq-botpy>=1.2"]`. |
-| Pure-Python handler functions | — | Router Service, Admin Console API, conversation-read-view: `handle(path, query, ...) -> (status_code, body)` | The existing `services/conversation-read-view/src/conversation_read_view/api.py` proves this pattern: no HTTP framework, pure routing via string prefix matching, `urllib.parse.parse_qs` for query strings, returns `(int, dict)` tuples. Router Service and Admin Console API follow the same pattern. HTTP serving is deferred to the deployment layer, not the package. Keeps `dependencies = []`. |
-| `itertools.islice` + dict comprehensions (stdlib) | 3.11+ | conversation-read-view pagination and filtering | The existing `ContractLogReadModel` (`services/conversation-read-view/src/conversation_read_view/read_model.py`) builds in-memory dict indexes from JSONL contract logs. Pagination is `list(items)[offset:offset+limit]` or `itertools.islice`. Filtering is dict comprehensions over the existing `_conversations`/`_tasks`/`_trace_to_task_id` dicts. No SQL, no ORM, no pagination library needed. |
+### 1. Streaming Events (Adapter Streaming)
 
-### Supporting Libraries
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| Python stdlib `asyncio` + `async generators` | 3.11+ (CI floor) | The `BackendAdapter` Protocol already declares `async def stream_events(self, run_id: str) -> AsyncIterator[RunEvent]` (line 233 of `protocols.py`). The `RunRuntime` Protocol already declares `async def stream(self, run_id: str) -> AsyncIterator[RunEvent]` (line 269). `RunEvent` is a frozen dataclass with `event_type: str` using `RunEventType` enum (9 event types: `state_changed`, `step_started`, `step_completed`, `message_delta`, `tool_call_started`, `tool_call_completed`, `approval_requested`, `artifact_created`, `error`). No new streaming library is needed — Python 3.11 async generators are the native streaming primitive. | Adapters implement `stream_events()` as `async def` generators that `yield RunEvent(...)` instances. The existing `encode_sse_event()` in `packages/channels/web_sse/src/inkstatute_channels_web_sse/sse.py` already encodes `RunEvent` into SSE frames (`id:`, `event:`, `data:` lines). The `web_sse` ChannelAdapter already declares `supports_streaming=True` in `ChannelCapabilitySet`. M3 promotes `stream_event_support` from `False` to `True` in `AdapterCapabilitySet` for productionized adapters. | Do NOT add `sse-starlette` v3.4.5 — it requires Starlette/FastAPI as a dependency, breaking the `dependencies = []` pattern. The existing `encode_sse_event()` is a pure-stdlib SSE encoder that is sufficient. Do NOT add `websockets` library — WebSocket is not needed; SSE (unidirectional server→client) is the correct protocol for streaming run events to a thin web client. |
+| `openai` Python SDK (streaming) | 2.44.0 (Jun 2026) | `AsyncOpenAI` provides `client.responses.create(stream=True)` and `client.chat.completions.create(stream=True)` returning async iterators of SSE events. `async for event in stream` maps directly to `yield RunEvent(event_type=RunEventType.MESSAGE_DELTA, ...)`. The SDK handles SSE parsing, connection management, and backpressure internally. | Lazy import inside `provider_model` adapter's `stream_events()` method. Map `response.output_text.delta` → `RunEvent(MESSAGE_DELTA)`, `response.completed` → `RunEvent(STATE_CHANGED)`. Optional dependency: `[project.optional-dependencies] openai = ["openai>=2.0"]`. | Do NOT add a separate SSE parsing library — the `openai` SDK parses SSE internally. |
+| `anthropic` Python SDK (streaming) | 0.116.0 (Jul 2026) | `AsyncAnthropic` provides `client.messages.stream()` returning an async context manager with `async for event in stream` iteration. Events: `message_start`, `content_block_start`, `content_block_delta` (text deltas), `message_stop`. Maps to `RunEvent(MESSAGE_DELTA)` and `RunEvent(STATE_CHANGED)`. Python 3.9+, httpx-backed, MIT licensed. | Lazy import inside `provider_model` adapter's `stream_events()` when `provider == "anthropic"`. Optional dependency: `[project.optional-dependencies] anthropic = ["anthropic>=0.100"]`. | Do NOT use `anthropic` SDK's MCP helper functions for the MCP Connector Registry — those are Anthropic-specific tool-format converters, not a general MCP client. Use the official `mcp` SDK instead. |
+| `codex` CLI (streaming) | latest (2026) | `codex exec --json` already emits JSONL events to stdout line-by-line. The existing Codex adapter reads stdout via `subprocess`. For streaming, read stdout line-by-line as an async generator: `async for line in process.stdout: yield _map_codex_event(json.loads(line))`. Codex JSONL events (`thread.started`, `turn.completed`, `item.*`, `token.*`) map to `RunEvent` types. | Extend `CodexBackendAdapter.stream_events()` to read `subprocess` stdout incrementally using `asyncio.create_subprocess_exec` + `process.stdout.readline()`. No new Python dependency — `subprocess` + `json` + `asyncio` are stdlib. | Do NOT add a Codex Python SDK — `codex exec --json` subprocess is the documented non-interactive surface. |
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| `codex` CLI (npm/standalone binary) | latest (2026) | Codex adapter runtime: the `codex exec` subcommand for non-interactive agent runs | Installed on the host machine, NOT a Python dependency. The adapter invokes it via `subprocess` just like Hermes `oneshot_command`. Key flags: `--json` (JSONL event stream), `--output-schema <schema.json>` (JSON Schema draft 2020-12 validated final output), `-o <file>` (write final message), `--sandbox read-only` (safest for prototype), `--skip-git-repo-check`, `--ephemeral` (no session persistence). Multi-turn: `codex exec resume --last "follow-up prompt"`. |
-| `contract_test_suite.event_stream_replay` | internal (existing) | Skill Registry read + conversation-read-view + Admin Console API: load and replay JSONL contract logs | Already built (`packages/contract-test-suite/src/contract_test_suite/event_stream_replay.py`). `load_event_stream(Path)` returns validated event records. Skill Registry reads `ExecutionTrace.active_skill_name` from these logs; conversation-read-view already uses it; Admin Console API reuses the same loader for operational views. No new dependency. |
-| `run_v2_gates.py --json-summary` | internal (existing) | Admin Console API: health/gate status read-only views | Already built (`scripts/run_v2_gates.py`). Emits JSON summary of 9 V2 gates. Admin Console API invokes it via `subprocess` and exposes the results as read-only `/health` and `/gates` endpoints. No new dependency. |
-| `platform_contract.events.RouteDecision` | internal (existing) | Router Service: normalized routing decision contract event | Already defined (`packages/platform-contract/src/platform_contract/events.py:207`). The Router Service produces `RouteDecision` dataclass instances with `primary_skill`, `confidence`, `mode`, `gates_before`, `gates_after`, `matched_rule`, `reason`. No new contract schema needed. |
-| `wecom_service.active_task_router` | internal (existing) | Router Service: precedent for pure-Python regex-based routing | Already built (`services/wecom-service/src/wecom_service/active_task_router.py`). Uses `re.compile` patterns, `StrEnum` route classification, dataclass decisions. The Router Service extracts and generalizes this pattern into a standalone service. No new library. |
+### 2. MCP (Model Context Protocol) Connector Registry
 
-### Development Tools
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| `mcp` Python SDK (v1.x stable) | 1.28.1 (Jun 2026) | The official MCP Python SDK from `modelcontextprotocol/python-sdk` (23.5K stars, MIT, Python 3.10+). v1.x is the stable production line; v2 is in beta targeting 2026-07-28 spec release. Provides `ClientSession` for connecting to MCP servers (stdio, SSE, WebSocket transports), `Server` class for exposing tools/resources/prompts, and typed protocol messages (`ListToolsResult`, `CallToolResult`, `ListResourcesResult`). The SDK handles JSON-RPC framing, capability negotiation, and transport lifecycle. | New `packages/mcp-connector-registry/` package. The registry stores `McpServerDescriptor` records (already defined in `events.py:116` with `server_id`, `name`, `transport`, `capability_refs`, `secret_refs`). The registry itself is a pure-Python dict-based store with `handle_get/handle_post -> (status_code, body)` API (same pattern as `skill-registry`). The `mcp` SDK is an optional runtime dependency for live MCP server connections: `[project.optional-dependencies] runtime = ["mcp>=1.27,<2"]`. Pin `<2` to avoid v2 breaking changes. The registry package itself stays `dependencies = []` — it stores descriptors and validates configs without importing `mcp`. | Do NOT use `mcp` v2.0.0b1 — it's a pre-release with breaking API changes. Pin `mcp>=1.27,<2`. Do NOT add the OpenAI Agents SDK's MCP integration (`openai-agents`) — that's a multi-agent framework, not an MCP client. Do NOT build a custom JSON-RPC implementation — the `mcp` SDK handles protocol framing. |
+| `McpServerDescriptor` (existing contract) | internal | Already defined as a frozen dataclass in `packages/platform-contract/src/platform_contract/events.py:116`. Already referenced in `SolutionPackageManifest.mcp_servers: list[McpServerDescriptor]` (line 416). The contract already supports MCP server registration at the solution-manifest level. | The MCP Connector Registry reads `mcp_servers` from `solutions/*/manifest.json` (same pattern as Skill Registry reading `skills` arrays). No new contract schema needed. | Do NOT add a new MCP contract event — `McpServerDescriptor` is already frozen in the contract. |
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| `packages/backends/codex/` (new) | Codex adapter package mirroring `packages/backends/hermes/` structure | `src/inkstatute_backends_codex/` with `adapter.py` (CodexBackendAdapter implementing BackendAdapter Protocol), `config.py` (CodexBackendConfig with `exec_command: tuple[str, ...] = ("codex", "exec", "--json", "--sandbox", "read-only")`), `manifest.py` (build_codex_manifest with `AgentBackendMode.CODEX`), `runs_api.py` (optional). `pyproject.toml` with `dependencies = []`. Test fixtures with `codex exec --json` JSONL samples. |
-| `packages/backends/provider_model/` (new) | Direct provider_model adapter package | `src/inkstatute_backends_provider_model/` with `adapter.py` (ProviderModelBackendAdapter implementing BackendAdapter Protocol), `config.py` (ProviderModelConfig with `provider`, `model`, `api_base_url`, `api_key_secret_ref`), `manifest.py` (build_provider_model_manifest with `AgentBackendMode.PROVIDER_MODEL`). `pyproject.toml` with `dependencies = []` and `[project.optional-dependencies] openai = ["openai>=2.0"]`. The adapter imports `openai` lazily inside `submit_run()` so the package imports without the dependency installed. |
-| `services/router-service/` (new) | Independent Router Service as pure-Python library | `src/router_service/` with `router.py` (pure function `route(turn, context) -> RouteDecision`), `api.py` (`handle_post(path, body) -> (status_code, dict)` for HTTP-style routing requests), `config.py`. `pyproject.toml` with `dependencies = []`. Extracts routing logic from `platform-runtime` and `wecom-service/active_task_router.py`. NO FastAPI — follows `conversation-read-view/api.py` pattern. |
-| `packages/skill-registry/` (new) | Read-only Skill Registry package | `src/skill_registry/` with `reader.py` (parses `solutions/*/manifest.json` `skills` arrays + contract log `ExecutionTrace.active_skill_name`), `api.py` (`handle_get(path, query) -> (status_code, dict)` for `/skills`, `/skills/{name}`). `pyproject.toml` with `dependencies = []`. Uses stdlib `json` for manifest parsing and `contract_test_suite.event_stream_replay` for log-derived skill usage. |
-| `services/admin-console-api/` (new) | Read-only Admin Console API as pure-Python library | `src/admin_console_api/` with `api.py` (`handle_get(path, query) -> (status_code, dict)` for `/sessions`, `/tasks`, `/feedback`, `/gates`, `/health`), `views.py` (aggregates from `ContractLogReadModel` + `run_v2_gates.py` subprocess + `contract_test_suite` checkers). `pyproject.toml` with `dependencies = []`. NO FastAPI. |
-| `packages/channels/qqbot/` (new) | QQBot ChannelAdapter package mirroring `packages/channels/wecom/` | `src/inkstatute_channels_qqbot/` with `adapter.py` (QQBotChannelAdapter implementing ChannelAdapter Protocol), `config.py` (QQBotChannelConfig with `app_id_secret_ref`, `app_secret_ref`, `token_secret_ref`), `normalization.py` (parse QQ Bot callback envelopes, normalize to `AgentTurn`/`FeedbackEvent`). `pyproject.toml` with `dependencies = []` and `[project.optional-dependencies] runtime = ["qq-botpy>=1.2"]`. Adapter wraps sanitized primitives with `network_io: False`, exactly like WeCom. |
+### 3. Model Provider Gateway (Routing, Rate-Limit, Fallback)
 
-## Installation
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| Pure-Python token-bucket rate limiter (stdlib) | 3.11+ | Rate limiting for the Model Provider Gateway is a token-bucket or sliding-window algorithm over `asyncio` time. Python stdlib `asyncio.monotonic()` + `collections.deque` + `asyncio.Lock` is sufficient for per-provider, per-tenant rate limiting. The existing `wecom_service/active_task_router.py` proves the pure-Python pattern: `re.compile` patterns, `StrEnum` classification, `dataclass` decisions, no external deps. | New `services/model-provider-gateway/` (or `packages/model-provider-gateway/`). Gateway wraps multiple provider clients (`AsyncOpenAI`, `AsyncAnthropic`, `AsyncClient` for Ollama) behind a unified `submit_completion()` method. Rate limiter is a `dataclass` with `async def acquire(self, key: str) -> None`. Fallback is a list of providers with priority ordering; on `ErrorCategory.RUNTIME_ERROR`, try next provider. `handle_post(path, body) -> (status_code, dict)` API. `dependencies = []`. | Do NOT add `aiolimiter` v3.1.0 — it's a good async rate limiter but adds a dependency. The token-bucket algorithm is ~30 lines of stdlib code. Do NOT add LiteLLM v1.90.2 as a gateway — it's a 100+ provider proxy server with caching, adds massive dependency surface. The gateway needs routing + rate-limit + fallback, not 100 provider adapters. |
+| `RouteDecision` (existing contract) | internal | Already defined in `events.py:207` with `primary_skill`, `confidence`, `mode`, `gates_before`, `gates_after`, `matched_rule`, `reason`. The Router Service already produces `RouteDecision` records. The Model Provider Gateway extends routing to model selection: which provider/model to use for a given route. | Gateway consumes `RouteDecision` from the Router Service and maps `primary_skill` → provider/model configuration. No new contract event needed for basic gateway routing. | Do NOT create a new `ModelRouteDecision` contract event unless the frozen contract is extended (which requires a contract evolution phase). Use `RouteDecision.metadata` for model routing details. |
+| `openai` + `anthropic` + `ollama` SDKs (multi-provider) | 2.44.0 / 0.116.0 / 0.6.2 | The gateway dispatches to multiple providers. `AsyncOpenAI` (OpenAI-compatible: OpenAI, Azure, Ollama via `base_url`), `AsyncAnthropic` (Anthropic Claude direct), `ollama.AsyncClient` (Ollama native API). All three are async-first, httpx-backed, Python 3.8+. | Lazy imports inside gateway provider clients. `[project.optional-dependencies] openai = ["openai>=2.0"]`, `anthropic = ["anthropic>=0.100"]`, `ollama = ["ollama>=0.5"]`. The gateway package stays `dependencies = []`. | Do NOT use LiteLLM as a unified provider abstraction — see above. Do NOT use `openai` SDK for Anthropic (via proxy) — direct `anthropic` SDK is cleaner for fallback proof. |
 
-```bash
-# === M2 Core: No new required dependencies ===
-# Router Service, Skill Registry, conversation-read-view, Admin Console API
-# all use Python 3.11+ stdlib only. No installation required.
+### 4. Multi-Agent Runtime Adapter
 
-python3 -c "import json, re, subprocess, pathlib, itertools, urllib.parse, dataclasses; print('stdlib OK')"
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| Pure-Python async orchestrator (stdlib `asyncio`) | 3.11+ | Multi-agent orchestration is deterministic routing code wrapping LLM calls. The existing `BackendAdapter` Protocol (9 methods, frozen) is the agent interface. A multi-agent runtime is an orchestrator that calls multiple `BackendAdapter.submit_run()` instances and merges results. Python 3.11 `asyncio.gather()` for parallel agents, `asyncio.create_task()` for background agents, `asyncio.Queue` for inter-agent message passing. No framework needed — the pattern is: orchestrator class holds `dict[agent_id, BackendAdapter]`, routes `RunRequest` to sub-agents, collects `RunEvent` streams, emits merged `RunEvent` stream. | New `packages/backends/multi_agent/` package. `MultiAgentBackendAdapter` implements `BackendAdapter` Protocol (9 methods). `AdapterCapabilitySet` with `parallel_task_support=True`. Orchestrator config: `MultiAgentConfig(agents: dict[str, AgentConfig], routing_strategy: str)`. Sub-agents are existing `BackendAdapter` implementations (Hermes, Codex, provider_model). `dependencies = []`. | Do NOT add LangChain (`langchain-adk` v0.3.14), LangGraph, CrewAI, AutoGen, or LlamaIndex `AgentWorkflow` — these are heavy multi-agent frameworks with large dependency trees that break the `dependencies = []` pattern. The "7 building blocks" pattern (direct SDK calls + deterministic routing + circuit breaker) is the correct approach. Do NOT add `justpipe` v0.12.0 — zero-dependency but adds an unproven abstraction; stdlib `asyncio` is sufficient. Do NOT add A2A protocol (`a2a-sdk`) — agent-to-agent protocol is overkill for a single-platform multi-agent runtime. |
+| `BackendAdapter` Protocol (existing, frozen) | internal | The 9-method Protocol (`backend_id`, `capabilities`, `bootstrap_check`, `submit_run`, `get_run`, `stream_events`, `cancel_run`, `submit_approval`, `collect_artifacts`) is the agent interface. Multi-agent runtime composes multiple `BackendAdapter` instances. | `MultiAgentBackendAdapter` wraps `dict[agent_id, BackendAdapter]` and delegates Protocol methods to sub-agents. `submit_run()` routes to the appropriate sub-agent based on `RunRequest.metadata["target_agent"]` or orchestrator logic. `stream_events()` merges `AsyncIterator[RunEvent]` from multiple sub-agents with sequence number normalization. | Do NOT modify the `BackendAdapter` Protocol — it's frozen. The multi-agent adapter IS a `BackendAdapter`, preserving contract compatibility. |
 
-# === Codex adapter: install Codex CLI on host (not a Python package) ===
-# Requires Node.js 22+ or download standalone binary
-npm install -g @openai/codex   # or: brew install codex
-codex --version                # verify installation
-# The adapter invokes `codex exec` via subprocess — no Python dependency.
+### 5. RBAC (Role-Based Access Control)
 
-# === Direct provider_model adapter: optional Python dependencies ===
-# Only needed when running the provider_model prototype against live LLM endpoints
-pip install "openai>=2.0"           # OpenAI-compatible providers (OpenAI, ollama, Azure, etc.)
-pip install "anthropic>=0.100"      # Optional: Anthropic Claude direct
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| `pycasbin` (Casbin Python) | 2.8.0 (Feb 2026) | The mature Python Casbin library (1.7K stars, Apache-2.0). Supports RBAC, RBAC with domains/tenants (multi-tenant isolation), ABAC. Has `AsyncEnforcer` for async/await code. Model files (`.conf`) define RBAC policy structure; policy files (`.csv`) or DB adapters store rules. The RBAC-with-domains model maps directly to multi-tenant isolation: `(sub, domain, obj, act)` tuples where `domain` = `tenant_id`. | New `packages/rbac/` package. `CasbinRbacGuard` wraps `AsyncEnforcer` with model file `rbac_model.conf` (RBAC with domains). The guard exposes `async def enforce(user: str, tenant_id: str, resource: str, action: str) -> bool`. Admin Console API and Web chat endpoints call `guard.enforce()` before handling requests. Optional dependency: `[project.optional-dependencies] runtime = ["pycasbin>=2.8"]`. The package stays `dependencies = []` — model/policy files are static config, enforcement logic is pure-Python dict lookups in tests. | Do NOT add `casbin-fastapi-decorator` v1.2.1 — it requires FastAPI as a dependency. The existing services use pure-function handlers, not FastAPI. Do NOT add `fastapi-permission` or `fastapi-authz` — same FastAPI dependency issue. Do NOT build a custom RBAC from scratch — Casbin's domain/tenant model is well-tested and maps exactly to the multi-tenant requirement. |
+| `Tenant` + `Workspace` + `BotInstance` (existing contract) | internal | Already defined as frozen dataclasses in `events.py`: `Tenant` (line 391, `tenant_id`, `name`, `status`), `Workspace` (line 400, `workspace_id`, `tenant_id`, `name`), `BotInstance` (line 428, `bot_instance_id`, `tenant_id`, `workspace_id`). `ChannelMessage`, `ChannelDelivery`, `Run`, `Session`, `MemoryRecord` all carry `tenant_id` + `workspace_id` fields. The contract already supports multi-tenant data partitioning. | RBAC enforcement uses `tenant_id` as the Casbin domain. Role assignments are `(user_id, role, tenant_id)` tuples. Resources are API paths or contract event types. | Do NOT add new contract events for RBAC — use `metadata` fields on existing events for audit trails. |
 
-# === QQBot channel: optional Python dependency for live deployment ===
-pip install "qq-botpy>=1.2"         # Tencent QQ Bot SDK (asyncio, aiohttp, WebSocket gateway)
+### 6. Multi-Tenant Isolation
 
-# === Verify optional dependencies ===
-python3 -c "import openai; print(f'openai {openai.__version__}')"
-python3 -c "import anthropic; print(f'anthropic {anthropic.__version__}')"
-python3 -c "import botpy; print(f'botpy (qq-botpy) loaded')"
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| Application-level tenant_id partitioning (existing pattern) | internal | The contract already carries `tenant_id` + `workspace_id` on all tenant-scoped events (`ChannelMessage`, `ChannelDelivery`, `Run`, `Session`, `MemoryRecord`, `BotInstance`). The existing `HindsightMemory._bank_id()` method (line 107 of `hindsight_memory.py`) already implements tenant isolation: `f"ink-{tenant_id}:{workspace_id}:{user_id}"` maps to a Hindsight `bank_id`. This is application-level isolation — each tenant gets a separate memory bank. | M3 extends this pattern: (1) Contract log files are partitioned by `tenant_id` in the file path (e.g., `contract_logs/{tenant_id}/{workspace_id}/`). (2) The `ContractLogReadModel` filters by `tenant_id` in dict comprehensions. (3) RBAC enforcement (Casbin domain = `tenant_id`) prevents cross-tenant access. (4) Hindsight bank isolation is already proven. No new library. | Do NOT add database-level isolation (PostgreSQL RLS, schema-per-tenant) — the platform uses JSONL contract logs, not a relational database (PRD §1.2: "不建独立 Conversation API + 数据库"). Do NOT add SQLite per-tenant databases — the existing `sqlite_memory.py` is a single-file fallback, not a multi-tenant store. Do NOT add `asyncpg` or `aiosqlite` for tenant isolation — application-level `tenant_id` filtering on in-memory dicts and JSONL files is sufficient at lawyer-trial scale. |
+| `pycasbin` RBAC with domains | 2.8.0 | Casbin's RBAC-with-domains model provides policy-level tenant isolation: users can only access resources within their assigned domain (`tenant_id`). This is the access-control layer of multi-tenant isolation, complementing the data-level partitioning. | Same `packages/rbac/` package. Model file uses `g3 = _, _, _` (sub, domain, obj) policy definition. | See RBAC section above for what NOT to add. |
+
+### 7. Web UI (Admin Console + Lawyer Chat)
+
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| Preact | 10.x (stable) | 3KB gzipped, React-compatible API, built-in Signals for fine-grained reactivity. The existing `apps/web_chat/src/render.ts` renderer is explicitly "DOM-free" and produces `RenderRecord` objects that "the host can map into React, Preact, lit-html, raw DOM, or a server-side template" (line 4-7). Preact is the lightest framework that preserves the `RenderRecord` → DOM mapping pattern. For the lawyer chat, Preact consumes SSE-streamed `RunEvent` records (via the existing `encode_sse_event()` encoder) and maps `RenderRecord` objects to Preact components. | `apps/web_chat/` extends with Preact host components that consume `RenderRecord[]` from `render.ts`. The renderer stays DOM-free; Preact is the host layer. `apps/admin_console/` (new) uses Preact + `@preact/signals` for state management. Both apps consume the pure-Python API handlers via HTTP (deployment layer wraps `handle_get/handle_post` in an ASGI server). | Do NOT add React 19 (40KB+) — the existing renderer comment explicitly lists Preact as a valid host. React's bundle size and VDOM overhead are unnecessary for a thin chat + admin dashboard. Do NOT add Next.js or Remix — server-side rendering frameworks add build complexity and a Node.js server dependency. The deployment layer is Python ASGI, not Node.js. |
+| `@preact/signals` | 2.x | Fine-grained reactivity for Preact without VDOM diffing. Admin console dashboard widgets (session list, task status, gate health) update independently when new data arrives via SSE polling. | State management in `apps/admin_console/`. Signals for `sessions`, `tasks`, `feedback`, `gates`, `health` views. Each signal updates from SSE/poll responses without re-rendering the entire dashboard. | Do NOT add Redux or Zustand — `@preact/signals` is lighter and built for Preact. Do NOT add TanStack Query — the admin console polls simple JSON endpoints, not complex GraphQL/REST queries. |
+| `lit-html` / Lit | 3.x | Alternative to Preact for Web Components. The existing renderer comment lists `lit-html` as a valid host. Lit produces framework-agnostic Custom Elements that can be embedded in any page. Useful if the lawyer chat needs to be embedded as a widget in third-party legal portals. | Optional alternative for embeddable widget scenarios. If the chat is a standalone page, Preact is simpler. If it must be embedded as a `<inkstatute-chat>` Custom Element, Lit is better. | Do NOT use both Preact AND Lit — pick one per app. Preact for admin console (dashboard), Lit only if lawyer chat needs Web Component embedding. |
+| TypeScript (existing) | 5.x | The existing `apps/web_chat/` and `packages/platform-sdk-ts/` are already TypeScript. The `RenderRecord` interface and `ChatEventInput` interface are defined in `render.ts`. | New `apps/admin_console/` is TypeScript. Extends `@inkstatute/platform-sdk-ts` for API client types. | Do NOT add a separate TypeScript build system — the existing apps use `tsc` directly with no bundler framework. |
+| Tailwind CSS | 4.x | Utility-first CSS for rapid admin console layout. The realworld framework comparison shows Tailwind v4 is used across all frameworks. Zero runtime CSS-in-JS overhead. | `apps/admin_console/` styles. Tailwind config scans `.tsx` files for class names. | Do NOT add CSS-in-JS (styled-components, emotion) — Tailwind is build-time, zero runtime cost. Do NOT add a component library (MUI, Ant Design) — they add 100KB+ and impose design system constraints. Simple Tailwind utility classes are sufficient for an internal admin console. |
+
+### 8. Anthropic SDK (Multi-Provider Support)
+
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| `anthropic` Python SDK | 0.116.0 (Jul 2026) | Official Anthropic Python library, MIT, Python 3.9+, httpx-backed. `AsyncAnthropic` client with `client.messages.create()` and `client.messages.stream()`. Supports Claude Opus 4, Sonnet 4, Haiku models. Streaming via `async for event in stream` with `content_block_delta` events for text deltas. | `packages/backends/provider_model/` adapter: when `config.provider == "anthropic"`, lazy import `from anthropic import AsyncAnthropic`. Map `messages.create()` → `AgentResult`, `messages.stream()` → `AsyncIterator[RunEvent]`. Optional dependency: `[project.optional-dependencies] anthropic = ["anthropic>=0.100"]`. | Do NOT use `anthropic` SDK for non-Anthropic providers — use `openai` SDK with `base_url` for OpenAI-compatible, `ollama` for Ollama native. Do NOT use Anthropic's MCP helper functions — use the official `mcp` SDK for MCP connector registry. |
+
+### 9. Ollama Client (Multi-Provider Support)
+
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| `ollama` Python library | 0.6.2 (Apr 2026) | Official Ollama Python client, MIT, Python 3.8+. `AsyncClient` with `AsyncClient().chat(model=..., messages=..., stream=True)` returning async iterator. Also supports `AsyncClient().embed()` for embeddings. Ollama runs locally (no API key needed) — useful for on-premise legal deployments with data residency requirements. | `packages/backends/provider_model/` adapter: when `config.provider == "ollama"`, lazy import `from ollama import AsyncClient`. Map `AsyncClient().chat()` → `AgentResult`, `AsyncClient().chat(stream=True)` → `AsyncIterator[RunEvent]`. Optional dependency: `[project.optional-dependencies] ollama = ["ollama>=0.5"]`. Alternative: use `AsyncOpenAI(base_url="http://localhost:11434/v1")` for OpenAI-compatible Ollama access (no `ollama` package needed). | Do NOT use `ollama` library if already using `AsyncOpenAI` with `base_url` — the OpenAI-compatible endpoint covers basic chat. Use `ollama` library only for Ollama-native features (embeddings, model management, multimodal). |
+
+### 10. Hindsight Session Memory Integration
+
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| `hindsight-client` | 0.7.2 (latest PyPI) | Already integrated in `packages/platform-runtime/src/platform_runtime/hindsight_memory.py`. The `HindsightMemory` class wraps `hindsight_client.Hindsight` with `aretain()`, `arecall()`, `areflect()` async methods. Tenant isolation via `_bank_id(tenant_id, workspace_id, user_id)` → `ink-{tenant}:{workspace}:{user}` bank ID. Uses BGE-M3 embeddings and BGE-Reranker-V2-M3 (configured server-side in Hindsight). | M3 extends Hindsight from long-term memory to session memory: (1) `AdapterCapabilitySet.session_memory_support` promoted from `False` to `True` for productionized adapters. (2) Adapters call `HindsightMemory.arecall()` before `submit_run()` to inject session context into the prompt. (3) Adapters call `HindsightMemory.aretain()` after `submit_run()` to persist conversation turns. (4) `RunRequest.session_id` (already in Protocol, line 114) links runs to Hindsight bank sessions. No new library — `hindsight-client` is already a lazy import in `platform-runtime`. | Do NOT add a second memory backend for session memory — Hindsight already supports session-scoped banks via `bank_id` naming. Do NOT add `mem0` or `letta` (MemGPT) — Hindsight is the validated memory backend with proven tenant isolation. Do NOT add a vector database (Chroma, Qdrant, Weaviate) — Hindsight handles embeddings and retrieval internally. |
+| `MemoryRecord` + `MemoryCandidate` (existing contract) | internal | Already defined as frozen dataclasses in `events.py`: `MemoryRecord` (line 459, with `scope: MemoryScope`, `sensitivity: MemorySensitivity`, `status: MemoryStatus`, `session_id`, `ttl_expires_at`, `deleted_at`), `MemoryCandidate` (line 483, with `requires_human_review: bool = True`). `MemoryScope` enum includes `SESSION`, `USER`, `WORKSPACE`, `TENANT` (line 171). The contract already supports session-scoped memory. | Session memory uses `MemoryScope.SESSION` with `session_id` linking. Adapters produce `MemoryRecord` events with `scope=SESSION` after each turn. `MemoryCandidate` records with `requires_human_review=True` preserve the legal safety gate. | Do NOT add new memory contract events — `MemoryRecord` and `MemoryCandidate` are frozen. Use `metadata` for adapter-specific memory details. |
+
+### 11. Skill Registry Write Operations
+
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| Pure-Python JSON file writer (stdlib) | 3.11+ | The existing `packages/skill-registry/` reads `solutions/*/manifest.json` `skills` arrays via stdlib `json`. Write operations are the inverse: validate a `NeutralSkillDescriptor` (already in contract, line 105), append to the `skills` array in `manifest.json`, write back via `json.dump()`. The legal safety gate is preserved: `SkillCandidate.requires_human_review = True` (line 79) — write operations only create `candidate` status entries, never auto-modify legal conclusions. | Extend `packages/skill-registry/` with `handle_post(path, body) -> (status_code, dict)` for `POST /skills` (create candidate) and `POST /skills/{name}/approve` (human-approved promotion). Write operations are guarded by RBAC (`pycasbin` — only `skill_admin` role can approve). `dependencies = []`. | Do NOT add a database for skill storage — `manifest.json` files are the source of truth (same as M2 read pattern). Do NOT add `jsonschema` library for validation — the existing `validate_agent_backend_manifest()` pattern uses manual dict validation. Do NOT auto-promote skill candidates — the human review gate is a safety requirement. |
+
+### 12. Model-Based and Hybrid Routing with Confidence Scoring
+
+| Library | Version | Why It Fits | Integration Point | What NOT to Add |
+|---------|---------|-------------|-------------------|-----------------|
+| Pure-Python confidence scoring (stdlib) | 3.11+ | The existing `RouteDecision` contract (line 207) already has `confidence: float` and `mode: RouteMode`. The existing Router Service (`packages/router-service/`) already produces `RouteDecision` with RULE and SKILL modes. Model-based routing adds a third mode: use an LLM to classify the turn and produce a confidence score. Hybrid routing combines rule-based + model-based: if rule confidence > threshold, use rule; otherwise, fall back to model-based classification. | Extend `packages/router-service/` with `MODEL` mode (add to `RouteMode` enum — requires contract evolution or use `metadata["mode"] = "model"`). The model-based router calls a lightweight LLM (via `AsyncOpenAI` or `AsyncAnthropic`) with a classification prompt. Confidence score = model's logprob or explicit confidence in structured output. Hybrid: `if rule_confidence > 0.8: use_rule() else: use_model()`. `dependencies = []` with optional `[project.optional-dependencies] openai = ["openai>=2.0"]`. | Do NOT add a dedicated ML classification library (scikit-learn, transformers) — the LLM IS the classifier. Do NOT add `sentence-transformers` for embedding-based routing — Hindsight already provides BGE-M3 embeddings if needed. Do NOT add `RouteMode.MODEL` to the frozen enum without a contract evolution phase — use `metadata` for new modes until the contract is formally extended. |
+
+---
+
+## Existing Stack Leveraged
+
+| Component | Location | How Reused in M3 |
+|-----------|----------|------------------|
+| `BackendAdapter` Protocol (9 methods, frozen) | `packages/platform-runtime/src/platform_runtime/protocols.py:222` | Multi-agent runtime implements this Protocol; all adapters (Codex, provider_model, multi_agent) conform to it. No modification. |
+| `ChannelAdapter` Protocol (6 methods, frozen) | `packages/platform-runtime/src/platform_runprotocols.py:208` | Web chat SSE channel extends the existing `web_sse` adapter. No modification. |
+| `RunEvent` + `RunEventType` (9 event types) | `packages/platform-contract/src/platform_contract/events.py:290` + `enums.py:100` | Streaming events use these frozen types. Adapters yield `RunEvent` instances. No modification. |
+| `encode_sse_event()` | `packages/channels/web_sse/src/inkstatute_channels_web_sse/sse.py:15` | SSE encoding for streaming events to web clients. Already handles `RunEvent` → SSE frame mapping with forbidden-payload-key filtering. No modification. |
+| `RenderRecord` + `render.ts` | `apps/web_chat/src/render.ts:14` | Lawyer chat UI consumes `RenderRecord[]` from the existing DOM-free renderer. Preact host maps records to DOM. No modification to renderer. |
+| `HindsightMemory` | `packages/platform-runtime/src/platform_runtime/hindsight_memory.py:32` | Session memory integration. Already has `aretain()`, `arecall()`, `areflect()` with tenant isolation. Extended to session scope. |
+| `ContractLogReadModel` | `services/conversation-read-view/src/conversation_read_view/read_model.py` | Admin console API reuses this for sessions/tasks/feedback views. Extended with tenant_id filtering for multi-tenant isolation. |
+| `RuntimeFeatureFlags` | `packages/platform-runtime/src/platform_runtime/feature_flags.py:13` | Extended with new flags: `mcp_registry_enabled`, `model_gateway_enabled`, `multi_agent_enabled`, `skill_write_enabled`, `web_ui_enabled`, `rbac_enabled`. All default `False`. |
+| `RouteDecision` contract event | `packages/platform-contract/src/platform_contract/events.py:207` | Model gateway and hybrid routing produce/consume this. `confidence` field used for hybrid routing threshold. |
+| `McpServerDescriptor` contract | `packages/platform-contract/src/platform_contract/events.py:116` | MCP Connector Registry stores these. Already in `SolutionPackageManifest.mcp_servers`. |
+| `NeutralSkillDescriptor` contract | `packages/platform-contract/src/platform_contract/events.py:105` | Skill Registry write operations create these. |
+| `MemoryRecord` + `MemoryCandidate` + `MemoryScope` | `packages/platform-contract/src/platform_contract/events.py:459,483` + `enums.py:171` | Session memory uses `MemoryScope.SESSION`. Write operations create `MemoryCandidate` with `requires_human_review=True`. |
+| `Tenant` + `Workspace` + `BotInstance` | `packages/platform-contract/src/platform_contract/events.py:391,400,428` | Multi-tenant isolation. All tenant-scoped events carry `tenant_id` + `workspace_id`. |
+| `AgentBackendMode` enum | `packages/platform-contract/src/platform_contract/agent_adapter.py:12` | Already has `HERMES`, `CODEX`, `PROVIDER_MODEL`. Multi-agent mode uses `metadata["mode"] = "multi_agent"` (or contract evolution adds `MULTI_AGENT`). |
+| `AdapterCapabilitySet` | `packages/platform-contract/src/platform_contract/agent_adapter.py:18` | Already has `stream_event_support`, `artifact_return_support`, `session_memory_support`, `parallel_task_support` fields. M3 promotes these from `False` to `True` for productionized adapters. No new fields needed. |
+| Pure-function handler pattern | `services/conversation-read-view/src/conversation_read_view/api.py` | All new services (MCP registry, model gateway, admin console write API) follow `handle_get/handle_post -> (status_code, body)` pattern. `dependencies = []`. |
+| `event_stream_replay` | `packages/contract-test-suite/src/contract_test_suite/event_stream_replay.py` | Contract test fixtures for all new features. Validates event ordering, schema compliance, tenant isolation. |
+| `@inkstatute/platform-sdk-ts` | `packages/platform-sdk-ts/` | TypeScript SDK for web apps. Admin console and lawyer chat import API types from here. |
+
+---
+
+## Integration Notes
+
+### Contract Freeze Preservation
+
+1. **No frozen Protocol modifications:** `BackendAdapter` (9 methods), `ChannelAdapter` (6 methods), `SolutionLoader`, `RunRuntime` remain unchanged. Multi-agent runtime IS a `BackendAdapter`; MCP registry uses existing `McpServerDescriptor`; model gateway wraps existing `BackendAdapter` instances.
+
+2. **No frozen enum modifications without evolution:** `RouteMode` has `MATCHED`, `SIMPLE_QA`, `SKIPPED`, `ZERO_MATCH`. Model-based routing uses `metadata["routing_mode"] = "model"` until a formal contract evolution phase adds `MODEL` to the enum. `AgentBackendMode` similarly uses `metadata` for `MULTI_AGENT` mode.
+
+3. **`AdapterCapabilitySet` fields already exist:** `stream_event_support`, `artifact_return_support`, `session_memory_support`, `parallel_task_support`, `cancel_support`, `approval_support` are all defined (lines 28-33). M3 sets these to `True` for productionized adapters — this is a value change, not a schema change.
+
+### Feature Flag Strategy
+
+New `RuntimeFeatureFlags` fields (all default `False`):
+```python
+mcp_registry_enabled: bool = False
+model_gateway_enabled: bool = False
+multi_agent_enabled: bool = False
+skill_write_enabled: bool = False
+hybrid_routing_enabled: bool = False
+web_ui_enabled: bool = False
+rbac_enabled: bool = False
+multi_tenant_isolation_enabled: bool = False
 ```
 
-## Alternatives Considered
+Each new runtime lane is gated by `flags.require_enabled("mcp_registry_enabled")` etc. Live promotion remains a human gate.
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| `codex exec` subprocess + stdlib JSON parsing | OpenAI Agents SDK (`openai-agents` v0.17.7) as Python library for Codex integration | Only if Codex exposes a stable Python SDK API for programmatic agent runs that is simpler than subprocess. As of Jul 2026, `codex exec --json` is the documented non-interactive surface; the Agents SDK is a separate multi-agent framework, not a Codex CLI wrapper. Subprocess mirrors the Hermes `oneshot_command` pattern exactly, proving contract portability without a new Python dependency. |
-| `codex exec --output-schema` for structured output | `codex exec --json` JSONL parsing only | Use `--json` when you need full event-stream telemetry (token usage, intermediate items, tool calls). Use `--output-schema` when you only need the final structured result mapped to `AgentResult`. For the M2 prototype, `--output-schema` with a schema matching `AgentResult` shape is cleaner; `--json` is useful for `ExecutionTrace` event mapping. Both can be combined. |
-| `openai` SDK v2.44.0 for provider_model | `litellm` v1.90.2 (unified 100+ provider gateway) | Only if the prototype must prove compatibility with many non-OpenAI providers simultaneously. LiteLLM is a heavy dependency (proxy server, caching, extra-proxy extras) that violates the dependency-free stance. The `openai` SDK alone covers OpenAI-compatible endpoints (including ollama which Hermes already uses via `base_url`). Adding `anthropic` SDK proves multi-provider. LiteLLM is overkill for a contract-portability prototype. |
-| `anthropic` SDK v0.116.0 as optional second provider | `openai` SDK alone with Anthropic via proxy | Only if you don't need to prove direct Anthropic API compatibility. The `openai` SDK can call Anthropic via a LiteLLM proxy or OpenAI's Anthropic-compatible endpoint, but that adds infrastructure. Direct `anthropic` SDK is cleaner for proving the BackendAdapter contract works with a non-OpenAI provider. |
-| Pure-Python handler functions (`handle_get -> (status_code, body)`) for Router Service | FastAPI v0.139.0 as HTTP framework | Only if the Router Service must be a standalone deployed HTTP service with auto-generated OpenAPI docs. The existing services (`conversation-read-view`, `feedback-service`, `wecom-service`) are ALL pure-Python handler functions with `dependencies = []`. Adding FastAPI would introduce the first non-stdlib runtime dependency (Pydantic, Starlette, uvicorn) and break the architectural pattern. HTTP serving is a deployment concern, not a package concern. |
-| Pure-Python handler functions for Admin Console API | FastAPI with auto-generated Swagger UI | Only if operators need interactive API documentation. The Admin Console API is read-only views over contract logs and gate results — the same data shape as `conversation-read-view`. FastAPI's Swagger UI is nice but adds 3+ dependencies. A simple JSON API with stdlib handlers is sufficient for M2; a FastAPI wrapper can be added at deployment time without changing the package. |
-| `itertools.islice` + dict comprehensions for pagination | SQLAlchemy + database for conversation-read-view | Only if the contract log volume exceeds in-memory dict capacity. The existing `ContractLogReadModel` loads JSONL into in-memory dicts. For M2 volumes (lawyer trial scale: 15-50 tasks), this is trivially fast. A database would violate "no new authoritative conversation database" (PRD §1.2) and add a runtime dependency. |
-| `qq-botpy` v1.2.1 (official Tencent SDK) for QQBot | Custom WebSocket client using stdlib `websockets` or `aiohttp` directly | Only if `qq-botpy` proves incompatible with Python 3.11 or has breaking bugs. `qq-botpy` is the official SDK from `tencent-connect/botpy`, maintained by Tencent, asyncio-based, MIT licensed. It handles auth (AppID + AppSecret), WebSocket gateway reconnection, and message normalization. Building a custom client would duplicate this work and is not M2 scope. The SDK's `aiohttp` dependency is acceptable as an optional runtime dependency. |
-| `qq-botpy` as optional dependency (`[project.optional-dependencies]`) | `qq-botpy` as required dependency in `packages/channels/qqbot/pyproject.toml` | Only if the channel adapter package cannot function without the SDK at import time. The WeCom adapter pattern proves that ChannelAdapter packages can be `dependencies = []` with `network_io: False` — they wrap sanitized primitives. The `botpy` import is deferred to runtime/deployment. This keeps CI and contract tests dependency-free. |
-| Parse `manifest.json` + contract logs for Skill Registry | Query a Hermes skill registry API or CLI | Only if Hermes exposes a skill registry API. Source inspection confirms Hermes has NO skill registry API — skill metadata lives in `solutions/*/manifest.json` `skills` arrays (name, description, intent, required_tools, risk_level) and in `ExecutionTrace.active_skill_name` in contract logs. PRD §3.2: "V2 不建独立 Skill Registry，只通过 Hermes router 日志和 skill index 读取 skill 元数据." Stdlib `json` parsing is the correct approach. |
+### Dependency Strategy
 
-## What NOT to Use
+All new Python packages maintain `dependencies = []` in `pyproject.toml`. Runtime dependencies are optional extras:
 
-| Technology | Why NOT | Used Instead |
-|------------|---------|-------------|
-| FastAPI v0.139.0 | Introduces Pydantic v2, Starlette, uvicorn as required dependencies. Every existing service uses `dependencies = []` and pure-function handlers. FastAPI would break the architectural pattern and the AGENTS dependency rule. | Pure-Python `handle_get/handle_post -> (status_code, body)` functions, exactly like `services/conversation-read-view/src/conversation_read_view/api.py` |
-| aiohttp (as a service framework) | No existing service uses aiohttp as an HTTP server. `wecom-service` has `dependencies = []`. aiohttp is only acceptable as a transitive dependency of `qq-botpy` for the QQBot channel runtime. | stdlib `urllib.parse` for query parsing; HTTP serving deferred to deployment |
-| SQLAlchemy / any ORM | PRD §1.2: "不建独立 Conversation API + 数据库." Contract logs are JSONL files, not relational data. The existing `ContractLogReadModel` uses in-memory dicts. | `contract_test_suite.event_stream_replay.load_event_stream()` + dict indexes |
-| LiteLLM v1.90.2 | Heavy dependency (proxy server, caching, 100+ provider adapters). Overkill for a provider_model prototype that needs to prove contract portability, not provider coverage. The `openai` SDK with `base_url` covers OpenAI-compatible providers. | `openai` SDK v2.44.0 (optional) + `anthropic` SDK v0.116.0 (optional) |
-| OpenAI Agents SDK (`openai-agents` v0.17.7) | It's a multi-agent workflow framework, not a Codex CLI integration. The Codex adapter needs to invoke `codex exec` as a subprocess, not build agent graphs. Using the Agents SDK would add an unnecessary abstraction layer and dependency. | `codex exec` subprocess + stdlib JSON/JSONL parsing |
-| Pydantic v2 | No existing package uses Pydantic. All dataclasses are stdlib `@dataclass(frozen=True, slots=True)`. Adding Pydantic for request/response validation in Router Service or Admin Console API would break the dependency-free pattern. | stdlib `dataclasses` + manual dict validation (existing pattern in `platform_contract.agent_adapter.validate_agent_backend_manifest`) |
-| uvicorn | No existing service runs uvicorn. Services are libraries, not ASGI apps. | Pure-function handlers; deployment-layer HTTP serving is out of M2 package scope |
-| Flask | Sync-only, not async-compatible with the Python 3.11 async core. No existing service uses it. | Pure-function async handlers |
-| Starlette | ASGI toolkit that would be used with FastAPI. Same dependency concerns. | Pure-function handlers |
-| any pagination library (e.g., `fastapi-pagination`) | The existing read model is in-memory dicts. Pagination is `list(items)[offset:offset+limit]`. A library adds complexity for a 3-line operation. | `itertools.islice` or list slicing |
-| qq-bot (old `qq-bot` v0.8.5) | Deprecated predecessor of `qq-botpy`. The official docs say "原机器人的老版本 qq-bot 仍然可以使用，但新接口的支持上会逐渐暂停." | `qq-botpy` v1.2.1 (`pip install qq-botpy`, `import botpy`) |
-
-## Stack Patterns by Variant
-
-### M2-01: Codex Adapter (`packages/backends/codex/`)
-
-**Pattern:** Subprocess one-shot, mirroring Hermes adapter exactly.
-
-```
-RunRequest → CodexBackendAdapter.submit_run()
-  → subprocess: codex exec --json --sandbox read-only --skip-git-repo-check \
-      --output-schema <agent_result_schema.json> -o <output.json> "<prompt>"
-  → parse JSONL events from stdout (thread.started, turn.completed, item.*)
-  → parse final JSON from -o file (schema-validated AgentResult shape)
-  → map to AgentResult + ExecutionTrace contract events
-  → return RunHandle
+```toml
+[project.optional-dependencies]
+openai = ["openai>=2.0"]           # provider_model, model gateway, hybrid routing
+anthropic = ["anthropic>=0.100"]   # provider_model, model gateway
+ollama = ["ollama>=0.5"]           # provider_model (Ollama native)
+mcp = ["mcp>=1.27,<2"]            # MCP connector registry (live connections)
+rbac = ["pycasbin>=2.8"]          # RBAC enforcement (live deployments)
 ```
 
-**Key integration points:**
-- `AgentBackendMode.CODEX` already exists in `platform_contract.agent_adapter` (line 14)
-- `AdapterCapabilitySet`: `invocation_mode="sync"`, `no_channel_io=True`, `run_invocation_modes=["oneshot"]`, `stream_event_support=False` (same reduced capabilities as Hermes one-shot)
-- `HermesOneShotRunner` Protocol pattern (`packages/backends/hermes/src/inkstatute_backends_hermes/adapter.py:27`) → `CodexOneShotRunner` Protocol with identical `invoke(req) -> CodexOneShotResult` shape
-- Config: `CodexBackendConfig(oneshot_command=("codex", "exec", "--json", "--sandbox", "read-only", "--skip-git-repo-check"))` — mirrors `HermesBackendConfig.oneshot_command`
+All imports are lazy (inside method bodies), so packages import without optional deps installed. CI and contract tests run with `dependencies = []`.
 
-**No new Python dependencies.** `dependencies = []`.
+### Web UI Deployment
 
-### M2-02: Direct provider_model Adapter (`packages/backends/provider_model/`)
+The Python services remain pure-function handlers. The deployment layer wraps them in an ASGI server (e.g., `uvicorn` or `hypercorn` — deployment concern, not package concern). Web apps (`apps/web_chat/`, `apps/admin_console/`) are static TypeScript bundles served by the same ASGI server or a CDN. SSE streaming from `encode_sse_event()` flows through the ASGI server to the browser's `EventSource` API.
 
-**Pattern:** Async LLM client call, no agent runtime.
+### Tenant Isolation Chain
 
 ```
-RunRequest → ProviderModelBackendAdapter.submit_run()
-  → lazy import: from openai import AsyncOpenAI
-  → client = AsyncOpenAI(api_key=..., base_url=config.api_base_url)
-  → response = await client.chat.completions.create(
-      model=config.model, messages=[{"role": "user", "content": req.turn.content}],
-      stream=False
-    )
-  → map response.choices[0].message.content to AgentResult.content
-  → map response.usage to ExecutionTrace metadata
-  → return RunHandle
+Request → RBAC (Casbin domain=tenant_id) → API handler (filters by tenant_id)
+  → ContractLogReadModel (dict comprehension: {k:v for k,v in items if v.tenant_id == tenant_id})
+  → HindsightMemory (bank_id = ink-{tenant}:{workspace}:{user})
+  → Contract log writer (path: contract_logs/{tenant_id}/{workspace_id}/)
 ```
 
-**Key integration points:**
-- `AgentBackendMode.PROVIDER_MODEL` already exists (line 15)
-- `AdapterCapabilitySet`: `invocation_mode="sync"`, `no_channel_io=True`, `session_memory_support=False`, `trace_support=True`
-- Lazy import pattern: `openai` imported inside `submit_run()` so package imports without it
-- `pyproject.toml`: `dependencies = []`, `[project.optional-dependencies] openai = ["openai>=2.0"]`
+Every layer enforces tenant isolation independently. RBAC prevents unauthorized access; data layer filters by `tenant_id`; memory layer uses isolated banks; log writer partitions by tenant path.
 
-**Optional dependency:** `openai>=2.0` (only when running live).
+---
 
-### M2-03: Router Service (`services/router-service/`)
+## Rejected Alternatives
 
-**Pattern:** Pure-Python routing library, extracted from platform-runtime + wecom-service.
-
-```
-AgentTurn → router_service.route(turn, context) -> RouteDecision
-  → regex/classifier matching (mirrors wecom_service.active_task_router._classify_intent)
-  → produce RouteDecision dataclass (platform_contract.events.RouteDecision)
-  → return contract event-ready decision
-```
-
-**Key integration points:**
-- `RouteDecision` contract event already defined (`platform_contract.events.RouteDecision`, line 207)
-- `route_decision.schema.json` already exists in `packages/platform-contract/src/platform_contract/schemas/`
-- Precedent: `services/wecom-service/src/wecom_service/active_task_router.py` — pure regex routing with `StrEnum` routes, `dataclass` decisions, `re.compile` patterns
-- `api.py`: `handle_post(path, body) -> (status_code, dict)` — same pattern as `conversation-read-view/api.py:handle_get`
-- NO FastAPI, NO aiohttp. `dependencies = []`.
-
-### M2-04: Skill Registry Read (`packages/skill-registry/`)
-
-**Pattern:** Parse existing manifest JSON + contract log execution traces.
-
-```
-sources:
-  1. solutions/*/manifest.json → skills[] (name, description, intent, required_tools, risk_level)
-  2. contract logs → ExecutionTrace.active_skill_name per turn
-  → merge into SkillRegistry (dict[skill_name, SkillMetadata])
-  → expose via handle_get("/skills", query) and handle_get("/skills/{name}", query)
-```
-
-**Key integration points:**
-- `solutions/lawfirm/manifest.json` already has `skills` array with 4 skills (line 12-41)
-- `contract_test_suite.event_stream_replay.load_event_stream()` for log-derived skill usage
-- `ExecutionTrace.active_skill_name` field in contract events
-- stdlib `json` for manifest parsing — no Hermes API exists (PRD §3.2 confirms)
-- `api.py`: `handle_get(path, query) -> (status_code, dict)` — same pattern as conversation-read-view
-- `dependencies = []`.
-
-### M2-05: conversation-read-view Completion (`services/conversation-read-view/`)
-
-**Pattern:** Extend existing `ContractLogReadModel` with pagination/filtering.
-
-```
-Existing: handle_get("/conversations/{id}", query) → single conversation
-          handle_get("/tasks/{id}", query) → single task
-          handle_get("/feedback", query) → pending feedback list
-
-M2 adds: handle_get("/conversations", query) → paginated list with ?limit&offset&user_id&status
-         handle_get("/tasks", query) → paginated list with ?limit&offset&status&trace_id
-         handle_get("/traces/{trace_id}", query) → trace query
-         handle_get("/feedback", query) → extend beyond pending-only filter
-```
-
-**Key integration points:**
-- `ContractLogReadModel` (`read_model.py:28`) already has `_conversations`, `_tasks`, `_trace_to_task_id` dicts
-- Add `list_conversations(limit, offset, filters) -> dict` and `list_tasks(limit, offset, filters) -> dict` methods
-- Pagination: `list(self._conversations.values())[offset:offset+limit]`
-- Filtering: dict comprehension `{k: v for k, v in items if filter_fn(v)}`
-- `api.py:handle_get` extended with new route prefixes
-- `dependencies = []`. No new library.
-
-### M2-06: Admin Console API (`services/admin-console-api/`)
-
-**Pattern:** Read-only operational views, pure-function handlers.
-
-```
-handle_get("/sessions", query) → paginated session list from ContractLogReadModel
-handle_get("/tasks", query) → paginated task list
-handle_get("/feedback", query) → feedback queue summary
-handle_get("/gates", query) → V2 gate status (subprocess: run_v2_gates.py --json-summary)
-handle_get("/health", query) → component health aggregation
-```
-
-**Key integration points:**
-- Reuses `ContractLogReadModel` from `conversation-read-view` (import as library)
-- Reuses `run_v2_gates.py --json-summary` via `subprocess` (existing gate runner)
-- Reuses `contract_test_suite` checkers (`boundary_checks`, `privacy_scan`, `coverage_report`)
-- `api.py`: `handle_get(path, query, ...) -> (status_code, dict)` — identical pattern to conversation-read-view
-- NO FastAPI. `dependencies = []`.
-
-### M2-07: QQBot Channel (`packages/channels/qqbot/`)
-
-**Pattern:** ChannelAdapter wrapping sanitized QQ Bot primitives, mirroring WeCom adapter.
-
-```
-RawInbound → QQBotChannelAdapter.verify_and_ack(raw) → AckResponse
-RawInbound → QQBotChannelAdapter.normalize_inbound(raw) → InboundNormalized
-  → parse QQ Bot callback envelope (at_message_create / message_create events)
-  → normalize to AgentTurn or FeedbackEvent
-ChannelDelivery → QQBotChannelAdapter.deliver(delivery) → DeliveryResult
-  → build QQ Bot send envelope (text / rich_media / ark)
-  → network_io: False (sanitized primitive, like WeCom)
-```
-
-**Key integration points:**
-- `ChannelAdapter` Protocol (`platform_runtime.protocols.ChannelAdapter`, line 208) — same 5 methods as WeCom
-- `ChannelCapabilitySet`: `supports_text=True`, `supports_files=True` (rich_media), `supports_cards=False` (QQ Bot has no template cards), `supports_streaming=False`, `ack_deadline_ms=5000`
-- Config: `QQBotChannelConfig(app_id_secret_ref=..., app_secret_ref=..., token_secret_ref=...)` — mirrors `WeComChannelConfig` secret-ref pattern
-- `botpy.Client` event handlers (`on_at_message_create`, `on_message_create`) map to `RawInbound` at the service boundary
-- `botpy.api.post_c2c_messages()` / `message.reply()` map to `ChannelDelivery` at the service boundary
-- `pyproject.toml`: `dependencies = []`, `[project.optional-dependencies] runtime = ["qq-botpy>=1.2"]`
-- `botpy` imported lazily at runtime, NOT at package import time
-
-**Optional dependency:** `qq-botpy>=1.2` (only for live deployment).
-
-## Version Compatibility
-
-| Component | Version | Python | Verified Date | Notes |
-|-----------|---------|--------|---------------|-------|
-| `openai` SDK | 2.44.0 | >=3.9 (tested on 3.13) | 2026-07-03 | PyPI latest. AsyncOpenAI uses httpx. Supports `base_url` for OpenAI-compatible endpoints. |
-| `anthropic` SDK | 0.116.0 | >=3.9 | 2026-07-03 | PyPI latest (released 2026-07-02). AsyncAnthropic uses httpx. |
-| `qq-botpy` (botpy) | 1.2.1 | >=3.8 | 2026-07-03 | PyPI latest. Last release Mar 2024. Dependencies: aiohttp>=3.7.4,<4, PyYAML, APScheduler. GitHub: tencent-connect/botpy (837 stars). |
-| `codex` CLI | latest 2026 | Node.js 22+ | 2026-07-03 | `codex exec --json` stable. `--output-schema` uses JSON Schema draft 2020-12. `codex exec resume --last` for multi-turn. Not a Python package — subprocess invocation. |
-| FastAPI (NOT recommended) | 0.139.0 | >=3.10 | 2026-07-03 | Listed for reference only. Do NOT add to any M2 package. |
-| LiteLLM (NOT recommended) | 1.90.2 | >=3.10,<3.14 | 2026-07-03 | Listed for reference only. Do NOT add to any M2 package. |
-| Python (CI floor) | 3.11 | — | — | `tomllib` stdlib since 3.11. All M2 packages target >=3.11. |
-| `openai-agents` (NOT recommended) | 0.17.7 | >=3.10 | 2026-07-03 | Listed for reference only. Not a Codex CLI integration; it's a multi-agent framework. |
-
-## Sources
-
-- [Codex CLI Command Reference — `codex exec`](https://developers.openai.com/codex/cli/reference)
-- [Codex Non-Interactive Mode — `--json`, `--output-schema`, `resume`](https://developers.openai.com/codex/noninteractive)
-- [Codex CLI Features — resuming conversations, scripting](https://developers.openai.com/codex/cli/features)
-- [Codex exec Structured Output Pipelines — `--output-schema`, `--json`, `resume`](https://codex.danielvaughan.com/2026/06/11/codex-exec-structured-output-pipelines-output-schema-json-resume-ci-automation/)
-- [OpenAI Python SDK — PyPI v2.44.0](https://pypi.org/project/openai/)
-- [OpenAI Python SDK — streaming helpers, AsyncOpenAI](https://github.com/openai/openai-python/blob/main/helpers.md)
-- [OpenAI Streaming API Responses — SSE, Responses API](https://developers.openai.com/api/docs/guides/streaming-responses)
-- [Anthropic Python SDK — PyPI v0.116.0](https://pypi.org/project/anthropic/)
-- [Anthropic Python SDK — GitHub, async clients](https://github.com/anthropics/anthropic-sdk-python)
-- [OpenAI Agents SDK — PyPI v0.17.7](https://pypi.org/project/openai-agents/) (considered, not recommended)
-- [LiteLLM — PyPI v1.90.2](https://pypi.org/project/litellm/) (considered, not recommended)
-- [QQ Bot Python SDK — official docs](https://bot.q.qq.com/wiki/develop/pythonsdk/)
-- [tencent-connect/botpy — GitHub](https://github.com/tencent-connect/botpy)
-- [qq-botpy — PyPI v1.2.1](https://pypi.org/project/qq-botpy/)
-- [botpy setup.py — dependencies: aiohttp, PyYAML, APScheduler](https://github.com/tencent-connect/botpy/blob/master/setup.py)
-- [FastAPI — PyPI v0.139.0](https://pypi.org/project/fastapi/) (considered, not recommended)
-- Existing codebase: `packages/backends/hermes/src/inkstatute_backends_hermes/adapter.py` (Hermes adapter pattern)
-- Existing codebase: `packages/channels/wecom/src/inkstatute_channels_wecom/adapter.py` (WeCom channel pattern)
-- Existing codebase: `services/conversation-read-view/src/conversation_read_view/api.py` (pure-function handler pattern)
-- Existing codebase: `services/wecom-service/src/wecom_service/active_task_router.py` (pure-Python routing precedent)
-- Existing codebase: `packages/platform-contract/src/platform_contract/agent_adapter.py` (AgentBackendMode enum)
-- Existing codebase: `packages/platform-contract/src/platform_contract/events.py` (RouteDecision dataclass)
-- Existing codebase: `solutions/lawfirm/manifest.json` (skill metadata source)
-- PRD §3.2: "V2 不建独立 Skill Registry，只通过 Hermes router 日志和 skill index 读取 skill 元数据"
-- PRD §11: M2 milestone scope
+| Recommended | Alternative | Reason Rejected |
+|-------------|-------------|-----------------|
+| Python stdlib async generators for streaming | `sse-starlette` v3.4.5 | Requires Starlette/FastAPI as dependency. The existing `encode_sse_event()` is a pure-stdlib SSE encoder that's already proven. Adding Starlette breaks the `dependencies = []` pattern. |
+| Python stdlib async generators for streaming | `websockets` library | WebSocket is bidirectional but unnecessary for run-event streaming (server→client only). SSE is simpler, works through proxies, and matches the existing `encode_sse_event()` + `EventSource` pattern. |
+| `mcp` SDK v1.28.1 (stable) | `mcp` SDK v2.0.0b1 (beta) | v2 is a pre-release with breaking API changes, targeting 2026-07-28 spec release. Not production-ready. Pin `mcp>=1.27,<2`. |
+| `mcp` SDK for MCP connector registry | OpenAI Agents SDK MCP integration | `openai-agents` is a multi-agent framework, not an MCP client library. Adds unnecessary agent orchestration abstractions. |
+| `pycasbin` v2.8.0 for RBAC | `casbin-fastapi-decorator` v1.2.1 | Requires FastAPI. The existing services use pure-function handlers, not FastAPI routes. |
+| `pycasbin` v2.8.0 for RBAC | Custom RBAC from scratch | Casbin's domain/tenant model is well-tested, supports ABAC, and maps exactly to multi-tenant isolation. Building from scratch risks security bugs. |
+| `pycasbin` v2.8.0 for RBAC | `fastapi-permission` / `fastapi-authz` | All FastAPI-specific. Breaks the pure-function handler pattern. |
+| Application-level `tenant_id` partitioning | PostgreSQL Row-Level Security (RLS) | The platform uses JSONL contract logs, not PostgreSQL (PRD §1.2). RLS requires a relational database. |
+| Application-level `tenant_id` partitioning | Schema-per-tenant or database-per-tenant | Same issue — no relational database. Application-level filtering on in-memory dicts and JSONL files is sufficient at lawyer-trial scale. |
+| Preact 10.x for Web UI | React 19 | 40KB+ bundle vs 3KB. The existing renderer explicitly lists Preact as a valid host. React's VDOM overhead is unnecessary for a thin chat + admin dashboard. |
+| Preact 10.x for Web UI | Svelte / SolidJS / Vue 3 | All are viable but add ecosystem divergence. Preact's React-compat layer means any React ecosystem component can be used if needed. The existing TypeScript SDK and renderer are framework-agnostic. |
+| Preact 10.x for Web UI | Next.js / Remix | Server-side rendering frameworks require a Node.js server. The deployment layer is Python ASGI. Static SPA bundles served by the ASGI server or CDN are simpler. |
+| Pure-Python `asyncio` orchestrator for multi-agent | LangChain / LangGraph / CrewAI / AutoGen | Heavy frameworks with large dependency trees (LangChain alone pulls 50+ packages). Break `dependencies = []`. The "7 building blocks" pattern (direct SDK + deterministic routing + circuit breaker) is proven and stdlib-only. |
+| Pure-Python `asyncio` orchestrator for multi-agent | `justpipe` v0.12.0 | Zero-dependency but unproven (3 stars, 2 contributors). stdlib `asyncio` is battle-tested and sufficient. |
+| Pure-Python `asyncio` orchestrator for multi-agent | A2A protocol (`a2a-sdk`) | Agent-to-agent protocol is designed for cross-framework interop. Within a single platform, direct `BackendAdapter` composition is simpler. |
+| `openai` + `anthropic` + `ollama` SDKs for multi-provider | LiteLLM v1.90.2 | Heavy dependency (proxy server, caching, 100+ provider adapters). Overkill for 3 providers. Direct SDKs are lighter and prove contract portability. |
+| `ollama` v0.6.2 for Ollama native | `AsyncOpenAI(base_url="http://localhost:11434/v1")` only | The OpenAI-compatible endpoint covers basic chat. Use `ollama` library for native features (embeddings, model management). Both are valid; `ollama` is needed only for native features. |
+| `hindsight-client` v0.7.2 for session memory | `mem0` / `letta` (MemGPT) | Hindsight is the validated memory backend with proven tenant isolation (bank-per-tenant). Adding a second memory backend adds complexity without benefit. |
+| `hindsight-client` v0.7.2 for session memory | Chroma / Qdrant / Weaviate (vector DB) | Hindsight handles embeddings (BGE-M3) and retrieval (BGE-Reranker-V2-M3) internally. A separate vector DB duplicates this capability. |
+| Pure-Python JSON file writer for Skill Registry write | SQLAlchemy + database for skill storage | `manifest.json` files are the source of truth (M2 pattern). A database violates "no new authoritative database" (PRD §1.2). |
+| Pure-Python confidence scoring for hybrid routing | scikit-learn / transformers for classification | The LLM IS the classifier. Adding ML libraries for routing classification is redundant when an LLM call produces the confidence score directly. |
+| Tailwind CSS v4 for admin console styling | MUI / Ant Design / Chakra UI | Component libraries add 100KB+ and impose design system constraints. An internal admin console needs simple utility styling, not a full design system. |
+| `@preact/signals` for state management | Redux / Zustand / TanStack Query | Signals are lighter (built for Preact) and sufficient for dashboard widget reactivity. Redux/Zustand add unnecessary boilerplate. TanStack Query is for complex REST/GraphQL caching, not simple JSON polling. |
+| Lazy imports + optional extras for all new deps | Required dependencies in `pyproject.toml` | Breaks the `dependencies = []` pattern that all 13 existing packages and 5 services follow. CI and contract tests must run without optional deps. |

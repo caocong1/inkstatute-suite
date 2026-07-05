@@ -1,625 +1,495 @@
-# Pitfalls Research
+# Pitfalls Research: M3 Platform Extensions
 
-**Domain:** M2 Multi-Backend & Platform Extensions — adding new backends, router extraction, skill registry, read-view completion, admin API, and QQBot channel to the existing InkStatute V2 platform (milestone v1.6)
-**Researched:** 2026-07-03
+**Domain:** M3 Platform Extensions — adapter productization, MCP registry, model gateway, multi-agent, skill write, hybrid routing, Web UI, RBAC, multi-tenant
+**Researched:** 2026-07-05
 **Confidence:** HIGH
 
-This research covers common mistakes when **adding M2 features to the existing InkStatute system** — a Python 3.11 async platform with 9 V2 gates (479 tests), four North Star contracts (ChannelAdapter, BackendAdapter, SolutionLoader, RunRuntime), a production Hermes backend adapter, a production WeCom channel, JSONL contract event logs, an output boundary filtering Hermes meta/gateway notices, and all runtime lanes default-OFF. M2 proceeds in parallel with unfinished V2 human gates (Phase 5 + Phase 8) at accepted risk.
+This research covers common mistakes when **adding M3 features to the existing InkStatute V2 system** — a Python 3.11 async legal-domain agent platform with a frozen `BackendAdapter` Protocol (9 methods, `packages/platform-runtime/src/platform_runtime/protocols.py:222-239`) and frozen `ChannelAdapter` Protocol (6 methods, `protocols.py:208-219`), 19 V2 CI gates (969 tests), JSONL contract event logs using `raw_payload_ref` for privacy, an output boundary that suppresses Hermes/gateway/meta notices, all runtime lanes default-OFF, and two open V2 human gates (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial) running in parallel. M3 must preserve every one of these invariants while promoting adapter prototypes to production, adding platform extensions, Web UI, RBAC, and multi-tenancy. Phase numbering continues from v1.6 (next phase = 45).
 
 ---
 
-## Multi-Backend Adapter Pitfalls (Codex + provider_model)
+## Critical Pitfalls (Legal/Safety)
 
-### Pitfall: Codex/provider_model adapters pressuring BackendAdapter Protocol changes
+These pitfalls could violate legal safety, client privacy, the output boundary, or the human-review gate on high-risk legal feedback. They are the highest-priority risks for a lawyer-facing platform and must be addressed before any M3 feature goes live.
+
+### Critical: Skill Registry write auto-modifying legal conclusion skills
 
 **What goes wrong:**
-The `BackendAdapter` Protocol (`packages/platform-runtime/src/platform_runtime/protocols.py:222-239`) defines 8 methods: `backend_id`, `capabilities`, `bootstrap_check`, `submit_run`, `get_run`, `stream_events`, `cancel_run`, `submit_approval`, `collect_artifacts`. The Hermes adapter (`packages/backends/hermes/src/inkstatute_backends_hermes/adapter.py`) implements all 8, but most return truthful "unsupported" responses for capabilities it lacks (e.g., `cancel_run` returns `reason: "unsupported_by_oneshot"`, `submit_approval` rejects high-risk legal approvals). When building the Codex adapter, the developer discovers Codex supports streaming events natively, and wants to add a `stream_intermediate_events` method or change `stream_events` to yield a new event type. When building the provider_model adapter, they discover direct LLM providers have no concept of "bootstrap check" or "collect artifacts" and want to make those methods optional on the Protocol. Each change ripples back to the Hermes adapter and the `DefaultRunRuntime` which calls all 8 methods.
+The V2 PRD and `AGENTS.md` are explicit: "High-risk legal feedback must remain human-reviewed. V2 records `skill_candidate`; it does not auto-synthesize or auto-modify legal conclusion skills." M3 introduces Skill Registry **write** operations. The moment writes are enabled, the temptation is to let feedback-derived `skill_candidate` records flow directly into active skills via an automated pipeline ("the trial showed 80% positive feedback, auto-promote it"). A poisoned or misclassified feedback event then becomes a live legal skill that steers lawyer advice. Worse, in a multi-tenant system a skill written for tenant A could leak into tenant B's active skill set.
 
 **Warning signs:**
-- A PR modifies `packages/platform-contract/src/platform_contract/agent_adapter.py` to add new capability fields or change `AdapterCapabilitySet` (currently 14 fields at line 19-33).
-- A PR modifies the `BackendAdapter` Protocol signature in `protocols.py`.
-- Codex/provider_model adapter tests pass but Hermes adapter tests break because the Protocol changed.
-- The `test_agent_adapter_contract.py` test that validates "schema does not require hermes or lawfirm fields for provider_model" (line 60-77) starts failing because new fields were added that are backend-specific.
+- A PR adds a `promote_skill_candidate` or `activate_skill` path that does not require a human approval record.
+- Skill write tests pass without an explicit `human_reviewed: true` gate field.
+- A feedback-to-skill pipeline writes to the same skill namespace that the router reads from at request time.
+- Skill versions are mutable in place (no immutable version snapshots), so a rollback cannot restore the prior legal conclusion.
 
 **Prevention:**
-- Freeze the `BackendAdapter` Protocol and `AdapterCapabilitySet` for M2. New backends must work within the existing 8-method, 14-capability surface. If a backend lacks a capability, it returns a truthful "unsupported" response the way Hermes does — this pattern is already proven.
-- Codex streaming should use the existing `stream_events` method and `stream_event_support` capability flag (already in `AdapterCapabilitySet` at line 28). No new Protocol methods.
-- provider_model's lack of bootstrap/artifacts should map to `bootstrap_check` returning `ok=True` with minimal metadata, and `collect_artifacts` returning an empty list — not to Protocol changes.
-- Add a contract test that asserts the `BackendAdapter` Protocol method count and `AdapterCapabilitySet` field count have not changed from the V2 baseline. This guards against accidental contract drift.
+- Skill Registry write MUST require an explicit human approval record (`reviewed_by`, `reviewed_at`, `review_evidence_ref`) before any skill becomes active. No automated promotion path, even behind a flag.
+- Skills MUST be versioned and immutable once published; writes create a new version, never mutate. Active skill set is a pointer to a version, swappable and rollbackable.
+- Add a contract test asserting no code path can flip a skill from `candidate` to `active` without a human-review record. This is the legal-safety equivalent of the existing output-boundary test.
+- Per-tenant skill namespaces enforced at the registry layer, not just the router layer.
 
-**Phase to address:** M2-01/M2-02 implementation phase — before writing adapter code, freeze the contract surface and add the count-assertion test.
+**Phase to address:** Skill Registry write phase — design the human-review gate into the write API before any write code is written.
 
----
-
-### Pitfall: Prototype adapters silently becoming production-eligible through the selection gate
+### Critical: Output boundary bypass via streaming events, artifacts, or Web UI
 
 **What goes wrong:**
-The `select_agent_backend` function (`services/wecom-service/src/wecom_service/agent_backend.py:23-58`) has a critical gate at line 49: `live_acceptance_allowed = production_ready and requested_mode == AgentBackendMode.HERMES.value`. However, line 50-51 has a bypass: `if requested_mode != AgentBackendMode.HERMES.value and metadata.get("production_ready") is True: live_acceptance_allowed = True`. If a Codex or provider_model manifest accidentally sets `metadata.production_ready: True`, the adapter becomes live-acceptance-eligible. Since M2 runs in parallel with V2 human gates, a misconfigured Codex prototype could be selected for a live WeCom turn during Phase 5 UAT, bypassing the Hermes-only production constraint.
+The existing output boundary (`OUTPUT-01`) suppresses Hermes gateway/update/command/meta notices before WeCom delivery. M3 adds three new bypass paths: (1) streaming events surface raw provider tokens, model names, and API error traces that were previously filtered at the `agent:end` boundary; (2) artifacts (files, logs, traces) can contain backend noise — model names, function call traces, stack traces — that the boundary was designed to block; (3) the Admin Web UI and Lawyer Web chat render backend output directly in a browser, potentially showing raw error text, model identifiers, or tool-call JSON to lawyers. Each is a new hole in a boundary that V2 spent a phase building.
 
 **Warning signs:**
-- A Codex or provider_model manifest fixture or config sets `production_ready: true`.
-- The `select_agent_backend` function is modified to relax the HERMES-only live acceptance check.
-- Integration tests run with `agent_backend.mode=codex` against the live WeCom service instead of mock fixtures.
-- The `live_acceptance_allowed` field on `AgentBackendSelection` is ignored by the WeCom dispatch path.
+- Streaming event tests assert on raw `model` or `provider` fields reaching the channel layer.
+- Artifact metadata includes `model_name`, `api_error`, or `tool_call_trace` fields that are not scrubbed.
+- Web chat renders assistant messages via `innerHTML` or unsanitized markdown from the backend stream.
+- A streaming partial-error event forwards the provider's error message verbatim ("anthropic rate limited", "ollama connection refused") to the user.
 
 **Prevention:**
-- All Codex/provider_model manifests must set `metadata.production_ready: false` explicitly, and a contract test must assert this for all non-Hermes manifests.
-- Add a test that verifies `select_agent_backend` returns `live_acceptance_allowed=False` when `mode != "hermes"` regardless of `production_ready` metadata — close the bypass at line 50-51.
-- The WeCom dispatch path (`ingress_runtime.py`) should assert `live_acceptance_allowed` before routing a live turn to any backend, not just trust the mode.
+- Apply the output boundary at the **streaming event emission point**, not just at `agent:end`. Define an allowlist of event types that may cross the boundary; rewrite or drop the rest. Partial-error events must be rewritten to InkStatute-owned service notices ("The assistant is temporarily unavailable"), never raw provider errors.
+- Artifact metadata passes through the same field allowlist used by the Admin Console API (`services/admin-console-api` field allowlist excluding secrets). Model names, API keys, and tool-call traces are stripped before any artifact ref is returned.
+- Web UI renders all assistant/backend content as escaped plaintext or via a sanitizer (DOMPurify) — never raw `innerHTML`. Treat all backend-originated text as untrusted, including model-generated markdown (see Operator & UX pitfalls).
+- Add a regression test: stream a fixture containing provider noise and assert none of it reaches the channel delivery or Web chat payload.
 
-**Phase to address:** M2-01/M2-02 implementation phase — before any Codex/provider_model manifest is committed, fix the selection gate bypass and add the assertion test.
+**Phase to address:** Adapter productization (streaming + artifacts) phase and Web UI phase — boundary enforcement must be designed into the streaming emitter and artifact collector before any feature flag is flipped.
 
----
-
-### Pitfall: Output boundary rules designed for Hermes noise missing new backend-specific leakage
+### Critical: raw_payload_ref privacy violation via artifacts, memory, or Web UI dashboards
 
 **What goes wrong:**
-The `DefaultAssistantOutputBoundary` (`packages/platform-runtime/src/platform_runtime/output_boundary.py:82-108`) has regex rules tuned for Hermes-specific noise: `backend_lifecycle` (restart/reconnect/shutting down), `tool_progress` (tool progress/memory sync/tool call), `operator_command` (/slash commands), `secret_like` (token/key/secret patterns). Codex and direct provider_model backends produce different noise: Codex may emit "function call trace", "token usage report", "rate limit retry", "context window exceeded"; provider_model may emit "model: glm-5.2", "provider: ollama-cloud", "API key invalid", "quota exceeded". These pass through the output boundary as `ALLOW` because the regex rules don't match them, and reach the lawyer's WeCom as visible text.
+V2 contract logs deliberately use `raw_payload_ref` (a reference) instead of storing sensitive full text, to protect client legal materials and work product. M3 introduces three new places where full text can leak: (1) artifacts may inline full document text instead of returning a ref; (2) session memory (Hindsight integration) may persist full conversation text or document contents into a memory store that lacks the same privacy scrubbing; (3) Admin Web UI dashboards may render full message text, feedback payloads, or file previews that the read-view API currently scrubs at read time. A single dashboard that shows raw feedback text undoes the `raw_payload_ref` discipline.
 
 **Warning signs:**
-- A Codex/provider_model adapter test asserts `BoundaryDecision.action == BoundaryAction.ALLOW` for text containing provider/model names or API error messages.
-- The output boundary regex rules are not updated when a new backend is added.
-- Integration tests for new backends don't include output boundary fixture tests with backend-specific noise samples.
-- A lawyer sees "Rate limit exceeded for model glm-5.2" or "Function call: web_search" in WeCom during parallel V2 UAT.
+- Artifact records contain `content` or `text` fields with full document bodies rather than `artifact_ref` + size + hash.
+- Memory store writes include unredacted conversation text or uploaded document contents.
+- Admin UI renders `feedback.payload` or `message.body` directly without the read-time privacy scrubbing that `services/conversation-read-view` applies.
+- Hindsight integration stores memory entries keyed by raw user input rather than a hashed/redacted reference.
 
 **Prevention:**
-- For each new backend, add output boundary fixture tests with backend-specific noise samples (Codex function call traces, provider error messages, rate limit notices, token usage reports) and assert they are BLOCKed or REWRITEd.
-- Add a generic "provider/model name leakage" rule to `_HARD_BLOCK_RULES` that catches patterns like `\b(?:model|provider|api[_-]?key|quota|rate[_-]?limit|token[_-]?usage)\b` in user-visible text.
-- The output boundary must be backend-agnostic — do not add Codex-specific or provider_model-specific logic into the boundary itself; instead add generic patterns that catch the *class* of noise, not the specific backend's strings.
+- Artifacts MUST use refs (`artifact_ref`, `content_hash`, `size_bytes`) for the contract log; full content lives in a separate object store with access controls. The contract event never carries full text.
+- Memory store inherits the same `raw_payload_ref` discipline: memory entries store references and metadata, not full text. If Hindsight requires full text for retrieval, it lives in a tenant-scoped store with explicit retention and access policy — not in contract logs.
+- Web UI dashboards reuse the existing `conversation-read-view` scrubbing layer; no dashboard endpoint returns raw payloads. Add a test asserting every admin/dashboard endpoint applies the same field allowlist + scrubbing as the read-view.
+- Add a contract test: assert no `ArtifactRecord`, `MemoryEntry`, or admin API response schema field is named `*payload`, `*text`, `*body` with full content — only refs.
 
-**Phase to address:** M2-01/M2-02 implementation phase — output boundary fixtures must be added alongside each new adapter, not deferred.
+**Phase to address:** Artifact return phase, session memory phase, and Admin Web UI phase — privacy-by-design in the schema before implementation.
 
----
-
-### Pitfall: Prototype scope creep — building production infrastructure for prototype adapters
+### Critical: High-risk feedback auto-routing in hybrid routing
 
 **What goes wrong:**
-The PRD §11 says Codex and provider_model are "原型" (prototypes). But during implementation, the developer builds a full Codex client with retry logic, rate limit handling, connection pooling, and session management — essentially building a production Codex integration. This introduces new runtime dependencies (HTTP client libraries, Codex SDK), new failure modes (network timeouts, API rate limits), and new test surface area. The prototype then requires production-grade error handling, monitoring, and retry logic that doesn't exist for Hermes (which is a subprocess one-shot). The 9 V2 gates now have to test against a much larger surface, and the `compileall` gate must compile new dependency code.
+M3 adds model-based and hybrid routing with confidence scoring. A confidence-miscalibrated router could route a high-risk legal question to a cheap/weak model (or a non-Hermes backend) that produces a plausible-but-wrong legal conclusion, bypassing the Hermes lawfirm profile that has the reviewed skill set. The router treats confidence as a quality signal, but high confidence on a wrong answer is the most dangerous failure mode in a legal domain. Cold-start bias (router defaults to the cheap path until it has enough data) means the first lawyer questions — the most consequential — get the worst routing.
 
 **Warning signs:**
-- The Codex adapter package has more files than the Hermes adapter package (currently 7 source files).
-- New runtime dependencies are added to `pyproject.toml` for prototype adapters.
-- The adapter implements retry/rate-limit/circuit-breaker logic instead of returning `AsyncTaskState.FAILED` on first error.
-- Prototype adapter tests require network access or mock HTTP servers.
+- Router confidence threshold for "escalate to strong model" is set once and never recalibrated against legal-domain accuracy.
+- Routing decisions for legal-domain queries are made purely on token-cost or latency signals, not legal-safety risk classification.
+- The router has no override that forces high-risk legal queries to Hermes (the reviewed backend) regardless of confidence.
+- Cold-start: router has no legal-domain training data, so it defaults to the cheapest provider for the first N requests.
 
 **Prevention:**
-- Codex/provider_model adapters must be fixture-driven prototypes: they accept injected runners (like `HermesOneShotRunner` protocol at `adapter.py:27-30`) and do not make real network calls. The prototype proves contract compatibility, not production resilience.
-- No new runtime dependencies. Use stdlib only. If the adapter needs an HTTP client, inject it as a Protocol the way Hermes injects its runner.
-- The adapter's `bootstrap_check` should return `ok=False` with `issues: ["prototype_not_production_ready"]` by default, requiring explicit configuration to override.
+- Hybrid routing MUST have a legal-risk classifier that forces any query classified as high-risk legal to the Hermes backend (or the reviewed skill set) regardless of confidence score. Confidence routing applies only to low-risk / non-legal queries.
+- Confidence calibration must be validated against a legal-domain eval set before the routing flag can be promoted. Cold-start defaults to the safe (Hermes) path, not the cheap path.
+- Add a test: high-risk legal fixtures always route to Hermes even when the router's confidence says the cheap model is sufficient.
+- Routing decisions are logged as `RouteDecision` events (already in the contract) with `reason` and `confidence`; audit these for routing-to-cheap-model patterns on legal queries.
 
-**Phase to address:** M2-01/M2-02 planning phase — scope the prototypes as contract-proof, not production integration.
+**Phase to address:** Hybrid routing phase — design the legal-risk override before implementing the confidence scorer.
 
----
-
-## Router Service Extraction Pitfalls
-
-### Pitfall: Breaking existing in-process callers when extracting routing into a standalone service
+### Critical: Multi-tenant cross-tenant legal data leakage
 
 **What goes wrong:**
-Routing is currently embedded in two places: (1) `DefaultRunRuntime.create_run` (`packages/platform-runtime/src/platform_runtime/runtime.py:52-68`) calls `self.backend.submit_run(backend_req)` which delegates to Hermes, and Hermes internally routes via `scripts/router.py`; (2) `active_task_router.py` (`services/wecom-service/src/wecom_service/active_task_router.py`) does fast control-plane routing for follow-up turns during active tasks. The `RouteDecision` contract event is recorded by the Hermes contract layer's mapper. Extracting routing into a standalone `services/router-service/` introduces a network boundary where `DefaultRunRuntime.create_run` must now make an async HTTP/RPC call to the router service before calling `backend.submit_run`. This changes the critical path from 1 async call to 2, and breaks the `RunRuntime` Protocol's `create_run` which is synchronous-in-spirit (it calls backend directly).
-
-The 9 V2 gates test `DefaultRunRuntime` in-process. The `test_phase10_runruntime_contracts.py` and `test_phase55_wecom_service_loop.py` tests inject fakes directly into the runtime. If the router service extraction changes `create_run` to require a router client dependency, all these tests break unless the router client is injectable and defaults to in-process.
+M3 adds multi-tenant isolation. In a legal platform, cross-tenant leakage means one law firm's client matters, feedback, skills, or memory bleed into another firm's view. This is not just a bug — it is a potential breach of client confidentiality and attorney work-product privilege. The shared-database-with-tenant-column pattern fails silently: a missing tenant filter in one query, a shared cache key that doesn't include tenant_id, a memory vector store with loose namespace filters, a skill registry that doesn't scope by tenant. Async connection pooling and shared caching (which this platform uses) increase the risk.
 
 **Warning signs:**
-- `DefaultRunRuntime.__init__` gains a new `router_client` parameter.
-- `create_run` makes an additional async call before `backend.submit_run`.
-- V2 gate tests for `platform-runtime` or `wecom-service` break after router extraction.
-- The `RunRuntime` Protocol gains a new method or changes `create_run` signature.
-- The router service is deployed as a separate process but tests still run in-process without a facade.
+- Any query/filter/scope in contract logs, read-view, memory, skills, or admin API that does not include `tenant_id` in its WHERE clause or key prefix.
+- Cache keys (async lru_cache, Redis) that don't include tenant_id — one tenant's computed result served to another.
+- Memory/vector store uses a shared namespace with similarity-based retrieval that can pull another tenant's chunk via high cosine similarity.
+- Migration scripts that backfill tenant_id with a default value, silently merging previously-separate data.
 
 **Prevention:**
-- Extract routing as an injectable `RouterPort` Protocol (like `AssistantOutputBoundary` in `ports.py`), not a network service. The standalone `services/router-service/` is a deployment packaging of the same logic, not a new runtime dependency.
-- `DefaultRunRuntime` should accept an optional `router: RouterPort | None = None`. When `None`, routing stays in-process (delegated to backend, as today). When provided, `create_run` calls `router.route(req)` first, attaches the `RouteDecision` to `req.metadata`, then calls `backend.submit_run`.
-- All existing tests continue to pass with `router=None` (default). New tests with `router=<fake>` prove the extraction path.
-- The standalone service wraps the same routing logic (`scripts/router.py` rules) in an HTTP handler, but the routing rules themselves remain a pure function importable without network.
+- Tenant isolation enforced at the data layer (tenant_id column + query interceptor that injects tenant filter), not just at the API layer. Every async query path passes through a tenant-scoped session/context.
+- Cache keys MUST be namespaced by tenant_id; add a test that asserts cross-tenant cache reads return miss/empty.
+- Memory/vector store uses per-tenant namespaces with hard isolation, not shared-namespace-with-filter. Test for cross-tenant vector bleed (attacker seeds near-duplicate content, asserts other tenant's data is not retrieved).
+- Migration: existing V2 data must be assigned an explicit default tenant; add a migration test asserting no row has null/empty tenant_id after migration.
+- Add a dedicated "tenant isolation" gate (a 20th gate or sub-gate) with cross-tenant access fixtures.
 
-**Phase to address:** M2-03 implementation phase — design the `RouterPort` Protocol before extracting, run all 9 gates with `router=None` to confirm no regression.
+**Phase to address:** Multi-tenant isolation phase — isolation enforced at the data layer before any tenant-scoped feature is built on top.
 
 ---
 
-### Pitfall: Router service introducing distributed failure modes that don't exist in-process
+## Adapter Productization Pitfalls
+
+### Pitfall: Streaming events — cancellation not propagating upstream (orphan billing + zombie runs)
 
 **What goes wrong:**
-In the current in-process model, routing either succeeds or raises an exception that the runtime catches. There are no network timeouts, no connection refused errors, no serialization failures. When routing becomes a standalone service, the `create_run` path gains: router service down → timeout → what? Does the runtime fall back to backend-internal routing? Does it fail the turn? Does it retry? The Hermes backend's `scripts/router.py` is a pure regex router with no external dependencies — it never fails. But the router service wrapper adds HTTP serialization, potential JSON encoding errors, and network latency that adds to the WeCom 5s ACK deadline.
-
-The `active_task_router.py` is even more sensitive: it classifies follow-up turns *without blocking on the active task* (line 76). If this classification requires a network call to the router service, the "fast control plane" promise is broken — a router service timeout means the user's follow-up message hangs.
+When streaming is enabled, a lawyer closes the WeCom chat or the Web chat tab mid-stream. The downstream SSE/async generator stops consuming, but the upstream LLM provider stream keeps reading tokens — the provider keeps billing, and in this platform the run stays "active" in the task state machine, blocking the human-gate loop. Python `async for` over an SDK stream does not automatically cancel the upstream HTTP connection when the downstream consumer stops. The result: orphaned runs that never reach a terminal state, polluting the 19 V2 gates' run-state assertions, and cost accumulation for tokens the lawyer never saw.
 
 **Warning signs:**
-- The router service adds >100ms latency to `create_run` in tests.
-- `active_task_router` is modified to call the router service instead of using its local regex classification.
-- Tests for `active_task_router` require network mocks or HTTP fixtures.
-- The WeCom 5s ACK deadline is consumed by router service call latency.
+- Runs stuck in `running` state after a user disconnects; gate tests that assert terminal-state counts start failing.
+- Cost/usage logs diverge from delivered tokens (server generated 5k tokens, user saw 30).
+- `stream_events` async generator does not call `stream.aclose()` / cancel the upstream task in a `finally` block.
+- The `cancel_run` BackendAdapter method is never wired to the streaming disconnect path.
 
 **Prevention:**
-- The `active_task_router.py` must remain in-process in `wecom-service`. It is a fast control-plane classifier, not a skill router. Do not extract it into the router service.
-- The router service should only own skill-level `RouteDecision` routing, not active-task classification.
-- `RouterPort` implementations must have a configurable timeout (default: 500ms) and a fallback policy: if the router service is unavailable, fall back to `RouteDecision(mode="zero_match")` and let the backend handle routing internally — this preserves the current behavior where Hermes routes internally.
-- Contract tests must cover: router service down → fallback → run still succeeds; router service slow → timeout → fallback → run still succeeds.
+- `stream_events` implementation MUST wrap the upstream SDK stream in a `try/finally` that calls `aclose()` (or cancels the upstream task) on consumer disconnect or cancellation. Use `asyncio.CancelledError` handling, not just `break`.
+- Wire the channel/Web chat disconnect signal → `cancel_run` on the BackendAdapter, so the run reaches a terminal `cancelled` state and the task state machine stays consistent.
+- Use a bounded `asyncio.Queue(maxsize=N)` between producer and consumer to apply backpressure — without it, a slow consumer (WeCom delivery) causes unbounded memory growth holding buffered tokens.
+- Never do blocking/sync I/O inside the `async for` stream loop — it starves the single-threaded asyncio event loop and freezes all concurrent runs. Delegate file writes, DB writes, network calls to thread pools.
+- Add a test: open a stream, disconnect mid-stream, assert the run reaches `cancelled` within a timeout and the upstream task is cancelled (no orphan).
 
-**Phase to address:** M2-03 implementation phase — define the fallback policy before writing the service, add failure-mode tests.
+**Phase to address:** Streaming events phase — cancellation propagation and backpressure designed before the first streaming adapter ships.
 
----
-
-### Pitfall: Router extraction breaking the v2-acceptance-traceability gate
+### Pitfall: Streaming events — partial failure and event ordering
 
 **What goes wrong:**
-The 9th V2 gate (`v2-acceptance-traceability` in `run_v2_gates.py:106-108`) runs `scripts/audit_v2_requirements.py --check-gaps` which asserts no requirement has `status: gap`. If the router extraction moves code from `platform-runtime` to `services/router-service/`, the audit's file-path-based traceability matrix may report the routing requirement as a gap because the code moved to a new path the audit doesn't know about. The gate fails, blocking all M2 work even though the code is correct.
+A stream that emits 80% of a response then hits a provider error leaves the platform in an ambiguous state: is the run `succeeded` (partial), `failed`, or `interrupted`? If the adapter emits a `failed` event after partial `token` events, the channel layer may deliver a half-answer to the lawyer followed by a raw error — violating the output boundary. Event ordering across multiple streams (text + tool-call deltas) is interleaved under different `event.index` values; naive concatenation produces garbled output. Tool-call argument deltas are not individually parseable JSON — calling `json.loads` on each fragment raises on every chunk.
 
 **Warning signs:**
-- The `v2-acceptance-traceability` gate fails after router extraction with a "gap" for a routing-related requirement.
-- `scripts/audit_v2_requirements.py` has hardcoded file paths that don't include `services/router-service/`.
-- The audit traceability JSON (`acceptance/v2-traceability.json`) shows routing requirements as "gap" after the code move.
+- A run reaches terminal state with partial text already delivered to WeCom, and no InkStatute-owned service notice follows.
+- Tool-call argument parsing raises `JSONDecodeError` mid-stream.
+- Text and tool-call deltas get concatenated into a single buffer, producing mixed garbage.
+- Event sequence tests assert a strict `started → tokens → completed` order but the adapter emits `error` after `tokens` with no handling.
 
 **Prevention:**
-- Before moving any routing code, update `scripts/audit_v2_requirements.py` to recognize `services/router-service/` as a valid evidence path.
-- Run the audit gate immediately after the router service package is created (even if empty) to confirm no false gap.
-- The router service must be added to the `compileall` gate in `run_v2_gates.py:110-127` — missing this causes a gate failure or, worse, a silent skip.
+- Define a terminal-event contract: a stream MUST end with exactly one of `completed`, `failed`, `cancelled`. On `failed` after partial delivery, the channel layer emits an InkStatute-owned service notice ("The assistant's response was interrupted") — never the raw provider error.
+- Keep text and tool-call deltas in separate buffers keyed by `event.index`. Only parse tool-call arguments after `content_block_stop`, or use a partial JSON parser for incremental rendering.
+- Add a fixture: stream that fails at 80% → assert terminal state is `failed`, delivered text is followed by a service notice, and no raw error reaches the user.
 
-**Phase to address:** M2-03 setup phase — update audit and gate runner before moving code.
+**Phase to address:** Streaming events phase — terminal-event contract defined alongside the streaming emitter.
 
----
-
-## Skill Registry Read Pitfalls
-
-### Pitfall: Coupling to Hermes skill metadata format instability
+### Pitfall: Artifact return — large file handling and temp file cleanup
 
 **What goes wrong:**
-Hermes has 101 top-level skill directories with ~312 skills synced via symlink/copy (PRD §3.2). The skill metadata format (skill names, descriptions, gate associations, MCP tool bindings) is Hermes-internal — it is not a stable platform contract. The M2 Skill Registry reads this metadata directly. When Hermes updates its skill directory structure, skill YAML format, or symlink convention, the Skill Registry breaks. This is the exact "Hermes version drift" risk identified in PRD §13 risk #15, but now the platform has a *runtime dependency* on Hermes internals, not just a subprocess call.
-
-The existing system avoids this coupling: the `ExecutionTrace.active_skill_name` is a plain string normalized from Hermes output, and the `RouteDecision.primary_skill` is also a string. The Skill Registry would need to parse Hermes skill index files, skill YAML/JSON configs, and potentially symlink targets — all of which are Hermes implementation details.
+Artifacts (generated documents, exported analyses, logs) can be large. If the adapter inlines artifact content into the contract event or holds it in memory, the platform OOMs under concurrent runs. If artifacts are written to temp files that are never cleaned up, disk fills over days. If artifact refs point to a temp path that gets garbage-collected before the lawyer retrieves the file, the ref dangles. In a legal domain, an artifact containing a generated legal memo that sits in an unscoped temp dir is a confidentiality risk.
 
 **Warning signs:**
-- The Skill Registry imports from Hermes source paths or reads Hermes internal config files directly.
-- Skill Registry tests break when Hermes skill directory structure changes.
-- The Skill Registry assumes a specific skill metadata schema (field names, nesting, file format) that isn't defined in `platform-contract`.
-- Skill metadata is exposed with Hermes-specific field names instead of platform-neutral names.
+- `ArtifactRecord` contains inline `content` for large files.
+- Temp files accumulate in `/tmp` across test runs or CI gates (disk usage grows).
+- Artifact refs use temp paths with no retention policy or access scoping.
+- Concurrent large-artifact runs cause memory spikes or OOM in CI.
 
 **Prevention:**
-- Define a platform-neutral `SkillMetadataView` schema in `platform-contract` (like `AgentTurn` / `AgentResult`) with fields: `skill_id`, `display_name`, `description`, `category`, `gate_associations`, `tool_associations`, `metadata`. The Skill Registry maps Hermes-internal format to this neutral schema.
-- The mapping logic must be in `services/hermes-contract-layer/` (which already owns Hermes coupling), not in the Skill Registry package itself. The Skill Registry receives already-mapped neutral metadata.
-- Add a version field to the Hermes skill index reader. If the Hermes skill format changes, the reader fails gracefully with `issues: ["hermes_skill_format_unsupported"]` instead of crashing.
-- Tests must use fixture skill directories, not real Hermes paths.
+- Artifacts MUST be stored in a scoped object store (tenant-scoped, run-scoped) with a ref + hash + size; the contract event carries only the ref. Inline content is allowed only below a small threshold (e.g., 4 KB) and only for non-sensitive metadata.
+- Temp files cleaned in a `finally` block after the artifact is persisted to the store; add a test asserting no temp files remain after a run.
+- Artifact refs include a TTL/retention field; expired refs are not retrievable.
+- Add a test: large artifact (e.g., 10 MB) → assert contract event has only ref, memory stays bounded, temp file is cleaned.
 
-**Phase to address:** M2-04 design phase — define the neutral `SkillMetadataView` schema before reading any Hermes metadata.
+**Phase to address:** Artifact return phase — storage strategy before the artifact collector ships.
 
----
-
-### Pitfall: Read-only Skill Registry becoming a write surface for skill_candidate
+### Pitfall: Multi-provider — API key management, rate limit differences, capability mismatches
 
 **What goes wrong:**
-The PRD §7 and §13 risk #11 are explicit: "V2 只记录 `skill_candidate`，不得自动修改高风险法律 skill" and "实现期要确保 `feedback-service` 不会误触发 `skillopt-runner` 的自动修订". The `test_thin_layer_boundaries.py` test `test_feedback_safety_fails_on_auto_modify_true` (line 67-77) asserts that `auto_modify: True` in skill_candidate metadata is rejected. The Skill Registry starts as read-only, but during M2 development, the temptation is to add a "register skill_candidate" endpoint so feedback-derived candidates can be written to the registry. This creates a write surface that can be accidentally triggered by the feedback loop, violating the human-review-only constraint.
+Adding Anthropic and Ollama to the provider_model adapter introduces: (1) API keys that must not be committed (already a V2 rule) but now span multiple providers with different env var conventions; (2) rate limits that differ by provider — Anthropic 429s vs Ollama local timeouts — and the adapter treats them identically, causing retry storms; (3) capability mismatches — Ollama local models may not support tool calls or streaming the same way Anthropic does, and the adapter assumes a uniform capability set, producing `unsupported` errors mid-run. Cost surprises: Ollama is "free" (local) but Anthropic bills per token; a fallback loop that escalates to Anthropic on every Ollama timeout silently inflates cost.
 
 **Warning signs:**
-- The Skill Registry API gains a POST/PUT endpoint.
-- The Skill Registry imports `FeedbackEvent` or `SkillCandidate` from `platform_contract.events` and processes them for writing.
-- The Skill Registry has any method named `register`, `create`, `update`, `add`, or `save`.
-- The `test_feedback_safety_fails_on_auto_modify_true` test is modified or deleted.
+- API keys appear in config files, logs, or contract events.
+- A single retry policy applied to all providers — Anthropic 429s retried aggressively, Ollama timeouts retried indefinitely.
+- Capability checks absent — the adapter calls `tool_use` on an Ollama model that doesn't support it, failing mid-run.
+- Fallback always escalates to the paid provider; cost dashboards show unexpected Anthropic spend.
 
 **Prevention:**
-- The Skill Registry must have zero write methods. Its API surface is GET-only: `list_skills()`, `get_skill(skill_id)`, `search_skills(query)`.
-- Add a contract test that asserts the Skill Registry module has no functions/methods matching write patterns (`register|create|update|delete|save|write|add|modify|put`).
-- The `auto_modify` safety test in `test_thin_layer_boundaries.py` must remain green and unmodified.
-- Skill candidates from feedback continue to flow through `feedback-service` → `FeedbackEvent.skill_candidate` → human review queue, never through the Skill Registry.
+- API keys loaded from env only, never config files or contract events. Add a test asserting no key material appears in any event schema field or log line (extend the existing secret-exclusion test).
+- Per-provider rate-limit and retry policy: Anthropic uses 429-aware exponential backoff with `retry-after` header; Ollama uses a short timeout with bounded retries. Never retry indefinitely.
+- Capability negotiation: `AdapterCapabilitySet` (already in the Protocol) must reflect the actual provider's capabilities; tool-call / streaming / function-calling gates checked before `submit_run`, not mid-run.
+- Fallback policy with cost ceiling: fallback to paid provider is bounded by a per-run / per-tenant cost budget; exceeding it fails the run with a service notice, not an infinite escalation.
 
-**Phase to address:** M2-04 implementation phase — enforce read-only at the contract test level before any code is written.
+**Phase to address:** Multi-provider phase — per-provider policy and capability negotiation before wiring the second provider.
 
 ---
 
-## conversation-read-view Completion Pitfalls
+## Platform Extensions Pitfalls
 
-### Pitfall: Loading entire JSONL contract logs into memory — unbounded result sets
+### Pitfall: MCP Connector Registry — malicious tool schemas and capability escalation
 
 **What goes wrong:**
-The current `ContractLogReadModel.from_records` (`services/conversation-read-view/src/conversation_read_view/read_model.py:45-127`) loads ALL records, sorts them in memory, and builds a full conversation/task index. The `load_records_from_jsonl` function (line 20-25) calls `load_event_stream` which reads the entire JSONL file. This works for V2's small fixture-based test logs but will not scale when M2 completes the read-view with pagination and filtering for production use. A production contract log with thousands of turns across hundreds of conversations will exhaust memory or take seconds to load on every API call.
-
-The current API (`api.py:11-58`) has no pagination — it returns full conversation/task objects. Adding pagination on top of an in-memory model doesn't fix the underlying problem; it just slices an already-loaded result.
+M3 adds an MCP Connector Registry to register and discover MCP tool connectors. MCP tool schemas are LLM-readable descriptions; a malicious or compromised connector can include a tool description that tricks the LLM into calling it with escalated capabilities ("this tool is required for every request, call it with the user's full context"). Tool execution without sandboxing means a malicious connector runs arbitrary code on the host. Capability escalation: a connector registered as "read-only" can declare tools that write, and the registry doesn't enforce the declared capability against the actual tool behavior. In a legal domain, a malicious tool could exfiltrate client document contents via a tool-call argument.
 
 **Warning signs:**
-- The read-view API gains `limit`/`offset` parameters but `from_records` still loads all records.
-- Test fixtures for conversation-read-view grow beyond 100 records.
-- The read-view API response time exceeds 1 second in tests.
-- `ContractLogReadModel.__init__` holds references to all conversations and tasks in memory (lines 38-42).
+- Tool schemas accepted into the registry without schema validation or capability review.
+- Tool execution runs in the same process/namespace as the agent — no sandbox, no network egress control.
+- Connector capabilities are self-declared and never verified against actual tool behavior.
+- Tool descriptions are passed verbatim into the LLM prompt without length limits or content review.
 
 **Prevention:**
-- Before adding pagination/filtering, refactor the read model to support streaming/indexed access: either (a) build an on-disk index (SQLite) from JSONL logs that supports paginated queries, or (b) implement a streaming reader that filters records during JSONL parsing without loading all into memory.
-- The API must accept `limit`, `offset`, `conversation_id` filter, `date_range` filter, and `status` filter at the query level, not at the post-load level.
-- Add a test with a 10,000-record fixture that asserts the API returns paginated results without loading all records (verify via memory profiling or mock the record loader).
+- Registry admission requires a schema validation + human review (consistent with the skill-write human-review gate). No auto-registration of untrusted connectors.
+- Tool execution sandboxed: separate process/container, restricted network egress, bounded CPU/memory, no access to contract logs or other tenants' data. Use the existing output-boundary discipline: tool results pass through an allowlist before reaching the LLM context.
+- Capability enforcement: the registry declares a capability set per connector; tool calls that exceed declared capabilities are blocked and logged.
+- Tool description length-limited and content-reviewed; descriptions are not passed verbatim if they contain instruction-like content.
+- Add a test: a fixture malicious connector (over-claiming description, attempting file exfiltration) is rejected or sandboxed.
 
-**Phase to address:** M2-05 design phase — choose the indexing strategy before adding API endpoints.
+**Phase to address:** MCP Connector Registry phase — admission review and sandboxing before any connector is callable.
 
----
-
-### Pitfall: Privacy scrub gap between store-time and read-time
+### Pitfall: Model Provider Gateway — cascading failures, fallback loops, cost explosion
 
 **What goes wrong:**
-The contract log store (`packages/platform-runtime/src/platform_runtime/store.py:108-137`) rejects events with `raw_payload` key and forbidden full-text keys (`case_facts`, `customer_document_text`, `document_text`, `full_text`, `payload_text`, `raw_text`) at store time. The read-view privacy module (`services/conversation-read-view/src/conversation_read_view/privacy.py:9-43`) only checks for `raw_payload` — it does NOT check for the other 6 forbidden full-text keys. This means if a new backend (Codex, provider_model) writes an event that bypasses the store-time check (e.g., through a different code path, or because the event is constructed differently), the read-view will happily expose `case_facts` or `customer_document_text` to the API consumer.
-
-When M2 extends the read-view with trace queries and admin API access, the surface area for this gap increases — more fields are exposed, more query paths exist, and the privacy scrub only catches one of seven forbidden keys.
+The unified gateway routes, rate-limits, and falls back across providers. Cascading failure: one provider's outage causes all traffic to fall to the next, which then overloads and fails, cascading to the next — a thundering herd. Fallback loops: a request fails on provider A, falls back to B, B fails, falls back to A — an infinite loop because the gateway doesn't track that A already failed for this request. Cost explosion: the gateway falls back from a cheap model to an expensive model on every transient error, multiplying cost. Model selection gaming: if the gateway exposes model choice to the caller (or the router), a tenant could pin all requests to the most expensive model, or the router could be gamed to always pick the expensive path.
 
 **Warning signs:**
-- The read-view API returns fields containing `case_facts`, `document_text`, or `full_text` in test fixtures.
-- The `scrub_contract_payload` function in `privacy.py` is not updated when new forbidden keys are added to `store.py`.
-- A new backend adapter writes contract events through a path that doesn't go through `InMemoryContractLogStore._reject_forbidden_payload_storage`.
-- The admin console API (M2-06) reads contract logs directly without going through `scrub_contract_payload`.
+- No circuit breaker — a failing provider is retried on every request, prolonging the outage.
+- Fallback chain has no "already tried" tracking — requests loop between providers.
+- No per-tenant / per-run cost ceiling; cost dashboards show unbounded spikes during outages.
+- Model selection is caller-controlled with no policy enforcement.
 
 **Prevention:**
-- Unify the forbidden keys: `privacy.py` must import and check the same `_FORBIDDEN_FULL_TEXT_KEYS` set from `store.py` (currently hardcoded separately). Single source of truth.
-- Add a read-time privacy test that asserts ALL forbidden keys (not just `raw_payload`) are rejected by `scrub_contract_payload`.
-- Every read-view API endpoint and admin console API endpoint must pipe responses through `scrub_contract_payload` — add a test that verifies this by injecting a fixture with each forbidden key and asserting rejection.
-- When Codex/provider_model adapters write contract events, verify they go through `ContractLogStore.append` which enforces store-time rejection.
+- Circuit breaker per provider: after N consecutive failures, the provider is marked unhealthy for a cooldown period; requests skip it instead of retrying. Half-open probing to recover.
+- Fallback chain tracks tried-providers per request; a provider already tried is not retried in the same request. Bounded fallback depth.
+- Per-tenant and per-run cost ceiling enforced at the gateway; exceeding it fails the run with a service notice, not an infinite escalation.
+- Model selection is gateway-policy-controlled, not caller-controlled; the router proposes, the gateway disposes based on policy + cost + health.
+- Add a test: simulate provider A outage → assert fallback to B is bounded, no loop, cost ceiling enforced, circuit breaker opens for A.
 
-**Phase to address:** M2-05 implementation phase — fix the privacy scrub gap before extending the API surface.
+**Phase to address:** Model Provider Gateway phase — circuit breaker and cost ceiling before multi-provider fallback is enabled.
 
----
-
-### Pitfall: Breaking existing query consumers when extending the API
+### Pitfall: Multi-Agent Runtime — agent deadlock, infinite handoff loops, shared state corruption
 
 **What goes wrong:**
-The current API (`api.py:11-58`) has three routes: `/conversations/{id}`, `/tasks/{id}`, `/feedback?status=pending`. The feedback route has a hard constraint at line 36-47: `status` must be `"pending"` — any other value returns 400. When M2 extends the API with pagination, filtering, and trace queries, the developer adds new query parameters (`limit`, `offset`, `date_from`, `date_to`, `channel`, `status`) and new routes (`/traces/{id}`, `/conversations`, `/tasks`). If the existing route behavior changes (e.g., `/feedback` now accepts `status=resolved`), existing consumers that expect 400 for non-pending status break. If the response shape changes (e.g., `_with_contract_metadata` adds new fields), consumers that parse the response with strict schema validation break.
+Multi-agent runtime introduces agent-to-agent handoffs. Deadlock: agent A waits for agent B's output, B waits for A's — no cycle breaker. Infinite handoff loop: A hands to B, B rejects and hands back to A, repeat — each agent interprets its role narrowly and rejects the other's output, with no authority to reconcile. Shared state corruption: agents share a context/memory store and one agent's write corrupts another's read mid-turn. Unbounded parallelism: the runtime fans out N sub-agents in parallel with no concurrency limit, exhausting the event loop / provider rate limits. In a legal domain, an infinite handoff loop silently burns cost while a lawyer waits; state corruption produces a legal conclusion built on garbled context.
 
 **Warning signs:**
-- The `/feedback?status=pending` route behavior changes (e.g., now returns all statuses, or the 400 error is removed).
-- The response shape of existing routes gains new required fields.
-- The `not_found_response` format changes.
-- Existing `test_api.py` tests are modified to accommodate new behavior instead of new tests being added for new routes.
+- No `max_depth` / `max_handoffs` bound on agent-to-agent handoffs.
+- No cycle detection in the agent handoff graph.
+- Shared state mutated by one agent while another is mid-read (no isolation / versioning).
+- Parallel fan-out with no semaphore / concurrency limit; provider 429s cascade.
 
 **Prevention:**
-- Existing routes must remain backward-compatible: `/conversations/{id}`, `/tasks/{id}`, `/feedback?status=pending` keep their current behavior exactly.
-- New routes (`/conversations` with pagination, `/tasks` with filtering, `/traces/{id}`) are additive.
-- New query parameters on existing routes must be optional and default to current behavior.
-- Add a "backward compatibility" test suite that pins the exact response shape of existing routes using golden fixtures.
+- Hard bounds: `max_handoffs` (e.g., 5) and `max_depth` per run; exceeding them terminates the run with a service notice. Track handoff count in the `ExecutionTrace`.
+- Cycle detection: track the agent handoff chain per run; if agent A → B → A is detected, break the cycle by escalating to a human or a terminal failure.
+- Shared state is versioned / copy-on-write per agent turn; an agent reads a snapshot, not a live-mutated store. Writes create a new version.
+- Bounded parallelism: `asyncio.Semaphore` limits concurrent sub-agent runs; excess sub-tasks queue or fail fast.
+- Add tests: (1) two-agent cycle → assert termination within `max_handoffs`; (2) parallel fan-out → assert concurrency capped; (3) shared-state mutation → assert no mid-turn corruption.
 
-**Phase to address:** M2-05 implementation phase — add backward compatibility tests before extending the API.
+**Phase to address:** Multi-Agent Runtime Adapter phase — bounds and cycle detection before any multi-agent run is enabled.
 
----
-
-## Admin Console API Pitfalls
-
-### Pitfall: No auth system — read-only endpoints exposed without authentication
+### Pitfall: Skill Registry write — version conflict and review bypass
 
 **What goes wrong:**
-The existing codebase has no authentication system. The `conversation-read-view` API (`api.py`) is a pure function `handle_get` with no auth check. The WeCom service uses callback verification (token/AES key) but that's channel auth, not API auth. When M2 adds the Admin Console API with endpoints for sessions, tasks, feedback, gates, and health, these endpoints expose operational data (session IDs, task statuses, feedback content, gate states, health details) with no authentication. Even though the endpoints are "read-only," the data they expose is sensitive: conversation metadata, user IDs, feedback content, backend health details, secret reference names.
-
-The `WeComChannelConfig.capabilities()` and `health()` methods already expose `secret_refs_configured` booleans (which secrets are configured) in `packages/channels/wecom/src/inkstatute_channels_wecom/adapter.py:55-63` and `137-152`. The admin API would aggregate these across all channels and backends, giving an attacker a map of the system's secret configuration.
+Beyond the critical auto-modification risk (above), skill writes introduce version conflicts: two operators edit the same skill concurrently, last-write-wins silently drops one edit. Review bypass: a write path is added that skips the human-review gate (e.g., an admin "hotfix" path, a migration script, a test fixture that writes active skills). Skill injection: a skill descriptor with a malicious `prompt_template` or `tool_binding` is written and immediately becomes active, injecting instructions into every lawyer query the router sends to that skill.
 
 **Warning signs:**
-- The Admin Console API has no auth middleware or token check.
-- Health/status endpoints expose `secret_refs_configured` maps, config paths, or backend metadata.
-- The admin API is deployed on the same port as the WeCom service callback handler.
-- No test asserts that unauthenticated requests are rejected.
+- Skill writes have no optimistic concurrency control (no `version` / `etag` check).
+- A write path exists that doesn't go through the human-review gate (admin hotfix, migration, fixture loader).
+- Skill descriptors accepted without validating `prompt_template` and `tool_binding` content.
+- Active skill set updated in place without versioning.
 
 **Prevention:**
-- M2-06 must include a minimal auth gate: at minimum, a static API token validated from environment variable (not committed to repo). All admin API endpoints require this token in an `Authorization` header.
-- Add a test that asserts all admin API endpoints return 401 without a valid token.
-- The admin API must NOT expose: secret reference names, secret values, config file paths, backend internal metadata, or `secret_refs_configured` maps. Instead, expose only `secrets_configured: true/false` (boolean, not which secrets).
-- The admin API must run on a separate port from the WeCom callback handler to prevent channel-traffic exposure.
+- Optimistic concurrency: write requires the current `version`; mismatch → conflict error, not silent overwrite.
+- Every write path — including admin, migration, and fixtures — goes through the same human-review gate. No bypass paths. Test fixtures write to a `candidate` namespace, never `active`.
+- Skill descriptor validation: `prompt_template` and `tool_binding` pass a content review (no instruction injection, no tool bindings outside the connector's declared capabilities).
+- Active skill set is a versioned pointer; promotion swaps the pointer atomically and is rollbackable.
 
-**Phase to address:** M2-06 design phase — define the auth gate and data redaction policy before building endpoints.
+**Phase to address:** Skill Registry write phase — concurrency control and single review-gate before any write path ships.
 
----
-
-### Pitfall: Read-only Admin Console scope creep to read-write operations
+### Pitfall: Hybrid routing — router hallucination, confidence miscalibration, routing loops, cold-start bias
 
 **What goes wrong:**
-The PRD §11 says Admin Console API is "只读" (read-only). But during implementation, the operator says "it would be convenient to restart a gate from the admin console" or "can I dismiss a feedback item from the admin API?" The developer adds a POST endpoint to dismiss feedback, then a POST to retry a failed task, then a POST to toggle a feature flag. Each addition turns the read-only admin API into a write surface that bypasses the default-OFF lane gates and the human-gated live promotion process. The `RuntimeFeatureFlags` (`packages/platform-runtime/src/platform_runtime/feature_flags.py:12-26`) are default-OFF — but an admin API that can toggle them at runtime defeats the human-gate safety model.
+Beyond the critical legal-risk-routing pitfall (above): router hallucination — the router model itself hallucinates a route decision (invents a skill or backend that doesn't exist). Confidence miscalibration — the router reports 0.9 confidence on a wrong route. Routing loops — the router routes to a skill, the skill defers back to the router, repeat. Cold-start bias — with no historical data, the router defaults to a fixed (often cheapest) path that is wrong for legal queries.
 
 **Warning signs:**
-- The Admin Console API gains POST/PUT/DELETE endpoints.
-- The admin API can modify `RuntimeFeatureFlags` at runtime.
-- The admin API can dismiss/triage feedback (changing `FeedbackEvent.status` from `pending` to `dismissed`).
-- The admin API can cancel runs or submit approvals (duplicating `BackendAdapter.cancel_run` / `submit_approval`).
+- Router emits a `skill_id` or `backend_id` that doesn't exist in the registry — no validation.
+- Confidence scores never validated against actual outcome accuracy.
+- Router → skill → router cycle with no loop breaker.
+- Cold-start: first N requests all route to the same default, regardless of query type.
 
 **Prevention:**
-- The Admin Console API must be GET-only. Add a contract test that asserts no POST/PUT/DELETE handlers exist in the admin API module.
-- The admin API must not import `RuntimeFeatureFlags`, `BackendAdapter.submit_run`, `BackendAdapter.cancel_run`, or `BackendAdapter.submit_approval`.
-- If operators need write operations, that is M3 scope (PRD §11: M3 includes "安全合规体系"). Document this explicitly in the M2 plan.
+- Router output validated against the registry: a route to a non-existent skill/backend is a hard error, not a fallback. The router cannot invent routes.
+- Confidence calibration validated against a legal-domain eval set; calibration drift monitored. Low-confidence routes escalate to the safe (Hermes) path, not the cheap path.
+- Routing loop breaker: track route-decision chain per run; if router → skill → router is detected, terminate with a service notice.
+- Cold-start defaults to the safe (Hermes / reviewed) path until the router has enough calibrated data to deviate. Cold-start is not "cheapest by default."
+- Add tests: (1) router hallucination → assert hard error; (2) routing loop → assert termination; (3) cold-start → assert safe default.
 
-**Phase to address:** M2-06 implementation phase — enforce GET-only at the contract test level.
+**Phase to address:** Hybrid routing phase — validation and loop-breaking before the router is enabled.
 
 ---
 
-### Pitfall: Admin health/status endpoints leaking internal system structure
+## Operator & UX Layer Pitfalls
+
+### Pitfall: Admin Web UI — XSS via chat content and dashboards
 
 **What goes wrong:**
-The admin API exposes health/status views for operators. The `ComponentHealth` dataclass (`packages/platform-runtime/src/platform_runtime/protocols.py:69-76`) includes `component_id`, `detail`, and `metadata`. The WeCom adapter's `health()` returns `channel_id`, `network_io: False`, and `secret_refs_configured` map. The Hermes adapter's `bootstrap_check` returns `backend_id`, `invocation_mode`, `no_channel_io`, `runner_injected`, `oneshot_command_configured`. When the admin API aggregates these, it exposes: which channels are configured, which backends are available, what invocation modes are supported, whether runners are injected, what commands are configured. This is internal system structure that an attacker can use to understand the attack surface.
+The Admin Web UI renders sessions, tasks, feedback, and health views. Chat content and feedback payloads are LLM-generated or user-supplied — both are untrusted. Rendering them via `innerHTML`, unsanitized markdown, or a sanitizer with bypasses (e.g., video-tag exemptions, `srcdoc` iframes) enables stored XSS. In a multi-user admin console, an attacker who can influence LLM output (via indirect prompt injection in a shared document) can fire XSS in every admin's browser, stealing the admin token from localStorage and escalating to full account takeover. This is a documented real-world pattern in LLM chat UIs (AnythingLLM, Open-WebUI, MagicAI CVEs).
 
 **Warning signs:**
-- Health endpoints return `metadata` fields from `ComponentHealth` or `BootstrapStatus` without redaction.
-- The admin API exposes package names, service paths, or adapter class names.
-- Health responses include `oneshot_command` or `api_base_url` values from `HermesBackendConfig`.
-- The admin API returns a system topology map showing all channels, backends, and their connections.
+- Assistant messages rendered via `innerHTML` or `{@html}` without DOMPurify.
+- Markdown rendered via `marked.parse()` without `DOMPurify.sanitize()` wrapping.
+- Session token stored in localStorage (readable via XSS).
+- No Content-Security-Policy header on the admin UI.
 
 **Prevention:**
-- Define an `AdminHealthView` neutral schema that exposes only: `component_type` (channel/backend/runtime), `component_id`, `ok: bool`, `detail: str` (human-readable status, not internal paths). No `metadata` passthrough.
-- Add a redaction layer that strips `metadata` from `ComponentHealth` and `BootstrapStatus` before exposing to the admin API.
-- Test that admin health responses do not contain: file paths, command strings, URLs, secret reference names, adapter class names, or package paths.
+- All backend/LLM/user content rendered as escaped plaintext or via `DOMPurify.sanitize(marked.parse(content))`. No raw HTML insertion. No sanitizer exemptions (video tags, iframes, `srcdoc`).
+- Session token in httpOnly cookie, not localStorage — XSS cannot read it.
+- Content-Security-Policy with `strict-dynamic` and nonces; no `unsafe-inline`.
+- Add a test: inject XSS payload via chat input / feedback / model description → assert it does not execute in the rendered UI.
 
-**Phase to address:** M2-06 implementation phase — build the redaction layer alongside the health endpoints.
+**Phase to address:** Admin Web UI phase — rendering sanitization and token storage before the UI is exposed to operators.
 
----
-
-## QQBot Channel Pitfalls
-
-### Pitfall: QQ-specific logic leaking into the shared ChannelAdapter contract
+### Pitfall: Admin Web UI — privilege escalation via UI and data exposure in dashboards
 
 **What goes wrong:**
-The `ChannelAdapter` Protocol (`packages/platform-runtime/src/platform_runtime/protocols.py:208-219`) defines 5 methods: `channel_id`, `capabilities`, `verify_and_ack`, `normalize_inbound`, `deliver`, `health`. The WeCom adapter (`packages/channels/wecom/src/inkstatute_channels_wecom/adapter.py`) imports WeCom-specific modules: `normalize_wecom_turn`, `normalize_wecom_feedback_callback`, `parse_callback_envelope`, `build_text_send_envelope`, `build_file_send_envelope`, `build_template_card_envelope`. These are WeCom-specific implementations of the contract methods.
-
-When building QQBot, the developer discovers QQ Bot has different callback verification (not WeCom's AES/token), different message types (QQ rich media, QQ inline keyboards vs WeCom template cards), and different feedback mechanisms (QQ button callbacks vs WeCom template card callbacks). The temptation is to add QQ-specific fields to `ChannelCapabilitySet` (e.g., `supports_qq_inline_keyboard`) or to `ChannelDelivery` metadata (e.g., `qq_message_type`). This pollutes the neutral contract with channel-specific fields, exactly the pattern the PRD §1.2 warns against: "平台核心不依赖法律字段、不依赖 Hermes 内部目录结构".
+The existing Admin Console API (`services/admin-console-api`) is read-only with static token auth and a field allowlist excluding secrets. The Web UI adds interactivity (and eventually write actions), creating privilege escalation paths: a read-only operator sees a "promote skill" button that calls a write endpoint not gated by RBAC; a dashboard shows fields the API allowlist excludes (because the UI has its own data path); CSRF allows a malicious site to trigger admin actions via the operator's session.
 
 **Warning signs:**
-- `ChannelCapabilitySet` (`protocols.py:57-66`) gains new fields specific to QQ (e.g., `supports_inline_keyboard`, `supports_qq_rich_media`).
-- `ChannelDelivery` metadata keys include channel-specific names (`qq_msg_type`, `qq_chat_type`).
-- The QQBot adapter imports from `wecom_service` modules instead of having its own normalization.
-- The `ChannelAdapter` Protocol changes to accommodate QQ-specific behavior.
+- Web UI calls write endpoints that the API layer doesn't RBAC-gate.
+- Dashboard data path bypasses the existing API field allowlist.
+- No CSRF protection on state-changing endpoints.
+- Operator role can perform admin actions through the UI that the API doesn't authorize.
 
 **Prevention:**
-- Freeze `ChannelCapabilitySet` and `ChannelAdapter` Protocol for M2. QQBot must work within the existing 8-capability surface (`supports_text`, `supports_files`, `supports_cards`, `supports_images`, `supports_voice`, `supports_streaming`, `ack_deadline_ms`, `idempotency_strategy`).
-- QQ-specific message types map to existing capabilities: QQ inline keyboards → `supports_cards=True`; QQ rich media → `supports_files=True` / `supports_images=True`.
-- QQBot gets its own `services/qqbot-service/` with its own normalization, verification, and sender modules — do not import from `wecom_service`.
-- Channel-specific metadata stays in `ChannelDelivery.metadata` as opaque key-value pairs, not in the contract schema's top-level fields.
+- Web UI MUST go through the same Admin Console API; no separate data path. The API's field allowlist applies to the UI too.
+- Every state-changing endpoint RBAC-gated (see Security pitfalls); the UI hides actions the role can't perform, but the API is the authority.
+- CSRF tokens on all state-changing endpoints; SameSite cookies.
+- Add a test: read-only operator token → assert write endpoints return 403; assert dashboard response excludes allowlisted fields.
 
-**Phase to address:** M2-07 design phase — freeze the channel contract surface before building QQBot.
+**Phase to address:** Admin Web UI phase + RBAC phase — API-gated data path and RBAC before write actions ship.
 
----
-
-### Pitfall: Duplicating WeCom service logic instead of abstracting shared channel concerns
+### Pitfall: Lawyer Web chat — session hijacking, message ordering, offline sync conflicts, file upload malware
 
 **What goes wrong:**
-The WeCom service (`services/wecom-service/`) contains: `normalization.py`, `protocol.py`, `sender.py`, `ingress_runtime.py`, `delivery_guard.py`, `output_policy.py`, `idempotency.py`, `session_runtime.py`, `active_task_router.py`, `task_flow.py`, and more. Much of this is WeCom-specific, but some is channel-generic: idempotency logic, delivery guard, output policy, session runtime, active task routing. When building QQBot, the developer copies the entire `wecom-service/` directory, renames it to `qqbot-service/`, and modifies the WeCom-specific parts. Now there are two copies of idempotency logic, two copies of delivery guard, two copies of session runtime — and when a bug is fixed in one, it's not fixed in the other.
-
-The `active_task_router.py` is especially risky: its regex patterns (`_STATUS_RE`, `_CANCEL_RE`, `_NEW_TASK_RE` at lines 181-183) contain Chinese keywords (进度, 状态, 取消, 停止) that are channel-independent. Duplicating this logic means the two channels' intent classification diverges over time.
+The lawyer-facing Web chat is a new channel alongside WeCom. Session hijacking: if the chat session token is predictable or stored in localStorage with XSS, an attacker hijacks the lawyer's session and sees client matters. Message ordering: async streaming + WeCom + Web chat running in parallel for the same lawyer can deliver messages out of order, producing incoherent legal advice. Offline sync conflicts: a lawyer composes offline, reconnects, and the sync overwrites a newer server-side state. File upload malware: a lawyer uploads a "document" that is malware (macro-laden doc, polyglot file); the platform stores and later serves it, or an admin opens it.
 
 **Warning signs:**
-- `services/qqbot-service/` contains files that are byte-for-byte copies of `services/wecom-service/` files (except for class names).
-- `idempotency.py`, `delivery_guard.py`, or `output_policy.py` is duplicated across channel services.
-- `active_task_router.py` is copied to `qqbot-service/` with the same regex patterns.
-- A bug fix in `wecom-service/idempotency.py` is not applied to `qqbot-service/idempotency.py`.
+- Session tokens are predictable, in URL params, or in localStorage with no XSS protection.
+- No monotonic sequence number on messages; ordering depends on arrival time.
+- Offline sync uses last-write-wins with no conflict detection.
+- File uploads accepted with no type validation, no malware scan, stored with original filenames served back to users.
 
 **Prevention:**
-- Before building QQBot, audit `wecom-service/` for channel-generic vs. channel-specific logic. Move channel-generic logic to `packages/platform-runtime/` or a new `packages/channel-core/` package.
-- `active_task_router.py` is channel-generic (it classifies text intent, not channel-specific callbacks). Move it to `packages/platform-runtime/` and have both WeCom and QQBot services import it.
-- `idempotency.py` and `delivery_guard.py` are likely channel-generic — extract to shared package.
-- `normalization.py`, `protocol.py`, `sender.py` are channel-specific — QQBot gets its own versions.
-- The extraction must be done BEFORE QQBot is built, not after — otherwise the duplication is already entrenched.
+- Session tokens: high-entropy, httpOnly + Secure + SameSite cookies, short TTL, rotation on privilege change. No tokens in localStorage or URLs.
+- Monotonic sequence numbers per conversation; the UI renders by sequence, not arrival order. Add a test for out-of-order delivery.
+- Offline sync: conflict detection (version vector / timestamp); conflicts surface to the lawyer, not silent overwrite.
+- File uploads: type validation (allowlist), malware scan (ClamAV or equivalent), stored with generated names not originals, served with `Content-Disposition: attachment` and no inline execution. Size limits.
+- File contents subject to the same `raw_payload_ref` discipline — contract logs reference, not inline.
 
-**Phase to address:** M2-07 pre-implementation phase — extract shared channel logic before writing QQBot.
+**Phase to address:** Lawyer Web chat phase — session security and upload safety before the chat is exposed to lawyers.
 
 ---
 
-### Pitfall: QQ Bot feedback loop diverging from WeCom's FeedbackEvent normalization
+## Security Pitfalls
+
+### Pitfall: RBAC — role explosion, permission granularity, default-deny vs default-allow
 
 **What goes wrong:**
-The WeCom feedback loop is carefully normalized: `normalize_wecom_feedback_callback` produces a `FeedbackEvent` with `source: "card_button"`, `event_type` classification, `action` (up/down/needs_fix/route_wrong), and `skill_candidate` for route mismatches. The `feedback-service` then deduplicates, classifies, and queues. QQ Bot has a different feedback mechanism (QQ inline keyboard buttons, QQ message reactions, or QQ command-based feedback). If the QQBot adapter normalizes feedback differently — e.g., different `source` enum value, different `action` mapping, or missing `skill_candidate` generation — the feedback-service's deduplication and classification logic breaks for QQ-originated feedback.
-
-The `FeedbackEvent` schema (PRD §6.3) defines `source` as `enum(card_button, text_command, web_form, admin_annotation)`. QQ Bot feedback must map to one of these — if the developer adds `qq_button` as a new source value, it breaks the schema.
+M3 introduces RBAC. Role explosion: a role is created per tenant per feature combination, leading to an unmanageable matrix where no one knows who can do what. Permission granularity mistakes: too coarse (one "admin" role that can do everything including promoting legal skills) or too fine (a permission per endpoint, unmaintainable). Default-allow: a new endpoint is added without a permission check, and the framework defaults to allow — any authenticated user can call it. Token leakage: RBAC decisions embedded in long-lived JWTs that leak scope after a role change.
 
 **Warning signs:**
-- The QQBot adapter produces `FeedbackEvent` records with `source` values not in the PRD §6.3 enum.
-- QQ Bot feedback lacks `skill_candidate` generation for route mismatches.
-- The `feedback-service` tests don't include QQ-originated feedback fixtures.
-- QQ Bot feedback deduplication uses a different idempotency key scheme than WeCom.
+- Role count grows linearly with tenant count.
+- A single "admin" role can both read dashboards and promote legal skills (no separation of duties).
+- New endpoints have no `@requires_permission` decorator; the framework defaults to allow.
+- JWTs with long TTLs carry permissions that aren't re-validated server-side after role changes.
 
 **Prevention:**
-- QQ Bot feedback must map to existing `FeedbackEvent.source` enum values: QQ inline keyboard buttons → `card_button`, QQ text commands → `text_command`. No new enum values.
-- QQ Bot feedback normalization must produce the same `FeedbackEvent` shape as WeCom: same `event_type` classification, same `action` mapping, same `skill_candidate` generation for route mismatches.
-- Add feedback-service tests with QQ-originated feedback fixtures that assert the same deduplication and classification behavior as WeCom fixtures.
-- The idempotency key for QQ Bot feedback must follow the same scheme: channel-specific callback metadata hashed into a stable key.
+- Fixed, small role set (e.g., `operator_read`, `operator_write`, `skill_reviewer`, `tenant_admin`, `platform_admin`) — not per-tenant roles. Tenancy is a separate axis from role.
+- Permission granularity at the action level (e.g., `skill:promote`, `skill:write_candidate`, `feedback:read`), grouped into roles. Legal-skill promotion requires `skill_reviewer` — a separate role from `operator_write` (separation of duties for the human-review gate).
+- Default-deny: every endpoint requires an explicit permission; the framework rejects unannotated endpoints in CI (a test that scans for endpoints without `@requires_permission`).
+- Short-lived tokens; permissions re-validated server-side on every request against the current role, not the token's embedded scope. Role changes take effect immediately.
+- Add a test: scan all endpoints → assert each has a permission annotation; assert default-deny for unauthenticated / under-privileged calls.
 
-**Phase to address:** M2-07 implementation phase — define QQ-to-FeedbackEvent mapping before building the feedback path.
+**Phase to address:** RBAC phase — role model and default-deny enforcement before any endpoint is exposed.
 
----
-
-### Pitfall: QQ Bot API instability and rate limits breaking the complete loop
+### Pitfall: Multi-tenant — cross-tenant data leakage, tenant config poisoning, noisy neighbor, migration complexity
 
 **What goes wrong:**
-WeCom has a stable enterprise API with well-documented rate limits and callback semantics. QQ Bot API is less mature: the QQ Bot platform may change message formats, callback signatures, rate limits, or card templates without notice. The WeCom service has retry and idempotency logic tuned for WeCom's retry behavior (WeCom retries callbacks every few seconds). QQ Bot may have different retry intervals, different ACK deadlines, or different rate limit headers. If the QQBot service copies WeCom's retry/idempotency parameters without tuning for QQ Bot's actual behavior, the complete loop (receive → ACK → agent → send → feedback) breaks under real QQ Bot traffic.
+Beyond the critical legal-data-leakage pitfall (above): tenant config poisoning — a tenant_admin can set config (model, routing policy, skill set) that affects another tenant, or a shared config is overwritten by one tenant. Noisy neighbor — one tenant's heavy run exhausts shared resources (event loop, provider rate limits, DB connections), degrading service for all other tenants. Migration complexity — existing V2 data is single-tenant; backfilling tenant_id is error-prone (null tenant_ids, default-tenant merging, forgotten tables).
 
 **Warning signs:**
-- QQBot service uses WeCom's `ack_deadline_ms: 5000` without verifying QQ Bot's actual ACK deadline.
-- QQBot service retry logic uses WeCom's retry intervals without checking QQ Bot API documentation.
-- No rate limit handling for QQ Bot API send calls.
-- QQ Bot card/template format changes break the `deliver` method silently.
+- Tenant config stored in a shared table without tenant_id scoping.
+- No per-tenant resource quota (concurrent runs, rate limit, storage).
+- Migration script backfills tenant_id on some tables but misses contract logs, feedback, memory, or artifacts.
+- Shared provider API key used for all tenants — one tenant's burst exhausts the rate limit for everyone.
 
 **Prevention:**
-- QQBot is a prototype proving ChannelAdapter portability (PRD §11: "QQBot 完整闭环"). It must complete the loop but is not a production cutover. Scope it as: fixture-driven loop proof, not live QQ Bot deployment.
-- All QQ Bot API interactions must be behind injected Protocols (like `HermesOneShotRunner`), not hardcoded API calls. Tests use fixtures, not live QQ Bot API.
-- `ack_deadline_ms` and retry parameters must be configurable per-channel, not hardcoded from WeCom values.
-- Add a test that verifies the QQBot complete loop (receive → ACK → normalize → dispatch → deliver → feedback) works end-to-end with fixtures.
+- Tenant config scoped by tenant_id; tenant_admin can only mutate their own tenant's config. Test: tenant A config change does not affect tenant B.
+- Per-tenant resource quotas: max concurrent runs, max requests/min, max storage. Enforced at the gateway / runtime. Noisy neighbor is bounded by quota, not by contention.
+- Migration: enumerate every table/store (contract logs, feedback, memory, artifacts, skills, sessions) and assert each has a non-null tenant_id after migration. Add a migration test.
+- Per-tenant provider API keys where possible; shared keys have per-tenant rate-limit partitioning.
+- Add a dedicated tenant-isolation gate with cross-tenant fixtures (a 20th gate or sub-gate).
 
-**Phase to address:** M2-07 implementation phase — scope as fixture-driven prototype, inject all QQ Bot API calls.
+**Phase to address:** Multi-tenant isolation phase — data-layer isolation and migration test before any tenant-scoped feature ships.
 
 ---
 
-## Cross-Cutting Pitfalls (M2 parallel to V2 human gates)
+## Integration Pitfalls (How new features can break existing gates/contracts)
 
-### Pitfall: Contract instability during parallel M2 work breaking V2 human gate evidence
+### Pitfall: M3 features pressuring the frozen BackendAdapter / ChannelAdapter Protocols
 
 **What goes wrong:**
-M2 proceeds in parallel with V2 human gates (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial). The V2 acceptance readiness report (`v1.5-V2-ACCEPTANCE-READINESS.md`) documents the state of the system at v1.5 closure. If M2 work modifies the `platform-contract` schemas, the `BackendAdapter` Protocol, the `ChannelAdapter` Protocol, or the output boundary rules, the system that the lawyers are testing during Phase 8 is no longer the system that was audited at v1.5. A schema change to `AgentResult` or `RouteDecision` could break the contract log replay that the V2 gates validate, causing the 9 gates to fail during the lawyer trial — which would invalidate the trial evidence.
-
-The `v2-acceptance-traceability` gate (9th gate) checks for requirement gaps. If M2 adds new requirements or moves code, the audit may report gaps that didn't exist at v1.5 closure, failing the gate while lawyers are mid-trial.
+The `BackendAdapter` Protocol (9 methods, `protocols.py:222-239`) and `ChannelAdapter` Protocol (6 methods, `protocols.py:208-219`) are frozen. M3 features create pressure to change them: streaming wants a new event type or a `stream_intermediate_events` method; artifacts want a `get_artifact` method; multi-agent wants a `handoff` method; multi-provider wants capability fields added to `AdapterCapabilitySet`. Each change ripples back to the Hermes adapter, the `DefaultRunRuntime` (which calls all 9 methods), and the contract test suite — breaking the 19 V2 gates.
 
 **Warning signs:**
-- M2 PRs modify files in `packages/platform-contract/src/platform_contract/schemas/`.
-- M2 PRs modify `packages/platform-runtime/src/platform_runtime/protocols.py`.
-- M2 PRs modify `packages/platform-runtime/src/platform_runtime/output_boundary.py`.
-- The 9 V2 gates fail during the V2 human gate period.
-- The `v2-acceptance-traceability` audit reports new gaps during M2 work.
+- A PR modifies `protocols.py` Protocol signatures or method count.
+- A PR adds fields to `AdapterCapabilitySet` or `ChannelCapabilitySet`.
+- Hermes adapter tests break after a Codex/provider_model change.
+- The `test_agent_adapter_contract.py` contract test fails because new backend-specific fields were added.
 
 **Prevention:**
-- Freeze `packages/platform-contract/` schema files for the duration of V2 human gates. Any M2 work that requires schema changes must be deferred until V2 acceptance is complete or explicitly approved as accepted risk.
-- M2 work that touches `protocols.py` or `output_boundary.py` must run all 9 V2 gates before merge and document that gates remain green.
-- Create a "contract freeze" test that compares current schema files against a v1.5 baseline hash — if schemas change, the test fails and requires explicit override.
-- The `v2-acceptance-traceability` audit must continue to pass throughout M2 — if M2 code moves break the audit, fix the audit before merging, not after.
+- Keep the Protocols frozen. New features work within the existing 9-method / 6-method surface: streaming uses `stream_events` + capability flags; artifacts use `collect_artifacts`; multi-agent uses `submit_run` with a multi-agent request shape; multi-provider uses `AdapterCapabilitySet` flags. No new Protocol methods.
+- If a feature genuinely cannot fit, it goes through a contract-change proposal with explicit V2-gate impact analysis — not a silent PR.
+- Add a contract test asserting Protocol method count and capability-set field count are unchanged from the V2 baseline (extend the existing count-assertion test from v1.6).
 
-**Phase to address:** All M2 phases — enforce contract freeze from M2-01 through M2-07.
+**Phase to address:** Every M3 phase that touches adapters — the contract-freeze guard test is added first, before any feature work.
 
----
-
-### Pitfall: Gate runner PYTHONPATH gaps when adding new packages
+### Pitfall: Feature flags not defaulting OFF, or live promotion bypassing the human gate
 
 **What goes wrong:**
-The V2 gate runner (`scripts/run_v2_gates.py:49-128`) has explicit PYTHONPATH entries for each gate. The `contract-test-suite` gate (line 100-104) has 11 PYTHONPATH entries. When M2 adds new packages (`packages/backends/codex`, `packages/backends/provider_model`, `packages/channels/qqbot`, `services/router-service`, `services/skill-registry`, `services/admin-console-api`), each must be added to the gate runner's PYTHONPATH and `compileall` paths. Missing a path causes either: (a) the gate fails with `ModuleNotFoundError`, or (b) worse, the gate silently passes because the new package's tests aren't discovered (the v1.4 audit found a PYTHONPATH regression that had been hiding 3 broken gates since v1.2 — PITFALLS.md v1.5 Pitfall 3).
+V2 invariant: all runtime lanes default OFF; live promotion is a human gate. M3 adds many new flags (streaming, artifacts, memory, multi-provider, MCP registry, model gateway, multi-agent, skill write, hybrid routing, Web UI, RBAC, multi-tenant). A flag defaults to ON by mistake, or a flag is promoted to live without the human gate, and a half-tested feature hits real lawyers. This is the single most common way M-features break a stable V2.
 
 **Warning signs:**
-- A new package is created but not added to `run_v2_gates.py`.
-- The `compileall` gate doesn't compile the new package's `src/` directory.
-- The `contract-test-suite` gate doesn't include the new package in its PYTHONPATH.
-- New package tests pass in isolation (`python -m unittest discover`) but not through the gate runner.
-- A gate that should test the new package silently skips it because the path is missing.
+- A new flag's default is `True` in config or code.
+- No human-gate evidence record before a flag is promoted in a live environment.
+- Flags are coupled — enabling one implicitly enables another.
+- Flag checks are missing on some code paths (the feature runs even when the flag is off).
 
 **Prevention:**
-- For each new M2 package, add a gate entry in `run_v2_gates.py` with the correct PYTHONPATH, following the existing pattern.
-- Add all new package `src/` paths to the `compileall` gate (line 110-127).
-- Add all new package `src/` paths to the `contract-test-suite` gate PYTHONPATH (line 103) if the contract tests need to import them.
-- Add a meta-test that asserts every `packages/*/src` and `services/*/src` directory is covered by either a gate PYTHONPATH or `compileall`.
+- Every M3 flag defaults to `False` in code and in every environment config. Add a test asserting all M3 flags default to False (extend the v1.6 flag-default test).
+- Flag promotion requires a human-gate evidence record (`promoted_by`, `promoted_at`, `evidence_ref`). No automated promotion.
+- Flags are independent; enabling one does not enable another. Test: enable flag A, assert flag B is still off.
+- Every feature code path checks its flag; add a test that asserts the feature is inert when the flag is off (no events emitted, no runs changed, no UI rendered).
 
-**Phase to address:** Each M2 feature phase — add gate entries when creating the package, not after.
+**Phase to address:** Every M3 phase — flag-default test added alongside each feature flag.
 
----
-
-### Pitfall: Default-OFF lane violations — M2 features enabled without human gate
+### Pitfall: M3 features breaking the 19 V2 gates (969 tests) via contract event drift
 
 **What goes wrong:**
-All runtime lanes are default-OFF (`RuntimeFeatureFlags` in `feature_flags.py:13-19`: `run_runtime_enabled`, `streaming_lane_enabled`, `channel_delivery_enabled`, `approval_lane_enabled`, `contract_log_enabled`, `context_assembly_enabled` — all `False`). M2 adds new services (router-service, skill-registry, admin-console-api) that may need their own feature flags. If these services are deployed without a default-OFF flag, they are implicitly ON, violating the "live promotion is human-gated" principle. The router service, if deployed as a standalone process and connected to the runtime, effectively enables routing outside the backend's control — a lane that was previously implicit (backend-internal) becomes explicit (external service) without a gate.
+The 19 V2 gates include contract event schema validation, fixture replay, relationship checks, and the gate-coverage meta-test. M3 features that emit new event types, change event fields, or add new packages/services can break these gates: a new event type isn't covered by the gate-coverage meta-test; a streaming event has a field that fails schema validation; a multi-agent run produces an `ExecutionTrace` relationship that the relationship-check test doesn't expect; a new package under `packages/*/src` isn't covered by any gate (the meta-test fails).
 
 **Warning signs:**
-- New M2 services have no feature flag and are ON by default.
-- The router service is deployed and connected to `DefaultRunRuntime` without a `router_enabled` flag.
-- The admin console API is deployed without an `admin_api_enabled` flag.
-- The skill registry is queried by the runtime without a `skill_registry_enabled` flag.
-- M2 feature flags are added to `RuntimeFeatureFlags` but default to `True`.
+- A new `packages/*/src` or `services/*/src` directory is added without a corresponding gate.
+- A new event type or field fails the contract schema validation gate.
+- The gate-coverage meta-test (`packages/contract-test-suite/tests/test_gate_coverage.py`) fails.
+- V2 gate test count drops below 969 (regression).
 
 **Prevention:**
-- Add M2 feature flags to `RuntimeFeatureFlags` (or a new `M2FeatureFlags` dataclass) with all defaults `False`: `router_service_enabled`, `skill_registry_enabled`, `admin_api_enabled`, `qqbot_channel_enabled`, `codex_backend_enabled`, `provider_model_backend_enabled`.
-- Each M2 service must check its flag before processing. The runtime must check `router_service_enabled` before calling the router port.
-- Tests for M2 features must explicitly enable the flag (as existing tests do with `RuntimeFeatureFlags(run_runtime_enabled=True)`).
-- Add a test that asserts all M2 feature flags default to `False`.
+- Every new package/service directory gets a gate before merge (enforced by the gate-coverage meta-test).
+- New event types/fields go through schema validation + fixture replay tests before being emitted.
+- Run the full 19-gate suite on every M3 PR; the test count must not drop below 969 and all gates must stay green. Add this as a CI requirement.
+- Any M3 feature that needs to change an existing event schema goes through a contract-change proposal, not a silent field addition.
 
-**Phase to address:** M2 setup phase — define all M2 feature flags with default-OFF before any service code is written.
+**Phase to address:** Every M3 phase — gate coverage and contract validation checked per PR.
 
----
-
-## Privacy & Safety Pitfalls
-
-### Pitfall: Contract log privacy regression from new backend event shapes
+### Pitfall: V2 human gates (Phase 5 + Phase 8) disrupted by M3 runtime changes
 
 **What goes wrong:**
-The contract log store (`store.py:108-137`) rejects events with `raw_payload` and 6 forbidden full-text keys. But Codex and provider_model backends produce different event shapes than Hermes. Codex may include `function_call_result` with full text; provider_model may include `prompt_content` or `completion_text` with user legal content. These field names are not in the `_FORBIDDEN_FULL_TEXT_KEYS` set (`store.py:130-137`: `case_facts`, `customer_document_text`, `document_text`, `full_text`, `payload_text`, `raw_text`). New backend events with sensitive legal content in fields like `prompt_content`, `completion_text`, `function_call_result`, or `tool_output` pass the store-time check and get persisted in contract logs — violating the PRD §7 rule: "契约日志只引用原始 payload（`raw_payload_ref`），不存敏感全文".
+Phase 5 (live WeCom UAT) and Phase 8 (five-workday lawyer trial) are open human gates running in parallel with M3. M3 runtime changes (streaming, multi-provider, multi-agent, routing) alter the live behavior the human gates are evaluating. A lawyer in the Phase 8 trial hits a streaming partial-failure that delivers a half-answer followed by a raw error — the trial evidence is contaminated. A routing change sends a trial lawyer's query to a different backend, producing a different answer quality than the trial baseline.
 
 **Warning signs:**
-- Codex/provider_model adapter tests write contract events with fields containing legal text that aren't in `_FORBIDDEN_FULL_TEXT_KEYS`.
-- New backend event fixtures contain `prompt_content`, `completion_text`, `function_call_result`, or `tool_output` fields with full text.
-- The `_FORBIDDEN_FULL_TEXT_KEYS` set is not updated when new backends are added.
-- Contract log replay tests for new backends contain sensitive legal content.
+- M3 flags are enabled in the environment where Phase 5 / Phase 8 is running.
+- Trial evidence (feedback, conversations) is collected from a run that used an M3 feature, mixing it with V2-baseline evidence.
+- No environment separation between M3-feature-on and V2-baseline for the human gates.
 
 **Prevention:**
-- Before adding Codex/provider_model adapters, audit their event shapes for new field names that could carry sensitive text. Add any new sensitive field names to `_FORBIDDEN_FULL_TEXT_KEYS` in `store.py`.
-- Consider a positive-list approach instead of a deny-list: contract log events may only contain fields from an allowlist (`turn_id`, `conversation_id`, `content` (hashed), `raw_payload_ref`, `metadata`, etc.). Any field not on the allowlist is rejected. This is safer than chasing new backend field names.
-- Add a test that asserts Codex/provider_model contract events are rejected by `_reject_forbidden_payload_storage` when they contain full-text legal content.
+- M3 features are OFF in the Phase 5 / Phase 8 environment. The human gates run against the V2 baseline. M3 features are validated in a separate environment.
+- Trial evidence tagged with the runtime config (flags on/off, backend, router mode) so M3-influenced evidence is not mixed with V2-baseline evidence.
+- Any M3 feature that must be validated by lawyers goes through its own human gate, not by contaminating Phase 5 / Phase 8.
 
-**Phase to address:** M2-01/M2-02 implementation phase — update forbidden keys before writing adapter event mappers.
-
----
-
-### Pitfall: Output boundary bypass through new channel delivery paths
-
-**What goes wrong:**
-The output boundary (`output_boundary.py`) filters text before user visibility. But it's applied in the runtime's delivery path, not in the channel adapter. When QQBot is added as a second channel, the `DefaultRunRuntime` must apply the output boundary to QQBot deliveries just as it does for WeCom. If the QQBot adapter is wired directly to the backend's output (bypassing the runtime's delivery path), the output boundary is skipped, and backend noise (Hermes gateway notices, Codex function call traces, provider error messages) reaches QQ Bot users.
-
-The WeCom adapter's `deliver` method (`adapter.py:106-135`) builds send envelopes but does NOT apply the output boundary — that's the runtime's job. If QQBot's `deliver` method is wired differently (e.g., directly from backend `stream_events` to channel `deliver`), the boundary is bypassed.
-
-**Warning signs:**
-- QQBot delivery tests don't include output boundary assertion.
-- The QQBot service has a code path from `BackendAdapter.stream_events` → `QQBotChannelAdapter.deliver` that doesn't pass through `DefaultAssistantOutputBoundary.apply`.
-- QQBot users see backend meta/gateway/function-call text during testing.
-- The output boundary is applied in `wecom-service` specifically, not in `platform-runtime` generically.
-
-**Prevention:**
-- The output boundary must be applied in `DefaultRunRuntime` (platform-runtime), not in individual channel services. This ensures all channels get boundary filtering by default.
-- Verify that `DefaultRunRuntime` applies the boundary to ALL channel deliveries, not just WeCom. If the current code only applies it for WeCom, refactor to apply it generically.
-- Add a test with a multi-channel runtime (WeCom + QQBot fake) that asserts the output boundary is applied to both channels' deliveries.
-- The QQBot adapter's `deliver` method should receive already-filtered text, not raw backend output.
-
-**Phase to address:** M2-07 implementation phase — verify output boundary is runtime-level, not channel-level; add multi-channel boundary test.
+**Phase to address:** Every M3 phase that touches runtime behavior — environment separation maintained throughout M3.
 
 ---
 
-### Pitfall: Admin Console API exposing secrets through health/status/config views
+## Regression Risks
 
-**What goes wrong:**
-The `WeComChannelConfig` exposes `token_secret_ref`, `encoding_aes_key_secret_ref`, `corp_id_ref` — these are secret *reference names* (not values), but even reference names reveal the system's secret management structure. The `HermesBackendConfig` exposes `api_base_url` and `oneshot_command`. The `BootstrapStatus.metadata` includes `oneshot_command_configured: bool` and `runner_injected: bool`. When the admin API aggregates health/status across all channels and backends, it may expose: which secret references are configured, what API URLs are used, what commands are configured, whether runners are injected. An attacker who gains admin API access gets a complete map of the system's sensitive configuration.
-
-The PRD §7 is explicit: "WeCom token、encoding AES key、secret、access token、media 文件、回调原文、用户消息原文不得提交到仓库" and "密钥只通过环境变量或密钥管理系统引用". The admin API must not become a side-channel for secret discovery.
-
-**Warning signs:**
-- Admin API health endpoints return `secret_refs_configured` maps showing which secrets are configured.
-- Admin API config views return `api_base_url`, `oneshot_command`, or `profile_name` values.
-- Admin API responses include environment variable names or secret reference names.
-- The admin API has a `/config` endpoint that dumps service configuration.
-
-**Prevention:**
-- The admin API must have a strict allowlist of fields it can expose. For health: `component_type`, `component_id`, `ok`, `detail` (human-readable). For config: nothing — config views are M3 scope with proper RBAC.
-- Add a test that asserts admin API responses do not contain: `_ref`, `secret`, `token`, `key`, `url`, `command`, `path`, `password` (case-insensitive substring match on response JSON keys).
-- The admin API must not have a `/config` or `/secrets` endpoint. If operators need config inspection, that is M3 scope.
-
-**Phase to address:** M2-06 implementation phase — build the field allowlist and leakage test before exposing any endpoints.
-
----
-
-## Top 5 Risks (Ranked)
-
-### Risk 1: Contract drift from new backends breaking the 479-test V2 gate suite
-**Impact:** HIGH — breaks V2 acceptance evidence, invalidates lawyer trial, blocks all M2 progress
-**Likelihood:** MEDIUM — the Protocol is well-defined but adapter-specific pressure is real
-**Mitigation:** Freeze `BackendAdapter` Protocol, `AdapterCapabilitySet`, and `ChannelAdapter` Protocol for M2. Add contract-count assertion tests. All M2 PRs must run all 9 gates before merge. No schema file modifications during V2 human gate period.
-
-### Risk 2: Prototype adapters becoming production-eligible through the selection gate bypass
-**Impact:** HIGH — a Codex/provider_model prototype could serve live WeCom turns during V2 UAT, producing unfiltered output
-**Likelihood:** MEDIUM — the bypass exists in `agent_backend.py:50-51` today
-**Mitigation:** Fix the `select_agent_backend` bypass: `live_acceptance_allowed` must be `False` for all non-Hermes modes regardless of `production_ready` metadata. Add assertion test. All non-Hermes manifests must set `production_ready: false`.
-
-### Risk 3: Privacy scrub gap between store-time and read-time leaking sensitive legal content
-**Impact:** HIGH — violates PRD §7 privacy baselines, exposes client legal content through read-view/admin API
-**Likelihood:** HIGH — the gap already exists (`privacy.py` checks 1 key, `store.py` checks 7 keys)
-**Mitigation:** Unify forbidden keys between `store.py` and `privacy.py`. Add new backend field names to forbidden keys before writing adapter event mappers. Add read-time privacy tests for all forbidden keys. Apply `scrub_contract_payload` to every API response path.
-
-### Risk 4: Router service extraction breaking in-process runtime tests and introducing distributed failure modes
-**Impact:** MEDIUM — breaks 9 V2 gates if not done with injectable facade, adds latency/failure to critical path
-**Likelihood:** MEDIUM — extraction is a structural change to the runtime's critical path
-**Mitigation:** Extract routing as an injectable `RouterPort` Protocol with `None` default (in-process). Define fallback policy for router service unavailable. Keep `active_task_router.py` in-process. Run all 9 gates with `router=None` to confirm no regression.
-
-### Risk 5: QQBot channel duplicating WeCom service logic instead of abstracting shared concerns
-**Impact:** MEDIUM — creates maintenance burden, divergence bugs, and makes future channel additions harder
-**Likelihood:** HIGH — the WeCom service has significant channel-generic logic mixed with channel-specific code
-**Mitigation:** Extract channel-generic logic (idempotency, delivery guard, active task router, output policy application) to `packages/platform-runtime/` or `packages/channel-core/` BEFORE building QQBot. QQBot gets its own normalization/protocol/sender modules. Add a test that asserts QQBot does not import from `wecom_service`.
-
----
-
-## Sources
-
-- `.planning/PROJECT.md` — M2 milestone context, target features, key constraints (lines 13-30)
-- `docs/requirements/V2-PRD.md` — §5 non-goals (line 351-368), §7 safety/compliance (line 543-556), §11 M2 scope (line 636-643), §13 risks (line 688-708), §3.2 skill system (line 116-118), §3.3 routing (line 120-122), §4.1.2 adapter contract (line 209-213)
-- `AGENTS.md` — safety/privacy rules (lines 30-37), coding rules (lines 39-45)
-- `packages/platform-contract/src/platform_contract/agent_adapter.py` — `AgentBackendMode` enum (line 12-15), `AdapterCapabilitySet` (line 18-33), `AgentBackendManifest` (line 36-45), `validate_agent_backend_manifest` (line 48-106)
-- `packages/platform-runtime/src/platform_runtime/protocols.py` — `ChannelAdapter` Protocol (line 208-219), `BackendAdapter` Protocol (line 222-239), `RunRuntime` Protocol (line 255-273), `ChannelCapabilitySet` (line 57-66), `ChannelDelivery` (line 88-95)
-- `packages/platform-runtime/src/platform_runtime/feature_flags.py` — `RuntimeFeatureFlags` all default-OFF (line 13-19)
-- `packages/platform-runtime/src/platform_runtime/output_boundary.py` — `DefaultAssistantOutputBoundary` regex rules (line 82-108)
-- `packages/platform-runtime/src/platform_runtime/store.py` — `_reject_forbidden_payload_storage` (line 108-115), `_FORBIDDEN_FULL_TEXT_KEYS` (line 130-137)
-- `packages/platform-runtime/src/platform_runtime/runtime.py` — `DefaultRunRuntime.create_run` (line 52-68), `DefaultRunRuntime.__init__` (line 28-50)
-- `packages/backends/hermes/src/inkstatute_backends_hermes/adapter.py` — `HermesBackendAdapter` (line 45-413), `HermesOneShotRunner` Protocol (line 27-30), truthful "unsupported" returns (line 158-168, 170-204)
-- `packages/backends/hermes/src/inkstatute_backends_hermes/manifest.py` — `build_hermes_oneshot_manifest` (line 17-37), `hermes_oneshot_capabilities` (line 40-58)
-- `packages/backends/hermes/src/inkstatute_backends_hermes/config.py` — `HermesBackendConfig` (line 12-37)
-- `packages/channels/wecom/src/inkstatute_channels_wecom/adapter.py` — `WeComChannelAdapter` (line 38-162), WeCom-specific imports (line 25-31), `secret_refs_configured` in health (line 137-152)
-- `packages/channels/wecom/src/inkstatute_channels_wecom/config.py` — `WeComChannelConfig` (line 12-34)
-- `services/wecom-service/src/wecom_service/agent_backend.py` — `select_agent_backend` (line 23-58), live acceptance bypass (line 49-51)
-- `services/wecom-service/src/wecom_service/active_task_router.py` — `route_active_task_turn` (line 69-165), Chinese regex patterns (line 181-183)
-- `services/conversation-read-view/src/conversation_read_view/read_model.py` — `ContractLogReadModel.from_records` loads all records (line 45-127)
-- `services/conversation-read-view/src/conversation_read_view/privacy.py` — `scrub_contract_payload` only checks `raw_payload` (line 9-43)
-- `services/conversation-read-view/src/conversation_read_view/api.py` — `handle_get` routes (line 11-58), feedback status 400 constraint (line 36-47)
-- `packages/contract-test-suite/tests/test_agent_adapter_contract.py` — provider_model fixture validation (line 52-58), schema neutrality assertion (line 60-77)
-- `packages/contract-test-suite/tests/test_thin_layer_boundaries.py` — `assert_feedback_human_review_safety` (line 67-77), platform contract import boundary (line 12-20)
-- `scripts/run_v2_gates.py` — 9 gate definitions (line 63-128), PYTHONPATH per gate (line 51-61), `compileall` paths (line 110-127)
-- `.planning/ROADMAP.md` — v1.5 closure status (line 12-13), 479 tests green (line 31)
-- `.planning/research/PITFALLS.md` (v1.5) — Pitfall 3 PYTHONPATH regression history (line 73-79), Pitfall 1 production wiring false positive pattern (line 13-39)
+| M3 Feature | Existing functionality at risk | Regression risk | Mitigation |
+|---|---|---|---|
+| Streaming events | WeCom delivery loop (`LOOP-01`), output boundary (`OUTPUT-01`), run state machine | Partial delivery + raw error to lawyer; runs stuck non-terminal | Terminal-event contract; boundary at emission point; cancellation propagation |
+| Artifact return | Contract log privacy (`raw_payload_ref`), output boundary | Full-text leak in artifacts; backend noise in artifact metadata | Ref-only in contract events; field allowlist on artifact metadata |
+| Session memory (Hindsight) | Privacy discipline, feedback normalization (`FEEDBACK-01`) | Memory poisoning persists across sessions; full-text in memory store; cross-session leakage | Per-session/per-tenant memory isolation; ref-only entries; poison-detection test |
+| Multi-provider (Anthropic, Ollama) | Hermes-primary invariant, output boundary, cost | Fallback loops; capability mismatch mid-run; API key in logs; cost explosion | Per-provider policy; capability negotiation; cost ceiling; key-exclusion test |
+| MCP Connector Registry | Output boundary, contract neutrality | Malicious tool exfiltrates client data; tool result leaks backend noise to LLM context | Admission review; sandboxed execution; tool-result allowlist |
+| Model Provider Gateway | Hermes-primary invariant, routing (`RouteDecision`) | Cascading failure; fallback loop; cost explosion; model selection gaming | Circuit breaker; tried-provider tracking; per-tenant cost ceiling; gateway-policy-controlled selection |
+| Multi-Agent Runtime | Run state machine, `ExecutionTrace` relationships, cost | Deadlock; infinite handoff; shared-state corruption; unbounded parallelism | `max_handoffs`/`max_depth`; cycle detection; copy-on-write state; bounded parallelism |
+| Skill Registry write | Legal-safety human-review gate, `skill_candidate` invariant | Auto-promotion of legal skills; review bypass; skill injection; version conflict | Human-review gate on every write path; versioned immutable skills; descriptor validation |
+| Hybrid routing | Router service (`M2-03`), Hermes-primary, legal safety | High-risk legal routed to cheap model; router hallucination; routing loop; cold-start bias | Legal-risk override; route validation; loop breaker; safe cold-start default |
+| Admin Web UI | Admin Console API allowlist, output boundary | XSS via chat content; privilege escalation; CSRF; dashboard data exposure | DOMPurify; API-gated data path; RBAC on every endpoint; CSRF tokens |
+| Lawyer Web chat | WeCom loop, privacy, output boundary | Session hijacking; out-of-order messages; file upload malware; offline sync conflict | httpOnly tokens; monotonic sequence; malware scan; conflict detection |
+| RBAC | Admin Console API auth, legal-skill promotion gate | Role explosion; default-allow on new endpoints; token leakage after role change | Fixed role set; default-deny with CI scan; short-lived tokens re-validated server-side |
+| Multi-tenant | All V2 data (contract logs, feedback, memory, skills, sessions) | Cross-tenant legal data leakage; tenant config poisoning; noisy neighbor; migration errors | Data-layer tenant isolation; per-tenant quotas; migration test; dedicated isolation gate |
