@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: M3 Platform Extensions
-status: planning
-last_updated: "2026-07-05T07:44:07.247Z"
-last_activity: 2026-07-05
+status: roadmap_created
+last_updated: "2026-07-06T00:50:00.000Z"
+last_activity: 2026-07-06
 progress:
-  total_phases: 0
+  total_phases: 13
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.6 complete — next milestone not yet defined
+**Current focus:** Milestone v1.7 M3 Platform Extensions — roadmap created, 13 phases (45-57) defined
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 45 (M3 Pre-Implementation Safety) — Not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-05 — Milestone v1.7 started
+Status: Roadmap created — ready for Phase 45 planning
+Last activity: 2026-07-06 — Roadmap created for v1.7 M3 (13 phases, 42 requirements mapped)
 
 ### Deferred Items
 
