@@ -446,8 +446,10 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("platform-sdk-ts", gate_names)
         self.assertIn("model-gateway", gate_names)
         self.assertIn("multi-agent-adapter", gate_names)
+        self.assertIn("admin-web-ui", gate_names)
+        self.assertIn("lawyer-web-chat", gate_names)
         self.assertIn("gate-coverage-meta-test", gate_names)
-        self.assertEqual(len(gate_names), 24)
+        self.assertEqual(len(gate_names), 26)
 
 
 if __name__ == "__main__":
