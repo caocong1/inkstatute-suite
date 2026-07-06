@@ -42,7 +42,7 @@
 - [x] **Phase 52: Skill Registry Write (B2)** - `SkillRegistryWritePort` + `WritableSkillRegistry` with CRUD, immutable versioning, human-review two-person rule, and per-tenant namespaces.
 - [x] **Phase 53: Hybrid Routing (B3)** - `RouterStrategy.HYBRID` with Rule → Skill → Model cascade, confidence thresholds, and legal-risk classifier forcing high-risk queries to Hermes.
 - [x] **Phase 54: Model Provider Gateway (B4)** - Composite `BackendAdapter` wrapping multiple provider_model sub-adapters with rate limiting, fallback chains, circuit breakers, and cost tracking.
-- [ ] **Phase 55: Multi-Agent Runtime Adapter (B5)** - Composite `BackendAdapter` with sequential/parallel/supervisor orchestration, handoff limits, cycle detection, and copy-on-write shared state.
+- [x] **Phase 55: Multi-Agent Runtime Adapter (B5)** - Composite `BackendAdapter` with sequential/parallel/supervisor orchestration, handoff limits, cycle detection, and copy-on-write shared state.
 - [x] **Phase 56: Multi-Tenant Isolation (C2)** - `TenantScopeResolver` + `TenantGuard` injecting `tenant_id` filter into every read-model query, partitioned contract logs, namespaced cache keys, and migration test.
 - [ ] **Phase 57: Admin Web UI + Lawyer Web Chat (C3 + C4)** - Operator dashboard Web UI with session/task/feedback/gate/health views and lawyer-facing Web chat with real SSE, session auth, and output boundary enforcement.
 
@@ -198,7 +198,7 @@ Plans:
 3. Multi-agent shared state is scoped to `parent_run_id` with copy-on-write isolation; sub-agent state mutations do not leak to sibling sub-agents or the parent run; no cross-tenant shared state in multi-agent runs.
 4. `multi_agent_enabled` defaults to `False`; the composite adapter is injected as `backend` with no Protocol change — the composite IS a `BackendAdapter`.
 
-**Plans:** TBD
+**Plans:** 55-01 (MultiAgentRuntimeAdapter composite adapter with sequential/parallel/supervisor orchestration, max_handoffs, cycle detection, COW shared state) — complete
 
 ### Phase 56: Multi-Tenant Isolation (C2)
 
