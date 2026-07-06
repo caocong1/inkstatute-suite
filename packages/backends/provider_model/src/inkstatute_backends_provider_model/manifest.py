@@ -51,7 +51,7 @@ def provider_model_prototype_capabilities(
         invocation_mode="direct_llm",
         feedback_target_support="generated",
         session_read_support=False,
-        artifact_return_support=False,
+        artifact_return_support=True,
         trace_support=False,
         no_channel_io=True,
         run_invocation_modes=["oneshot"],

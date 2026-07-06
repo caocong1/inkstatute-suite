@@ -159,10 +159,13 @@ def parse_openai_response(
         },
     )
 
+    artifact_refs = _extract_file_refs(response)
+
     return ProviderModelExecResult(
         status=status,
         result=result,
         completion_id=completion_id,
+        artifact_refs=artifact_refs,
         raw_payload_ref=None,
         metadata={
             "provider_completion_id": completion_id,
@@ -218,6 +221,29 @@ def _sanitize_usage(usage: JsonObject) -> JsonObject:
             except (TypeError, ValueError):
                 continue
     return sanitized
+
+
+def _extract_file_refs(response: JsonObject) -> list[str]:
+    """Extract file output refs from a provider response.
+
+    Looks for a ``files`` field (list of dicts) in the response and builds
+    ref-based artifact references. Each file entry may have ``uri``, ``url``,
+    or ``id`` keys. Entries without any of these are skipped.
+    """
+
+    files = response.get("files", []) or []
+    if not isinstance(files, list):
+        return []
+    refs: list[str] = []
+    for file_entry in files:
+        if not isinstance(file_entry, dict):
+            continue
+        ref = file_entry.get("uri") or file_entry.get("url")
+        if ref is None and file_entry.get("id"):
+            ref = f"provider://files/{file_entry['id']}"
+        if ref is not None:
+            refs.append(str(ref))
+    return refs
 
 
 def _sanitize_model_name(model: str) -> str:

@@ -103,7 +103,7 @@ class ProviderModelManifestTests(unittest.TestCase):
         self.assertFalse(capabilities.approval_support)
         self.assertFalse(capabilities.live_update_support)
         self.assertFalse(capabilities.parallel_task_support)
-        self.assertFalse(capabilities.artifact_return_support)
+        self.assertTrue(capabilities.artifact_return_support)
 
     def test_manifest_invocation_mode_is_direct_llm(self) -> None:
         capabilities = build_provider_model_manifest().capabilities
