@@ -35,6 +35,10 @@ class RuntimeFeatureFlags:
     rbac_enabled: bool = False
     multi_tenant_enabled: bool = False
 
+    # Phase 57 flags — all default OFF, gated by require_enabled
+    admin_web_ui_enabled: bool = False
+    lawyer_web_chat_enabled: bool = False
+
     def require_enabled(self, flag_name: str) -> None:
         known_flags = {field.name for field in fields(self)}
         if flag_name not in known_flags:
