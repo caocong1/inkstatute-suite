@@ -37,7 +37,7 @@
 - [x] **Phase 47: Artifact Return (A2)** - Productize `collect_artifacts()` + `AgentResult.artifacts` with ref-based schema and output boundary enforcement.
 - [ ] **Phase 48: Multi-Provider Runners (A3)** - `AnthropicRunner` and `OllamaRunner` implementing `ProviderRunner` Protocol with error normalization.
 - [x] **Phase 49: Session Memory Wiring (A4)** - Wire existing `HindsightMemory` + `MemoryOrchestrator` into runtime as optional deps; adapters declare `session_memory_support=True` and consume `ContextBundle`.
-- [ ] **Phase 50: MCP Connector Registry (B1)** - Read-only MCP Connector Registry with registration, JSON Schema tool schemas, versioning, soft-delete, and router tool-resolution join.
+- [x] **Phase 50: MCP Connector Registry (B1)** - Read-only MCP Connector Registry with registration, JSON Schema tool schemas, versioning, soft-delete, and router tool-resolution join.
 - [ ] **Phase 51: RBAC (C1)** - 4-role RBAC with permissions matrix, `RbacGuard` middleware, default-deny CI scan, and token-based auth with role+tenant claims.
 - [ ] **Phase 52: Skill Registry Write (B2)** - `SkillRegistryWritePort` + `WritableSkillRegistry` with CRUD, immutable versioning, human-review two-person rule, and per-tenant namespaces.
 - [ ] **Phase 53: Hybrid Routing (B3)** - `RouterStrategy.HYBRID` with Rule → Skill → Model cascade, confidence thresholds, and legal-risk classifier forcing high-risk queries to Hermes.
