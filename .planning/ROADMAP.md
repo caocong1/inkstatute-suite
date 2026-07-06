@@ -60,7 +60,13 @@
 4. A flag-default test exists for every new M3 feature flag, asserting the flag is `False` by default and the associated runtime lane is inactive when the flag is off.
 5. V2 human gate evidence (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial) runs against the V2 baseline without M3 feature flag contamination.
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 45-01-PLAN.md — Add 9 M3 feature flags to RuntimeFeatureFlags + extend flag-default tests
+- [ ] 45-02-PLAN.md — Extend contract-count freeze to RouterPort(1) + SkillRegistryPort(3)
+- [ ] 45-03-PLAN.md — Update admin-console-api hardcoded flag-set assertion from 12 to 21 flags
+- [ ] 45-04-PLAN.md — Run full 19-gate V2 suite + document V2 human gate isolation
 
 ### Phase 46: Streaming Events (A1)
 
