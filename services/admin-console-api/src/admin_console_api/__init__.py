@@ -4,6 +4,7 @@ from .api import handle_admin_get
 from .auth import check_auth_header, resolve_admin_token
 from .gates import handle_gates, run_gate_summary
 from .health import HEALTH_ALLOWED_FIELDS, handle_health, project_health
+from .routes import ROUTE_PREFIXES
 
 __all__ = [
     "handle_admin_get",
@@ -14,4 +15,5 @@ __all__ = [
     "HEALTH_ALLOWED_FIELDS",
     "handle_gates",
     "run_gate_summary",
+    "ROUTE_PREFIXES",
 ]

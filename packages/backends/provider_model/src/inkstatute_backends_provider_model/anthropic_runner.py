@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import importlib
 import json
-import re
 from typing import Any, Protocol
 
 from platform_contract.enums import (
@@ -42,6 +41,7 @@ from platform_runtime import RunRequest
 
 from .adapter import ProviderModelExecResult, ProviderModelRunner
 from .config import ProviderModelBackendConfig
+from .error_normalization import normalize_provider_error, sanitize_error_message
 
 # ---------------------------------------------------------------------------
 # Transport abstraction
@@ -197,60 +197,27 @@ def _sanitize_model_name(model: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Error normalization
+# Error normalization (delegates to shared error_normalization module)
 # ---------------------------------------------------------------------------
-
-_URL_RE = re.compile(r"https?://\S+")
-_TOKEN_RE = re.compile(r"token=\S+")
-_PATH_RE = re.compile(r"/(?:home|Users)[/\w.\-]*")
-_MODEL_RE = re.compile(r"\b(?:gpt|claude|gemini|llama)[-\w]*", re.IGNORECASE)
 
 
 def _sanitize_error_message(msg: str) -> str:
-    """Strip URLs, tokens, file paths, and model names from an error message."""
+    """Strip URLs, tokens, file paths, and model names from an error message.
 
-    sanitized = _URL_RE.sub("[url_redacted]", msg)
-    sanitized = _TOKEN_RE.sub("token=[redacted]", sanitized)
-    sanitized = _PATH_RE.sub("[redacted]", sanitized)
-    sanitized = _MODEL_RE.sub("[model_redacted]", sanitized)
-    return sanitized
+    Delegates to :func:`error_normalization.sanitize_error_message`.
+    """
+
+    return sanitize_error_message(msg)
 
 
 def _normalize_anthropic_error(exc: Exception, stage: str) -> ErrorInfo:
     """Normalize an Anthropic SDK exception into a sanitized :class:`ErrorInfo`.
 
-    Detection is string-based on the exception class name because the
-    ``anthropic`` SDK cannot be imported at module top level (lazy import).
+    Delegates to :func:`error_normalization.normalize_provider_error` with
+    ``provider="anthropic"``.
     """
 
-    exc_name = type(exc).__name__
-
-    if "RateLimit" in exc_name:
-        code = "provider_model_rate_limit"
-        retryable: bool | None = True
-    elif "Authentication" in exc_name or "Auth" in exc_name:
-        code = "provider_model_auth_error"
-        retryable = False
-    elif "Connection" in exc_name or "Timeout" in exc_name:
-        code = "provider_model_connection_error"
-        retryable = True
-    elif "APIStatus" in exc_name or "API" in exc_name:
-        code = "provider_model_api_error"
-        retryable = None
-    else:
-        code = "provider_model_unknown_error"
-        retryable = None
-
-    message = _sanitize_error_message(str(exc))
-
-    return ErrorInfo(
-        category=ErrorCategory.RUNTIME_ERROR,
-        code=code,
-        message=message,
-        stage=stage,
-        retryable=retryable,
-        details={"provider": "anthropic"},
-    )
+    return normalize_provider_error(exc, stage, provider="anthropic")
 
 
 # ---------------------------------------------------------------------------

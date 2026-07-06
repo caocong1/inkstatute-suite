@@ -23,7 +23,6 @@ Key behaviours:
 from __future__ import annotations
 
 import json
-import re
 from typing import Any, Protocol
 
 from platform_contract.enums import (
@@ -37,6 +36,7 @@ from platform_runtime import RunRequest
 
 from .adapter import ProviderModelExecResult, ProviderModelRunner
 from .config import ProviderModelBackendConfig
+from .error_normalization import normalize_provider_error, sanitize_error_message
 from .openai_runner import parse_openai_response
 
 # ---------------------------------------------------------------------------
@@ -89,71 +89,29 @@ class OllamaHTTPError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# Error normalization
+# Error normalization (delegates to shared error_normalization module)
 # ---------------------------------------------------------------------------
-
-_URL_RE = re.compile(r"https?://\S+")
-_TOKEN_RE = re.compile(r"token=\S+")
-_PATH_RE = re.compile(r"/(?:home|Users)[/\w.\-]*")
-_MODEL_RE = re.compile(r"\b(?:gpt|claude|gemini|llama)[-\w]*", re.IGNORECASE)
 
 
 def _sanitize_error_message(msg: str) -> str:
-    """Strip URLs, tokens, file paths, and model names from an error message."""
+    """Strip URLs, tokens, file paths, and model names from an error message.
 
-    sanitized = _URL_RE.sub("[url_redacted]", msg)
-    sanitized = _TOKEN_RE.sub("token=[redacted]", sanitized)
-    sanitized = _PATH_RE.sub("[redacted]", sanitized)
-    sanitized = _MODEL_RE.sub("[model_redacted]", sanitized)
-    return sanitized
+    Delegates to :func:`error_normalization.sanitize_error_message`.
+    """
+
+    return sanitize_error_message(msg)
 
 
 def _normalize_ollama_error(exc: Exception, stage: str) -> ErrorInfo:
     """Normalize an Ollama HTTP/transport exception into a sanitized
     :class:`ErrorInfo`.
 
-    Detection uses HTTP status codes (via ``getattr(exc, "status_code", None)``)
-    for HTTP errors and string-based class-name detection for transport-level
-    exceptions (timeouts, connection errors).
+    Delegates to :func:`error_normalization.normalize_provider_error` with
+    ``provider="ollama"``. HTTP status codes are detected via
+    ``getattr(exc, "status_code", None)``.
     """
 
-    exc_name = type(exc).__name__
-    status_code = getattr(exc, "status_code", None)
-
-    if status_code == 429 or "RateLimit" in exc_name:
-        code = "provider_model_rate_limit"
-        retryable: bool | None = True
-    elif status_code in (401, 403) or "Authentication" in exc_name or "Auth" in exc_name:
-        code = "provider_model_auth_error"
-        retryable = False
-    elif (
-        "Connection" in exc_name
-        or "Timeout" in exc_name
-        or "timeout" in exc_name.lower()
-        or "connect" in exc_name.lower()
-    ):
-        code = "provider_model_connection_error"
-        retryable = True
-    elif status_code is not None and status_code >= 500:
-        code = "provider_model_api_error"
-        retryable = None
-    elif "APIStatus" in exc_name or "API" in exc_name:
-        code = "provider_model_api_error"
-        retryable = None
-    else:
-        code = "provider_model_unknown_error"
-        retryable = None
-
-    message = _sanitize_error_message(str(exc))
-
-    return ErrorInfo(
-        category=ErrorCategory.RUNTIME_ERROR,
-        code=code,
-        message=message,
-        stage=stage,
-        retryable=retryable,
-        details={"provider": "ollama", "status_code": status_code} if status_code else {"provider": "ollama"},
-    )
+    return normalize_provider_error(exc, stage, provider="ollama")
 
 
 # ---------------------------------------------------------------------------

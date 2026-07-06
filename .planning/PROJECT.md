@@ -107,48 +107,36 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 - [x] Resolve Hermes integration risks before production hook implementation.
 - [x] Add a thin hook-based Hermes shadow contract layer that does not alter legal/business outbound behavior.
 - [ ] Complete the five-workday lawyer trial acceptance criteria. (human gate — carried, not M2 scope)
-- [x] M2-01: Codex adapter prototype proving agent-backend-neutral contract beyond Hermes. — Phase 39 (v1.6); verified Phase 44.
-- [x] M2-02: Direct provider_model adapter prototype proving contract-compatible direct LLM provider mode. — Phase 40 (v1.6); verified Phase 44.
-- [x] M2-03: Independent Router Service normalizing routing decisions as a standalone service. — Phase 38 (v1.6); verified Phase 44.
-- [x] M2-04: Skill Registry read exposing Hermes skill metadata as a read-only registry. — Phase 37 (v1.6); verified Phase 44.
-- [x] M2-05: conversation-read-view completion with full PRD-spec read-only views, pagination, and filtering. — Phase 41 (v1.6); verified Phase 44.
-- [x] M2-06: Admin Console API (read-only) exposing operational views for operators. — Phase 42 (v1.6); verified Phase 44.
-- [x] M2-07: QQBot complete loop as second channel proving ChannelAdapter portability. — Phase 43 (v1.6); verified Phase 44.
-- [x] M2-08: Gate coverage meta-test enforcing every packages/*/src and services/*/src directory is covered by a V2 gate. — Phase 44 (v1.6); verified Phase 44.
-- [ ] M3-01: Promote Codex + provider_model adapters from prototype to production-grade (streaming events, artifact return, session memory, multi-provider). — v1.7
-- [ ] M3-02: MCP Connector Registry (register and discover MCP tool connectors). — v1.7
-- [ ] M3-03: Model Provider Gateway (unified model provider gateway: routing, rate-limit, fallback). — v1.7
-- [ ] M3-04: Multi-Agent Runtime Adapter productization. — v1.7
-- [ ] M3-05: Skill Registry write operations. — v1.7
-- [ ] M3-06: Model-based and hybrid routing with confidence scoring. — v1.7
-- [ ] M3-07: Admin console Web UI (sessions/tasks/feedback/gates/health visualization). — v1.7
-- [ ] M3-08: Lawyer-facing Web chat interface (complement to WeCom). — v1.7
-- [ ] M3-09: RBAC (role-based access control). — v1.7
-- [ ] M3-10: Multi-tenant isolation. — v1.7
+- [x] M2-01: Codex adapter prototype proving agent-backend-neutral contract beyond Hermes. — Phase 39 (v1.6)
+- [x] M2-02: Direct provider_model adapter prototype proving contract-compatible direct LLM provider mode. — Phase 40 (v1.6)
+- [x] M2-03: Independent Router Service normalizing routing decisions as a standalone service. — Phase 38 (v1.6)
+- [x] M2-04: Skill Registry read exposing Hermes skill metadata as a read-only registry. — Phase 37 (v1.6)
+- [x] M2-05: conversation-read-view completion with full PRD-spec read-only views, pagination, and filtering. — Phase 41 (v1.6)
+- [x] M2-06: Admin Console API (read-only) exposing operational views for operators. — Phase 42 (v1.6)
+- [x] M2-07: QQBot complete loop as second channel proving ChannelAdapter portability. — Phase 43 (v1.6)
+- [x] M2-08: Gate coverage meta-test enforcing every packages/*/src and services/*/src directory is covered by a V2 gate. — Phase 44 (v1.6)
 
 ### Out of Scope
 
 - Retired product V1 as an active requirement source - V2 PRD replaces it.
 - Rebuilding Hermes core, session storage, router, skill registry, MCP registry, or model gateway - V2 calls Hermes as an agent backend, not a Hermes fork.
+- Production Codex or direct provider-model adapters - V2 defines the contract and configuration shape, but only Hermes mode is required to be production-ready.
 - Full multi-channel gateway - V2 builds the minimum InkStatute WeCom service only.
 - New independent authoritative conversation database - V2 read models come from contract logs, with Hermes sessions only as a fallback adapter.
-- Tauri desktop and WeChat complete V2 loop - not part of V2 acceptance.
+- Full Web UI, Tauri desktop, QQBot complete V2 loop, and WeChat complete V2 loop - not part of V2 acceptance.
 - Automatic legal skill synthesis or automatic modification of high-risk legal conclusion skills - V2 records `skill_candidate` for human review only.
 - Storing raw customer legal payloads in contract logs by default - logs prefer references and minimized sensitive data.
-- Encryption at rest and retention/destruction policy automation - deferred to M4; M3 covers RBAC + multi-tenant isolation only.
-- QQBot dual receive mode (webhook + WebSocket) and rich media - deferred to M4.
 
 ## Context
 
 - Source of truth: `docs/requirements/V2-PRD.md`.
+- Production Codex or direct provider-model adapters - V2 defines the contract and configuration shape, but only Hermes mode is required to be production-ready.
 - Intel entry point: `.planning/intel/SYNTHESIS.md`.
 - Target runtime: Python packages/services first, with JSON Schema as the cross-language contract format; TypeScript can follow after V2 priority work.
-- Primary workflow: high-autonomy GSD with human gates for blockers, legal/safety concerns, and manual lawyer trial validation.
+- Full Web UI, Primary wotop, QQBot complere V2 lokf,low: high-autonomy GSD with human gates for blockers, legal/safety concerns, and manual lawyer trial validation.
 - PRD development order is binding for this roadmap: platform contract, contract test suite, Hermes integration risk resolution, Hermes shadow layer, WeCom loop, read/feedback services, CI/composability, lawyer trial.
 
-## Constraints
 
-- **Source of truth**: V2 PRD is active; retired V1 must not be reintroduced - prevents scope expansion back to the old full-stack platform.
 - **Architecture**: WeCom ingress/egress is owned by InkStatute; agent backend access goes through an adapter contract - Hermes remains the first production agent backend, not the channel boundary.
 - **Integration**: Hermes core execution should remain unchanged - contract work uses hooks, mappers, writers, adapter wrappers, output policy, and tests.
 - **Sequencing**: `platform-contract` and `contract-test-suite` come before production Hermes hook work - prevents building hooks against unstable contracts.
@@ -191,7 +179,6 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 | Keep platform-native memory as the lawyer-assistant default and route Zep/Hindsight, OpenViking/ReMe, and Mem0 through future sanitized spikes | The component study favors different providers for graph/audit, file-auditable, and PoC use cases, but live legal memory still needs privacy, deletion/export, residency, security, review, benchmark, and license gates | Decided 2026-07-02 |
 | Build v1.3 as native production memory first, with external providers as measured adapter spikes | A legal-memory system needs deletion/export, tenant isolation, human review, traceability, and raw-payload controls before provider convenience; external tools must beat or complement the native baseline through sanitized evidence | Decided 2026-07-02 |
 | Start M2 (v1.6) before formal V2 acceptance, accepting the PRD §11 dependency violation as risk | V2 code closure is READY (9/9 code reqs, 479 tests, 0 gaps); the only remaining V2 gates are human (Phase 5 live WeCom UAT + Phase 8 lawyer trial) which run in parallel. Blocking all M2 code work on human gates would waste autonomous capacity. Risk accepted: M2 features are contract-compatible extensions, not V2-acceptance-critical paths. | Decided 2026-07-03 |
-| Start M3 (v1.7) Platform Extensions: adapter productization + platform extensions + Web UI + RBAC/multi-tenant | M2 proved agent-backend-neutral contracts via prototypes; M3 promotes them to production-grade and extends the platform surface (MCP, model gateway, multi-agent, skill write, hybrid routing). Web UI (admin + lawyer-facing) and RBAC/multi-tenant are needed for operator-readiness. Encryption/retention deferred to M4. v1.6 safety strategy preserved. | Decided 2026-07-05 |
 
 ## Shipped Milestones
 
@@ -203,9 +190,7 @@ Replaced the evaluation-only memory approach with a single, productized long-ter
 
 ### v1.3 Production Memory System and Evaluation Spikes (Shipped: 2026-07-02)
 
-Durable native memory store, rolling summaries, recall orchestration wired into WeCom/runtime flows, feedback-to-memory service wiring, evaluation gates with SQLite baseline/export evidence, and sanitized external adapter spikes with `defer_all_external` recommendation. Audit status: `closed`.
 
-**Archive:** [v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) | [v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md) | [v1.3-MILESTONE-AUDIT.md](milestones/v1.3-MILESTONE-AUDIT.md)
 
 ### v1.2 Conversational Context and Memory Foundation (Shipped: 2026-07-02)
 
@@ -221,32 +206,33 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v1.6 M2 Multi-Backend & Platform Extensions (2026-07-04) — archived. 9/9 phases, 22/22 requirements, 19/19 gates green (969 tests).
-- **Active milestone:** v1.7 M3 Platform Extensions — defining requirements.
-- **V2 gate status:** All 19 gates green (969 tests). Must stay green throughout v1.7.
-- **V2 acceptance:** BLOCKED ON HUMAN GATES (carried, parallel to v1.7) — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence. PRD §11 dependency accepted as risk by user 2026-07-03.
+- **Last shipped:** v1.5 V2 Acceptance Closure (2026-07-03) — archived.
+- **Active milestone:** v1.6 M2 Multi-Backend & Platform Extensions — starting Phase 36.
+- **V2 gate status:** All 9 gates green (479 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall). Must stay green throughout v1.6.
+- **V2 acceptance:** BLOCKED ON HUMAN GATES (carried, parallel to v1.6) — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence. PRD §11 dependency accepted as risk by user 2026-07-03.
 - **Carried human gates (not autonomous-completable):**
   - Phase 5 live WeCom UAT — fixture-satisfied, operator confirmation needed.
   - Phase 8 five-workday lawyer trial — live evidence required (TRIAL-01 remains `[ ]` in Active).
   - All v1.1+ runtime lanes — default-OFF, live promotion is a human gate.
-- **v1.7 scope:** M3 Platform Extensions — adapter productization (streaming, artifacts, session memory, multi-provider), MCP Connector Registry, Model Provider Gateway, Multi-Agent Runtime Adapter, Skill Registry write, hybrid routing, Admin Web UI, lawyer-facing Web chat, RBAC, multi-tenant isolation.
+- **v1.6 scope:** M2 per V2-PRD §11 — Codex/provider_model adapter prototypes, Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot loop.
 
 ## Evolution
 
-This document evolves at phase transitions and milestone boundaries.
-
-**After each phase transition** (via `$gsd-transition`):
-1. Requirements invalidated? Move to Out of Scope with reason.
-2. Requirements validated? Move to Validated with phase reference.
-3. New requirements emerged? Add to Active.
-4. Decisions to log? Add to Key Decisions.
+This document evolves a5 VhaAcceptsniisCdlsue ries.3
+62Multi-Backend & startPhae 36
+**After each phase tran5iVonAccep( n`g4Cnisu sorm-contrac3, wecom-servivice, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileallon`):6
+1. Requirements invalid5tVd6Accep tniBkC  sut pe withstar3on.6Phas 36
+2. Requirements validated?M6ve2tMulti-Backend & o Validat47  tests acrstart ptfPhate 36, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary,wcontract-ith -puite, v2-acceptance-traceability, compileallhase reference.6
+3. New requirements emerge? Add to Active47. across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall6
+4. Decisions to log? Add to Key Decisions.6
 5. "What This Is" still accurate? Update if drifted.
-
+62 perV2-RD§11Cox/vier_mdldppsorSviceadconvesaton-rea-viewcmpleoConsoPIQQBolp
 **After each milestone** (via `$gsd-complete-milestone`):
-1. Full review of all sections.
-2. Core Value check - still the right priority?
+1. Full6review of a2 perlV2- RDs§11Cox/vier_mdldppsorSviceadconvesaton-rea-viewcmpleoConsoPIQQBolp
+2. Core6Value check2-per V2- RDh§11iorCotx/vier_mdldppsorSviceadconvesaton-rea-viewcmpleoConsoPIQQBolp
 3. Audit Out of Scope - reasons still valid?
 4. Update Context with current state.
 
 ---
-*Last updated: 2026-07-05 — milestone v1.7 M3 Platform Extensions started (adapter productization + platform extensions + Web UI + RBAC/multi-tenant)*
+*Last updated: 2026-07-03 — milestone v1.6 M2 Multi-Backend & Platform Extensions started (PRD §11 dependency accepted as risk)*
+36 M2ulti-Backend &PRD §11 enenyccpdasrsk36 M2ulti-Backend &PRD §11 enenyccpdasrsk362Multi-Backend & PRD §11 enenyccpd a rk36 M2ulti-Backend &PRD §11 enenyccpdasrsk
