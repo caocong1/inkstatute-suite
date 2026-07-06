@@ -428,5 +428,129 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
                 self.assertNotIn(original, repr(audit))
 
 
+class FilterArtifactMetadataTests(unittest.TestCase):
+    def test_filter_allows_safe_keys(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {
+            "sha256": "abc123",
+            "size_bytes": 1024,
+            "content_ref": "fixture://content/001",
+            "kind": "pdf",
+            "name": "contract.pdf",
+            "mime_type": "application/pdf",
+            "source": "codex_exec",
+            "source_refs": ["ref-001"],
+            "template_ref": "fixture://templates/contract",
+            "features": ["track_changes"],
+            "created_at": "2026-07-06T00:00:00Z",
+        }
+
+        filtered = filter_artifact_metadata(metadata)
+
+        for key in metadata:
+            self.assertIn(key, filtered)
+        self.assertEqual(filtered["sha256"], "abc123")
+        self.assertEqual(filtered["size_bytes"], 1024)
+
+    def test_filter_strips_model_names(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {"model": "gpt-4", "sha256": "abc123"}
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertNotIn("model", filtered)
+        self.assertIn("sha256", filtered)
+
+    def test_filter_strips_api_error_traces(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {"api_error": "trace details", "name": "doc.pdf"}
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertNotIn("api_error", filtered)
+        self.assertIn("name", filtered)
+
+    def test_filter_strips_function_call_internals(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {"function_call": "tool_result", "kind": "pdf"}
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertNotIn("function_call", filtered)
+        self.assertIn("kind", filtered)
+
+    def test_filter_strips_unknown_keys(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {"unknown_key": "value", "sha256": "abc"}
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertNotIn("unknown_key", filtered)
+        self.assertIn("sha256", filtered)
+
+    def test_filter_sanitizes_urls_in_allowed_values(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {"source": "https://api.openai.com/v1/files/file-001"}
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertIn("source", filtered)
+        self.assertNotIn("https://api.openai.com", filtered["source"])
+        self.assertIn("[url_redacted]", filtered["source"])
+
+    def test_filter_recursive_dict_filter(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {
+            "source_refs": [
+                {"content_ref": "https://example.com/file", "model": "gpt-4"},
+            ],
+        }
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertIn("source_refs", filtered)
+        self.assertIsInstance(filtered["source_refs"], list)
+        inner = filtered["source_refs"][0]
+        self.assertIsInstance(inner, dict)
+        self.assertIn("content_ref", inner)
+        self.assertNotIn("model", inner)
+        self.assertIn("[url_redacted]", inner["content_ref"])
+
+    def test_filter_case_insensitive_keys(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {"SHA256": "abc", "Size_Bytes": 1024, "MODEL": "gpt-4"}
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertIn("SHA256", filtered)
+        self.assertIn("Size_Bytes", filtered)
+        self.assertNotIn("MODEL", filtered)
+
+    def test_filter_empty_metadata_returns_empty(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        filtered = filter_artifact_metadata({})
+
+        self.assertEqual(filtered, {})
+
+    def test_filter_preserves_non_string_non_dict_values(self) -> None:
+        from platform_runtime.output_boundary import filter_artifact_metadata
+
+        metadata = {"size_bytes": 1024, "features": ["a", "b"]}
+
+        filtered = filter_artifact_metadata(metadata)
+
+        self.assertEqual(filtered["size_bytes"], 1024)
+        self.assertEqual(filtered["features"], ["a", "b"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -154,6 +154,39 @@ class CollectArtifactsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(artifacts[0].artifact_id, f"{handle.run_id}-artifact-001")
         self.assertEqual(artifacts[1].artifact_id, f"{handle.run_id}-artifact-002")
 
+    async def test_artifact_metadata_filters_model_names(self) -> None:
+        runner = FakeCodexExecRunnerWithArtifacts()
+        # Inject model name into runner metadata to verify it's filtered
+        original_invoke = runner.invoke
+
+        async def invoke_with_noise(req: RunRequest) -> CodexExecResult:
+            result = await original_invoke(req)
+            return CodexExecResult(
+                status=result.status,
+                result=result.result,
+                thread_id=result.thread_id,
+                artifact_refs=result.artifact_refs,
+                raw_payload_ref=result.raw_payload_ref,
+                metadata={
+                    **result.metadata,
+                    "model": "gpt-4",
+                    "api_error": "trace details",
+                    "function_call": "tool_result",
+                },
+            )
+
+        runner.invoke = invoke_with_noise  # type: ignore[assignment]
+        adapter = CodexBackendAdapter(runner=runner)
+
+        handle = await adapter.submit_run(make_request())
+        artifacts = await adapter.collect_artifacts(handle.run_id)
+
+        for record in artifacts:
+            self.assertNotIn("model", record.metadata)
+            self.assertNotIn("api_error", record.metadata)
+            self.assertNotIn("function_call", record.metadata)
+            self.assertIn("source", record.metadata)
+
 
 if __name__ == "__main__":
     unittest.main()

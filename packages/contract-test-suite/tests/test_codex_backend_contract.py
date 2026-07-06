@@ -92,6 +92,11 @@ class CodexBackendContractTests(unittest.TestCase):
         """The Codex manifest mode must be AgentBackendMode.CODEX."""
         self.assertEqual(build_codex_manifest().mode, AgentBackendMode.CODEX)
 
+    def test_codex_manifest_artifact_return_support_is_true(self) -> None:
+        """The Codex prototype must declare artifact_return_support=True."""
+        manifest = build_codex_manifest()
+        self.assertIs(manifest.capabilities.artifact_return_support, True)
+
 
 if __name__ == "__main__":
     unittest.main()

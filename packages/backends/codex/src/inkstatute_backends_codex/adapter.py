@@ -24,6 +24,7 @@ from platform_runtime import (
     RunHandle,
     RunRequest,
 )
+from platform_runtime.output_boundary import filter_artifact_metadata
 
 from .config import CodexBackendConfig
 from .manifest import build_codex_manifest
@@ -306,13 +307,20 @@ def _artifact_records(run_id: str, refs: list[str], metadata: JsonObject) -> lis
     """Build ref-based ArtifactRecord entries from artifact refs (no inline binaries)."""
 
     kind = str(metadata.get("artifact_kind", "backend_ref"))
+    safe_metadata = filter_artifact_metadata({
+        "source": "codex_exec",
+        **{
+            k: v for k, v in metadata.items()
+            if k in ("sha256", "size_bytes", "content_ref", "mime_type")
+        },
+    })
     return [
         ArtifactRecord(
             artifact_id=f"{run_id}-artifact-{index:03d}",
             kind=kind,
             uri_ref=ref,
             name=f"{run_id}-artifact-{index:03d}",
-            metadata={"source": "codex_exec"},
+            metadata=safe_metadata,
         )
         for index, ref in enumerate(refs, start=1)
     ]
@@ -322,13 +330,20 @@ def _artifact_entries(run_id: str, refs: list[str], metadata: JsonObject) -> lis
     """Build ref-based Artifact entries for AgentResult.artifacts (no inline binaries)."""
 
     kind = str(metadata.get("artifact_kind", ArtifactKind.OTHER.value))
+    safe_metadata = filter_artifact_metadata({
+        "source": "codex_exec",
+        **{
+            k: v for k, v in metadata.items()
+            if k in ("sha256", "size_bytes", "content_ref", "mime_type")
+        },
+    })
     return [
         Artifact(
             artifact_id=f"{run_id}-artifact-{index:03d}",
             kind=kind,
             name=f"{run_id}-artifact-{index:03d}",
             uri=ref,
-            metadata={"source": "codex_exec"},
+            metadata=safe_metadata,
         )
         for index, ref in enumerate(refs, start=1)
     ]

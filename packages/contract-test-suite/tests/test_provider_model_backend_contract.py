@@ -97,6 +97,11 @@ class ProviderModelBackendContractTests(unittest.TestCase):
         """The provider_model manifest mode must be AgentBackendMode.PROVIDER_MODEL."""
         self.assertEqual(build_provider_model_manifest().mode, AgentBackendMode.PROVIDER_MODEL)
 
+    def test_provider_model_manifest_artifact_return_support_is_true(self) -> None:
+        """The provider_model prototype must declare artifact_return_support=True."""
+        manifest = build_provider_model_manifest()
+        self.assertIs(manifest.capabilities.artifact_return_support, True)
+
 
 if __name__ == "__main__":
     unittest.main()

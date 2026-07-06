@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import hashlib
 import re
 from enum import StrEnum
-from typing import Mapping
+from typing import Any, Mapping
 
 from platform_contract.enums import RunEventType
 from platform_contract.events import JsonObject
@@ -148,8 +148,71 @@ def _audit(text: str, *, rule_id: str) -> JsonObject:
     }
 
 
+# ---------------------------------------------------------------------------
+# Artifact metadata allowlist
+# ---------------------------------------------------------------------------
+
+_ALLOWED_ARTIFACT_METADATA_KEYS = frozenset({
+    "sha256",
+    "size_bytes",
+    "content_ref",
+    "kind",
+    "name",
+    "mime_type",
+    "source",
+    "source_refs",
+    "template_ref",
+    "features",
+    "created_at",
+})
+
+_ARTIFACT_URL_RE = re.compile(r"https?://\S+")
+_ARTIFACT_TOKEN_RE = re.compile(r"token=\S+")
+
+
+def filter_artifact_metadata(metadata: JsonObject) -> JsonObject:
+    """Filter artifact metadata to allowed keys only, strip backend noise.
+
+    Only keys in ``_ALLOWED_ARTIFACT_METADATA_KEYS`` (matched case-insensitively)
+    are preserved. String values are sanitized to strip URLs and token-like
+    patterns. Dict values are recursively filtered. List values are recursively
+    sanitized. This prevents backend noise (model names, API error traces,
+    function call internals) from leaking into artifact metadata.
+    """
+
+    filtered: JsonObject = {}
+    for key, value in metadata.items():
+        if str(key).lower() not in _ALLOWED_ARTIFACT_METADATA_KEYS:
+            continue
+        filtered[key] = _sanitize_artifact_value(value)
+    return filtered
+
+
+def _sanitize_artifact_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            k: _sanitize_artifact_value(v)
+            for k, v in value.items()
+            if str(k).lower() in _ALLOWED_ARTIFACT_METADATA_KEYS
+        }
+    if isinstance(value, list):
+        return [_sanitize_artifact_value(item) for item in value]
+    if isinstance(value, str):
+        return _sanitize_artifact_text(value)
+    return value
+
+
+def _sanitize_artifact_text(text: str) -> str:
+    """Strip URLs and token-like patterns from artifact text values."""
+
+    sanitized = _ARTIFACT_URL_RE.sub("[url_redacted]", text)
+    sanitized = _ARTIFACT_TOKEN_RE.sub("token=[redacted]", sanitized)
+    return sanitized
+
+
 __all__ = [
     "BoundaryAction",
     "BoundaryDecision",
     "DefaultAssistantOutputBoundary",
+    "filter_artifact_metadata",
 ]
