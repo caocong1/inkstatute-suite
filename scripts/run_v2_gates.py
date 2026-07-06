@@ -72,6 +72,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     mcp_registry_src = repo_root / "packages" / "mcp-registry" / "src"
     sdk_ts_src = repo_root / "packages" / "platform-sdk-ts" / "src"
     model_gateway_src = repo_root / "packages" / "model-gateway" / "src"
+    multi_agent_src = repo_root / "packages" / "multi-agent-adapter" / "src"
 
     return (
         Gate(
@@ -123,6 +124,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "model-gateway",
             (py, "-m", "unittest", "discover", "-s", "packages/model-gateway/tests"),
             (model_gateway_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
+            "multi-agent-adapter",
+            (py, "-m", "unittest", "discover", "-s", "packages/multi-agent-adapter/tests"),
+            (multi_agent_src, platform_src, platform_runtime_src),
         ),
         Gate(
             "admin-console-api",
@@ -205,6 +211,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/backends/codex/src",
                 "packages/backends/provider_model/src",
                 "packages/model-gateway/src",
+                "packages/multi-agent-adapter/src",
                 "services/wecom-service/src",
                 "services/hermes-contract-layer/src",
                 "services/feedback-service/src",

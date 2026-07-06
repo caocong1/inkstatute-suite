@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-multi-agent-adapter"
+version = "0.1.0"
+description = "Composite Multi-Agent Runtime BackendAdapter wrapping multiple sub-adapters with sequential/parallel/supervisor orchestration."
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [
+  { name = "InkStatute" }
+]
+dependencies = []
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
