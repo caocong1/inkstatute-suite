@@ -138,6 +138,16 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
         ),
         Gate(
+            "admin-web-ui",
+            (py, "-m", "unittest", "discover", "-s", "services/admin-web-ui/tests"),
+            (admin_web_ui_src, admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
+            "lawyer-web-chat",
+            (py, "-m", "unittest", "discover", "-s", "services/lawyer-web-chat/tests"),
+            (lawyer_web_chat_src, rbac_src, web_sse_src, channel_core_src, contract_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
             "rbac",
             (py, "-m", "unittest", "discover", "-s", "packages/rbac/tests"),
             (rbac_src, admin_api_src, platform_src, platform_runtime_src, read_view_src, feedback_src, contract_src),
