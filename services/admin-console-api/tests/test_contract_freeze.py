@@ -69,6 +69,9 @@ class ContractFreezeTests(unittest.TestCase):
             "web_sse_channel_enabled",
             "rbac_enabled",
             "multi_tenant_enabled",
+            # M4 flags (2) — added by Phase 57
+            "admin_web_ui_enabled",
+            "lawyer_web_chat_enabled",
         }
         self.assertEqual(flag_names, expected_flags)
 

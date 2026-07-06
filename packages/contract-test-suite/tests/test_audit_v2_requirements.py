@@ -445,8 +445,9 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("wecom-channel", gate_names)
         self.assertIn("platform-sdk-ts", gate_names)
         self.assertIn("model-gateway", gate_names)
+        self.assertIn("multi-agent-adapter", gate_names)
         self.assertIn("gate-coverage-meta-test", gate_names)
-        self.assertEqual(len(gate_names), 23)
+        self.assertEqual(len(gate_names), 24)
 
 
 if __name__ == "__main__":

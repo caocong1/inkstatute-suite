@@ -73,6 +73,8 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     sdk_ts_src = repo_root / "packages" / "platform-sdk-ts" / "src"
     model_gateway_src = repo_root / "packages" / "model-gateway" / "src"
     multi_agent_src = repo_root / "packages" / "multi-agent-adapter" / "src"
+    admin_web_ui_src = repo_root / "services" / "admin-web-ui" / "src"
+    lawyer_web_chat_src = repo_root / "services" / "lawyer-web-chat" / "src"
 
     return (
         Gate(
@@ -212,6 +214,8 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/backends/provider_model/src",
                 "packages/model-gateway/src",
                 "packages/multi-agent-adapter/src",
+                "services/admin-web-ui/src",
+                "services/lawyer-web-chat/src",
                 "services/wecom-service/src",
                 "services/hermes-contract-layer/src",
                 "services/feedback-service/src",
