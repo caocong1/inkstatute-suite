@@ -70,14 +70,18 @@ class TestRouterStrategyEnum(unittest.TestCase):
     def test_router_strategy_is_str_enum(self) -> None:
         self.assertEqual(RouterStrategy.RULE, "rule")
 
-    def test_router_strategy_has_exactly_two_values(self) -> None:
-        self.assertEqual(len(list(RouterStrategy)), 2)
+    def test_router_strategy_has_exactly_three_values(self) -> None:
+        self.assertEqual(len(list(RouterStrategy)), 3)
+
+    def test_router_strategy_hybrid_value(self) -> None:
+        self.assertEqual(RouterStrategy.HYBRID.value, "hybrid")
 
     def test_router_strategy_not_in_route_mode(self) -> None:
         """RouterStrategy values must NOT be in the frozen RouteMode set."""
         frozen_route_modes = ["matched", "simple_qa", "skipped", "zero_match"]
         self.assertNotIn("rule", frozen_route_modes)
         self.assertNotIn("skill", frozen_route_modes)
+        self.assertNotIn("hybrid", frozen_route_modes)
 
 
 # --- classify_intent function tests ---

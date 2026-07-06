@@ -1,10 +1,12 @@
 """RouterStrategy enum — router-internal routing strategies.
 
 ``RouterStrategy`` defines the internal strategy the router uses to classify
-a message and produce a ``RouteDecision``.  The two strategies are:
+a message and produce a ``RouteDecision``.  The three strategies are:
 
 - ``RULE`` — keyword/regex intent classification (``classify_intent``).
 - ``SKILL`` — skill registry lookup via ``SkillRegistryPort``.
+- ``HYBRID`` — Rule → Skill → Model cascade with confidence thresholds
+  and a legal-risk classifier that forces high-risk queries to Hermes.
 
 These are **router-internal strategies** that map onto the frozen
 ``RouteMode`` outcome values (``matched``, ``simple_qa``, ``skipped``,
@@ -22,9 +24,10 @@ class RouterStrategy(StrEnum):
     """Router-internal strategy enum.
 
     Values map onto frozen ``RouteMode`` outcomes, NOT onto ``RouteMode``
-    itself.  Adding ``RULE``/``SKILL`` to ``RouteMode`` would violate
-    SAFETY-06.
+    itself.  Adding ``RULE``/``SKILL``/``HYBRID`` to ``RouteMode`` would
+    violate SAFETY-06.
     """
 
     RULE = "rule"
     SKILL = "skill"
+    HYBRID = "hybrid"
