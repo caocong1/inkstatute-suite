@@ -11,7 +11,11 @@ from platform_contract.agent_adapter import (
 from .config import CodexBackendConfig
 
 
-def build_codex_manifest(config: CodexBackendConfig | None = None) -> AgentBackendManifest:
+def build_codex_manifest(
+    config: CodexBackendConfig | None = None,
+    *,
+    stream_event_support: bool = False,
+) -> AgentBackendManifest:
     """Build the Codex prototype backend manifest."""
 
     resolved = config or CodexBackendConfig()
@@ -22,7 +26,7 @@ def build_codex_manifest(config: CodexBackendConfig | None = None) -> AgentBacke
         backend_version=resolved.backend_version,
         profile_name=None,
         bundle_id=None,
-        capabilities=codex_prototype_capabilities(),
+        capabilities=codex_prototype_capabilities(stream_event_support=stream_event_support),
         metadata={
             "default_lane": "oneshot",
             "production_ready": False,
@@ -33,7 +37,9 @@ def build_codex_manifest(config: CodexBackendConfig | None = None) -> AgentBacke
     )
 
 
-def codex_prototype_capabilities() -> AdapterCapabilitySet:
+def codex_prototype_capabilities(
+    stream_event_support: bool = False,
+) -> AdapterCapabilitySet:
     """Return the reduced Codex prototype capability set (14 fields)."""
 
     return AdapterCapabilitySet(
@@ -45,7 +51,7 @@ def codex_prototype_capabilities() -> AdapterCapabilitySet:
         trace_support=True,
         no_channel_io=True,
         run_invocation_modes=["oneshot"],
-        stream_event_support=False,
+        stream_event_support=stream_event_support,
         cancel_support=False,
         approval_support=False,
         live_update_support=False,

@@ -8,13 +8,14 @@ from dataclasses import dataclass, field, replace
 from typing import Any, AsyncIterator, Iterator, Protocol
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
-from platform_contract.enums import AgentResultStatus, AsyncTaskState
+from platform_contract.enums import AgentResultStatus, AsyncTaskState, RunEventType
 from platform_contract.events import AgentResult, ErrorInfo, JsonObject, ReplyType
 from platform_runtime import (
     Approval,
     ArtifactRecord,
     BootstrapStatus,
     Run,
+    RunEvent,
     RunHandle,
     RunRequest,
 )
@@ -67,20 +68,26 @@ class CodexBackendAdapter:
         *,
         config: CodexBackendConfig | None = None,
         runner: CodexExecRunner | None = None,
+        streaming_runner: StreamingCodexExecRunner | None = None,
         clock: Any | None = None,
     ) -> None:
         self.config = config or CodexBackendConfig()
         self._runner = runner
+        self._streaming_runner = streaming_runner
         self._clock = clock or _SystemClock()
         self._next_run = 1
         self._runs: dict[str, Run] = {}
         self._artifacts: dict[str, list[ArtifactRecord]] = {}
+        self._run_requests: dict[str, RunRequest] = {}
 
     def backend_id(self) -> str:
         return self.config.backend_id
 
     def capabilities(self) -> AdapterCapabilitySet:
-        return build_codex_manifest(self.config).capabilities
+        return build_codex_manifest(
+            self.config,
+            stream_event_support=self._streaming_runner is not None,
+        ).capabilities
 
     async def bootstrap_check(self) -> BootstrapStatus:
         runner_ready = self._runner is not None or bool(self.config.exec_command)
@@ -127,6 +134,7 @@ class CodexBackendAdapter:
         )
         self._runs[run_id] = run
         self._artifacts[run_id] = []
+        self._run_requests[run_id] = req
         return RunHandle(
             run_id=run_id,
             backend_run_id=backend_run_id,
@@ -141,10 +149,55 @@ class CodexBackendAdapter:
     async def get_run(self, run_id: str) -> Run:
         return self._require_run(run_id)
 
-    async def stream_events(self, run_id: str) -> AsyncIterator[Any]:
-        self._require_run(run_id)
-        if False:
-            yield
+    async def stream_events(self, run_id: str) -> AsyncIterator[RunEvent]:
+        run = self._require_run(run_id)
+        if self._streaming_runner is None:
+            yield RunEvent(
+                event_id=f"event-{run_id}-000",
+                run_id=run_id,
+                event_type=RunEventType.STATE_CHANGED.value,
+                occurred_at=self._clock.now(),
+                seq=0,
+                payload={"status": _status_value(run.status)},
+                metadata={"source": "codex_stream_terminal"},
+            )
+            return
+
+        seq = 0
+        try:
+            async for delta in self._streaming_runner.stream(self._run_requests[run_id]):
+                yield RunEvent(
+                    event_id=f"event-{run_id}-{seq:03d}",
+                    run_id=run_id,
+                    event_type=delta.event_type,
+                    occurred_at=self._clock.now(),
+                    seq=seq,
+                    payload=delta.payload,
+                    metadata={"source": "codex_stream"},
+                )
+                seq += 1
+            yield RunEvent(
+                event_id=f"event-{run_id}-{seq:03d}",
+                run_id=run_id,
+                event_type=RunEventType.STATE_CHANGED.value,
+                occurred_at=self._clock.now(),
+                seq=seq,
+                payload={"status": AsyncTaskState.SUCCEEDED.value},
+                metadata={"source": "codex_stream_terminal"},
+            )
+        except Exception as exc:
+            yield RunEvent(
+                event_id=f"event-{run_id}-{seq:03d}",
+                run_id=run_id,
+                event_type=RunEventType.STATE_CHANGED.value,
+                occurred_at=self._clock.now(),
+                seq=seq,
+                payload={
+                    "status": AsyncTaskState.FAILED.value,
+                    "error": {"code": "codex_stream_error", "message": type(exc).__name__},
+                },
+                metadata={"source": "codex_stream_error"},
+            )
 
     async def cancel_run(self, run_id: str) -> Run:
         run = self._require_run(run_id)
@@ -206,6 +259,10 @@ def _coerce_task_state(status: AsyncTaskState | str) -> AsyncTaskState:
     if status_value == AgentResultStatus.FAILED.value:
         return AsyncTaskState.FAILED
     return AsyncTaskState(status_value)
+
+
+def _status_value(status: AsyncTaskState | str) -> str:
+    return status.value if isinstance(status, AsyncTaskState) else str(status)
 
 
 def _default_result(req: RunRequest, status: AsyncTaskState) -> AgentResult:
