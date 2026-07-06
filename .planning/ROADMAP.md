@@ -41,7 +41,7 @@
 - [x] **Phase 51: RBAC (C1)** - 4-role RBAC with permissions matrix, `RbacGuard` middleware, default-deny CI scan, and token-based auth with role+tenant claims.
 - [x] **Phase 52: Skill Registry Write (B2)** - `SkillRegistryWritePort` + `WritableSkillRegistry` with CRUD, immutable versioning, human-review two-person rule, and per-tenant namespaces.
 - [x] **Phase 53: Hybrid Routing (B3)** - `RouterStrategy.HYBRID` with Rule → Skill → Model cascade, confidence thresholds, and legal-risk classifier forcing high-risk queries to Hermes.
-- [ ] **Phase 54: Model Provider Gateway (B4)** - Composite `BackendAdapter` wrapping multiple provider_model sub-adapters with rate limiting, fallback chains, circuit breakers, and cost tracking.
+- [x] **Phase 54: Model Provider Gateway (B4)** - Composite `BackendAdapter` wrapping multiple provider_model sub-adapters with rate limiting, fallback chains, circuit breakers, and cost tracking.
 - [ ] **Phase 55: Multi-Agent Runtime Adapter (B5)** - Composite `BackendAdapter` with sequential/parallel/supervisor orchestration, handoff limits, cycle detection, and copy-on-write shared state.
 - [x] **Phase 56: Multi-Tenant Isolation (C2)** - `TenantScopeResolver` + `TenantGuard` injecting `tenant_id` filter into every read-model query, partitioned contract logs, namespaced cache keys, and migration test.
 - [ ] **Phase 57: Admin Web UI + Lawyer Web Chat (C3 + C4)** - Operator dashboard Web UI with session/task/feedback/gate/health views and lawyer-facing Web chat with real SSE, session auth, and output boundary enforcement.
@@ -185,7 +185,7 @@ Plans:
 3. Gateway implements fallback chains with circuit breakers (open/half-open/closed states) and tried-provider tracking; cascading failures are prevented by circuit breaker isolation and cost ceiling enforcement.
 4. Gateway tracks per-tenant/matter cost with budget ceilings; when a budget is exceeded, the gateway refuses the request and emits an error event — no auto-downgrade for legal tasks (legal-risk classifier forces high-risk queries to Hermes regardless of cost).
 
-**Plans:** TBD
+**Plans:** 54-01 (ModelProviderGateway composite BackendAdapter + sub-adapter delegation), 54-02 (rate limiting + circuit breakers + fallback chains + tried_providers), 54-03 (cost tracking with budget ceilings + integration tests + V2 gate) — complete
 
 ### Phase 55: Multi-Agent Runtime Adapter (B5)
 
