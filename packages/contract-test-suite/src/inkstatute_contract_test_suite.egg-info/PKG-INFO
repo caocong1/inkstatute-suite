@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: inkstatute-contract-test-suite
+Version: 0.1.0
+Summary: Dependency-free contract validation harness for InkStatute platform events.
+Requires-Python: >=3.11

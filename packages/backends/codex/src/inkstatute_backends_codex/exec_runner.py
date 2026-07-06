@@ -22,18 +22,19 @@ from __future__ import annotations
 import json
 import re
 import subprocess
-from typing import Any, Protocol
+from typing import Any, Iterator, Protocol
 
 from platform_contract.enums import (
     AgentResultStatus,
     AsyncTaskState,
     ErrorCategory,
     ReplyType,
+    RunEventType,
 )
 from platform_contract.events import AgentResult, ErrorInfo, JsonObject
 from platform_runtime import RunRequest
 
-from .adapter import CodexExecResult, CodexExecRunner
+from .adapter import CodexExecResult, CodexExecRunner, CodexStreamEvent
 from .config import CodexBackendConfig
 
 # ---------------------------------------------------------------------------
@@ -189,6 +190,70 @@ def parse_codex_jsonl(
             "codex_unparsed_lines": unparsed[:5],
         },
     )
+
+
+def parse_codex_jsonl_stream(lines: list[str]) -> Iterator[CodexStreamEvent]:
+    """Parse Codex JSONL lines into a stream of :class:`CodexStreamEvent` records.
+
+    Unlike :func:`parse_codex_jsonl` which collects a final result, this
+    generator yields intermediate events as each line is parsed:
+
+    - ``item.completed``/``item.updated`` with message item types yield
+      ``MESSAGE_DELTA`` events.
+    - ``turn.completed`` yields a ``STATE_CHANGED`` event with ``SUCCEEDED``.
+    - ``turn.failed`` yields a ``STATE_CHANGED`` event with ``FAILED`` and
+      a sanitized error.
+    - ``error`` yields a ``STATE_CHANGED`` event with ``FAILED`` and a
+      sanitized error.
+    - ``thread.started``, empty lines, and unparseable lines are skipped.
+    """
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+
+        event_type = event.get("type")
+
+        if event_type in ("item.completed", "item.updated"):
+            item = event.get("item", {})
+            if not isinstance(item, dict):
+                item = {}
+            item_type = item.get("type") or item.get("item_type")
+            if item_type in _MESSAGE_ITEM_TYPES:
+                item_text = item.get("text") or item.get("content")
+                yield CodexStreamEvent(
+                    event_type=RunEventType.MESSAGE_DELTA.value,
+                    payload={"message_delta": item_text},
+                )
+
+        if event_type == "turn.completed":
+            yield CodexStreamEvent(
+                event_type=RunEventType.STATE_CHANGED.value,
+                payload={"status": AsyncTaskState.SUCCEEDED.value},
+            )
+
+        if event_type == "turn.failed":
+            yield CodexStreamEvent(
+                event_type=RunEventType.STATE_CHANGED.value,
+                payload={
+                    "status": AsyncTaskState.FAILED.value,
+                    "error": _normalize_error(event, stage="turn"),
+                },
+            )
+
+        if event_type == "error":
+            yield CodexStreamEvent(
+                event_type=RunEventType.STATE_CHANGED.value,
+                payload={
+                    "status": AsyncTaskState.FAILED.value,
+                    "error": _normalize_error(event, stage="stream"),
+                },
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -355,8 +420,23 @@ class SubprocessCodexExecRunner:
         return result
 
 
+class FakeStreamingCodexRunner:
+    """Test helper that yields a pre-configured list of CodexStreamEvent records."""
+
+    def __init__(self, events: list[CodexStreamEvent]) -> None:
+        self._events = list(events)
+
+    async def stream(self, req: RunRequest) -> AsyncIterator[CodexStreamEvent]:
+        for event in self._events:
+            yield event
+
+
 __all__ = [
+    "CodexStreamEvent",
+    "FakeStreamingCodexRunner",
+    "StreamingCodexExecRunner",
     "SubprocessCodexExecRunner",
     "SubprocessTransport",
     "parse_codex_jsonl",
+    "parse_codex_jsonl_stream",
 ]

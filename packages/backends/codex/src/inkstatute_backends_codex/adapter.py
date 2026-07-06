@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass, field, replace
-from typing import Any, AsyncIterator, Protocol
+from typing import Any, AsyncIterator, Iterator, Protocol
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
 from platform_contract.enums import AgentResultStatus, AsyncTaskState
@@ -29,6 +29,12 @@ class CodexExecRunner(Protocol):
     async def invoke(self, req: RunRequest) -> "CodexExecResult": ...
 
 
+class StreamingCodexExecRunner(Protocol):
+    """Injected runner that streams Codex exec events as CodexStreamEvent records."""
+
+    async def stream(self, req: RunRequest) -> AsyncIterator["CodexStreamEvent"]: ...
+
+
 @dataclass(frozen=True, slots=True)
 class CodexExecResult:
     """Reference-first result returned by a Codex exec runner."""
@@ -39,6 +45,14 @@ class CodexExecResult:
     artifact_refs: list[str] = field(default_factory=list)
     raw_payload_ref: str | None = None
     metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class CodexStreamEvent:
+    """Intermediate streaming event yielded by a StreamingCodexExecRunner."""
+
+    event_type: str
+    payload: JsonObject = field(default_factory=dict)
 
 
 class CodexBackendAdapter:

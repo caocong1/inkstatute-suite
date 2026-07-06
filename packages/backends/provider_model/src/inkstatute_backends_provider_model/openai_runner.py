@@ -26,7 +26,7 @@ from __future__ import annotations
 import importlib
 import json
 import re
-from typing import Any, Protocol
+from typing import Any, AsyncIterator, Iterator, Protocol
 
 from platform_contract.enums import (
     AgentResultStatus,
@@ -37,7 +37,12 @@ from platform_contract.enums import (
 from platform_contract.events import AgentResult, ErrorInfo, JsonObject
 from platform_runtime import RunRequest
 
-from .adapter import ProviderModelExecResult, ProviderModelRunner
+from .adapter import (
+    ProviderModelExecResult,
+    ProviderModelRunner,
+    ProviderModelStreamDelta,
+    StreamingProviderModelRunner,
+)
 from .config import ProviderModelBackendConfig
 
 # ---------------------------------------------------------------------------
@@ -165,6 +170,41 @@ def parse_openai_response(
             "provider_model": _sanitize_model_name(model),
         },
     )
+
+
+def parse_sse_deltas(lines: list[str]) -> Iterator[ProviderModelStreamDelta]:
+    """Parse SSE-format ``data: `` lines into :class:`ProviderModelStreamDelta` records.
+
+    Lines not prefixed with ``data: `` (comments, keepalive pings, empty lines)
+    are skipped. ``data: [DONE]`` signals end of stream and is not yielded.
+    Unparseable JSON payloads are skipped.
+    """
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            continue
+        if not line.startswith("data: "):
+            continue
+        payload = line[len("data: "):]
+        if payload == "[DONE]":
+            continue
+        try:
+            parsed = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        choices = parsed.get("choices", []) or [] if isinstance(parsed, dict) else []
+        choice = choices[0] if choices else {}
+        if not isinstance(choice, dict):
+            choice = {}
+        delta = choice.get("delta", {}) or {}
+        if not isinstance(delta, dict):
+            delta = {}
+        content = delta.get("content", "")
+        if content is None:
+            content = ""
+        finish_reason = choice.get("finish_reason")
+        yield ProviderModelStreamDelta(content=content, finish_reason=finish_reason)
 
 
 def _sanitize_usage(usage: JsonObject) -> JsonObject:
@@ -365,9 +405,24 @@ class OpenAIClientRunner:
         )
 
 
+class FakeStreamingProviderModelRunner:
+    """Convenience fake streaming runner for tests (no SDK required)."""
+
+    def __init__(self, deltas: list[ProviderModelStreamDelta]) -> None:
+        self._deltas = list(deltas)
+
+    async def stream(self, req: RunRequest) -> AsyncIterator[ProviderModelStreamDelta]:
+        for delta in self._deltas:
+            yield delta
+
+
 __all__ = [
     "OpenAIClientRunner",
     "OpenAITransport",
     "FakeOpenAITransport",
     "parse_openai_response",
+    "ProviderModelStreamDelta",
+    "StreamingProviderModelRunner",
+    "FakeStreamingProviderModelRunner",
+    "parse_sse_deltas",
 ]

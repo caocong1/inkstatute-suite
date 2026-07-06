@@ -101,54 +101,54 @@ Requirements for M3 milestone. Each maps to roadmap phases (45+).
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SAFETY-01 | 45 | Pending |
-| SAFETY-02 | 45 | Pending |
-| SAFETY-03 | 45 | Pending |
-| SAFETY-04 | 45 | Pending |
-| SAFETY-05 | 45 | Pending |
-| STREAM-01 | 46 | Pending |
-| STREAM-02 | 46 | Pending |
-| ARTIFACT-01 | 47 | Pending |
-| ARTIFACT-02 | 47 | Pending |
-| MULTIPROV-01 | 48 | Pending |
-| MULTIPROV-02 | 48 | Pending |
-| MULTIPROV-03 | 48 | Pending |
-| SESSMEM-01 | 49 | Pending |
-| MCP-01 | 50 | Pending |
-| MCP-02 | 50 | Pending |
-| MCP-03 | 50 | Pending |
-| RBAC-01 | 51 | Pending |
-| RBAC-02 | 51 | Pending |
-| RBAC-03 | 51 | Pending |
-| SKILLWRITE-01 | 52 | Pending |
-| SKILLWRITE-02 | 52 | Pending |
-| SKILLWRITE-03 | 52 | Pending |
-| HYBRID-01 | 53 | Pending |
-| HYBRID-02 | 53 | Pending |
-| HYBRID-03 | 53 | Pending |
-| GATEWAY-01 | 54 | Pending |
-| GATEWAY-02 | 54 | Pending |
-| GATEWAY-03 | 54 | Pending |
-| GATEWAY-04 | 54 | Pending |
-| MULTIAGENT-01 | 55 | Pending |
-| MULTIAGENT-02 | 55 | Pending |
-| MULTIAGENT-03 | 55 | Pending |
-| TENANT-01 | 56 | Pending |
-| TENANT-02 | 56 | Pending |
-| TENANT-03 | 56 | Pending |
-| TENANT-04 | 56 | Pending |
-| ADMINUI-01 | 57 | Pending |
-| ADMINUI-02 | 57 | Pending |
-| ADMINUI-03 | 57 | Pending |
-| LAWCHAT-01 | 57 | Pending |
-| LAWCHAT-02 | 57 | Pending |
-| LAWCHAT-03 | 57 | Pending |
+| STREAM-01 | TBD | Pending |
+| STREAM-02 | TBD | Pending |
+| ARTIFACT-01 | TBD | Pending |
+| ARTIFACT-02 | TBD | Pending |
+| SESSMEM-01 | TBD | Pending |
+| MULTIPROV-01 | TBD | Pending |
+| MULTIPROV-02 | TBD | Pending |
+| MULTIPROV-03 | TBD | Pending |
+| MCP-01 | TBD | Pending |
+| MCP-02 | TBD | Pending |
+| MCP-03 | TBD | Pending |
+| GATEWAY-01 | TBD | Pending |
+| GATEWAY-02 | TBD | Pending |
+| GATEWAY-03 | TBD | Pending |
+| GATEWAY-04 | TBD | Pending |
+| MULTIAGENT-01 | TBD | Pending |
+| MULTIAGENT-02 | TBD | Pending |
+| MULTIAGENT-03 | TBD | Pending |
+| SKILLWRITE-01 | TBD | Pending |
+| SKILLWRITE-02 | TBD | Pending |
+| SKILLWRITE-03 | TBD | Pending |
+| HYBRID-01 | TBD | Pending |
+| HYBRID-02 | TBD | Pending |
+| HYBRID-03 | TBD | Pending |
+| ADMINUI-01 | TBD | Pending |
+| ADMINUI-02 | TBD | Pending |
+| ADMINUI-03 | TBD | Pending |
+| LAWCHAT-01 | TBD | Pending |
+| LAWCHAT-02 | TBD | Pending |
+| LAWCHAT-03 | TBD | Pending |
+| RBAC-01 | TBD | Pending |
+| RBAC-02 | TBD | Pending |
+| RBAC-03 | TBD | Pending |
+| TENANT-01 | TBD | Pending |
+| TENANT-02 | TBD | Pending |
+| TENANT-03 | TBD | Pending |
+| TENANT-04 | TBD | Pending |
+| SAFETY-01 | TBD | Pending |
+| SAFETY-02 | TBD | Pending |
+| SAFETY-03 | TBD | Pending |
+| SAFETY-04 | TBD | Pending |
+| SAFETY-05 | TBD | Pending |
 
 **Coverage:**
-- v1.7 requirements: 42 total
-- Mapped to phases: 42 (100%)
-- Unmapped: 0
+- v1.7 requirements: 38 total
+- Mapped to phases: 0
+- Unmapped: 38 ⚠️ (to be filled by roadmapper)
 
 ---
 *Requirements defined: 2026-07-05*
-*Last updated: 2026-07-06 after M3 roadmap creation (13 phases, 45-57)*
+*Last updated: 2026-07-05 after M3 requirement definition*

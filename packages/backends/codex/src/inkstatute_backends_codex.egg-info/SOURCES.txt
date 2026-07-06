@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+src/inkstatute_backends_codex/__init__.py
+src/inkstatute_backends_codex/adapter.py
+src/inkstatute_backends_codex/config.py
+src/inkstatute_backends_codex/exec_runner.py
+src/inkstatute_backends_codex/manifest.py
+src/inkstatute_backends_codex/probe.py
+src/inkstatute_backends_codex.egg-info/PKG-INFO
+src/inkstatute_backends_codex.egg-info/SOURCES.txt
+src/inkstatute_backends_codex.egg-info/dependency_links.txt
+src/inkstatute_backends_codex.egg-info/top_level.txt
+tests/test_adapter.py
+tests/test_error_normalization.py
+tests/test_probe.py
+tests/test_runner.py

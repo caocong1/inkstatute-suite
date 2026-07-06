@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass, field, replace
-from typing import Any, AsyncIterator, Protocol
+from typing import Any, AsyncIterator, Iterator, Protocol
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
 from platform_contract.enums import AgentResultStatus, AsyncTaskState
@@ -29,6 +29,12 @@ class ProviderModelRunner(Protocol):
     async def invoke(self, req: RunRequest) -> "ProviderModelExecResult": ...
 
 
+class StreamingProviderModelRunner(Protocol):
+    """Injected runner for the streaming SSE delta lane (implemented in Plan 46-02)."""
+
+    async def stream(self, req: RunRequest) -> AsyncIterator["ProviderModelStreamDelta"]: ...
+
+
 @dataclass(frozen=True, slots=True)
 class ProviderModelExecResult:
     """Reference-first result returned by a provider_model runner."""
@@ -39,6 +45,14 @@ class ProviderModelExecResult:
     artifact_refs: list[str] = field(default_factory=list)
     raw_payload_ref: str | None = None
     metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderModelStreamDelta:
+    """A single SSE delta chunk yielded by a streaming provider_model runner."""
+
+    content: str
+    finish_reason: str | None = None
 
 
 class ProviderModelBackendAdapter:
