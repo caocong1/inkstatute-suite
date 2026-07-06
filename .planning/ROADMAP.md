@@ -78,7 +78,12 @@ Plans:
 2. Client cancellation propagates through runtime → adapter → provider via `aclose()` cleanup, leaving no zombie runs; a `try/finally` block ensures the stream is closed even on exception.
 3. Streaming events pass through `AssistantOutputBoundary` before reaching channels, with an allowlist of permitted event types filtering out raw provider tokens, model names, and error traces.
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 46-01-PLAN.md — Codex adapter streaming (StreamingCodexExecRunner protocol, JSONL stream parser, stream_events() with terminal event, manifest update)
+- [ ] 46-02-PLAN.md — provider_model adapter streaming (StreamingProviderModelRunner protocol, SSE delta parser, stream_events() with terminal event, manifest update)
+- [ ] 46-03-PLAN.md — Runtime stream() cancellation propagation (try/finally + aclose()) + output boundary event-type allowlist
 
 ### Phase 47: Artifact Return (A2)
 
