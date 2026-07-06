@@ -35,7 +35,7 @@ class TenantScope:
     def partition_path(self) -> str:
         """Return the tenant partition path for filesystem-style storage.
 
-        Format: ``tenants/{tenant_id}/workspaces/{workspace_id}/`` when both
+        Path pattern: ``tenants/{tenant_id}/workspaces/{workspace_id}/`` when both
         are present, ``tenants/{tenant_id}/`` when only tenant_id, or ``""``
         when unresolved.
         """
