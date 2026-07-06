@@ -1,0 +1,36 @@
+"""Tests for cursor pagination helpers."""
+
+from __future__ import annotations
+
+import unittest
+
+from inkstatute_mcp_registry.cursor import decode_cursor, encode_cursor
+
+
+class CursorEncodeDecodeTests(unittest.TestCase):
+    def test_encode_decode_round_trip(self) -> None:
+        """encode then decode returns the original server_id."""
+        original = "server-001"
+        encoded = encode_cursor(original)
+        decoded = decode_cursor(encoded)
+        self.assertEqual(decoded, original)
+
+    def test_encode_produces_non_empty_string(self) -> None:
+        """encode of a non-empty string is non-empty."""
+        self.assertTrue(encode_cursor("server-001"))
+        self.assertTrue(encode_cursor("a"))
+
+    def test_encode_is_opaque(self) -> None:
+        """encoded cursor does not contain raw server_id as readable substring."""
+        server_id = "server-001"
+        encoded = encode_cursor(server_id)
+        self.assertNotIn(server_id, encoded)
+
+    def test_decode_invalid_cursor_raises(self) -> None:
+        """decode of invalid base64 raises Exception."""
+        with self.assertRaises(Exception):
+            decode_cursor("!!!not-valid-base64!!!")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -68,6 +68,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     qqbot_src = repo_root / "packages" / "channels" / "qqbot" / "src"
     web_sse_src = repo_root / "packages" / "channels" / "web_sse" / "src"
     wecom_channel_src = repo_root / "packages" / "channels" / "wecom" / "src"
+    mcp_registry_src = repo_root / "packages" / "mcp-registry" / "src"
     sdk_ts_src = repo_root / "packages" / "platform-sdk-ts" / "src"
 
     return (
@@ -99,7 +100,12 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "router-service",
             (py, "-m", "unittest", "discover", "-s", "packages/router-service/tests"),
-            (router_service_src, platform_src, skill_registry_src),
+            (router_service_src, platform_src, skill_registry_src, mcp_registry_src),
+        ),
+        Gate(
+            "mcp-registry",
+            (py, "-m", "unittest", "discover", "-s", "packages/mcp-registry/tests"),
+            (mcp_registry_src, platform_src, platform_runtime_src),
         ),
         Gate(
             "codex-backend",
@@ -155,7 +161,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, channel_core_src, qqbot_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, channel_core_src, qqbot_src, mcp_registry_src),
         ),
         Gate(
             "v2-acceptance-traceability",
@@ -177,6 +183,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/platform-runtime/src",
                 "packages/skill-registry/src",
                 "packages/router-service/src",
+                "packages/mcp-registry/src",
                 "packages/backends/codex/src",
                 "packages/backends/provider_model/src",
                 "services/wecom-service/src",
