@@ -24,6 +24,7 @@ from .pagination import (
 )
 from .privacy import find_forbidden_key_path, find_forbidden_raw_payload_path, scrub_contract_payload
 from .read_model import ContractLogReadModel, build_read_model, load_records_from_jsonl
+from .tenant_read_model import TenantScopedContractLogReadModel
 
 __all__ = [
     "CONVERSATION_CSV_COLUMNS",
@@ -34,6 +35,7 @@ __all__ = [
     "ReadModelIssue",
     "TASK_CSV_COLUMNS",
     "TaskView",
+    "TenantScopedContractLogReadModel",
     "build_read_model",
     "clamp_limit",
     "csv_metadata",
