@@ -23,7 +23,7 @@ class RuntimeFeatureFlagsTests(unittest.TestCase):
         self.assertFalse(flags.codex_backend_enabled)
         self.assertFalse(flags.provider_model_backend_enabled)
 
-    def test_all_m2_flags_default_to_false_via_introspection(self) -> None:
+    def test_all_flags_default_to_false_via_introspection(self) -> None:
         default_flags = RuntimeFeatureFlags()
 
         for field in fields(RuntimeFeatureFlags):
@@ -52,6 +52,48 @@ class RuntimeFeatureFlagsTests(unittest.TestCase):
             "unknown runtime feature flag: missing_lane",
         ):
             flags.require_enabled("missing_lane")
+
+
+class M3FeatureFlagDefaultTests(unittest.TestCase):
+    """Verify all 9 M3 feature flags default to False and require_enabled gates them."""
+
+    M3_FLAGS = (
+        "session_memory_enabled",
+        "mcp_registry_enabled",
+        "model_gateway_enabled",
+        "multi_agent_enabled",
+        "skill_registry_write_enabled",
+        "hybrid_routing_enabled",
+        "web_sse_channel_enabled",
+        "rbac_enabled",
+        "multi_tenant_enabled",
+    )
+
+    def test_all_m3_flags_default_false(self) -> None:
+        flags = RuntimeFeatureFlags()
+        for flag_name in self.M3_FLAGS:
+            with self.subTest(flag=flag_name):
+                self.assertIs(getattr(flags, flag_name), False)
+
+    def test_all_m3_flags_require_enabled_raises_when_false(self) -> None:
+        flags = RuntimeFeatureFlags()
+        for flag_name in self.M3_FLAGS:
+            with self.subTest(flag=flag_name):
+                with self.assertRaises(RuntimeFeatureDisabledError):
+                    flags.require_enabled(flag_name)
+
+    def test_all_m3_flags_require_enabled_passes_when_true(self) -> None:
+        for flag_name in self.M3_FLAGS:
+            with self.subTest(flag=flag_name):
+                kwargs = {flag_name: True}
+                flags = RuntimeFeatureFlags(**kwargs)
+                flags.require_enabled(flag_name)
+
+    def test_all_m3_flags_field_exists(self) -> None:
+        field_names = {f.name for f in fields(RuntimeFeatureFlags)}
+        for flag_name in self.M3_FLAGS:
+            with self.subTest(flag=flag_name):
+                self.assertIn(flag_name, field_names)
 
 
 if __name__ == "__main__":
