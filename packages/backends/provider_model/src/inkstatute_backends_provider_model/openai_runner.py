@@ -146,6 +146,8 @@ def parse_openai_response(
             message="empty completion with no content",
         )
 
+    artifact_refs = _extract_file_refs(response)
+
     result = AgentResult(
         result_id=f"provider-model-result-{run_id}",
         turn_id=turn_id,
@@ -163,6 +165,7 @@ def parse_openai_response(
         status=status,
         result=result,
         completion_id=completion_id,
+        artifact_refs=artifact_refs,
         raw_payload_ref=None,
         metadata={
             "provider_completion_id": completion_id,
@@ -170,6 +173,37 @@ def parse_openai_response(
             "provider_model": _sanitize_model_name(model),
         },
     )
+
+
+def _extract_file_refs(response: JsonObject) -> list[str]:
+    """Extract artifact file references from an OpenAI-compatible provider response.
+
+    Supports ``files`` (list of ``{"uri": ..., "name": ...}`` dicts) and
+    ``file_ids`` (list of string IDs) fields. Non-dict entries and missing
+    URIs are skipped. Returns a list of reference strings suitable for
+    ``ProviderModelExecResult.artifact_refs``.
+    """
+
+    refs: list[str] = []
+    files = response.get("files", []) or []
+    if not isinstance(files, list):
+        return refs
+    for entry in files:
+        if not isinstance(entry, dict):
+            continue
+        uri = entry.get("uri") or entry.get("url")
+        if isinstance(uri, str) and uri:
+            refs.append(uri)
+            continue
+        fid = entry.get("id")
+        if isinstance(fid, str) and fid:
+            refs.append(f"provider://files/{fid}")
+    file_ids = response.get("file_ids", []) or []
+    if isinstance(file_ids, list):
+        for fid in file_ids:
+            if isinstance(fid, str) and fid:
+                refs.append(f"provider://files/{fid}")
+    return refs
 
 
 def parse_sse_deltas(lines: list[str]) -> Iterator[ProviderModelStreamDelta]:

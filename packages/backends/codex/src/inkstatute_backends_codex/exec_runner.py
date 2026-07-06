@@ -303,6 +303,19 @@ def _normalize_error(event: dict[str, Any], stage: str) -> ErrorInfo:
     )
 
 
+def _error_info_to_dict(error: ErrorInfo) -> dict[str, Any]:
+    """Convert an :class:`ErrorInfo` to a JSON-serializable dict for stream payloads."""
+
+    return {
+        "category": str(error.category),
+        "code": error.code,
+        "message": error.message,
+        "stage": error.stage,
+        "retryable": error.retryable,
+        "details": error.details,
+    }
+
+
 def _sanitize_message(msg: str) -> str:
     """Strip URLs, tokens, and file paths from an error message string."""
 
