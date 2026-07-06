@@ -162,8 +162,11 @@ class ProviderModelBackendAdapter:
             )
             return
         seq = 0
+        finish_reason: str | None = None
+        inner = self._streaming_runner.stream(self._run_requests[run_id])
         try:
-            async for delta in self._streaming_runner.stream(self._run_requests[run_id]):
+            async for delta in inner:
+                finish_reason = delta.finish_reason
                 yield RunEvent(
                     event_id=f"event-{run_id}-{seq:03d}",
                     run_id=run_id,
@@ -174,14 +177,20 @@ class ProviderModelBackendAdapter:
                     metadata={"source": "provider_model_sse"},
                 )
                 seq += 1
+            if finish_reason is not None and finish_reason != "stop":
+                terminal_status = AsyncTaskState.FAILED.value
+                terminal_source = "provider_model_sse_truncated"
+            else:
+                terminal_status = AsyncTaskState.SUCCEEDED.value
+                terminal_source = "provider_model_sse_terminal"
             yield RunEvent(
                 event_id=f"event-{run_id}-terminal",
                 run_id=run_id,
                 event_type=RunEventType.STATE_CHANGED.value,
                 occurred_at=self._clock.now(),
                 seq=seq,
-                payload={"status": AsyncTaskState.SUCCEEDED.value},
-                metadata={"source": "provider_model_sse_terminal"},
+                payload={"status": terminal_status},
+                metadata={"source": terminal_source},
             )
         except Exception as exc:  # noqa: BLE001 - terminal failure guarantee
             yield RunEvent(
@@ -199,6 +208,8 @@ class ProviderModelBackendAdapter:
                 },
                 metadata={"source": "provider_model_stream_error"},
             )
+        finally:
+            await inner.aclose()
 
     async def cancel_run(self, run_id: str) -> Run:
         run = self._require_run(run_id)
