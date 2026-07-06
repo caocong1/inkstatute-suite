@@ -96,7 +96,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "skill-registry",
             (py, "-m", "unittest", "discover", "-s", "packages/skill-registry/tests"),
-            (skill_registry_src, platform_src, platform_runtime_src),
+            (skill_registry_src, platform_src, platform_runtime_src, rbac_src),
         ),
         Gate(
             "router-service",
