@@ -14,6 +14,7 @@ from urllib.parse import parse_qs
 
 from conversation_read_view.pagination import clamp_limit, slice_page
 from conversation_read_view.privacy import scrub_contract_payload
+from conversation_read_view.tenant_read_model import TenantScopedContractLogReadModel
 
 ADMIN_API_MAX_LIMIT_ENV = "ADMIN_API_MAX_LIMIT"
 
@@ -50,28 +51,34 @@ def handle_sessions(
     path: str,
     query: dict[str, str],
     read_model: Any,
+    *,
+    tenant_filter: Any = None,
 ) -> tuple[int, dict[str, Any]]:
     """Handle ``/sessions`` (list) and ``/sessions/{id}`` (detail) views.
 
     Sessions = conversations in the contract log model.
+    When ``tenant_filter`` is active, results are filtered by tenant_id.
     """
+
+    scoped = _wrap_scoped(read_model)
 
     if path == "/sessions":
         filters, error = _parse_filters(query, _ALLOWED_SESSION_FILTERS)
         if error is not None:
             return 400, _filter_error_response(error, query)
         max_limit = resolve_admin_max_limit()
-        items = read_model.list_conversations(
+        items = scoped.list_conversations(
             time_from=filters.get("from"),
             time_to=filters.get("to"),
             user_id=filters.get("user_id"),
             channel=filters.get("channel"),
+            tenant_filter=tenant_filter,
         )
         return _list_response(items, query, max_limit, filters)
 
     if path.startswith("/sessions/"):
         session_id = path.removeprefix("/sessions/")
-        conversation = read_model.get_conversation(session_id)
+        conversation = scoped.get_conversation(session_id, tenant_filter=tenant_filter)
         if conversation is None:
             return 404, _not_found_response("session", session_id)
         return 200, _with_admin_metadata(conversation)
@@ -83,28 +90,36 @@ def handle_tasks(
     path: str,
     query: dict[str, str],
     read_model: Any,
+    *,
+    tenant_filter: Any = None,
 ) -> tuple[int, dict[str, Any]]:
-    """Handle ``/tasks`` (list) and ``/tasks/{id}`` (detail) views."""
+    """Handle ``/tasks`` (list) and ``/tasks/{id}`` (detail) views.
+
+    When ``tenant_filter`` is active, results are filtered by tenant_id.
+    """
+
+    scoped = _wrap_scoped(read_model)
 
     if path == "/tasks":
         filters, error = _parse_filters(query, _ALLOWED_TASK_FILTERS)
         if error is not None:
             return 400, _filter_error_response(error, query)
         max_limit = resolve_admin_max_limit()
-        items = read_model.list_tasks(
+        items = scoped.list_tasks(
             time_from=filters.get("from"),
             time_to=filters.get("to"),
             user_id=filters.get("user_id"),
             channel=filters.get("channel"),
             status=filters.get("status"),
+            tenant_filter=tenant_filter,
         )
         return _list_response(items, query, max_limit, filters)
 
     if path.startswith("/tasks/"):
         identifier = path.removeprefix("/tasks/")
-        task = read_model.get_task(identifier)
+        task = scoped.get_task(identifier, tenant_filter=tenant_filter)
         if task is None:
-            task = read_model.get_task_by_trace_id(identifier)
+            task = scoped.get_task_by_trace_id(identifier, tenant_filter=tenant_filter)
         if task is None:
             return 404, _not_found_response("task", identifier)
         return 200, _with_admin_metadata(task)
@@ -116,8 +131,16 @@ def handle_feedback(
     query: dict[str, str],
     read_model: Any,
     feedback_queue: list[dict[str, Any]] | None,
+    *,
+    tenant_filter: Any = None,
 ) -> tuple[int, dict[str, Any]]:
-    """Handle ``/feedback`` view — pending feedback items only."""
+    """Handle ``/feedback`` view — pending feedback items only.
+
+    When ``tenant_filter`` is active, items are additionally filtered by
+    ``tenant_id``.  Items without a ``tenant_id`` field are excluded when
+    the filter is active (fail-safe: no tenant_id = no access in multi-tenant
+    mode).
+    """
 
     status = query.get("status", "pending")
     if status != "pending":
@@ -129,10 +152,12 @@ def handle_feedback(
             },
             "metadata": {"admin_api": True, "read_only": True},
         }
+    filter_active = tenant_filter is not None and getattr(tenant_filter, "is_active", False)
     items = [
         scrub_contract_payload(item)
         for item in (feedback_queue or [])
         if item.get("status") == "pending"
+        and (not filter_active or item.get("tenant_id") == tenant_filter.tenant_id)
     ]
     return 200, {
         "items": items,
@@ -143,6 +168,17 @@ def handle_feedback(
             "source_status": "derived_pending_queue",
         },
     }
+
+
+def _wrap_scoped(read_model: Any) -> Any:
+    """Wrap read_model in TenantScopedContractLogReadModel.
+
+    The wrapper delegates directly when tenant_filter is None or inactive,
+    so there is no behavior change or overhead for disabled mode.
+    """
+    if isinstance(read_model, TenantScopedContractLogReadModel):
+        return read_model
+    return TenantScopedContractLogReadModel(read_model)
 
 
 def _parse_filters(

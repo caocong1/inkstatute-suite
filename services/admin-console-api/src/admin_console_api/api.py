@@ -18,6 +18,11 @@ from platform_runtime.feature_flags import (
     RuntimeFeatureDisabledError,
     RuntimeFeatureFlags,
 )
+from platform_runtime.tenant_scope import (
+    TenantGuard,
+    TenantScopeRequestContext,
+    TenantScopeResolver,
+)
 from rbac import RbacGuard, resolve_identity
 
 from .auth import check_auth_header, extract_auth_header, resolve_admin_token
@@ -78,6 +83,7 @@ def handle_admin_get(
     # Step 2 — auth (RBAC token or static token depending on flag)
     auth_header = extract_auth_header(headers)
     route_path, route_query = _split_path_query(path, query)
+    identity = None
 
     if feature_flags.rbac_enabled:
         secret = _resolve_rbac_secret(env, rbac_secret)
@@ -121,16 +127,25 @@ def handle_admin_get(
                     "message": "missing or invalid Authorization header",
                 },
             }
+        # Synthetic identity for static-token path (tenant_id="default")
+        from rbac import Identity, Role
+        identity = Identity(role=Role.ADMIN, tenant_id="default")
+
+    # Step 2c — tenant scope resolution + guard enforcement
+    resolver = TenantScopeResolver(feature_flags=feature_flags)
+    tenant_guard = TenantGuard(feature_flags=feature_flags)
+    scope = resolver.resolve(TenantScopeRequestContext(identity=identity, headers=headers))
+    tenant_filter = tenant_guard.enforce(scope)
 
     # Step 3 — route dispatch
     if route_path == "/sessions" or route_path.startswith("/sessions/"):
-        return handle_sessions(route_path, route_query, read_model)
+        return handle_sessions(route_path, route_query, read_model, tenant_filter=tenant_filter)
 
     if route_path == "/tasks" or route_path.startswith("/tasks/"):
-        return handle_tasks(route_path, route_query, read_model)
+        return handle_tasks(route_path, route_query, read_model, tenant_filter=tenant_filter)
 
     if route_path == "/feedback":
-        return handle_feedback(route_query, read_model, feedback_queue)
+        return handle_feedback(route_query, read_model, feedback_queue, tenant_filter=tenant_filter)
 
     if route_path == "/health":
         return handle_health(feature_flags, read_model)

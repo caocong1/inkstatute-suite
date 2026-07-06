@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+import json
 import unittest
 from pathlib import Path
 
@@ -17,6 +19,7 @@ from feedback_service.queue import (
     load_jsonl_records,
     normalize_feedback_inputs,
 )
+from platform_runtime.tenant_scope import ScopedQueryFilter
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_ROOT = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures"
@@ -151,6 +154,133 @@ class MaxLimitTests(unittest.TestCase):
 
     def test_resolve_admin_max_limit_ignores_garbage(self) -> None:
         self.assertEqual(resolve_admin_max_limit({"ADMIN_API_MAX_LIMIT": "abc"}), 100)
+
+
+def _load_raw_records(path: Path) -> list[dict[str, object]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _build_tenant_tagged_read_model():
+    """Build a read model with tenant_id-injected records for two tenants."""
+    base_records = _load_raw_records(PHASE5_STREAM)
+    records: list[dict[str, object]] = []
+
+    for tenant in ("firm-a", "firm-b"):
+        for rec in base_records:
+            cloned = copy.deepcopy(rec)
+            event = cloned.get("event")
+            if isinstance(event, dict):
+                event["tenant_id"] = tenant
+                if cloned.get("event_key") == "agent_turn":
+                    event["conversation_id"] = f"conv-{tenant}"
+                    event["turn_id"] = f"turn-{tenant}"
+                elif "turn_id" in event:
+                    event["turn_id"] = f"turn-{tenant}"
+                    event["conversation_id"] = f"conv-{tenant}"
+            records.append(cloned)
+
+    return build_read_model(records)
+
+
+class TenantScopedSessionsViewTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.read_model = _build_tenant_tagged_read_model()
+
+    def test_list_sessions_with_active_tenant_filter(self) -> None:
+        active = ScopedQueryFilter(tenant_id="firm-a", active=True)
+        status, body = handle_sessions("/sessions", {}, self.read_model, tenant_filter=active)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["items"]), 1)
+        self.assertEqual(body["items"][0]["conversation_id"], "conv-firm-a")
+
+    def test_list_sessions_with_disabled_filter_returns_all(self) -> None:
+        disabled = ScopedQueryFilter.disabled()
+        status, body = handle_sessions("/sessions", {}, self.read_model, tenant_filter=disabled)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["items"]), 2)
+
+    def test_list_sessions_with_no_filter_returns_all(self) -> None:
+        status, body = handle_sessions("/sessions", {}, self.read_model)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["items"]), 2)
+
+    def test_get_session_wrong_tenant_returns_404(self) -> None:
+        active = ScopedQueryFilter(tenant_id="firm-a", active=True)
+        status, body = handle_sessions("/sessions/conv-firm-b", {}, self.read_model, tenant_filter=active)
+        self.assertEqual(status, 404)
+
+    def test_get_session_matching_tenant_returns_200(self) -> None:
+        active = ScopedQueryFilter(tenant_id="firm-a", active=True)
+        status, body = handle_sessions("/sessions/conv-firm-a", {}, self.read_model, tenant_filter=active)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["conversation_id"], "conv-firm-a")
+
+
+class TenantScopedTasksViewTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.read_model = _build_tenant_tagged_read_model()
+
+    def test_list_tasks_with_active_tenant_filter(self) -> None:
+        active = ScopedQueryFilter(tenant_id="firm-a", active=True)
+        status, body = handle_tasks("/tasks", {}, self.read_model, tenant_filter=active)
+        self.assertEqual(status, 200)
+        for item in body["items"]:
+            self.assertEqual(item["conversation_id"], "conv-firm-a")
+
+    def test_list_tasks_with_disabled_filter_returns_all(self) -> None:
+        disabled = ScopedQueryFilter.disabled()
+        status, body = handle_tasks("/tasks", {}, self.read_model, tenant_filter=disabled)
+        self.assertEqual(status, 200)
+        self.assertGreaterEqual(len(body["items"]), 1)
+
+    def test_get_task_wrong_tenant_returns_404(self) -> None:
+        active = ScopedQueryFilter(tenant_id="firm-a", active=True)
+        status, body = handle_tasks("/tasks/turn-firm-b", {}, self.read_model, tenant_filter=active)
+        self.assertEqual(status, 404)
+
+
+class TenantScopedFeedbackViewTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.read_model = _build_tenant_tagged_read_model()
+        self.feedback_queue = [
+            {"feedback_id": "fb-1", "status": "pending", "tenant_id": "firm-a"},
+            {"feedback_id": "fb-2", "status": "pending", "tenant_id": "firm-b"},
+            {"feedback_id": "fb-3", "status": "pending", "tenant_id": "firm-a"},
+            {"feedback_id": "fb-4", "status": "resolved", "tenant_id": "firm-a"},
+        ]
+
+    def test_feedback_with_active_tenant_filter(self) -> None:
+        active = ScopedQueryFilter(tenant_id="firm-a", active=True)
+        status, body = handle_feedback({}, self.read_model, self.feedback_queue, tenant_filter=active)
+        self.assertEqual(status, 200)
+        ids = [item["feedback_id"] for item in body["items"]]
+        self.assertIn("fb-1", ids)
+        self.assertIn("fb-3", ids)
+        self.assertNotIn("fb-2", ids)
+        self.assertNotIn("fb-4", ids)
+
+    def test_feedback_with_disabled_filter_returns_all_pending(self) -> None:
+        disabled = ScopedQueryFilter.disabled()
+        status, body = handle_feedback({}, self.read_model, self.feedback_queue, tenant_filter=disabled)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["items"]), 3)
+
+    def test_feedback_with_no_filter_returns_all_pending(self) -> None:
+        status, body = handle_feedback({}, self.read_model, self.feedback_queue)
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["items"]), 3)
+
+    def test_feedback_active_filter_excludes_items_without_tenant_id(self) -> None:
+        queue = [
+            {"feedback_id": "fb-no-tenant", "status": "pending"},
+            {"feedback_id": "fb-a", "status": "pending", "tenant_id": "firm-a"},
+        ]
+        active = ScopedQueryFilter(tenant_id="firm-a", active=True)
+        status, body = handle_feedback({}, self.read_model, queue, tenant_filter=active)
+        self.assertEqual(status, 200)
+        ids = [item["feedback_id"] for item in body["items"]]
+        self.assertIn("fb-a", ids)
+        self.assertNotIn("fb-no-tenant", ids)
 
 
 if __name__ == "__main__":
