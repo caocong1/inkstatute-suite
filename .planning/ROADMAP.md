@@ -39,7 +39,7 @@
 - [x] **Phase 49: Session Memory Wiring (A4)** - Wire existing `HindsightMemory` + `MemoryOrchestrator` into runtime as optional deps; adapters declare `session_memory_support=True` and consume `ContextBundle`.
 - [x] **Phase 50: MCP Connector Registry (B1)** - Read-only MCP Connector Registry with registration, JSON Schema tool schemas, versioning, soft-delete, and router tool-resolution join.
 - [x] **Phase 51: RBAC (C1)** - 4-role RBAC with permissions matrix, `RbacGuard` middleware, default-deny CI scan, and token-based auth with role+tenant claims.
-- [ ] **Phase 52: Skill Registry Write (B2)** - `SkillRegistryWritePort` + `WritableSkillRegistry` with CRUD, immutable versioning, human-review two-person rule, and per-tenant namespaces.
+- [x] **Phase 52: Skill Registry Write (B2)** - `SkillRegistryWritePort` + `WritableSkillRegistry` with CRUD, immutable versioning, human-review two-person rule, and per-tenant namespaces.
 - [ ] **Phase 53: Hybrid Routing (B3)** - `RouterStrategy.HYBRID` with Rule → Skill → Model cascade, confidence thresholds, and legal-risk classifier forcing high-risk queries to Hermes.
 - [ ] **Phase 54: Model Provider Gateway (B4)** - Composite `BackendAdapter` wrapping multiple provider_model sub-adapters with rate limiting, fallback chains, circuit breakers, and cost tracking.
 - [ ] **Phase 55: Multi-Agent Runtime Adapter (B5)** - Composite `BackendAdapter` with sequential/parallel/supervisor orchestration, handoff limits, cycle detection, and copy-on-write shared state.
