@@ -164,8 +164,10 @@ class CodexBackendAdapter:
             return
 
         seq = 0
+        terminal_status = AsyncTaskState.SUCCEEDED.value
+        inner = self._streaming_runner.stream(self._run_requests[run_id])
         try:
-            async for delta in self._streaming_runner.stream(self._run_requests[run_id]):
+            async for delta in inner:
                 yield RunEvent(
                     event_id=f"event-{run_id}-{seq:03d}",
                     run_id=run_id,
@@ -176,15 +178,24 @@ class CodexBackendAdapter:
                     metadata={"source": "codex_stream"},
                 )
                 seq += 1
-            yield RunEvent(
-                event_id=f"event-{run_id}-{seq:03d}",
-                run_id=run_id,
-                event_type=RunEventType.STATE_CHANGED.value,
-                occurred_at=self._clock.now(),
-                seq=seq,
-                payload={"status": AsyncTaskState.SUCCEEDED.value},
-                metadata={"source": "codex_stream_terminal"},
-            )
+                if delta.event_type == RunEventType.STATE_CHANGED.value:
+                    status = delta.payload.get("status")
+                    if status in (
+                        AsyncTaskState.SUCCEEDED.value,
+                        AsyncTaskState.FAILED.value,
+                        AsyncTaskState.CANCELLED.value,
+                    ):
+                        terminal_status = status
+            if terminal_status == AsyncTaskState.SUCCEEDED.value:
+                yield RunEvent(
+                    event_id=f"event-{run_id}-{seq:03d}",
+                    run_id=run_id,
+                    event_type=RunEventType.STATE_CHANGED.value,
+                    occurred_at=self._clock.now(),
+                    seq=seq,
+                    payload={"status": AsyncTaskState.SUCCEEDED.value},
+                    metadata={"source": "codex_stream_terminal"},
+                )
         except Exception as exc:
             yield RunEvent(
                 event_id=f"event-{run_id}-{seq:03d}",
@@ -198,6 +209,8 @@ class CodexBackendAdapter:
                 },
                 metadata={"source": "codex_stream_error"},
             )
+        finally:
+            await inner.aclose()
 
     async def cancel_run(self, run_id: str) -> Run:
         run = self._require_run(run_id)
