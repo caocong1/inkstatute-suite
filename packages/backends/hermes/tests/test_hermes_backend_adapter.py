@@ -90,6 +90,13 @@ class HermesBackendManifestTests(unittest.TestCase):
         self.assertFalse(capabilities.live_update_support)
         self.assertFalse(capabilities.parallel_task_support)
 
+    def test_hermes_manifest_declares_session_memory_support(self) -> None:
+        """Phase 49 SESSMEM-02: hermes adapter declares session_memory_support=True."""
+        from inkstatute_backends_hermes.manifest import hermes_oneshot_capabilities
+
+        capabilities = hermes_oneshot_capabilities()
+        self.assertTrue(capabilities.session_memory_support)
+
 
 class HermesBackendAdapterTests(unittest.IsolatedAsyncioTestCase):
     async def test_adapter_exposes_backend_adapter_methods(self) -> None:

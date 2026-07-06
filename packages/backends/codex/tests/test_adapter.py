@@ -105,6 +105,13 @@ class CodexManifestTests(unittest.TestCase):
         self.assertFalse(capabilities.parallel_task_support)
         self.assertTrue(capabilities.artifact_return_support)
 
+    def test_codex_manifest_declares_session_memory_support(self) -> None:
+        """Phase 49 SESSMEM-02: codex adapter declares session_memory_support=True."""
+        from inkstatute_backends_codex.manifest import codex_prototype_capabilities
+
+        capabilities = codex_prototype_capabilities()
+        self.assertTrue(capabilities.session_memory_support)
+
 
 class CodexBackendAdapterTests(unittest.IsolatedAsyncioTestCase):
     async def test_adapter_exposes_backend_adapter_methods(self) -> None:

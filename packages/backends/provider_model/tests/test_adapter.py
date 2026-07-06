@@ -105,6 +105,13 @@ class ProviderModelManifestTests(unittest.TestCase):
         self.assertFalse(capabilities.parallel_task_support)
         self.assertTrue(capabilities.artifact_return_support)
 
+    def test_provider_model_manifest_declares_session_memory_support(self) -> None:
+        """Phase 49 SESSMEM-02: provider_model adapter declares session_memory_support=True."""
+        from inkstatute_backends_provider_model.manifest import provider_model_prototype_capabilities
+
+        capabilities = provider_model_prototype_capabilities()
+        self.assertTrue(capabilities.session_memory_support)
+
     def test_manifest_invocation_mode_is_direct_llm(self) -> None:
         capabilities = build_provider_model_manifest().capabilities
 

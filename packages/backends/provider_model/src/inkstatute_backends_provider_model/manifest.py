@@ -60,7 +60,7 @@ def provider_model_prototype_capabilities(
         approval_support=False,
         live_update_support=False,
         parallel_task_support=False,
-        session_memory_support=False,
+        session_memory_support=True,
     )
 
 

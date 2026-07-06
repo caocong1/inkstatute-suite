@@ -54,7 +54,7 @@ def hermes_oneshot_capabilities() -> AdapterCapabilitySet:
         approval_support=False,
         live_update_support=False,
         parallel_task_support=False,
-        session_memory_support=False,
+        session_memory_support=True,
     )
 
 
