@@ -24,6 +24,17 @@ class RuntimeFeatureFlags:
     codex_backend_enabled: bool = False
     provider_model_backend_enabled: bool = False
 
+    # M3 flags (9) — all default OFF, gated by require_enabled
+    session_memory_enabled: bool = False
+    mcp_registry_enabled: bool = False
+    model_gateway_enabled: bool = False
+    multi_agent_enabled: bool = False
+    skill_registry_write_enabled: bool = False
+    hybrid_routing_enabled: bool = False
+    web_sse_channel_enabled: bool = False
+    rbac_enabled: bool = False
+    multi_tenant_enabled: bool = False
+
     def require_enabled(self, flag_name: str) -> None:
         known_flags = {field.name for field in fields(self)}
         if flag_name not in known_flags:
