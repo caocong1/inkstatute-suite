@@ -359,8 +359,8 @@ Plans:
 
 ### Phase 57.1: Close gap: TENANT-01/02/03/04 — wire TenantGuard into Web UIs and admin-console-api views (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Operator can enable `multi_tenant_enabled=True` and the admin-console-api views, admin-web-ui, and lawyer-web-chat all enforce tenant-scoped data access via `TenantGuard.enforce()` — no cross-tenant data leakage in Web UI read paths. Tenant context flows from RBAC token claims through admin-web-ui proxy to admin-console-api view handlers, and lawyer-web-chat session handlers apply tenant filters to message history and SSE streams.
+**Requirements**: TENANT-01, TENANT-02, TENANT-03, TENANT-04
 **Depends on:** Phase 57
 **Plans:** 0 plans
 
