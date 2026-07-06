@@ -23,6 +23,7 @@
 **Requirements:** `.planning/REQUIREMENTS.md` (38 requirements)
 
 **Key context:**
+
 - Maintain v1.6 safety strategy: contract freeze, feature flags default OFF, output boundary enforced, human gates (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial) preserved.
 - All 9 new runtime lanes default-OFF; live promotion remains a human gate.
 - Hermes remains the first production backend; Codex/provider_model promoted to production-grade but Hermes stays primary.
@@ -54,6 +55,7 @@
 **Depends on:** v1.6 completion (Phase 44)
 **Requirements:** SAFETY-01, SAFETY-02, SAFETY-03, SAFETY-04, SAFETY-05
 **Success Criteria** (what must be TRUE):
+
 1. All 9 new M3 feature flags (`session_memory_enabled`, `mcp_registry_enabled`, `model_gateway_enabled`, `multi_agent_enabled`, `skill_registry_write_enabled`, `hybrid_routing_enabled`, `web_sse_channel_enabled`, `rbac_enabled`, `multi_tenant_enabled`) default to `False` in `RuntimeFeatureFlags`.
 2. Contract-count assertion test confirms no frozen Protocol modified (`BackendAdapter` 9 methods, `ChannelAdapter` 6 methods, `RouterPort.decide`, `SkillRegistryPort` 3 read methods) and `packages/platform-contract/` baseline hash unchanged from v1.6.
 3. All 19 V2 gates pass green (969+ tests) with no regressions on the M3 baseline branch.
@@ -63,6 +65,7 @@
 **Plans:** 4 plans
 
 Plans:
+
 - [ ] 45-01-PLAN.md — Add 9 M3 feature flags to RuntimeFeatureFlags + extend flag-default tests
 - [ ] 45-02-PLAN.md — Extend contract-count freeze to RouterPort(1) + SkillRegistryPort(3)
 - [ ] 45-03-PLAN.md — Update admin-console-api hardcoded flag-set assertion from 12 to 21 flags
@@ -74,6 +77,7 @@ Plans:
 **Depends on:** Phase 45
 **Requirements:** STREAM-01, STREAM-02
 **Success Criteria** (what must be TRUE):
+
 1. Codex and provider_model adapters yield `RunEvent` records from `stream_events()` with real provider streaming (Codex exec JSON-lines, OpenAI/Anthropic SSE deltas) and a guaranteed terminal event (`completed`, `failed`, or `cancelled`) on every stream.
 2. Client cancellation propagates through runtime → adapter → provider via `aclose()` cleanup, leaving no zombie runs; a `try/finally` block ensures the stream is closed even on exception.
 3. Streaming events pass through `AssistantOutputBoundary` before reaching channels, with an allowlist of permitted event types filtering out raw provider tokens, model names, and error traces.
@@ -81,6 +85,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
+
 - [ ] 46-01-PLAN.md — Codex adapter streaming (StreamingCodexExecRunner protocol, JSONL stream parser, stream_events() with terminal event, manifest update)
 - [ ] 46-02-PLAN.md — provider_model adapter streaming (StreamingProviderModelRunner protocol, SSE delta parser, stream_events() with terminal event, manifest update)
 - [ ] 46-03-PLAN.md — Runtime stream() cancellation propagation (try/finally + aclose()) + output boundary event-type allowlist
@@ -91,6 +96,7 @@ Plans:
 **Depends on:** Phase 45
 **Requirements:** ARTIFACT-01, ARTIFACT-02
 **Success Criteria** (what must be TRUE):
+
 1. Adapters return artifacts via frozen `collect_artifacts()` and populate `AgentResult.artifacts` with ref-based schema (`content_ref`, `sha256`, `size_bytes`); no inline binary content appears in any artifact record or contract event.
 2. Artifact metadata enforces the output boundary — backend noise (model names, API error traces, function call internals) is filtered from artifact metadata fields via an allowlist.
 3. Codex adapter populates `AgentResult.artifacts` and `_artifacts[run_id]` store from existing `CodexExecResult.artifact_refs`, and provider_model adapter populates artifacts from provider response file outputs.
@@ -103,6 +109,7 @@ Plans:
 **Depends on:** Phase 46, Phase 47
 **Requirements:** MULTIPROV-01, MULTIPROV-02, MULTIPROV-03
 **Success Criteria** (what must be TRUE):
+
 1. `AnthropicRunner` implements `ProviderRunner` Protocol with Messages API normalization (system as top-level param, content blocks, thinking tokens) via `AsyncAnthropic` lazy SDK import.
 2. `OllamaRunner` implements `ProviderRunner` Protocol for local models via OpenAI-compatible endpoint, with model listing and basic chat completion.
 3. Multi-provider error normalization reuses v1.6 `ErrorInfo`/`ErrorCategory` pattern — provider-specific errors (rate limits, auth failures, model unavailable) map to the same error categories with consistent `ErrorInfo` records.
@@ -116,6 +123,7 @@ Plans:
 **Depends on:** Phase 45
 **Requirements:** SESSMEM-01
 **Success Criteria** (what must be TRUE):
+
 1. `DefaultRunRuntime` accepts optional `memory_orchestrator` and `context_assembler` injected dependencies; when `session_memory_enabled=True`, `MemoryOrchestrator.recall()` queries `HindsightMemory` scoped by `(tenant_id, workspace_id, user_id)` and injects recalled memory refs into `ContextBundle` before `backend.submit_run()`.
 2. Adapters declare `session_memory_support=True` in their manifest and consume the `ContextBundle` from `RunRequest.metadata`; no adapter calls `HindsightMemory` or any memory provider directly.
 3. When `session_memory_enabled=False` (default), no memory orchestration occurs and the runtime behaves identically to v1.6 — the feature is purely additive and opt-in.
@@ -128,6 +136,7 @@ Plans:
 **Depends on:** Phase 45
 **Requirements:** MCP-01, MCP-02, MCP-03
 **Success Criteria** (what must be TRUE):
+
 1. `McpRegistryPort` implements read-only operations (`list_servers`, `get_server`, `search`) with cursor pagination, returning `McpServerDescriptor` records matching the frozen contract shape.
 2. MCP registry supports registration with JSON Schema tool schemas, versioning (semantic version tracking), and soft-delete (connectors marked inactive, not removed); no auto-execution on registration — admission review required before execution.
 3. Router joins skill `required_tool_refs` → MCP server `capability_refs` at read time, producing a unified tool-resolution map without modifying frozen `RouteDecision` or `NeutralSkillDescriptor` schemas.
@@ -141,6 +150,7 @@ Plans:
 **Depends on:** Phase 45
 **Requirements:** RBAC-01, RBAC-02, RBAC-03
 **Success Criteria** (what must be TRUE):
+
 1. `packages/rbac/` implements 4 roles (admin, operator, lawyer, viewer) with a declarative permissions matrix mapping endpoint → required role; `RbacGuard.check(role, endpoint)` middleware wraps admin API handlers.
 2. RBAC enforces default-deny: a CI scan fails when any admin API endpoint lacks a role annotation; unannotated endpoints are treated as denied by default.
 3. RBAC token-based auth issues short-lived tokens with role+tenant claims; `resolve_identity()` extracts claims from the token, with `check_auth_header` static-token fallback preserved when `rbac_enabled=False`.
@@ -154,6 +164,7 @@ Plans:
 **Depends on:** Phase 51
 **Requirements:** SKILLWRITE-01, SKILLWRITE-02, SKILLWRITE-03
 **Success Criteria** (what must be TRUE):
+
 1. `SkillRegistryWritePort` + `WritableSkillRegistry` implements CRUD operations in a separate `write.py` module (frozen `registry.py` read-only module untouched), with immutable versioning (every write creates a new version) and rollback to any prior version.
 2. Every skill write path (create, update, delete, migration, fixture load) requires a human-review record with reviewer identity and timestamp; no `candidate` → `active` transition is possible without a human-review record — two-person rule enforced for legal skills.
 3. Skill write enforces per-tenant skill namespaces; a skill created in tenant A is not visible or accessible to tenant B; contract test asserts no cross-tenant skill leakage.
@@ -167,6 +178,7 @@ Plans:
 **Depends on:** Phase 50, Phase 48
 **Requirements:** HYBRID-01, HYBRID-02, HYBRID-03
 **Success Criteria** (what must be TRUE):
+
 1. `RouterStrategy.HYBRID` (router-internal enum, NOT frozen `RouteMode`) implements Rule → Skill → Model cascade with confidence thresholds: route directly when confidence ≥0.8, emit clarification prompt when 0.5–0.8, fall back to safe path when <0.5.
 2. Legal-risk classifier forces high-risk queries to Hermes regardless of confidence score; a test asserts that high-risk legal fixtures always route to Hermes, preventing confidence-miscalibrated routing to cheap/weak models.
 3. `RouteDecision.confidence` is populated (float 0.0–1.0) for all hybrid routing decisions; the strategy is recorded in `metadata["router_strategy"]` without modifying the frozen `RouteDecision` schema.
@@ -180,6 +192,7 @@ Plans:
 **Depends on:** Phase 48, Phase 53
 **Requirements:** GATEWAY-01, GATEWAY-02, GATEWAY-03, GATEWAY-04
 **Success Criteria** (what must be TRUE):
+
 1. `packages/model-gateway/` implements a composite `BackendAdapter` wrapping multiple provider_model sub-adapters (Anthropic, Ollama, OpenAI) behind the frozen 9-method Protocol; injected into `DefaultRunRuntime` as `backend` with no runtime change.
 2. Gateway enforces per-tenant/provider rate limiting (RPM, TPM, concurrency) via a pure-Python token-bucket implementation using `asyncio.monotonic()` + `collections.deque` + `asyncio.Lock` (~30 lines, no external dependency).
 3. Gateway implements fallback chains with circuit breakers (open/half-open/closed states) and tried-provider tracking; cascading failures are prevented by circuit breaker isolation and cost ceiling enforcement.
@@ -193,6 +206,7 @@ Plans:
 **Depends on:** Phase 54, Phase 50
 **Requirements:** MULTIAGENT-01, MULTIAGENT-02, MULTIAGENT-03
 **Success Criteria** (what must be TRUE):
+
 1. Multi-Agent Runtime Adapter is a composite `BackendAdapter` delegating to `dict[agent_id, BackendAdapter]` sub-adapters by `solution.backend_id`; namespaced `run_id` routes `get_run`/`stream_events`/`cancel_run` to the correct sub-adapter.
 2. Multi-agent supports sequential, parallel, and supervisor orchestration patterns with `max_handoffs=5` limit and cycle detection (visited-set prevents infinite handoff loops); `asyncio.Semaphore` bounds concurrency for parallel fan-out.
 3. Multi-agent shared state is scoped to `parent_run_id` with copy-on-write isolation; sub-agent state mutations do not leak to sibling sub-agents or the parent run; no cross-tenant shared state in multi-agent runs.
@@ -206,6 +220,7 @@ Plans:
 **Depends on:** Phase 51
 **Requirements:** TENANT-01, TENANT-02, TENANT-03, TENANT-04
 **Success Criteria** (what must be TRUE):
+
 1. `TenantScopeResolver` resolves caller `tenant_id` from RBAC token claims; `TenantGuard` injects `tenant_id` filter into every read-model query, preventing cross-tenant data access at the data layer.
 2. Contract logs are partitioned by `tenant_id`/`workspace_id` path; JSONL writers and readers scope file paths by tenant, preventing one firm's client matters from bleeding into another firm's view.
 3. Cache keys are namespaced by `tenant_id`; Hindsight bank isolation is enforced per tenant (existing `bank_id` mapping extended with explicit tenant guard); no shared cache keys across tenants.
@@ -214,6 +229,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
+
 - [x] 56-01-PLAN.md — TenantScopeResolver, TenantGuard, and tenant-scoped stores
 - [x] 56-02-PLAN.md — Hindsight bank isolation enforcement + migration test
 
@@ -223,6 +239,7 @@ Plans:
 **Depends on:** Phase 51, Phase 56, Phase 50, Phase 54, Phase 46, Phase 47
 **Requirements:** ADMINUI-01, ADMINUI-02, ADMINUI-03, LAWCHAT-01, LAWCHAT-02, LAWCHAT-03
 **Success Criteria** (what must be TRUE):
+
 1. Admin Web UI (`services/admin-web-ui/`) renders an operator dashboard with session/task inspection, feedback review queue, gate status visualization, and health monitoring; built with Preact + Tailwind (static bundle, no Node.js server required).
 2. Admin Web UI consumes existing `admin-console-api` read endpoints plus new read route branches (`/mcp-servers`, `/model-gateway/health`, `/skills`, `/tenants`); RBAC middleware enforces role-based access between flag gate and route dispatch.
 3. Admin Web UI enforces the output boundary: all backend content is rendered as escaped plaintext or DOMPurify-sanitized content — never `innerHTML`; CSP headers and httpOnly cookies prevent XSS; no secrets or raw legal payloads in browser storage.
@@ -339,6 +356,17 @@ Plans:
 **Status:** COMPLETE — all 3 phases shipped (33-35), 23/23 requirements satisfied, 479 tests green.
 
 ### v1.5 Phase Details
+
+### Phase 57.1: Close gap: TENANT-01/02/03/04 — wire TenantGuard into Web UIs and admin-console-api views (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 57
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 57.1 to break down)
 
 #### Phase 33: V2 Requirement Audit & Traceability Infrastructure
 
