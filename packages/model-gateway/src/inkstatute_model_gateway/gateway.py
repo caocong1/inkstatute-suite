@@ -10,9 +10,9 @@ When ``config.enabled`` is ``False`` (default), the gateway is transparent —
 limiting, circuit breaking, fallback, or cost tracking.
 
 When ``config.enabled`` is ``True``, the gateway applies:
-- Per-tenant/provider rate limiting (RPM/TPM/concurrency) — Plan 02
-- Circuit breakers with fallback chains and tried-provider tracking — Plan 02
-- Per-tenant/matter cost tracking with budget ceilings — Plan 03
+- Per-tenant/provider rate limiting (RPM/TPM/concurrency)
+- Circuit breakers with fallback chains and tried-provider tracking
+- Per-tenant/matter cost tracking with budget ceilings (Plan 03)
 """
 
 from __future__ import annotations
@@ -31,7 +31,9 @@ from platform_runtime import (
     RunRequest,
 )
 
+from .circuit_breaker import CircuitBreakerConfig, CircuitBreakerRegistry, CircuitState
 from .config import ModelProviderGatewayConfig
+from .rate_limiter import RateLimitConfig, RateLimiter
 
 
 class ModelProviderGateway:
@@ -55,6 +57,8 @@ class ModelProviderGateway:
         self._clock = clock or _SystemClock()
         self._run_to_adapter: dict[str, str] = {}
         self._run_requests: dict[str, RunRequest] = {}
+        self._rate_limiter = RateLimiter(self.config.rate_limit_configs)
+        self._circuit_registry = CircuitBreakerRegistry(self.config.circuit_breaker_config)
 
     # ------------------------------------------------------------------
     # BackendAdapter Protocol — 9 methods
@@ -90,19 +94,9 @@ class ModelProviderGateway:
         )
 
     async def submit_run(self, req: RunRequest) -> RunHandle:
-        backend_id = req.solution.backend_id
-        if backend_id is None:
-            raise KeyError("solution.backend_id is None; cannot route to sub-adapter")
-        adapter = self._sub_adapters.get(backend_id)
-        if adapter is None:
-            raise KeyError(
-                f"no sub-adapter registered for backend_id={backend_id!r}; "
-                f"available: {list(self._sub_adapters.keys())}"
-            )
-        handle = await adapter.submit_run(req)
-        self._run_to_adapter[handle.run_id] = backend_id
-        self._run_requests[handle.run_id] = req
-        return handle
+        if self.config.enabled:
+            return await self._submit_run_enabled(req)
+        return await self._submit_run_passthrough(req)
 
     async def get_run(self, run_id: str) -> Run:
         adapter = self._resolve_adapter(run_id)
@@ -124,6 +118,124 @@ class ModelProviderGateway:
     async def collect_artifacts(self, run_id: str) -> list[ArtifactRecord]:
         adapter = self._resolve_adapter(run_id)
         return await adapter.collect_artifacts(run_id)
+
+    # ------------------------------------------------------------------
+    # Pass-through mode (disabled)
+    # ------------------------------------------------------------------
+
+    async def _submit_run_passthrough(self, req: RunRequest) -> RunHandle:
+        """Transparent delegation — no gateway logic."""
+        backend_id = req.solution.backend_id
+        if backend_id is None:
+            raise KeyError("solution.backend_id is None; cannot route to sub-adapter")
+        adapter = self._sub_adapters.get(backend_id)
+        if adapter is None:
+            raise KeyError(
+                f"no sub-adapter registered for backend_id={backend_id!r}; "
+                f"available: {list(self._sub_adapters.keys())}"
+            )
+        handle = await adapter.submit_run(req)
+        self._run_to_adapter[handle.run_id] = backend_id
+        self._run_requests[handle.run_id] = req
+        return handle
+
+    # ------------------------------------------------------------------
+    # Enabled mode — rate limiting, circuit breakers, fallback
+    # ------------------------------------------------------------------
+
+    async def _submit_run_enabled(self, req: RunRequest) -> RunHandle:
+        """Enabled mode with rate limiting, circuit breakers, and fallback."""
+        tenant_id = req.tenant_id or "default"
+        primary = req.solution.backend_id
+
+        # Build provider order: primary first, then fallback chain.
+        provider_order: list[str] = []
+        if primary is not None:
+            provider_order.append(primary)
+        for pid in self.config.fallback_chain:
+            if pid not in provider_order:
+                provider_order.append(pid)
+
+        tried_providers: list[str] = []
+        last_error: str | None = None
+
+        for provider_id in provider_order:
+            adapter = self._sub_adapters.get(provider_id)
+            if adapter is None:
+                tried_providers.append(provider_id)
+                last_error = f"sub-adapter not registered: {provider_id}"
+                continue
+
+            # Check circuit breaker.
+            if not self._circuit_registry.can_execute(provider_id):
+                tried_providers.append(provider_id)
+                last_error = f"circuit breaker open: {provider_id}"
+                continue
+
+            # Check rate limits.
+            rpm_ok = await self._rate_limiter.check_rpm(tenant_id, provider_id)
+            if not rpm_ok:
+                tried_providers.append(provider_id)
+                last_error = f"rate limited (RPM): {provider_id}"
+                continue
+
+            # Acquire concurrency semaphore.
+            sem = await self._rate_limiter.acquire_concurrency(tenant_id, provider_id)
+            if sem is not None:
+                await sem.acquire()
+
+            try:
+                handle = await adapter.submit_run(req)
+                tried_providers.append(provider_id)
+
+                # Check result status.
+                run = await adapter.get_run(handle.run_id)
+                status = _status_value(run.status)
+
+                if status == AsyncTaskState.SUCCEEDED.value:
+                    # Success — record success in circuit breaker.
+                    self._circuit_registry.record_success(provider_id)
+                    # Record request in rate limiter.
+                    await self._rate_limiter.record_request(tenant_id, provider_id)
+                    # Augment handle metadata with tried_providers.
+                    augmented_metadata = dict(handle.metadata)
+                    augmented_metadata["tried_providers"] = list(tried_providers)
+                    augmented_metadata["gateway_enabled"] = True
+                    self._run_to_adapter[handle.run_id] = provider_id
+                    self._run_requests[handle.run_id] = req
+                    return RunHandle(
+                        run_id=handle.run_id,
+                        backend_run_id=handle.backend_run_id,
+                        status=handle.status,
+                        metadata=augmented_metadata,
+                    )
+                else:
+                    # Failure — record failure in circuit breaker.
+                    self._circuit_registry.record_failure(provider_id)
+                    await self._rate_limiter.record_request(tenant_id, provider_id)
+                    last_error = f"provider failed: {provider_id} (status={status})"
+                    continue
+            except Exception as exc:  # noqa: BLE001
+                tried_providers.append(provider_id)
+                self._circuit_registry.record_failure(provider_id)
+                last_error = f"provider exception: {provider_id} ({type(exc).__name__})"
+                continue
+            finally:
+                if sem is not None:
+                    sem.release()
+
+        # All providers exhausted.
+        return RunHandle(
+            run_id=f"gateway-failed-{id(req)}",
+            backend_run_id=None,
+            status=AsyncTaskState.FAILED,
+            metadata={
+                "tried_providers": list(tried_providers),
+                "gateway_enabled": True,
+                "error_code": "model_gateway_all_providers_failed",
+                "error_message": last_error or "all providers exhausted",
+            },
+        )
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -212,8 +324,14 @@ def _merge_capabilities(sub_adapters: dict[str, Any]) -> AdapterCapabilitySet:
 
 
 # ---------------------------------------------------------------------------
-# Clock
+# Helpers
 # ---------------------------------------------------------------------------
+
+
+def _status_value(status: AsyncTaskState | str) -> str:
+    if isinstance(status, AsyncTaskState):
+        return status.value
+    return str(status)
 
 
 class _SystemClock:
