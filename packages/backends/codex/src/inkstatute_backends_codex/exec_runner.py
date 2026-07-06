@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 import re
 import subprocess
-from typing import Any, Iterator, Protocol
+from typing import Any, AsyncIterator, Iterator, Protocol
 
 from platform_contract.enums import (
     AgentResultStatus,
@@ -34,7 +34,7 @@ from platform_contract.enums import (
 from platform_contract.events import AgentResult, ErrorInfo, JsonObject
 from platform_runtime import RunRequest
 
-from .adapter import CodexExecResult, CodexExecRunner, CodexStreamEvent
+from .adapter import CodexExecResult, CodexExecRunner, CodexStreamEvent, StreamingCodexExecRunner
 from .config import CodexBackendConfig
 
 # ---------------------------------------------------------------------------
