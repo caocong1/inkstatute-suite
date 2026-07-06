@@ -23,6 +23,8 @@ from .long_term_memory import (
     _validate_retain_input,
 )
 from .memory_adapters import MemoryStoreCapabilityManifest
+from .feature_flags import RuntimeFeatureFlags
+from .tenant_scope import TenantScopeError
 
 
 class HindsightMemoryError(RuntimeError):
@@ -46,9 +48,11 @@ class HindsightMemory:
         self,
         *,
         client: Hindsight,
+        feature_flags: RuntimeFeatureFlags | None = None,
     ) -> None:
         self._client = client
         self._base_url = getattr(client, "base_url", "http://localhost:8888")
+        self._feature_flags = feature_flags or RuntimeFeatureFlags()
 
     def capability_manifest(self) -> JsonObject:
         """Return a capability manifest describing this adapter."""
@@ -122,8 +126,37 @@ class HindsightMemory:
             if "already exists" not in str(e).lower():
                 pass
 
+    def _enforce_tenant_scope(
+        self,
+        tenant_id: str | None,
+        workspace_id: str | None,
+        user_id: str | None,
+    ) -> None:
+        """Enforce that tenant_id is resolved when multi_tenant_enabled=True.
+
+        When ``multi_tenant_enabled=False``, this is a no-op (v1.6 behavior).
+        When ``True``, raises ``TenantScopeError`` if tenant_id is None or
+        empty — preventing bank operations without a resolved tenant scope.
+        """
+        if not self._feature_flags.multi_tenant_enabled:
+            return
+        if tenant_id is None or tenant_id == "":
+            raise TenantScopeError(
+                "hindsight bank operation requires resolved tenant_id when multi_tenant_enabled"
+            )
+        # Defense-in-depth: verify the derived bank_id contains the tenant_id.
+        # _bank_id sanitizes non-alphanumeric chars to '_', so we check that
+        # the tenant_id (similarly sanitized) appears in the bank_id prefix.
+        bank_id = self._bank_id(tenant_id, workspace_id or "", user_id or "")
+        safe_tenant = "".join(c if c.isalnum() or c in "-_." else "_" for c in tenant_id)
+        if not bank_id.startswith(f"ink-{safe_tenant}"):
+            raise TenantScopeError(
+                f"hindsight bank_id {bank_id!r} does not contain tenant_id {tenant_id!r}"
+            )
+
     async def aretain(self, input: MemoryRetainInput) -> MemoryRetainResult:
         _validate_retain_input(input)
+        self._enforce_tenant_scope(input.tenant_id, input.workspace_id, input.user_id)
         bank_id = self._bank_id(input.tenant_id, input.workspace_id, input.user_id)
         await self._ensure_bank(bank_id)
         try:
@@ -145,6 +178,7 @@ class HindsightMemory:
 
     async def arecall(self, input: MemoryRecallInput) -> MemoryRecallResult:
         _validate_recall_input(input)
+        self._enforce_tenant_scope(input.tenant_id, input.workspace_id, input.user_id)
         bank_id = self._bank_id(input.tenant_id, input.workspace_id, input.user_id)
         await self._ensure_bank(bank_id)
         try:
@@ -181,6 +215,7 @@ class HindsightMemory:
 
     async def areflect(self, input: MemoryReflectInput) -> MemoryReflectResult:
         _validate_reflect_input(input)
+        self._enforce_tenant_scope(input.tenant_id, input.workspace_id, input.user_id)
         bank_id = self._bank_id(input.tenant_id, input.workspace_id, input.user_id)
         await self._ensure_bank(bank_id)
         try:
