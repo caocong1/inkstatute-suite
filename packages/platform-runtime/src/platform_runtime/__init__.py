@@ -151,6 +151,16 @@ from .session_resolver import (
     resolve_session_turn,
 )
 from .store import ContractLogEntry, ContractLogPrivacyError, InMemoryContractLogStore
+from .tenant_scope import (
+    ScopedQueryFilter,
+    TenantGuard,
+    TenantScope,
+    TenantScopeError,
+    TenantScopeRequestContext,
+    TenantScopeResolver,
+)
+from .tenant_contract_log import TenantScopedContractLogStore
+from .tenant_cache import TenantNamespacedCache
 
 __all__ = [
     "AckResponse",
@@ -278,6 +288,14 @@ __all__ = [
     "RollingSummaryRecord",
     "RollingSummaryTrigger",
     "SummaryPrivacyError",
+    "TenantGuard",
+    "TenantNamespacedCache",
+    "TenantScope",
+    "TenantScopeError",
+    "TenantScopeRequestContext",
+    "TenantScopeResolver",
+    "TenantScopedContractLogStore",
     "evaluate_memory_adapter_manifest",
     "resolve_session_turn",
+    "ScopedQueryFilter",
 ]
