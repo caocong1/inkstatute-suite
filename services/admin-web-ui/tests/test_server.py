@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import copy
+import json
 import unittest
+from pathlib import Path
 from typing import Any, Mapping
 
+from admin_console_api.api import handle_admin_get as real_handle_admin_get
 from admin_web_ui.server import CSP_HEADER, handle_admin_web_ui_request
+from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 from rbac import Role, issue_token
 
@@ -242,6 +247,137 @@ class AdminWebUiServerTests(unittest.TestCase):
         )
         self.assertNotIn("gpt-4", body)
         self.assertNotIn("model:", body.lower())
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+FIXTURE_ROOT = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures"
+PHASE5_STREAM = FIXTURE_ROOT / "phase5_wecom_contract_stream.jsonl"
+
+
+def _load_raw_records(path: Path) -> list[dict[str, object]]:
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _build_tenant_tagged_read_model():
+    """Build a read model with tenant_id-injected records for two tenants."""
+    base_records = _load_raw_records(PHASE5_STREAM)
+    records: list[dict[str, object]] = []
+
+    for tenant in ("firm-a", "firm-b"):
+        for rec in base_records:
+            cloned = copy.deepcopy(rec)
+            event = cloned.get("event")
+            if isinstance(event, dict):
+                event["tenant_id"] = tenant
+                if cloned.get("event_key") == "agent_turn":
+                    event["conversation_id"] = f"conv-{tenant}"
+                    event["turn_id"] = f"turn-{tenant}"
+                elif "turn_id" in event:
+                    event["turn_id"] = f"turn-{tenant}"
+                    event["conversation_id"] = f"conv-{tenant}"
+            records.append(cloned)
+
+    return build_read_model(records)
+
+
+class TenantIsolationTests(unittest.TestCase):
+    """End-to-end tenant isolation tests through admin-web-ui → admin-console-api."""
+
+    SECRET = "test-secret-key"
+
+    def setUp(self) -> None:
+        self.read_model = _build_tenant_tagged_read_model()
+        self.feedback_queue: list[dict[str, Any]] = [
+            {"feedback_id": "fb-a", "status": "pending", "tenant_id": "firm-a"},
+            {"feedback_id": "fb-b", "status": "pending", "tenant_id": "firm-b"},
+        ]
+
+    def _token(self, tenant_id: str) -> str:
+        return issue_token(self.SECRET, role=Role.ADMIN, tenant_id=tenant_id)
+
+    def test_disabled_multi_tenant_shows_all_data(self) -> None:
+        """multi_tenant_enabled=False → all data shown (no regression)."""
+        flags = RuntimeFeatureFlags(
+            admin_web_ui_enabled=True,
+            admin_api_enabled=True,
+            rbac_enabled=True,
+            multi_tenant_enabled=False,
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/sessions",
+            {"Authorization": f"Bearer {self._token('firm-a')}"},
+            feature_flags=flags,
+            handle_admin_get=real_handle_admin_get,
+            read_model=self.read_model,
+            feedback_queue=self.feedback_queue,
+            rbac_secret=self.SECRET,
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("conv-firm-a", body)
+        self.assertIn("conv-firm-b", body)
+
+    def test_enabled_multi_tenant_filters_by_identity(self) -> None:
+        """multi_tenant_enabled=True → only firm-a data shown for firm-a admin."""
+        flags = RuntimeFeatureFlags(
+            admin_web_ui_enabled=True,
+            admin_api_enabled=True,
+            rbac_enabled=True,
+            multi_tenant_enabled=True,
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/sessions",
+            {"Authorization": f"Bearer {self._token('firm-a')}"},
+            feature_flags=flags,
+            handle_admin_get=real_handle_admin_get,
+            read_model=self.read_model,
+            feedback_queue=self.feedback_queue,
+            rbac_secret=self.SECRET,
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("conv-firm-a", body)
+        self.assertNotIn("conv-firm-b", body)
+
+    def test_enabled_multi_tenant_different_tenant_isolation(self) -> None:
+        """firm-b admin cannot see firm-a conversations."""
+        flags = RuntimeFeatureFlags(
+            admin_web_ui_enabled=True,
+            admin_api_enabled=True,
+            rbac_enabled=True,
+            multi_tenant_enabled=True,
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/sessions",
+            {"Authorization": f"Bearer {self._token('firm-b')}"},
+            feature_flags=flags,
+            handle_admin_get=real_handle_admin_get,
+            read_model=self.read_model,
+            feedback_queue=self.feedback_queue,
+            rbac_secret=self.SECRET,
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("conv-firm-b", body)
+        self.assertNotIn("conv-firm-a", body)
+
+    def test_enabled_multi_tenant_feedback_filtered(self) -> None:
+        """feedback section shows only firm-a feedback items for firm-a admin."""
+        flags = RuntimeFeatureFlags(
+            admin_web_ui_enabled=True,
+            admin_api_enabled=True,
+            rbac_enabled=True,
+            multi_tenant_enabled=True,
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/feedback",
+            {"Authorization": f"Bearer {self._token('firm-a')}"},
+            feature_flags=flags,
+            handle_admin_get=real_handle_admin_get,
+            read_model=self.read_model,
+            feedback_queue=self.feedback_queue,
+            rbac_secret=self.SECRET,
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("fb-a", body)
+        self.assertNotIn("fb-b", body)
 
 
 if __name__ == "__main__":
