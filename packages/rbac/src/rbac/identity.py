@@ -63,13 +63,38 @@ def resolve_identity(
             return None
         return Identity(role=role, tenant_id=claims.tenant_id)
 
-    # Static-token fallback (v1.6 behavior) — lazy import to keep the rbac
-    # package stdlib-only at module top level.
-    from admin_console_api.auth import check_auth_header
+    # Static-token fallback (v1.6 behavior).  The ``admin_console_api.auth``
+    # module is imported lazily so the rbac package remains stdlib-only at
+    # module top level and testable standalone.  When ``admin_console_api`` is
+    # not on the import path (e.g. rbac-only test runs), a local stdlib
+    # implementation of the same constant-time Bearer-token comparison is
+    # used — preserving identical v1.6 semantics with no external dependency.
+    try:
+        from admin_console_api.auth import check_auth_header
+    except ImportError:
+        check_auth_header = _static_token_check
 
     if check_auth_header(auth_header, static_token):
         return Identity(role=Role.ADMIN, tenant_id="default")
     return None
+
+
+def _static_token_check(header_value: str | None, expected_token: str | None) -> bool:
+    """Local fallback for ``check_auth_header`` (v1.6 static-token semantics).
+
+    Returns ``False`` when the token is not configured, the header is missing,
+    or the header does not start with ``"Bearer "``.  Uses
+    ``hmac.compare_digest`` for constant-time comparison — identical to
+    ``admin_console_api.auth.check_auth_header``.
+    """
+    import hmac
+
+    if expected_token is None:
+        return False
+    if header_value is None or not header_value.startswith(_BEARER_PREFIX):
+        return False
+    provided = header_value[len(_BEARER_PREFIX):]
+    return hmac.compare_digest(provided, expected_token)
 
 
 __all__ = ["Identity", "resolve_identity"]

@@ -437,12 +437,15 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("codex-backend", gate_names)
         self.assertIn("provider-model-backend", gate_names)
         self.assertIn("admin-console-api", gate_names)
+        self.assertIn("rbac", gate_names)
+        self.assertIn("rbac-annotation-scan", gate_names)
+        self.assertIn("mcp-registry", gate_names)
         self.assertIn("qqbot-channel", gate_names)
         self.assertIn("web-sse-channel", gate_names)
         self.assertIn("wecom-channel", gate_names)
         self.assertIn("platform-sdk-ts", gate_names)
         self.assertIn("gate-coverage-meta-test", gate_names)
-        self.assertEqual(len(gate_names), 19)
+        self.assertEqual(len(gate_names), 22)
 
 
 if __name__ == "__main__":

@@ -64,6 +64,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     codex_backend_src = repo_root / "packages" / "backends" / "codex" / "src"
     provider_model_backend_src = repo_root / "packages" / "backends" / "provider_model" / "src"
     admin_api_src = repo_root / "services" / "admin-console-api" / "src"
+    rbac_src = repo_root / "packages" / "rbac" / "src"
     channel_core_src = repo_root / "packages" / "channel-core" / "src"
     qqbot_src = repo_root / "packages" / "channels" / "qqbot" / "src"
     web_sse_src = repo_root / "packages" / "channels" / "web_sse" / "src"
@@ -120,7 +121,17 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "admin-console-api",
             (py, "-m", "unittest", "discover", "-s", "services/admin-console-api/tests"),
-            (admin_api_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
+            (admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
+            "rbac",
+            (py, "-m", "unittest", "discover", "-s", "packages/rbac/tests"),
+            (rbac_src, admin_api_src, platform_src, platform_runtime_src, read_view_src, feedback_src, contract_src),
+        ),
+        Gate(
+            "rbac-annotation-scan",
+            (py, "scripts/scan_rbac_annotations.py"),
+            (rbac_src, admin_api_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
         ),
         Gate(
             "qqbot-channel",
@@ -161,7 +172,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, channel_core_src, qqbot_src, mcp_registry_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, rbac_src, channel_core_src, qqbot_src, mcp_registry_src),
         ),
         Gate(
             "v2-acceptance-traceability",
@@ -184,6 +195,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/skill-registry/src",
                 "packages/router-service/src",
                 "packages/mcp-registry/src",
+                "packages/rbac/src",
                 "packages/backends/codex/src",
                 "packages/backends/provider_model/src",
                 "services/wecom-service/src",
