@@ -40,7 +40,7 @@
 - [x] **Phase 50: MCP Connector Registry (B1)** - Read-only MCP Connector Registry with registration, JSON Schema tool schemas, versioning, soft-delete, and router tool-resolution join.
 - [x] **Phase 51: RBAC (C1)** - 4-role RBAC with permissions matrix, `RbacGuard` middleware, default-deny CI scan, and token-based auth with role+tenant claims.
 - [x] **Phase 52: Skill Registry Write (B2)** - `SkillRegistryWritePort` + `WritableSkillRegistry` with CRUD, immutable versioning, human-review two-person rule, and per-tenant namespaces.
-- [ ] **Phase 53: Hybrid Routing (B3)** - `RouterStrategy.HYBRID` with Rule → Skill → Model cascade, confidence thresholds, and legal-risk classifier forcing high-risk queries to Hermes.
+- [x] **Phase 53: Hybrid Routing (B3)** - `RouterStrategy.HYBRID` with Rule → Skill → Model cascade, confidence thresholds, and legal-risk classifier forcing high-risk queries to Hermes.
 - [ ] **Phase 54: Model Provider Gateway (B4)** - Composite `BackendAdapter` wrapping multiple provider_model sub-adapters with rate limiting, fallback chains, circuit breakers, and cost tracking.
 - [ ] **Phase 55: Multi-Agent Runtime Adapter (B5)** - Composite `BackendAdapter` with sequential/parallel/supervisor orchestration, handoff limits, cycle detection, and copy-on-write shared state.
 - [ ] **Phase 56: Multi-Tenant Isolation (C2)** - `TenantScopeResolver` + `TenantGuard` injecting `tenant_id` filter into every read-model query, partitioned contract logs, namespaced cache keys, and migration test.
@@ -172,7 +172,7 @@ Plans:
 3. `RouteDecision.confidence` is populated (float 0.0–1.0) for all hybrid routing decisions; the strategy is recorded in `metadata["router_strategy"]` without modifying the frozen `RouteDecision` schema.
 4. `hybrid_routing_enabled` defaults to `False`; cold-start defaults to safe (Hermes) path; `ModelClassifierPort` is host-injected with `None` default preserving in-process fallback.
 
-**Plans:** TBD
+**Plans:** 53-01 (legal-risk classifier + ModelClassifierPort + HYBRID enum), 53-02 (HYBRID strategy cascade + confidence + tests) — complete
 
 ### Phase 54: Model Provider Gateway (B4)
 

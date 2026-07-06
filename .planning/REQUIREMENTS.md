@@ -33,9 +33,9 @@ Requirements for M3 milestone. Each maps to roadmap phases (45+).
 - [ ] **SKILLWRITE-01**: `SkillRegistryWritePort` + `WritableSkillRegistry` implements CRUD with immutable versioning and rollback
 - [ ] **SKILLWRITE-02**: Skill write requires human-review record on every write path (two-person rule for legal skills — no auto-promotion)
 - [ ] **SKILLWRITE-03**: Skill write enforces per-tenant skill namespaces (no cross-tenant skill leakage)
-- [ ] **HYBRID-01**: `RouterStrategy.HYBRID` implements Rule → Skill → Model cascade with confidence thresholds (route ≥0.8, clarify 0.5–0.8, fallback <0.5)
-- [ ] **HYBRID-02**: Legal-risk classifier forces high-risk queries to Hermes regardless of confidence score
-- [ ] **HYBRID-03**: `RouteDecision.confidence` populated for all hybrid routing decisions
+- [x] **HYBRID-01**: `RouterStrategy.HYBRID` implements Rule → Skill → Model cascade with confidence thresholds (route ≥0.8, clarify 0.5–0.8, fallback <0.5)
+- [x] **HYBRID-02**: Legal-risk classifier forces high-risk queries to Hermes regardless of confidence score
+- [x] **HYBRID-03**: `RouteDecision.confidence` populated for all hybrid routing decisions
 
 ### Operator & UX Layer
 
@@ -122,9 +122,9 @@ Requirements for M3 milestone. Each maps to roadmap phases (45+).
 | SKILLWRITE-01 | TBD | Pending |
 | SKILLWRITE-02 | TBD | Pending |
 | SKILLWRITE-03 | TBD | Pending |
-| HYBRID-01 | TBD | Pending |
-| HYBRID-02 | TBD | Pending |
-| HYBRID-03 | TBD | Pending |
+| HYBRID-01 | Phase 53 | Complete |
+| HYBRID-02 | Phase 53 | Complete |
+| HYBRID-03 | Phase 53 | Complete |
 | ADMINUI-01 | TBD | Pending |
 | ADMINUI-02 | TBD | Pending |
 | ADMINUI-03 | TBD | Pending |
