@@ -10,41 +10,11 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: v1.7 M3 Platform Extensions
+## Current Milestone: None (v1.7 shipped — next milestone TBD)
 
-**Goal:** Promote adapter prototypes to production-grade, extend the platform surface (MCP, model gateway, multi-agent, skill write + hybrid routing), add operator and lawyer-facing Web UI, and introduce RBAC + multi-tenant isolation — while preserving the v1.6 safety strategy.
+**Last shipped:** v1.7 M3 Platform Extensions (2026-07-06) — 14 phases, 34 plans, 38/38 requirements, 24/24 V2 gates green (1,547+ tests).
 
-**Target features (by priority):**
-
-1. **Adapter productization (PRIORITY)**
-   - Codex + provider_model adapters promoted from prototype to production-grade
-   - Streaming event support for adapters
-   - Artifact return support for adapters
-   - Session memory support for adapters (Hindsight integration)
-   - Multi-provider support for provider_model adapter (Anthropic, Ollama)
-
-2. **Platform extensions**
-   - MCP Connector Registry (register and discover MCP tool connectors)
-   - Model Provider Gateway (unified model provider gateway: routing, rate-limit, fallback)
-   - Multi-Agent Runtime Adapter productization
-   - Skill Registry write operations
-   - Model-based and hybrid routing with confidence scoring
-
-3. **Operator & UX layer**
-   - Admin console Web UI (sessions/tasks/feedback/gates/health visualization)
-   - Lawyer-facing Web chat interface (complement to WeCom)
-
-4. **Security & compliance (scoped)**
-   - RBAC (role-based access control)
-   - Multi-tenant isolation
-   - (Encryption + retention/destruction deferred to M4)
-
-**Key context:**
-- Maintain v1.6 safety strategy: contract freeze, feature flags default OFF, output boundary enforced, human gates (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial) preserved.
-- All new runtime lanes default-OFF; live promotion remains a human gate.
-- Hermes remains the first production backend; Codex/provider_model promoted to production-grade but Hermes stays primary.
-- 19 existing V2 gates must stay green throughout (no regressions).
-- Phase numbering continues from v1.6 (next phase = 45).
+**Next steps:** Run `/gsd-new-milestone` to define the next milestone. Candidate areas: encryption/retention (M4), QQBot extensions, live V2 human gates (Phase 5 WeCom UAT + Phase 8 lawyer trial).
 
 <details>
 <summary>Previous: v1.6 M2 Multi-Backend & Platform Extensions — SHIPPED (historical)</summary>
@@ -98,6 +68,11 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 - [READVIEW-01] Build read-only conversation/task/feedback APIs from contract logs. — Phase 7 (v1.0); audited Phase 33; verified Phase 34.
 - [OBSERVE-01] Enforce observability, replay, privacy, and legal safety baselines. — Phase 7 (v1.0); audited Phase 33; verified Phase 34.
 - [COMPOSE-01] Enforce composability and industry-neutral contract behavior in CI. — Phase 8 (v1.0); audited Phase 33; verified Phase 34.
+- ✓ M3 adapter productization (streaming, artifacts, session memory, multi-provider) — v1.7 (Phases 46-49)
+- ✓ M3 platform extensions (MCP registry, model gateway, multi-agent, skill write, hybrid routing) — v1.7 (Phases 50-55)
+- ✓ M3 operator & UX layer (Admin Web UI, Lawyer Web Chat) — v1.7 (Phase 57)
+- ✓ M3 security & compliance (RBAC, multi-tenant isolation) — v1.7 (Phases 51, 56, 57.1)
+- ✓ M3 safety (9 feature flags default False, frozen Protocols preserved, 24 V2 gates green) — v1.7 (Phase 45)
 
 ### Active
 
@@ -182,6 +157,18 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ## Shipped Milestones
 
+### v1.7 M3 Platform Extensions (Shipped: 2026-07-06)
+
+Promoted adapter prototypes to production-grade (streaming, artifacts, multi-provider, session memory), extended platform surface (MCP registry, model gateway, multi-agent, skill write + hybrid routing), added operator and lawyer-facing Web UI, and introduced RBAC + multi-tenant isolation. Gap closure phase 57.1 wired TenantGuard into Web UI data access paths. All 9 feature flags default False, no frozen Protocol surfaces modified, 24 V2 gates green (1,547+ tests). Audit passed 38/38.
+
+**Archive:** [v1.7-ROADMAP.md](milestones/v1.7-ROADMAP.md) | [v1.7-REQUIREMENTS.md](milestones/v1.7-REQUIREMENTS.md) | [v1.7-MILESTONE-AUDIT.md](milestones/v1.7-MILESTONE-AUDIT.md)
+
+### v1.6 M2 Multi-Backend & Platform Extensions (Shipped: 2026-07-04)
+
+Codex + provider_model adapter prototypes, independent Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot channel loop, and gate coverage meta-test. Audit passed 22/22, 19/19 gates green, 969 tests.
+
+**Archive:** [v1.6-ROADMAP.md](milestones/v1.6-ROADMAP.md) | [v1.6-REQUIREMENTS.md](milestones/v1.6-REQUIREMENTS.md) | [v1.6-MILESTONE-AUDIT.md](milestones/v1.6-MILESTONE-AUDIT.md)
+
 ### v1.4 Long-Term Memory Productization (Shipped: 2026-07-03)
 
 Replaced the evaluation-only memory approach with a single, productized long-term memory layer (Hindsight backend). Unified `Memory` interface, Hindsight adapter, focus/retention policies, WeCom runtime integration, retry/observability, singleton wiring, and contract event observability. Audit passed 20/20.
@@ -206,33 +193,35 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v1.5 V2 Acceptance Closure (2026-07-03) — archived.
-- **Active milestone:** v1.6 M2 Multi-Backend & Platform Extensions — starting Phase 36.
-- **V2 gate status:** All 9 gates green (479 tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall). Must stay green throughout v1.6.
-- **V2 acceptance:** BLOCKED ON HUMAN GATES (carried, parallel to v1.6) — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence. PRD §11 dependency accepted as risk by user 2026-07-03.
+- **Last shipped:** v1.7 M3 Platform Extensions (2026-07-06) — archived.
+- **Active milestone:** None — next milestone TBD (run `/gsd-new-milestone`).
+- **V2 gate status:** All 24 gates green (1,547+ tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall, skill-registry, router-service, mcp-registry, codex-backend, provider-model-backend, model-gateway, admin-console-api, rbac, qqbot-channel, web-sse-channel, wecom-channel, platform-sdk-ts, gate-coverage-meta-test, admin-web-ui, lawyer-web-chat).
+- **V2 acceptance:** BLOCKED ON HUMAN GATES (carried) — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence.
 - **Carried human gates (not autonomous-completable):**
   - Phase 5 live WeCom UAT — fixture-satisfied, operator confirmation needed.
   - Phase 8 five-workday lawyer trial — live evidence required (TRIAL-01 remains `[ ]` in Active).
   - All v1.1+ runtime lanes — default-OFF, live promotion is a human gate.
-- **v1.6 scope:** M2 per V2-PRD §11 — Codex/provider_model adapter prototypes, Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot loop.
+- **Codebase:** 70,356 lines Python across 24+ packages/services. 132 commits in v1.7, 303 files modified, 36,741 lines inserted.
+- **Candidate next milestone areas:** Encryption & retention (M4), QQBot extensions, live V2 human gates, production deployment hardening.
 
 ## Evolution
 
-This document evolves a5 VhaAcceptsniisCdlsue ries.3
-62Multi-Backend & startPhae 36
-**After each phase tran5iVonAccep( n`g4Cnisu sorm-contrac3, wecom-servivice, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileallon`):6
-1. Requirements invalid5tVd6Accep tniBkC  sut pe withstar3on.6Phas 36
-2. Requirements validated?M6ve2tMulti-Backend & o Validat47  tests acrstart ptfPhate 36, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary,wcontract-ith -puite, v2-acceptance-traceability, compileallhase reference.6
-3. New requirements emerge? Add to Active47. across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall6
-4. Decisions to log? Add to Key Decisions.6
+This document evolves at each phase transition and milestone completion.
+
+**After each phase transition** (via `$gsd-execute-phase` → `$gsd-verify-work`):
+1. Requirements invalidated? Move to Out of Scope with rationale.
+2. Requirements validated? Move to Validated with phase reference.
+3. New requirements emerge? Add to Active.
+4. Decisions to log? Add to Key Decisions.
 5. "What This Is" still accurate? Update if drifted.
-62 perV2-RD§11Cox/vier_mdldppsorSviceadconvesaton-rea-viewcmpleoConsoPIQQBolp
+
 **After each milestone** (via `$gsd-complete-milestone`):
-1. Full6review of a2 perlV2- RDs§11Cox/vier_mdldppsorSviceadconvesaton-rea-viewcmpleoConsoPIQQBolp
-2. Core6Value check2-per V2- RDh§11iorCotx/vier_mdldppsorSviceadconvesaton-rea-viewcmpleoConsoPIQQBolp
-3. Audit Out of Scope - reasons still valid?
+1. Full review of "What This Is" accuracy.
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state.
+5. All shipped requirements moved to Validated.
+6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-03 — milestone v1.6 M2 Multi-Backend & Platform Extensions started (PRD §11 dependency accepted as risk)*
-36 M2ulti-Backend &PRD §11 enenyccpdasrsk36 M2ulti-Backend &PRD §11 enenyccpdasrsk362Multi-Backend & PRD §11 enenyccpd a rk36 M2ulti-Backend &PRD §11 enenyccpdasrsk
+*Last updated: 2026-07-07 after v1.7 M3 milestone completion*

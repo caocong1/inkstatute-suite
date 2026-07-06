@@ -1,5 +1,24 @@
 # Project Milestones: 墨律 InkStatute
 
+## v1.7 M3 Platform Extensions (Shipped: 2026-07-06)
+
+**Delivered:** Promoted adapter prototypes to production-grade (streaming, artifacts, multi-provider, session memory), extended platform surface (MCP registry, model gateway, multi-agent, skill write + hybrid routing), added operator and lawyer-facing Web UI, and introduced RBAC + multi-tenant isolation. Gap closure phase 57.1 wired TenantGuard into Web UI data access paths. All 9 feature flags default False, no frozen Protocol surfaces modified, 24 V2 gates green (1,547+ tests).
+
+**Phases completed:** 45-57 + 57.1 gap closure (14 phases, 34 plans, 132 commits, 36,741 LOC inserted)
+
+**Archive:** [v1.7-ROADMAP.md](milestones/v1.7-ROADMAP.md) | [v1.7-REQUIREMENTS.md](milestones/v1.7-REQUIREMENTS.md) | [v1.7-MILESTONE-AUDIT.md](milestones/v1.7-MILESTONE-AUDIT.md)
+
+**Key accomplishments:**
+
+- Adapter Productization (A1-A4): Codex + provider_model adapters promoted to production with frozen stream_events(), collect_artifacts(), multi-provider runners (Anthropic, Ollama), and session memory wiring via ContextBundle
+- Platform Extensions (B1-B5): MCP Connector Registry, Skill Registry Write (with two-person rule), Hybrid Routing (Rule→Skill→Model cascade), Model Provider Gateway (rate limiting + circuit breakers + cost tracking), Multi-Agent Runtime Adapter
+- Security & Compliance (C1-C2): RBAC with 4 roles + token-based auth + CI scan, Multi-Tenant Isolation with TenantScopeResolver + TenantGuard + Hindsight bank isolation
+- Operator & UX Layer (C3-C4): Admin Web UI (dashboard, session/task inspection, feedback review) + Lawyer Web Chat (real SSE, session auth, file upload, feedback)
+- Gap Closure (57.1): Wired TenantGuard into admin-console-api and lawyer-web-chat data access paths, closing HIGH-severity tenant isolation gap (+46 tests)
+- Safety: All 9 feature flags default False, no frozen Protocol surfaces modified, 24 V2 gates green throughout (1,547+ tests, zero regressions)
+
+---
+
 ## v1.4 Long-Term Memory Productization (Shipped: 2026-07-03)
 
 **Delivered:** Replaced the evaluation-only memory approach with a single, productized long-term memory layer (Hindsight backend) so the bot feels like one continuous companion. The unified `Memory` interface, Hindsight adapter, focus/retention policies, WeCom runtime integration, retry/observability, and live validation are all shipped. Singleton memory wiring and contract event observability closed via Phase 32 gap closure.
