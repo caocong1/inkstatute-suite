@@ -163,7 +163,9 @@ class ProviderModelBackendAdapterTests(unittest.IsolatedAsyncioTestCase):
             Approval(approval_id="approval-001", decision="approved"),
         )
 
-        self.assertEqual(events, [])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].event_type, "state_changed")
+        self.assertEqual(events[0].payload["status"], "succeeded")
         self.assertEqual(cancelled.metadata["reason"], "unsupported_by_provider_model_prototype")
         self.assertEqual(approved.metadata["reason"], "approval_unsupported_by_provider_model_prototype")
         self.assertIs(approved.metadata["approval_decision_recorded"], False)

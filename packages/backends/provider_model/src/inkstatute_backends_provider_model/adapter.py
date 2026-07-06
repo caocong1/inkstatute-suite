@@ -8,13 +8,14 @@ from dataclasses import dataclass, field, replace
 from typing import Any, AsyncIterator, Iterator, Protocol
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
-from platform_contract.enums import AgentResultStatus, AsyncTaskState
+from platform_contract.enums import AgentResultStatus, AsyncTaskState, RunEventType
 from platform_contract.events import AgentResult, ErrorInfo, JsonObject, ReplyType
 from platform_runtime import (
     Approval,
     ArtifactRecord,
     BootstrapStatus,
     Run,
+    RunEvent,
     RunHandle,
     RunRequest,
 )
@@ -67,20 +68,26 @@ class ProviderModelBackendAdapter:
         *,
         config: ProviderModelBackendConfig | None = None,
         runner: ProviderModelRunner | None = None,
+        streaming_runner: StreamingProviderModelRunner | None = None,
         clock: Any | None = None,
     ) -> None:
         self.config = config or ProviderModelBackendConfig()
         self._runner = runner
+        self._streaming_runner = streaming_runner
         self._clock = clock or _SystemClock()
         self._next_run = 1
         self._runs: dict[str, Run] = {}
         self._artifacts: dict[str, list[ArtifactRecord]] = {}
+        self._run_requests: dict[str, RunRequest] = {}
 
     def backend_id(self) -> str:
         return self.config.backend_id
 
     def capabilities(self) -> AdapterCapabilitySet:
-        return build_provider_model_manifest(self.config).capabilities
+        return build_provider_model_manifest(
+            self.config,
+            stream_event_support=self._streaming_runner is not None,
+        ).capabilities
 
     async def bootstrap_check(self) -> BootstrapStatus:
         runner_ready = self._runner is not None
@@ -126,6 +133,7 @@ class ProviderModelBackendAdapter:
         )
         self._runs[run_id] = run
         self._artifacts[run_id] = []
+        self._run_requests[run_id] = req
         return RunHandle(
             run_id=run_id,
             backend_run_id=backend_run_id,
@@ -140,10 +148,57 @@ class ProviderModelBackendAdapter:
     async def get_run(self, run_id: str) -> Run:
         return self._require_run(run_id)
 
-    async def stream_events(self, run_id: str) -> AsyncIterator[Any]:
-        self._require_run(run_id)
-        if False:
-            yield
+    async def stream_events(self, run_id: str) -> AsyncIterator[RunEvent]:
+        run = self._require_run(run_id)
+        if self._streaming_runner is None:
+            yield RunEvent(
+                event_id=f"event-{run_id}-terminal",
+                run_id=run_id,
+                event_type=RunEventType.STATE_CHANGED.value,
+                occurred_at=self._clock.now(),
+                seq=0,
+                payload={"status": _status_value(run.status)},
+                metadata={"source": "provider_model_stream_terminal"},
+            )
+            return
+        seq = 0
+        try:
+            async for delta in self._streaming_runner.stream(self._run_requests[run_id]):
+                yield RunEvent(
+                    event_id=f"event-{run_id}-{seq:03d}",
+                    run_id=run_id,
+                    event_type=RunEventType.MESSAGE_DELTA.value,
+                    occurred_at=self._clock.now(),
+                    seq=seq,
+                    payload={"message_delta": delta.content, "status": "running"},
+                    metadata={"source": "provider_model_sse"},
+                )
+                seq += 1
+            yield RunEvent(
+                event_id=f"event-{run_id}-terminal",
+                run_id=run_id,
+                event_type=RunEventType.STATE_CHANGED.value,
+                occurred_at=self._clock.now(),
+                seq=seq,
+                payload={"status": AsyncTaskState.SUCCEEDED.value},
+                metadata={"source": "provider_model_sse_terminal"},
+            )
+        except Exception as exc:  # noqa: BLE001 - terminal failure guarantee
+            yield RunEvent(
+                event_id=f"event-{run_id}-terminal",
+                run_id=run_id,
+                event_type=RunEventType.STATE_CHANGED.value,
+                occurred_at=self._clock.now(),
+                seq=seq,
+                payload={
+                    "status": AsyncTaskState.FAILED.value,
+                    "error": {
+                        "code": "provider_model_stream_error",
+                        "message": str(type(exc).__name__),
+                    },
+                },
+                metadata={"source": "provider_model_stream_error"},
+            )
 
     async def cancel_run(self, run_id: str) -> Run:
         run = self._require_run(run_id)
@@ -205,6 +260,12 @@ def _coerce_task_state(status: AsyncTaskState | str) -> AsyncTaskState:
     if status_value == AgentResultStatus.FAILED.value:
         return AsyncTaskState.FAILED
     return AsyncTaskState(status_value)
+
+
+def _status_value(status: AsyncTaskState | str) -> str:
+    if isinstance(status, AsyncTaskState):
+        return status.value
+    return str(status)
 
 
 def _default_result(req: RunRequest, status: AsyncTaskState) -> AgentResult:

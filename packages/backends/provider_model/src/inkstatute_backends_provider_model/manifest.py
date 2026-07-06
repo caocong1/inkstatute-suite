@@ -11,7 +11,11 @@ from platform_contract.agent_adapter import (
 from .config import ProviderModelBackendConfig
 
 
-def build_provider_model_manifest(config: ProviderModelBackendConfig | None = None) -> AgentBackendManifest:
+def build_provider_model_manifest(
+    config: ProviderModelBackendConfig | None = None,
+    *,
+    stream_event_support: bool = False,
+) -> AgentBackendManifest:
     """Build the provider_model prototype backend manifest."""
 
     resolved = config or ProviderModelBackendConfig()
@@ -22,7 +26,9 @@ def build_provider_model_manifest(config: ProviderModelBackendConfig | None = No
         backend_version=resolved.backend_version,
         profile_name=None,
         bundle_id=None,
-        capabilities=provider_model_prototype_capabilities(),
+        capabilities=provider_model_prototype_capabilities(
+            stream_event_support=stream_event_support,
+        ),
         metadata={
             "default_lane": "oneshot",
             "production_ready": False,
@@ -34,7 +40,10 @@ def build_provider_model_manifest(config: ProviderModelBackendConfig | None = No
     )
 
 
-def provider_model_prototype_capabilities() -> AdapterCapabilitySet:
+def provider_model_prototype_capabilities(
+    *,
+    stream_event_support: bool = False,
+) -> AdapterCapabilitySet:
     """Return the reduced provider_model prototype capability set (14 fields)."""
 
     return AdapterCapabilitySet(
@@ -46,7 +55,7 @@ def provider_model_prototype_capabilities() -> AdapterCapabilitySet:
         trace_support=False,
         no_channel_io=True,
         run_invocation_modes=["oneshot"],
-        stream_event_support=False,
+        stream_event_support=stream_event_support,
         cancel_support=False,
         approval_support=False,
         live_update_support=False,
