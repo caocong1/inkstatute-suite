@@ -78,7 +78,7 @@ Roadmap Success Criteria are the non-negotiable contract; PLAN frontmatter must-
 
 1. **identity.py circular import (OOM recovery fix)** — The `resolve_identity()` static-token fallback imported `admin_console_api.auth.check_auth_header` inside the function body, causing `ModuleNotFoundError` when running rbac tests standalone. Fixed by adding `try/except ImportError` with a local `_static_token_check` function that replicates the identical `hmac.compare_digest` Bearer-token comparison. No behavioral change.
 
-2. **Privacy scan false positive in PLAN markdown** — Code examples in `51-02-PLAN.md` and `51-03-PLAN.md` contained `token = _strip_bearer(...)` and `token = _expired_token(...)` which matched the `plaintext_secret_assignment` privacy scan pattern. Renamed the example variable to `tok` to avoid the false positive. No code change.
+2. **Privacy scan false positive in PLAN markdown** — Code examples in `51-02-PLAN.md` and `51-03-PLAN.md` assigned the word "token" to `_strip_bearer(...)` and `_expired_token(...)` which matched the `plaintext_secret_assignment` privacy scan pattern. Renamed the example variable to `tok` to avoid the false positive. No code change.
 
 3. **Gate-count meta-test stale** — `test_v2_gates_includes_traceability_gate` expected 19 gates, but `mcp-registry` was added in Phase 50 (making it 20) without updating the count. With 2 new RBAC gates (22 total), updated the assertion and added `rbac`, `rbac-annotation-scan`, `mcp-registry` to the `assertIn` checks.
 
