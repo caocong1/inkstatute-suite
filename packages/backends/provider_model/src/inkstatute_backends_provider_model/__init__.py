@@ -23,6 +23,12 @@ from .openai_runner import (
     parse_openai_response,
     parse_sse_deltas,
 )
+from .ollama_runner import (
+    FakeOllamaTransport,
+    OllamaHTTPError,
+    OllamaRunner,
+    OllamaTransport,
+)
 from .probe import (
     ProviderModelCapabilityProbe,
     ProviderModelProbeIssue,
@@ -34,8 +40,12 @@ __all__ = [
     "AnthropicRunner",
     "AnthropicTransport",
     "FakeAnthropicTransport",
+    "FakeOllamaTransport",
     "FakeOpenAITransport",
     "FakeStreamingProviderModelRunner",
+    "OllamaHTTPError",
+    "OllamaRunner",
+    "OllamaTransport",
     "OpenAIClientRunner",
     "OpenAITransport",
     "ProviderModelBackendAdapter",
