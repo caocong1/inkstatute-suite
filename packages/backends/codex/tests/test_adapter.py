@@ -103,7 +103,7 @@ class CodexManifestTests(unittest.TestCase):
         self.assertFalse(capabilities.approval_support)
         self.assertFalse(capabilities.live_update_support)
         self.assertFalse(capabilities.parallel_task_support)
-        self.assertFalse(capabilities.artifact_return_support)
+        self.assertTrue(capabilities.artifact_return_support)
 
 
 class CodexBackendAdapterTests(unittest.IsolatedAsyncioTestCase):

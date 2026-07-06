@@ -8,8 +8,13 @@ from dataclasses import dataclass, field, replace
 from typing import Any, AsyncIterator, Iterator, Protocol
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
-from platform_contract.enums import AgentResultStatus, AsyncTaskState, RunEventType
-from platform_contract.events import AgentResult, ErrorInfo, JsonObject, ReplyType
+from platform_contract.enums import (
+    AgentResultStatus,
+    ArtifactKind,
+    AsyncTaskState,
+    RunEventType,
+)
+from platform_contract.events import AgentResult, Artifact, ErrorInfo, JsonObject, ReplyType
 from platform_runtime import (
     Approval,
     ArtifactRecord,
@@ -124,16 +129,22 @@ class CodexBackendAdapter:
             "artifact_refs": list(result.artifact_refs),
             "runner_metadata": _sanitize_metadata(result.metadata),
         }
+        agent_result = _sanitize_result(result.result) or _default_result(req, status)
+        if result.artifact_refs:
+            agent_result = replace(
+                agent_result,
+                artifacts=_artifact_entries(run_id, result.artifact_refs, result.metadata),
+            )
         run = Run(
             run_id=run_id,
             status=status,
             turn_id=req.turn.turn_id,
             solution_id=req.solution.solution_id,
-            result=_sanitize_result(result.result) or _default_result(req, status),
+            result=agent_result,
             metadata=run_metadata,
         )
         self._runs[run_id] = run
-        self._artifacts[run_id] = []
+        self._artifacts[run_id] = _artifact_records(run_id, result.artifact_refs, result.metadata)
         self._run_requests[run_id] = req
         return RunHandle(
             run_id=run_id,
@@ -233,6 +244,7 @@ class CodexBackendAdapter:
         return updated
 
     async def collect_artifacts(self, run_id: str) -> list[ArtifactRecord]:
+        self._require_run(run_id)
         return list(self._artifacts.get(run_id, ()))
 
     def _new_run_id(self) -> str:
@@ -288,6 +300,38 @@ def _default_result(req: RunRequest, status: AsyncTaskState) -> AgentResult:
         content=None,
         metadata={"source": "codex_prototype"},
     )
+
+
+def _artifact_records(run_id: str, refs: list[str], metadata: JsonObject) -> list[ArtifactRecord]:
+    """Build ref-based ArtifactRecord entries from artifact refs (no inline binaries)."""
+
+    kind = str(metadata.get("artifact_kind", "backend_ref"))
+    return [
+        ArtifactRecord(
+            artifact_id=f"{run_id}-artifact-{index:03d}",
+            kind=kind,
+            uri_ref=ref,
+            name=f"{run_id}-artifact-{index:03d}",
+            metadata={"source": "codex_exec"},
+        )
+        for index, ref in enumerate(refs, start=1)
+    ]
+
+
+def _artifact_entries(run_id: str, refs: list[str], metadata: JsonObject) -> list[Artifact]:
+    """Build ref-based Artifact entries for AgentResult.artifacts (no inline binaries)."""
+
+    kind = str(metadata.get("artifact_kind", ArtifactKind.OTHER.value))
+    return [
+        Artifact(
+            artifact_id=f"{run_id}-artifact-{index:03d}",
+            kind=kind,
+            name=f"{run_id}-artifact-{index:03d}",
+            uri=ref,
+            metadata={"source": "codex_exec"},
+        )
+        for index, ref in enumerate(refs, start=1)
+    ]
 
 
 def _sanitize_metadata(metadata: JsonObject) -> JsonObject:
