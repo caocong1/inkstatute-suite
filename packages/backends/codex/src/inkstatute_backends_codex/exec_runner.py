@@ -242,7 +242,7 @@ def parse_codex_jsonl_stream(lines: list[str]) -> Iterator[CodexStreamEvent]:
                 event_type=RunEventType.STATE_CHANGED.value,
                 payload={
                     "status": AsyncTaskState.FAILED.value,
-                    "error": _normalize_error(event, stage="turn"),
+                    "error": _error_info_to_dict(_normalize_error(event, stage="turn")),
                 },
             )
 
@@ -251,7 +251,7 @@ def parse_codex_jsonl_stream(lines: list[str]) -> Iterator[CodexStreamEvent]:
                 event_type=RunEventType.STATE_CHANGED.value,
                 payload={
                     "status": AsyncTaskState.FAILED.value,
-                    "error": _normalize_error(event, stage="stream"),
+                    "error": _error_info_to_dict(_normalize_error(event, stage="stream")),
                 },
             )
 
@@ -301,6 +301,19 @@ def _normalize_error(event: dict[str, Any], stage: str) -> ErrorInfo:
         retryable=retryable,
         details=sanitized_details,
     )
+
+
+def _error_info_to_dict(error: ErrorInfo) -> dict[str, Any]:
+    """Convert an :class:`ErrorInfo` to a JSON-serializable dict for stream payloads."""
+
+    return {
+        "category": str(error.category),
+        "code": error.code,
+        "message": error.message,
+        "stage": error.stage,
+        "retryable": error.retryable,
+        "details": error.details,
+    }
 
 
 def _sanitize_message(msg: str) -> str:

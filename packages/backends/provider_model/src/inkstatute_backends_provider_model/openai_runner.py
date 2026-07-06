@@ -193,7 +193,7 @@ def parse_sse_deltas(lines: list[str]) -> Iterator[ProviderModelStreamDelta]:
             parsed = json.loads(payload)
         except json.JSONDecodeError:
             continue
-        choices = parsed.get("choices", []) or [] if isinstance(parsed, dict) else []
+        choices = (parsed.get("choices", []) or []) if isinstance(parsed, dict) else []
         choice = choices[0] if choices else {}
         if not isinstance(choice, dict):
             choice = {}
