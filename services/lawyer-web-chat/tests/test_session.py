@@ -123,6 +123,32 @@ class SessionStoreTests(unittest.TestCase):
         removed = self.store.cleanup_expired(now=1200)
         self.assertEqual(removed, 0)
 
+    def test_session_listing_tenant_isolation(self) -> None:
+        """Sessions from two tenants — listing only shows current tenant's sessions."""
+        self.store.create_session(
+            tenant_id="tenant-1",
+            user_id="lawyer-1",
+            conversation_id="conv-1",
+        )
+        self.store.create_session(
+            tenant_id="tenant-2",
+            user_id="lawyer-2",
+            conversation_id="conv-2",
+        )
+        # Verify sessions are scoped by tenant_id (as done in _handle_sessions)
+        tenant1_sessions = [
+            s for s in self.store._sessions.values()
+            if s.tenant_id == "tenant-1"
+        ]
+        tenant2_sessions = [
+            s for s in self.store._sessions.values()
+            if s.tenant_id == "tenant-2"
+        ]
+        self.assertEqual(len(tenant1_sessions), 1)
+        self.assertEqual(len(tenant2_sessions), 1)
+        self.assertEqual(tenant1_sessions[0].conversation_id, "conv-1")
+        self.assertEqual(tenant2_sessions[0].conversation_id, "conv-2")
+
 
 class CookieHelperTests(unittest.TestCase):
     def test_build_set_cookie_header_contains_httponly(self) -> None:

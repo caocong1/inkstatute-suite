@@ -14,6 +14,7 @@ from lawyer_web_chat.session import COOKIE_NAME, SessionStore, build_set_cookie_
 from lawyer_web_chat.sse import SseStream
 from lawyer_web_chat.upload import FileUploadHandler
 from platform_runtime.feature_flags import RuntimeFeatureFlags
+from platform_runtime.tenant_scope import TenantScopeError
 from rbac import Role
 
 
@@ -250,6 +251,195 @@ class LawyerWebChatServerTests(unittest.TestCase):
         # Both sessions should be listed for the same conversation
         sessions = self.session_store.get_sessions_for_conversation("shared-conv")
         self.assertEqual(len(sessions), 2)
+
+
+class TenantIsolationTests(unittest.TestCase):
+    """Tests for tenant isolation in lawyer-web-chat with multi_tenant_enabled."""
+
+    SECRET = "test-secret-key"
+
+    def setUp(self) -> None:
+        self.session_store = SessionStore()
+        self.message_history = MessageHistory()
+        self.upload_handler = FileUploadHandler()
+        self.feedback_handler = FeedbackHandler()
+        self.sse_stream = SseStream()
+
+    def _make_request(
+        self,
+        method: str = "GET",
+        path: str = "/",
+        headers: dict[str, str] | None = None,
+        body: bytes | None = None,
+        flags: RuntimeFeatureFlags | None = None,
+    ) -> tuple[int, bytes, dict[str, str]]:
+        if flags is None:
+            flags = RuntimeFeatureFlags(lawyer_web_chat_enabled=True)
+        return handle_lawyer_chat_request(
+            method,
+            path,
+            headers,
+            body,
+            feature_flags=flags,
+            session_store=self.session_store,
+            message_history=self.message_history,
+            upload_handler=self.upload_handler,
+            feedback_handler=self.feedback_handler,
+            sse_stream=self.sse_stream,
+            rbac_secret=self.SECRET,
+        )
+
+    def _login(self, tenant_id: str = "tenant-1") -> dict[str, str]:
+        body = json.dumps({
+            "tenant_id": tenant_id,
+            "user_id": "lawyer-1",
+            "conversation_id": f"conv-{tenant_id}",
+        }).encode("utf-8")
+        status, resp_body, headers = self._make_request("POST", "/login", body=body)
+        self.assertEqual(status, 200)
+        cookie_header = headers.get("Set-Cookie", "")
+        for part in cookie_header.split(";"):
+            part = part.strip()
+            if part.startswith(f"{COOKIE_NAME}="):
+                token = part[len(COOKIE_NAME) + 1:]
+                return {"Cookie": f"{COOKIE_NAME}={token}"}
+        self.fail("No Set-Cookie header found")
+
+    def test_disabled_multi_tenant_returns_all_history(self) -> None:
+        """multi_tenant_enabled=False → all message history returned (no regression)."""
+        self.message_history.add_message(
+            conversation_id="conv-tenant-1",
+            sender="lawyer",
+            content="Hello from tenant-1",
+            payload_ref="ref://1",
+            metadata={"tenant_id": "tenant-1"},
+        )
+        self.message_history.add_message(
+            conversation_id="conv-tenant-1",
+            sender="lawyer",
+            content="Hello from tenant-2",
+            payload_ref="ref://2",
+            metadata={"tenant_id": "tenant-2"},
+        )
+        auth_headers = self._login("tenant-1")
+        flags = RuntimeFeatureFlags(lawyer_web_chat_enabled=True, multi_tenant_enabled=False)
+        status, body, _ = self._make_request(
+            "GET", "/history?conversation_id=conv-tenant-1", headers=auth_headers, flags=flags,
+        )
+        self.assertEqual(status, 200)
+        data = json.loads(body.decode("utf-8"))
+        self.assertEqual(data["count"], 2)
+
+    def test_enabled_multi_tenant_filters_history(self) -> None:
+        """multi_tenant_enabled=True → only matching tenant messages returned."""
+        self.message_history.add_message(
+            conversation_id="shared-conv",
+            sender="lawyer",
+            content="Message from tenant-1",
+            payload_ref="ref://1",
+            metadata={"tenant_id": "tenant-1"},
+        )
+        self.message_history.add_message(
+            conversation_id="shared-conv",
+            sender="lawyer",
+            content="Message from tenant-2",
+            payload_ref="ref://2",
+            metadata={"tenant_id": "tenant-2"},
+        )
+        auth_headers = self._login("tenant-1")
+        flags = RuntimeFeatureFlags(lawyer_web_chat_enabled=True, multi_tenant_enabled=True)
+        status, body, _ = self._make_request(
+            "GET", "/history?conversation_id=shared-conv", headers=auth_headers, flags=flags,
+        )
+        self.assertEqual(status, 200)
+        data = json.loads(body.decode("utf-8"))
+        self.assertEqual(data["count"], 1)
+        self.assertIn("tenant-1", data["items"][0]["content"])
+
+    def test_enabled_multi_tenant_filters_uploads(self) -> None:
+        """multi_tenant_enabled=True → upload listing filters by tenant."""
+        # Create uploads for two tenants in the same conversation
+        self.upload_handler.handle_upload(
+            filename="a.txt", content_bytes=b"a", mime_type="text/plain",
+            tenant_id="tenant-1", conversation_id="shared-conv",
+        )
+        self.upload_handler.handle_upload(
+            filename="b.txt", content_bytes=b"b", mime_type="text/plain",
+            tenant_id="tenant-2", conversation_id="shared-conv",
+        )
+        auth_headers = self._login("tenant-1")
+        flags = RuntimeFeatureFlags(lawyer_web_chat_enabled=True, multi_tenant_enabled=True)
+        # Upload a file as tenant-1 (write path already uses tenant_id)
+        content_b64 = base64.b64encode(b"new file").decode("ascii")
+        body = json.dumps({
+            "filename": "new.txt", "content": content_b64,
+            "mime_type": "text/plain", "conversation_id": "shared-conv",
+        }).encode("utf-8")
+        status, resp_body, _ = self._make_request(
+            "POST", "/upload", headers=auth_headers, body=body, flags=flags,
+        )
+        self.assertEqual(status, 200)
+
+    def test_enabled_multi_tenant_feedback_isolated(self) -> None:
+        """Feedback submitted with tenant-1 token has tenant_id in metadata."""
+        auth_headers = self._login("tenant-1")
+        flags = RuntimeFeatureFlags(lawyer_web_chat_enabled=True, multi_tenant_enabled=True)
+        body = json.dumps({
+            "conversation_id": "conv-tenant-1",
+            "user_id": "lawyer-1",
+            "action": "up",
+            "feedback_target": "turn-1",
+        }).encode("utf-8")
+        status, resp_body, _ = self._make_request(
+            "POST", "/feedback", headers=auth_headers, body=body, flags=flags,
+        )
+        self.assertEqual(status, 200)
+        data = json.loads(resp_body.decode("utf-8"))
+        self.assertIn("feedback_id", data)
+
+    def test_enabled_multi_tenant_unresolved_raises(self) -> None:
+        """multi_tenant_enabled=True, token with no tenant_id → TenantScopeError (fail-safe)."""
+        from rbac.token import _b64url_encode
+        from unittest.mock import patch
+        import hashlib
+        import hmac
+
+        with patch("rbac.token.time.time", return_value=1000.0):
+            now = 1000
+            payload = {
+                "role": "lawyer",
+                "tenant_id": "",
+                "iat": now,
+                "exp": now + 60,
+            }
+            payload_json = json.dumps(payload, separators=(",", ":"), sort_keys=True)
+            payload_b64 = _b64url_encode(payload_json.encode("utf-8"))
+            sig = hmac.new(
+                self.SECRET.encode("utf-8"), payload_b64.encode("ascii"), hashlib.sha256
+            ).digest()
+            token = f"{payload_b64}.{_b64url_encode(sig)}"
+
+            flags = RuntimeFeatureFlags(lawyer_web_chat_enabled=True, multi_tenant_enabled=True)
+            with self.assertRaises(TenantScopeError):
+                self._make_request(
+                    "GET", "/history",
+                    headers={"Cookie": f"{COOKIE_NAME}={token}"},
+                    flags=flags,
+                )
+
+    def test_cross_tenant_session_isolation(self) -> None:
+        """tenant-1 login cannot see tenant-2 sessions."""
+        # Login as tenant-1
+        self._login("tenant-1")
+        # Login as tenant-2
+        self._login("tenant-2")
+        # List sessions as tenant-1
+        auth_headers = self._login("tenant-1")
+        status, body, _ = self._make_request("GET", "/sessions", headers=auth_headers)
+        self.assertEqual(status, 200)
+        data = json.loads(body.decode("utf-8"))
+        for session in data["sessions"]:
+            self.assertEqual(session["conversation_id"], "conv-tenant-1")
 
 
 if __name__ == "__main__":

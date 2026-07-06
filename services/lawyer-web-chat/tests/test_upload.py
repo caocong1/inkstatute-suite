@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 
 from lawyer_web_chat.upload import FileUploadHandler
+from platform_runtime.tenant_scope import ScopedQueryFilter
 
 
 class FileUploadHandlerTests(unittest.TestCase):
@@ -127,6 +128,57 @@ class FileUploadHandlerTests(unittest.TestCase):
             conversation_id="c2",
         )
         self.assertEqual(r1.content_hash, r2.content_hash)
+
+    def test_list_uploads_with_active_tenant_filter(self) -> None:
+        """Active filter → only uploads from matching tenant returned."""
+        self.handler.handle_upload(
+            filename="a.txt", content_bytes=b"a", mime_type="text/plain",
+            tenant_id="tenant-1", conversation_id="shared-conv",
+        )
+        self.handler.handle_upload(
+            filename="b.txt", content_bytes=b"b", mime_type="text/plain",
+            tenant_id="tenant-2", conversation_id="shared-conv",
+        )
+        active = ScopedQueryFilter(tenant_id="tenant-1", active=True)
+        uploads = self.handler.list_uploads("shared-conv", tenant_filter=active)
+        self.assertEqual(len(uploads), 1)
+        self.assertEqual(uploads[0].metadata["tenant_id"], "tenant-1")
+
+    def test_list_uploads_with_disabled_filter_returns_all(self) -> None:
+        """Disabled filter → all uploads returned (no regression)."""
+        self.handler.handle_upload(
+            filename="a.txt", content_bytes=b"a", mime_type="text/plain",
+            tenant_id="tenant-1", conversation_id="shared-conv",
+        )
+        self.handler.handle_upload(
+            filename="b.txt", content_bytes=b"b", mime_type="text/plain",
+            tenant_id="tenant-2", conversation_id="shared-conv",
+        )
+        disabled = ScopedQueryFilter.disabled()
+        uploads = self.handler.list_uploads("shared-conv", tenant_filter=disabled)
+        self.assertEqual(len(uploads), 2)
+
+    def test_get_upload_with_active_tenant_filter_wrong_tenant(self) -> None:
+        """get_upload with wrong tenant filter → None (invisible)."""
+        result = self.handler.handle_upload(
+            filename="a.txt", content_bytes=b"a", mime_type="text/plain",
+            tenant_id="tenant-1", conversation_id="conv-1",
+        )
+        active = ScopedQueryFilter(tenant_id="tenant-2", active=True)
+        retrieved = self.handler.get_upload(result.upload_id, tenant_filter=active)
+        self.assertIsNone(retrieved)
+
+    def test_get_upload_with_active_tenant_filter_matching_tenant(self) -> None:
+        """get_upload with matching tenant filter → upload returned."""
+        result = self.handler.handle_upload(
+            filename="a.txt", content_bytes=b"a", mime_type="text/plain",
+            tenant_id="tenant-1", conversation_id="conv-1",
+        )
+        active = ScopedQueryFilter(tenant_id="tenant-1", active=True)
+        retrieved = self.handler.get_upload(result.upload_id, tenant_filter=active)
+        self.assertIsNotNone(retrieved)
+        assert retrieved is not None
+        self.assertEqual(retrieved.upload_id, result.upload_id)
 
 
 if __name__ == "__main__":

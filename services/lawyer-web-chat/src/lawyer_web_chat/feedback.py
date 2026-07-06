@@ -50,10 +50,15 @@ class FeedbackHandler:
         turn_id: str | None = None,
         tenant_id: str | None = None,
         now: int | None = None,
+        tenant_filter: Any = None,
     ) -> FeedbackResult:
         """Normalize and submit feedback.
 
         Returns a ``FeedbackResult`` with the normalized ``FeedbackEvent``.
+
+        ``tenant_filter`` is accepted for API consistency with other handlers.
+        The write path already uses ``tenant_id`` for tagging; the filter is
+        a no-op for submit operations (it applies to future list/read methods).
         """
         ts = int(now if now is not None else time.time())
         self._counter += 1

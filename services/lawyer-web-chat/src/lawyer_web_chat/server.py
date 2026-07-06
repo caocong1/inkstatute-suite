@@ -24,6 +24,11 @@ from platform_runtime.feature_flags import (
     RuntimeFeatureDisabledError,
     RuntimeFeatureFlags,
 )
+from platform_runtime.tenant_scope import (
+    TenantGuard,
+    TenantScopeRequestContext,
+    TenantScopeResolver,
+)
 
 from .boundary import ChatBoundary
 from .feedback import FeedbackHandler
@@ -97,20 +102,26 @@ def handle_lawyer_chat_request(
 
     tenant_id = claims.tenant_id
 
+    # Tenant scope resolution + guard enforcement
+    resolver = TenantScopeResolver(feature_flags=feature_flags)
+    tenant_guard = TenantGuard(feature_flags=feature_flags)
+    scope = resolver.resolve(TenantScopeRequestContext(identity=claims, headers=headers))
+    tenant_filter = tenant_guard.enforce(scope)
+
     if method == "GET" and route_path == "/sessions":
         return _handle_sessions(tenant_id, session_store, response_headers)
 
     if method == "GET" and route_path == "/history":
-        return _handle_history(path, tenant_id, message_history, response_headers)
+        return _handle_history(path, tenant_id, message_history, response_headers, tenant_filter=tenant_filter)
 
     if method == "GET" and route_path == "/stream":
-        return _handle_stream(tenant_id, sse_stream, message_history, response_headers)
+        return _handle_stream(tenant_id, sse_stream, message_history, response_headers, tenant_filter=tenant_filter)
 
     if method == "POST" and route_path == "/upload":
-        return _handle_upload(body, tenant_id, upload_handler, response_headers)
+        return _handle_upload(body, tenant_id, upload_handler, response_headers, tenant_filter=tenant_filter)
 
     if method == "POST" and route_path == "/feedback":
-        return _handle_feedback(body, tenant_id, feedback_handler, response_headers)
+        return _handle_feedback(body, tenant_id, feedback_handler, response_headers, tenant_filter=tenant_filter)
 
     body_html = _render_error_page("not_found", f"Unknown route: {route_path}")
     return 404, body_html.encode("utf-8"), response_headers
@@ -210,6 +221,8 @@ def _handle_history(
     tenant_id: str,
     message_history: MessageHistory,
     response_headers: dict[str, str],
+    *,
+    tenant_filter: Any = None,
 ) -> tuple[int, bytes, dict[str, str]]:
     """Get message history for a conversation."""
     response_headers["Content-Type"] = "application/json"
@@ -219,7 +232,7 @@ def _handle_history(
     for part in query.split("&"):
         if part.startswith("conversation_id="):
             conversation_id = part.split("=", 1)[1]
-    result = message_history.get_history(conversation_id)
+    result = message_history.get_history(conversation_id, tenant_filter=tenant_filter)
     response_body = json.dumps(result)
     return 200, response_body.encode("utf-8"), response_headers
 
@@ -229,6 +242,8 @@ def _handle_stream(
     sse_stream: SseStream,
     message_history: MessageHistory,
     response_headers: dict[str, str],
+    *,
+    tenant_filter: Any = None,
 ) -> tuple[int, bytes, dict[str, str]]:
     """SSE streaming endpoint."""
     response_headers["Content-Type"] = "text/event-stream"
@@ -236,7 +251,7 @@ def _handle_stream(
     response_headers["Connection"] = "keep-alive"
     # In a real implementation, this would stream from the runtime.
     # For now, we encode any existing history as SSE events.
-    history = message_history.get_history(tenant_id)
+    history = message_history.get_history(tenant_id, tenant_filter=tenant_filter)
     events = []
     for item in history["items"]:
         events.append({
@@ -257,6 +272,8 @@ def _handle_upload(
     tenant_id: str,
     upload_handler: FileUploadHandler,
     response_headers: dict[str, str],
+    *,
+    tenant_filter: Any = None,
 ) -> tuple[int, bytes, dict[str, str]]:
     """Handle file upload — stores references only."""
     if body is None:
@@ -304,6 +321,8 @@ def _handle_feedback(
     tenant_id: str,
     feedback_handler: FeedbackHandler,
     response_headers: dict[str, str],
+    *,
+    tenant_filter: Any = None,
 ) -> tuple[int, bytes, dict[str, str]]:
     """Handle feedback submission."""
     if body is None:

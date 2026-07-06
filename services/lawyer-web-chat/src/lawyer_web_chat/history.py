@@ -84,12 +84,23 @@ class MessageHistory:
         *,
         limit: int = 50,
         cursor: str | None = None,
+        tenant_filter: Any = None,
     ) -> dict[str, Any]:
         """Get message history for a conversation.
 
         Returns a dict with ``items``, ``count``, ``has_more``, and ``next_cursor``.
+
+        When ``tenant_filter`` is active, messages are additionally filtered by
+        ``msg.metadata.get("tenant_id") == tenant_filter.tenant_id``.  Messages
+        without a ``tenant_id`` in metadata are excluded when the filter is
+        active (fail-safe).
         """
         messages = self._messages.get(conversation_id, [])
+        if tenant_filter is not None and getattr(tenant_filter, "is_active", False):
+            messages = [
+                msg for msg in messages
+                if msg.metadata.get("tenant_id") == tenant_filter.tenant_id
+            ]
         start_idx = 0
         if cursor is not None:
             for i, msg in enumerate(messages):

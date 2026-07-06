@@ -87,15 +87,45 @@ class FileUploadHandler:
         self._uploads[upload_id] = result
         return result
 
-    def get_upload(self, upload_id: str) -> UploadResult | None:
-        """Get upload metadata by ID."""
-        return self._uploads.get(upload_id)
+    def get_upload(
+        self,
+        upload_id: str,
+        *,
+        tenant_filter: Any = None,
+    ) -> UploadResult | None:
+        """Get upload metadata by ID.
 
-    def list_uploads(self, conversation_id: str) -> list[UploadResult]:
-        """List uploads for a conversation."""
+        When ``tenant_filter`` is active, returns ``None`` if the upload's
+        ``tenant_id`` doesn't match the filter (fail-safe: invisible to
+        other tenants).
+        """
+        result = self._uploads.get(upload_id)
+        if result is None:
+            return None
+        if tenant_filter is not None and getattr(tenant_filter, "is_active", False):
+            if result.metadata.get("tenant_id") != tenant_filter.tenant_id:
+                return None
+        return result
+
+    def list_uploads(
+        self,
+        conversation_id: str,
+        *,
+        tenant_filter: Any = None,
+    ) -> list[UploadResult]:
+        """List uploads for a conversation.
+
+        When ``tenant_filter`` is active, additionally filters by
+        ``metadata.get("tenant_id") == tenant_filter.tenant_id``.
+        """
         return [
             u for u in self._uploads.values()
             if u.metadata.get("conversation_id") == conversation_id
+            and (
+                tenant_filter is None
+                or not getattr(tenant_filter, "is_active", False)
+                or u.metadata.get("tenant_id") == tenant_filter.tenant_id
+            )
         ]
 
 

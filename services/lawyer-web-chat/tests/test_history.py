@@ -6,6 +6,7 @@ import unittest
 
 from lawyer_web_chat.boundary import ChatBoundary
 from lawyer_web_chat.history import MessageHistory
+from platform_runtime.tenant_scope import ScopedQueryFilter
 
 
 class MessageHistoryTests(unittest.TestCase):
@@ -113,6 +114,79 @@ class MessageHistoryTests(unittest.TestCase):
         self.assertEqual(removed, 3)
         result = self.history.get_history("conv-1")
         self.assertEqual(result["count"], 0)
+
+    def test_get_history_with_active_tenant_filter(self) -> None:
+        """Active filter → only messages with matching tenant_id in metadata."""
+        self.history.add_message(
+            conversation_id="conv-1",
+            sender="lawyer",
+            content="Message from tenant-1",
+            payload_ref="ref://1",
+            metadata={"tenant_id": "tenant-1"},
+        )
+        self.history.add_message(
+            conversation_id="conv-1",
+            sender="lawyer",
+            content="Message from tenant-2",
+            payload_ref="ref://2",
+            metadata={"tenant_id": "tenant-2"},
+        )
+        active = ScopedQueryFilter(tenant_id="tenant-1", active=True)
+        result = self.history.get_history("conv-1", tenant_filter=active)
+        self.assertEqual(result["count"], 1)
+        self.assertIn("tenant-1", result["items"][0]["content"])
+
+    def test_get_history_with_disabled_filter_returns_all(self) -> None:
+        """Disabled filter → all messages returned (no regression)."""
+        self.history.add_message(
+            conversation_id="conv-1",
+            sender="lawyer",
+            content="Message from tenant-1",
+            payload_ref="ref://1",
+            metadata={"tenant_id": "tenant-1"},
+        )
+        self.history.add_message(
+            conversation_id="conv-1",
+            sender="lawyer",
+            content="Message from tenant-2",
+            payload_ref="ref://2",
+            metadata={"tenant_id": "tenant-2"},
+        )
+        disabled = ScopedQueryFilter.disabled()
+        result = self.history.get_history("conv-1", tenant_filter=disabled)
+        self.assertEqual(result["count"], 2)
+
+    def test_get_history_with_no_filter_returns_all(self) -> None:
+        """No filter → all messages returned (backward compat)."""
+        self.history.add_message(
+            conversation_id="conv-1",
+            sender="lawyer",
+            content="Message",
+            payload_ref="ref://1",
+            metadata={"tenant_id": "tenant-1"},
+        )
+        result = self.history.get_history("conv-1", tenant_filter=None)
+        self.assertEqual(result["count"], 1)
+
+    def test_get_history_active_filter_excludes_messages_without_tenant_id(self) -> None:
+        """Active filter → messages without tenant_id in metadata are excluded (fail-safe)."""
+        self.history.add_message(
+            conversation_id="conv-1",
+            sender="lawyer",
+            content="No tenant metadata",
+            payload_ref="ref://1",
+        )
+        self.history.add_message(
+            conversation_id="conv-1",
+            sender="lawyer",
+            content="Has tenant metadata",
+            payload_ref="ref://2",
+            metadata={"tenant_id": "tenant-1"},
+        )
+        active = ScopedQueryFilter(tenant_id="tenant-1", active=True)
+        result = self.history.get_history("conv-1", tenant_filter=active)
+        self.assertEqual(result["count"], 1)
+        self.assertIn("Has tenant metadata", result["items"][0]["content"])
 
 
 if __name__ == "__main__":
