@@ -15,6 +15,8 @@ from dataclasses import fields
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
 from platform_runtime.protocols import BackendAdapter, ChannelAdapter
+from inkstatute_router_service.port import RouterPort
+from inkstatute_skill_registry.registry import SkillRegistryPort
 
 
 class ContractCountFreezeTests(unittest.TestCase):
@@ -23,6 +25,8 @@ class ContractCountFreezeTests(unittest.TestCase):
     BACKEND_ADAPTER_METHOD_COUNT = 9
     ADAPTER_CAPABILITY_SET_FIELD_COUNT = 14
     CHANNEL_ADAPTER_METHOD_COUNT = 6
+    ROUTER_PORT_METHOD_COUNT = 1
+    SKILL_REGISTRY_PORT_METHOD_COUNT = 3
 
     def test_backend_adapter_method_count_unchanged(self) -> None:
         methods = [m for m in dir(BackendAdapter) if not m.startswith("_")]
@@ -51,6 +55,26 @@ class ContractCountFreezeTests(unittest.TestCase):
             self.CHANNEL_ADAPTER_METHOD_COUNT,
             f"ChannelAdapter Protocol method count changed: "
             f"expected {self.CHANNEL_ADAPTER_METHOD_COUNT}, "
+            f"got {len(methods)}: {methods}",
+        )
+
+    def test_router_port_method_count_unchanged(self) -> None:
+        methods = [m for m in dir(RouterPort) if not m.startswith("_")]
+        self.assertEqual(
+            len(methods),
+            self.ROUTER_PORT_METHOD_COUNT,
+            f"RouterPort Protocol method count changed: "
+            f"expected {self.ROUTER_PORT_METHOD_COUNT}, "
+            f"got {len(methods)}: {methods}",
+        )
+
+    def test_skill_registry_port_method_count_unchanged(self) -> None:
+        methods = [m for m in dir(SkillRegistryPort) if not m.startswith("_")]
+        self.assertEqual(
+            len(methods),
+            self.SKILL_REGISTRY_PORT_METHOD_COUNT,
+            f"SkillRegistryPort Protocol method count changed: "
+            f"expected {self.SKILL_REGISTRY_PORT_METHOD_COUNT}, "
             f"got {len(methods)}: {methods}",
         )
 
