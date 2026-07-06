@@ -43,7 +43,7 @@
 - [x] **Phase 53: Hybrid Routing (B3)** - `RouterStrategy.HYBRID` with Rule → Skill → Model cascade, confidence thresholds, and legal-risk classifier forcing high-risk queries to Hermes.
 - [ ] **Phase 54: Model Provider Gateway (B4)** - Composite `BackendAdapter` wrapping multiple provider_model sub-adapters with rate limiting, fallback chains, circuit breakers, and cost tracking.
 - [ ] **Phase 55: Multi-Agent Runtime Adapter (B5)** - Composite `BackendAdapter` with sequential/parallel/supervisor orchestration, handoff limits, cycle detection, and copy-on-write shared state.
-- [ ] **Phase 56: Multi-Tenant Isolation (C2)** - `TenantScopeResolver` + `TenantGuard` injecting `tenant_id` filter into every read-model query, partitioned contract logs, namespaced cache keys, and migration test.
+- [x] **Phase 56: Multi-Tenant Isolation (C2)** - `TenantScopeResolver` + `TenantGuard` injecting `tenant_id` filter into every read-model query, partitioned contract logs, namespaced cache keys, and migration test.
 - [ ] **Phase 57: Admin Web UI + Lawyer Web Chat (C3 + C4)** - Operator dashboard Web UI with session/task/feedback/gate/health views and lawyer-facing Web chat with real SSE, session auth, and output boundary enforcement.
 
 ## Phase Details
@@ -211,7 +211,11 @@ Plans:
 3. Cache keys are namespaced by `tenant_id`; Hindsight bank isolation is enforced per tenant (existing `bank_id` mapping extended with explicit tenant guard); no shared cache keys across tenants.
 4. A migration test asserts no null `tenant_id` in any tenant-scoped entity (events, artifacts, memory records, skill descriptors); a dedicated tenant-isolation gate (20th gate) runs fixture-based cross-tenant access denial tests.
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [x] 56-01-PLAN.md — TenantScopeResolver, TenantGuard, and tenant-scoped stores
+- [x] 56-02-PLAN.md — Hindsight bank isolation enforcement + migration test
 
 ### Phase 57: Admin Web UI + Lawyer Web Chat (C3 + C4)
 
@@ -242,7 +246,7 @@ Plans:
 | 53. Hybrid Routing (B3) | 0/0 | Not Started | — |
 | 54. Model Provider Gateway (B4) | 0/0 | Not Started | — |
 | 55. Multi-Agent Runtime Adapter (B5) | 0/0 | Not Started | — |
-| 56. Multi-Tenant Isolation (C2) | 0/0 | Not Started | — |
+| 56. Multi-Tenant Isolation (C2) | 2/2 | Complete | 2026-07-06 |
 | 57. Admin Web UI + Lawyer Web Chat (C3+C4) | 0/0 | Not Started | — |
 
 ## v1.7 Coverage
@@ -281,8 +285,8 @@ Plans:
 | MULTIAGENT-01 | 55 | Pending |
 | MULTIAGENT-02 | 55 | Pending |
 | MULTIAGENT-03 | 55 | Pending |
-| TENANT-01 | 56 | Pending |
-| TENANT-02 | 56 | Pending |
+| TENANT-01 | 56 | Complete |
+| TENANT-02 | 56 | Complete |
 | TENANT-03 | 56 | Pending |
 | TENANT-04 | 56 | Pending |
 | ADMINUI-01 | 57 | Pending |
