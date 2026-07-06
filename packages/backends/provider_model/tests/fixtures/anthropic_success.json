@@ -1,0 +1,11 @@
+{
+  "id": "msg-fixture-001",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-3-5-sonnet-20241022",
+  "content": [
+    {"type": "text", "text": "Here is the legal analysis you requested."}
+  ],
+  "stop_reason": "end_turn",
+  "usage": {"input_tokens": 100, "output_tokens": 50}
+}
