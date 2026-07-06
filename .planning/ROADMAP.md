@@ -32,7 +32,7 @@
 
 ## Phases
 
-- [ ] **Phase 45: M3 Pre-Implementation Safety** - Cross-cutting safety measures (9 feature flags default OFF, frozen Protocol verification, 19 V2 gates green baseline, flag-default tests, V2 human gate isolation) before any M3 feature code.
+- [x] **Phase 45: M3 Pre-Implementation Safety** - Cross-cutting safety measures (9 feature flags default OFF, frozen Protocol verification, 19 V2 gates green baseline, flag-default tests, V2 human gate isolation) before any M3 feature code.
 - [ ] **Phase 46: Streaming Events (A1)** - Productize `stream_events()` in Codex + provider_model adapters with guaranteed terminal event and cancellation propagation.
 - [ ] **Phase 47: Artifact Return (A2)** - Productize `collect_artifacts()` + `AgentResult.artifacts` with ref-based schema and output boundary enforcement.
 - [ ] **Phase 48: Multi-Provider Runners (A3)** - `AnthropicRunner` and `OllamaRunner` implementing `ProviderRunner` Protocol with error normalization.
