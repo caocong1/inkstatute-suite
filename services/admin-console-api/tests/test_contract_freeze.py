@@ -45,18 +45,30 @@ class ContractFreezeTests(unittest.TestCase):
     def test_no_new_fields_added_to_feature_flags(self) -> None:
         flag_names = {f.name for f in fields(RuntimeFeatureFlags)}
         expected_flags = {
+            # V2 flags (6)
             "run_runtime_enabled",
             "streaming_lane_enabled",
             "channel_delivery_enabled",
             "approval_lane_enabled",
             "contract_log_enabled",
             "context_assembly_enabled",
+            # M2 flags (6)
             "router_service_enabled",
             "skill_registry_enabled",
             "admin_api_enabled",
             "qqbot_channel_enabled",
             "codex_backend_enabled",
             "provider_model_backend_enabled",
+            # M3 flags (9)
+            "session_memory_enabled",
+            "mcp_registry_enabled",
+            "model_gateway_enabled",
+            "multi_agent_enabled",
+            "skill_registry_write_enabled",
+            "hybrid_routing_enabled",
+            "web_sse_channel_enabled",
+            "rbac_enabled",
+            "multi_tenant_enabled",
         }
         self.assertEqual(flag_names, expected_flags)
 
