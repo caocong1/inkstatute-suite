@@ -8,6 +8,7 @@ import re
 from enum import StrEnum
 from typing import Mapping
 
+from platform_contract.enums import RunEventType
 from platform_contract.events import JsonObject
 
 
@@ -25,6 +26,16 @@ class BoundaryDecision:
     reason: str = "business_output"
 
 
+_ALLOWED_STREAM_EVENT_TYPES = frozenset({
+    RunEventType.STATE_CHANGED.value,
+    RunEventType.MESSAGE_DELTA.value,
+    RunEventType.STEP_STARTED.value,
+    RunEventType.STEP_COMPLETED.value,
+    RunEventType.ARTIFACT_CREATED.value,
+    RunEventType.APPROVAL_REQUESTED.value,
+})
+
+
 class DefaultAssistantOutputBoundary:
     """Apply generic output policy before ordinary-user visibility."""
 
@@ -33,7 +44,15 @@ class DefaultAssistantOutputBoundary:
         visibility_target: str,
         text: str | None = None,
         event_metadata: Mapping[str, object] | None = None,
+        event_type: str | None = None,
     ) -> BoundaryDecision:
+        if event_type is not None and event_type not in _ALLOWED_STREAM_EVENT_TYPES:
+            return BoundaryDecision(
+                action=BoundaryAction.BLOCK,
+                visible_text=None,
+                audit_metadata={"rule_id": "event_type_not_allowed", "event_type": event_type},
+                reason="event_type_not_allowed",
+            )
         del visibility_target, event_metadata
         visible_text = "" if text is None else str(text)
         normalized = visible_text.lower()

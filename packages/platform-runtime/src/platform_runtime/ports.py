@@ -37,6 +37,7 @@ class AssistantOutputBoundary(Protocol):
         visibility_target: str,
         text: str | None = None,
         event_metadata: Mapping[str, object] | None = None,
+        event_type: str | None = None,
     ) -> AssistantOutputDecision: ...
 
 

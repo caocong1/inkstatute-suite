@@ -264,10 +264,14 @@ class DefaultRunRuntime:
     async def stream(self, run_id: str) -> AsyncIterator[RunEvent]:
         self.feature_flags.require_enabled("run_runtime_enabled")
         self.feature_flags.require_enabled("streaming_lane_enabled")
-        async for event in self.backend.stream_events(run_id):
-            bounded_event = self._apply_output_boundary(event)
-            if bounded_event is not None:
-                yield bounded_event
+        gen = self.backend.stream_events(run_id)
+        try:
+            async for event in gen:
+                bounded_event = self._apply_output_boundary(event)
+                if bounded_event is not None:
+                    yield bounded_event
+        finally:
+            await gen.aclose()
 
     async def cancel(self, run_id: str) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
@@ -406,6 +410,7 @@ class DefaultRunRuntime:
             visibility_target="ordinary_user",
             text=visible_text,
             event_metadata=event.metadata,
+            event_type=event.event_type,
         )
         policy_metadata = {
             "action": _boundary_action_value(decision.action),

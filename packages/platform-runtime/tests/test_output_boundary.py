@@ -137,6 +137,82 @@ class DefaultAssistantOutputBoundaryTests(unittest.TestCase):
                 self.assertEqual(decision.action, BoundaryAction.ALLOW)
 
 
+class EventTypeAllowlistTests(unittest.TestCase):
+    def test_allows_state_changed_event_type(self) -> None:
+        decision = DefaultAssistantOutputBoundary().apply(
+            visibility_target="ordinary_user",
+            text="business answer",
+            event_type=RunEventType.STATE_CHANGED.value,
+        )
+
+        self.assertEqual(decision.action, BoundaryAction.ALLOW)
+        self.assertEqual(decision.visible_text, "business answer")
+
+    def test_allows_message_delta_event_type(self) -> None:
+        decision = DefaultAssistantOutputBoundary().apply(
+            visibility_target="ordinary_user",
+            text="hello",
+            event_type=RunEventType.MESSAGE_DELTA.value,
+        )
+
+        self.assertEqual(decision.action, BoundaryAction.ALLOW)
+        self.assertEqual(decision.visible_text, "hello")
+
+    def test_blocks_error_event_type(self) -> None:
+        decision = DefaultAssistantOutputBoundary().apply(
+            visibility_target="ordinary_user",
+            text="some error",
+            event_type=RunEventType.ERROR.value,
+        )
+
+        self.assertEqual(decision.action, BoundaryAction.BLOCK)
+        self.assertEqual(decision.reason, "event_type_not_allowed")
+        self.assertEqual(decision.audit_metadata["event_type"], RunEventType.ERROR.value)
+        self.assertIsNone(decision.visible_text)
+
+    def test_blocks_tool_call_started_event_type(self) -> None:
+        decision = DefaultAssistantOutputBoundary().apply(
+            visibility_target="ordinary_user",
+            text="calling tool",
+            event_type=RunEventType.TOOL_CALL_STARTED.value,
+        )
+
+        self.assertEqual(decision.action, BoundaryAction.BLOCK)
+        self.assertEqual(decision.reason, "event_type_not_allowed")
+        self.assertEqual(decision.audit_metadata["event_type"], RunEventType.TOOL_CALL_STARTED.value)
+
+    def test_blocks_tool_call_completed_event_type(self) -> None:
+        decision = DefaultAssistantOutputBoundary().apply(
+            visibility_target="ordinary_user",
+            text="tool done",
+            event_type=RunEventType.TOOL_CALL_COMPLETED.value,
+        )
+
+        self.assertEqual(decision.action, BoundaryAction.BLOCK)
+        self.assertEqual(decision.reason, "event_type_not_allowed")
+        self.assertEqual(decision.audit_metadata["event_type"], RunEventType.TOOL_CALL_COMPLETED.value)
+
+    def test_none_event_type_preserves_backward_compatibility(self) -> None:
+        decision = DefaultAssistantOutputBoundary().apply(
+            visibility_target="ordinary_user",
+            text="business answer",
+            event_type=None,
+        )
+
+        self.assertEqual(decision.action, BoundaryAction.ALLOW)
+        self.assertEqual(decision.visible_text, "business answer")
+
+    def test_allowed_event_type_still_applies_text_filtering(self) -> None:
+        decision = DefaultAssistantOutputBoundary().apply(
+            visibility_target="ordinary_user",
+            text="api key invalid",
+            event_type=RunEventType.MESSAGE_DELTA.value,
+        )
+
+        self.assertEqual(decision.action, BoundaryAction.BLOCK)
+        self.assertEqual(decision.reason, "api_error")
+
+
 class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
     async def test_stream_rejects_when_streaming_lane_is_default_off(self) -> None:
         backend = FakeBackendAdapter()
@@ -179,9 +255,9 @@ class RuntimeStreamBoundaryTests(unittest.IsolatedAsyncioTestCase):
             def __init__(self) -> None:
                 self.calls: list[str | None] = []
 
-            def apply(self, visibility_target: str, text: str | None = None, event_metadata=None) -> BoundaryDecision:
+            def apply(self, visibility_target: str, text: str | None = None, event_metadata=None, event_type: str | None = None) -> BoundaryDecision:
                 self.calls.append(text)
-                return super().apply(visibility_target, text=text, event_metadata=event_metadata)
+                return super().apply(visibility_target, text=text, event_metadata=event_metadata, event_type=event_type)
 
         backend = FakeBackendAdapter()
         boundary = CountingBoundary()
