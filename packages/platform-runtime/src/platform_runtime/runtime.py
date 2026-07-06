@@ -11,6 +11,7 @@ from platform_contract.enums import AgentResultStatus, AsyncTaskState, Interrupt
 
 from .context_assembler import ContextAssembler, ContextAssemblyInput
 from .feature_flags import RuntimeFeatureFlags
+from .memory_orchestrator import MemoryOrchestrator
 from .interrupts import InMemoryInterruptStore, InterruptLifecycleAction, InterruptRecord
 from .output_boundary import BoundaryAction, DefaultAssistantOutputBoundary
 from .ports import AssistantOutputBoundary, ContractLogStore, IdFactory, RuntimeClock
@@ -37,6 +38,7 @@ class DefaultRunRuntime:
         id_factory: IdFactory | None = None,
         interrupt_store: InMemoryInterruptStore | None = None,
         context_assembler: ContextAssembler | None = None,
+        memory_orchestrator: MemoryOrchestrator | None = None,
     ) -> None:
         self.backend = backend
         self.channels = tuple(channels)
@@ -47,6 +49,7 @@ class DefaultRunRuntime:
         self.id_factory = id_factory or _SequentialIdFactory()
         self.interrupt_store = interrupt_store
         self.context_assembler = context_assembler
+        self.memory_orchestrator = memory_orchestrator
         self._resumed_run_by_key: dict[tuple[str, str | None, str | None], str] = {}
 
     async def create_run(self, req: RunRequest) -> Run:
@@ -150,6 +153,8 @@ class DefaultRunRuntime:
         *,
         pending_interrupt: InterruptRecord | None = None,
     ) -> RunRequest:
+        if self.feature_flags.session_memory_enabled:
+            return self._attach_context_bundle_with_memory(req, pending_interrupt=pending_interrupt)
         if not self.feature_flags.context_assembly_enabled:
             return req
         if self.context_assembler is None:
@@ -157,6 +162,37 @@ class DefaultRunRuntime:
 
         assembly_input = self._context_assembly_input(req, pending_interrupt=pending_interrupt)
         result = self.context_assembler.assemble(assembly_input)
+        context_event = result.as_event()
+        metadata = {
+            **dict(req.metadata),
+            "context_bundle_id": context_event["context_bundle_id"],
+            "context_bundle": context_event,
+        }
+        if self.feature_flags.contract_log_enabled:
+            self._contract_log().append("context_bundle", context_event)
+        return replace(req, metadata=metadata)
+
+    def _attach_context_bundle_with_memory(
+        self,
+        req: RunRequest,
+        *,
+        pending_interrupt: InterruptRecord | None = None,
+    ) -> RunRequest:
+        if self.memory_orchestrator is None:
+            raise RunRuntimeStateError("session_memory_enabled requires memory_orchestrator")
+
+        assembly_input = self._context_assembly_input(req, pending_interrupt=pending_interrupt)
+        result = self.memory_orchestrator.recall_and_assemble(
+            scope=assembly_input.scope,
+            session_id=assembly_input.session_id,
+            turn_id=assembly_input.turn_id,
+            current_turn_ref=assembly_input.current_turn_ref,
+            current_turn_text=assembly_input.current_turn_text,
+            recent_turn_refs=assembly_input.recent_turn_refs,
+            artifact_refs=assembly_input.artifact_refs,
+            feedback_correction_refs=assembly_input.feedback_correction_refs,
+            output_policy_ref=assembly_input.output_policy_ref,
+        )
         context_event = result.as_event()
         metadata = {
             **dict(req.metadata),

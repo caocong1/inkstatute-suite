@@ -356,10 +356,14 @@ class MemoryOrchestratorMemoryUseTests(unittest.TestCase):
 
 class MemoryOrchestratorContractTests(unittest.TestCase):
     def test_run_runtime_constructor_has_no_memory_orchestrator_parameter(self) -> None:
-        """REC-05: DefaultRunRuntime.__init__ must not gain a memory_orchestrator parameter."""
+        """REC-05 (superseded by Phase 49): DefaultRunRuntime.__init__ now accepts memory_orchestrator.
+
+        Phase 49 SESSMEM-01 explicitly requires the memory_orchestrator parameter.
+        The constructor must still NOT gain memory_store or recall_orchestrator parameters.
+        """
         signature = inspect.signature(DefaultRunRuntime.__init__)
 
-        self.assertNotIn("memory_orchestrator", signature.parameters)
+        self.assertIn("memory_orchestrator", signature.parameters)
         self.assertNotIn("memory_store", signature.parameters)
         self.assertNotIn("recall_orchestrator", signature.parameters)
 
