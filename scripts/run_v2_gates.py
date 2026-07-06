@@ -71,6 +71,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     wecom_channel_src = repo_root / "packages" / "channels" / "wecom" / "src"
     mcp_registry_src = repo_root / "packages" / "mcp-registry" / "src"
     sdk_ts_src = repo_root / "packages" / "platform-sdk-ts" / "src"
+    model_gateway_src = repo_root / "packages" / "model-gateway" / "src"
 
     return (
         Gate(
@@ -117,6 +118,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "provider-model-backend",
             (py, "-m", "unittest", "discover", "-s", "packages/backends/provider_model/tests"),
             (provider_model_backend_src, platform_src, platform_runtime_src, wecom_src, channel_core_src),
+        ),
+        Gate(
+            "model-gateway",
+            (py, "-m", "unittest", "discover", "-s", "packages/model-gateway/tests"),
+            (model_gateway_src, platform_src, platform_runtime_src),
         ),
         Gate(
             "admin-console-api",
@@ -172,7 +178,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, rbac_src, channel_core_src, qqbot_src, mcp_registry_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, rbac_src, channel_core_src, qqbot_src, mcp_registry_src, model_gateway_src),
         ),
         Gate(
             "v2-acceptance-traceability",
@@ -198,6 +204,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/rbac/src",
                 "packages/backends/codex/src",
                 "packages/backends/provider_model/src",
+                "packages/model-gateway/src",
                 "services/wecom-service/src",
                 "services/hermes-contract-layer/src",
                 "services/feedback-service/src",

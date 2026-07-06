@@ -7,16 +7,20 @@ from .circuit_breaker import (
     CircuitState,
 )
 from .config import ModelProviderGatewayConfig
+from .cost_tracker import BudgetCeiling, CostTracker, PricingRate
 from .gateway import ModelProviderGateway
 from .rate_limiter import RateLimitConfig, RateLimiter
 
 __all__ = [
+    "BudgetCeiling",
     "CircuitBreaker",
     "CircuitBreakerConfig",
     "CircuitBreakerRegistry",
     "CircuitState",
+    "CostTracker",
     "ModelProviderGateway",
     "ModelProviderGatewayConfig",
+    "PricingRate",
     "RateLimitConfig",
     "RateLimiter",
 ]

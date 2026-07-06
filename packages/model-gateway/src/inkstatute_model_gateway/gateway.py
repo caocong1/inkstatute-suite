@@ -33,6 +33,7 @@ from platform_runtime import (
 
 from .circuit_breaker import CircuitBreakerConfig, CircuitBreakerRegistry, CircuitState
 from .config import ModelProviderGatewayConfig
+from .cost_tracker import CostTracker, PricingRate, BudgetCeiling
 from .rate_limiter import RateLimitConfig, RateLimiter
 
 
@@ -59,6 +60,7 @@ class ModelProviderGateway:
         self._run_requests: dict[str, RunRequest] = {}
         self._rate_limiter = RateLimiter(self.config.rate_limit_configs)
         self._circuit_registry = CircuitBreakerRegistry(self.config.circuit_breaker_config)
+        self._cost_tracker = CostTracker(self.config.pricing, self.config.budgets)
 
     # ------------------------------------------------------------------
     # BackendAdapter Protocol — 9 methods
@@ -144,9 +146,27 @@ class ModelProviderGateway:
     # ------------------------------------------------------------------
 
     async def _submit_run_enabled(self, req: RunRequest) -> RunHandle:
-        """Enabled mode with rate limiting, circuit breakers, and fallback."""
+        """Enabled mode with rate limiting, circuit breakers, fallback, and cost tracking."""
         tenant_id = req.tenant_id or "default"
+        matter_id = req.metadata.get("matter_id") if req.metadata else None
         primary = req.solution.backend_id
+
+        # Check budget before attempting any provider.
+        within_budget, accumulated, ceiling = await self._cost_tracker.check_budget(tenant_id, matter_id)
+        if not within_budget:
+            return RunHandle(
+                run_id=f"gateway-budget-exceeded-{id(req)}",
+                backend_run_id=None,
+                status=AsyncTaskState.FAILED,
+                metadata={
+                    "error_code": "model_gateway_budget_exceeded",
+                    "error_message": f"budget ceiling exceeded for tenant {tenant_id}",
+                    "accumulated_cost": accumulated,
+                    "budget_ceiling": ceiling,
+                    "gateway_enabled": True,
+                    "tried_providers": [],
+                },
+            )
 
         # Build provider order: primary first, then fallback chain.
         provider_order: list[str] = []
@@ -197,6 +217,10 @@ class ModelProviderGateway:
                     self._circuit_registry.record_success(provider_id)
                     # Record request in rate limiter.
                     await self._rate_limiter.record_request(tenant_id, provider_id)
+                    # Record cost from run metadata.
+                    usage = _extract_usage_from_run(run)
+                    if usage:
+                        await self._cost_tracker.record_usage(tenant_id, matter_id, provider_id, usage)
                     # Augment handle metadata with tried_providers.
                     augmented_metadata = dict(handle.metadata)
                     augmented_metadata["tried_providers"] = list(tried_providers)
@@ -332,6 +356,17 @@ def _status_value(status: AsyncTaskState | str) -> str:
     if isinstance(status, AsyncTaskState):
         return status.value
     return str(status)
+
+
+def _extract_usage_from_run(run: Run) -> dict[str, Any]:
+    """Extract provider_usage from a Run's metadata.
+
+    Returns an empty dict if no usage is found.
+    """
+    usage = run.metadata.get("provider_usage") if run.metadata else None
+    if isinstance(usage, dict):
+        return usage
+    return {}
 
 
 class _SystemClock:

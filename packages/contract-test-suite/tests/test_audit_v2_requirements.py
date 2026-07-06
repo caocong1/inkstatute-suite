@@ -444,8 +444,9 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("web-sse-channel", gate_names)
         self.assertIn("wecom-channel", gate_names)
         self.assertIn("platform-sdk-ts", gate_names)
+        self.assertIn("model-gateway", gate_names)
         self.assertIn("gate-coverage-meta-test", gate_names)
-        self.assertEqual(len(gate_names), 22)
+        self.assertEqual(len(gate_names), 23)
 
 
 if __name__ == "__main__":
