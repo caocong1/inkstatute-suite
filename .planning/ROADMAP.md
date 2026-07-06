@@ -44,7 +44,7 @@
 - [x] **Phase 54: Model Provider Gateway (B4)** - Composite `BackendAdapter` wrapping multiple provider_model sub-adapters with rate limiting, fallback chains, circuit breakers, and cost tracking.
 - [x] **Phase 55: Multi-Agent Runtime Adapter (B5)** - Composite `BackendAdapter` with sequential/parallel/supervisor orchestration, handoff limits, cycle detection, and copy-on-write shared state.
 - [x] **Phase 56: Multi-Tenant Isolation (C2)** - `TenantScopeResolver` + `TenantGuard` injecting `tenant_id` filter into every read-model query, partitioned contract logs, namespaced cache keys, and migration test.
-- [ ] **Phase 57: Admin Web UI + Lawyer Web Chat (C3 + C4)** - Operator dashboard Web UI with session/task/feedback/gate/health views and lawyer-facing Web chat with real SSE, session auth, and output boundary enforcement.
+- [x] **Phase 57: Admin Web UI + Lawyer Web Chat (C3 + C4)** - Operator dashboard Web UI with session/task/feedback/gate/health views and lawyer-facing Web chat with real SSE, session auth, and output boundary enforcement.
 
 ## Phase Details
 
