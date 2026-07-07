@@ -269,6 +269,41 @@ class NormalizeInteractionEventTests(unittest.TestCase):
         self.assertEqual(feedback.event_type, "correction")
         self.assertEqual(feedback.conversation_id, "qqbot:group:FIXTURE_GROUP_INTERACTION_001:FIXTURE_GROUP_MEMBER_001")
 
+    def test_normalize_interaction_guild(self) -> None:
+        event = parse_envelope({
+            "op": 0,
+            "t": "INTERACTION_CREATE",
+            "d": {
+                "chat_type": 0,
+                "channel_id": "FIXTURE_GUILD_CHANNEL_001",
+                "data": {
+                    "resolved": {
+                        "button_data": "up",
+                        "button_id": "21",
+                        "user_id": "FIXTURE_GUILD_USER_001",
+                    },
+                    "type": 11,
+                },
+                "id": "FIXTURE_INTERACTION_GUILD_ID_001",
+            },
+        })
+        feedback = normalize_interaction_event(event, created_at="2026-07-07T12:00:00Z")
+
+        self.assertIsInstance(feedback, FeedbackEvent)
+        self.assertEqual(feedback.source, "card_button")
+        self.assertEqual(feedback.action, "up")
+        self.assertEqual(feedback.event_type, "rating")
+        self.assertEqual(feedback.rating, 1.0)
+        self.assertEqual(feedback.status, "pending")
+        self.assertEqual(feedback.user_id, "FIXTURE_GUILD_USER_001")
+        self.assertEqual(feedback.metadata["scene"], "guild")
+        self.assertEqual(feedback.metadata["chat_type"], 0)
+        self.assertEqual(
+            feedback.conversation_id,
+            "qqbot:guild:FIXTURE_GUILD_CHANNEL_001:FIXTURE_GUILD_USER_001",
+        )
+        validate_event("feedback_event", _event_dict(feedback), fixture_id="phase60-guild")
+
     def test_normalize_interaction_down(self) -> None:
         event = parse_envelope({
             "op": 0,
