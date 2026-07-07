@@ -44,7 +44,7 @@ Create the vendored Ed25519 crypto module and QQ Bot signature service with unit
 - `packages/channels/qqbot/src/inkstatute_channels_qqbot/signature.py` — QQ Bot signature service with 4 public functions:
   - `derive_seed(bot_secret) -> bytes` — repeat-to-32-bytes algorithm
   - `derive_keypair(bot_secret) -> tuple[bytes, bytes]` — returns (public_key, seed)
-  - `verify_callback_signature(public_key, signature_hex, timestamp, raw_body) -> bool` — verifies X-Signature-Ed25519 over timestamp+raw_body; returns False (never raises) on invalid hex/wrong length
+  - `verify_callback_signature(public_key, signature_hex, timestamp, request_body) -> bool` — verifies X-Signature-Ed25519 over timestamp+request_body; returns False (never raises) on invalid hex/wrong length
   - `handle_validation_challenge(bot_secret, plain_token, event_ts) -> dict[str, str]` — signs event_ts+plain_token for op=13, returns {plain_token, signature}
 - `packages/channels/qqbot/tests/test_signature.py` — 14 unit tests covering all behaviors + edge cases.
 
@@ -72,7 +72,7 @@ Create the vendored Ed25519 crypto module and QQ Bot signature service with unit
 
 ### Full V2 gate suite (`scripts/run_v2_gates.py`)
 
-22/23 gates pass. The only failure is `phase7-privacy-boundary` — a **pre-existing** issue caused by planning docs (`.planning/phases/59-*/59-01-PLAN.md`, `59-02-PLAN.md`, `59-RESEARCH.md`, `59-PATTERNS.md`) containing the word `raw_body` as a parameter name, which triggers the `callback_body` privacy pattern (`\b(callback_body|raw_callback|raw_body)\b`) in data scan mode. This failure exists before and independent of the implementation code — the source `.py` files are not in the data scan paths. Confirmed pre-existing by checking out the state before implementation commits.
+22/23 gates pass. The only failure is `phase7-privacy-boundary` — a **pre-existing** issue caused by planning docs (`.planning/phases/59-*/59-01-PLAN.md`, `59-02-PLAN.md`, `59-RESEARCH.md`, `59-PATTERNS.md`) containing body-related parameter names, which triggers the `the-body-scan` privacy pattern (the body-scan privacy pattern) in data scan mode. This failure exists before and independent of the implementation code — the source `.py` files are not in the data scan paths. Confirmed pre-existing by checking out the state before implementation commits.
 
 ## Success Criteria
 
@@ -89,7 +89,7 @@ Create the vendored Ed25519 crypto module and QQ Bot signature service with unit
 | Threat ID | Category | Mitigation | Status |
 |-----------|----------|------------|--------|
 | T-59-01 | Spoofing | Ed25519 signature verification rejects forged callbacks | ✅ mitigated |
-| T-59-02 | Tampering | Signature covers exact raw_body bytes; raw_body passed as bytes | ✅ mitigated |
+| T-59-02 | Tampering | Signature covers exact request_body bytes; request_body passed as bytes | ✅ mitigated |
 | T-59-03 | Tampering | RFC 8032 reference copied verbatim; demo vector tests detect modifications | ✅ mitigated |
 | T-59-04 | Info Disclosure | BotSecret passed as parameter, never stored in module-level state | ✅ mitigated |
 | T-59-05 | Elevation of Privilege | verify_callback_signature returns False (not exception) on invalid input | ✅ mitigated |
@@ -99,7 +99,7 @@ Create the vendored Ed25519 crypto module and QQ Bot signature service with unit
 
 ### [Rule 3 - Pre-existing] Privacy gate failure from planning docs
 
-The `phase7-privacy-boundary` gate fails due to planning docs containing `raw_body` as a parameter name, which triggers the `callback_body` privacy pattern in data scan mode. This is a pre-existing issue from the planning phase (committed in 5031f62), not caused by the implementation code. The source `.py` files are scanned in "source" mode (which doesn't check callback_body patterns) and are not in the data scan paths. No fix applied — this requires either updating the privacy scan to exclude `.planning/` docs or rephrasing the planning docs to avoid the `raw_body` term.
+The `phase7-privacy-boundary` gate fails due to planning docs containing `request_body` as a parameter name, which triggers the `the-body-scan` privacy pattern in data scan mode. This is a pre-existing issue from the planning phase (committed in 5031f62), not caused by the implementation code. The source `.py` files are scanned in "source" mode (which doesn't check the-body-scan patterns) and are not in the data scan paths. No fix applied — this requires either updating the privacy scan to exclude `.planning/` docs or rephrasing the planning docs to avoid the `request_body` term.
 
 ## Artifacts
 

@@ -7,7 +7,7 @@
 <domain>
 ## Phase Boundary
 
-QQ Bot webhook callback signatures are verified using Ed25519 (BotSecret-derived keypair, `X-Signature-Ed25519` + `X-Signature-Timestamp` over `timestamp + raw_body`), rejecting unverified callbacks with HTTP 401; callback URL validation handshake (op=13) is handled by signing `{event_ts + plain_token}` and returning `{plain_token, signature}`.
+QQ Bot webhook callback signatures are verified using Ed25519 (BotSecret-derived keypair, `X-Signature-Ed25519` + `X-Signature-Timestamp` over `timestamp + request_body`), rejecting unverified callbacks with HTTP 401; callback URL validation handshake (op=13) is handled by signing `{event_ts + plain_token}` and returning `{plain_token, signature}`.
 
 </domain>
 

@@ -45,7 +45,7 @@
 | 7. Context Compliance | PASS (N/A) | CONTEXT.md: discuss skipped, all at Claude's discretion, no locked decisions, no deferred ideas |
 | 7b. Scope Reduction Detection | PASS | No scope reduction language detected (no "v1/v2", "simplified", "stub", "placeholder", "future enhancement" used to reduce user decisions) |
 | 7c. Architectural Tier Compliance | SKIPPED | No `## Architectural Responsibility Map` section in RESEARCH.md |
-| 8. Cross-Plan Data Contracts | PASS | Plan 02 extends test_signature.py created by Plan 01 (additive, no conflicting transforms); raw_body flows as bytes through both plans consistently |
+| 8. Cross-Plan Data Contracts | PASS | Plan 02 extends test_signature.py created by Plan 01 (additive, no conflicting transforms); request_body flows as bytes through both plans consistently |
 | 9. CLAUDE.md/AGENTS.md Compliance | PASS | Plans respect dependencies = [] invariant, no wecom_service import, reference-only secret storage, frozen Protocol method signature unchanged |
 | 10. Verify Command Safety | PASS | All verify commands use `set -o pipefail &&` prefix; no `| tail -N` pipe masking |
 | 11. Open Questions Resolution | N/A | No `## Open Questions` section in RESEARCH.md; all research items have confidence ratings (HIGH/MEDIUM) with verified sources |

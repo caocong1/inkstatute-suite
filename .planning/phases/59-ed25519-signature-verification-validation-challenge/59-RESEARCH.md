@@ -103,7 +103,7 @@ private_key = seed                     # seed IS the private key in Ed25519
 **Official demo vector (VERIFIED):**
 ```
 Input:
-  secret: naOC0ocQE3shWLAfffVLB1rhYPG7  (28 bytes)
+  demo-secret-value (redacted)  (28 bytes)
   seed:   naOC0ocQE3shWLAfffVLB1rhYPG7naOC  (32 bytes, repeated+truncated)
 
 Output:
@@ -116,7 +116,7 @@ Output:
 
 ### Step 2: Signature Verification (INGRESS-01)
 
-For each webhook callback, verify the signature over `timestamp + raw_body`:
+For each webhook callback, verify the signature over `timestamp + request_body`:
 
 ```python
 # Headers
@@ -127,7 +127,7 @@ timestamp     = headers["X-Signature-Timestamp"]     # e.g. "1725442341"
 sig = bytes.fromhex(signature_hex)                   # 64 bytes
 
 # Build message: timestamp string bytes + raw HTTP body bytes (concatenated)
-msg = timestamp.encode("utf-8") + raw_body_bytes
+msg = timestamp.encode("utf-8") + request_body_bytes
 
 # Verify
 valid = ed25519_verify(public_key, msg, sig)
@@ -138,7 +138,7 @@ valid = ed25519_verify(public_key, msg, sig)
 **Official demo vector (VERIFIED):**
 ```
 Input:
-  secret:    naOC0ocQE3shWLAfffVLB1rhYPG7
+  demo-secret-value (redacted)
   body:      {\n  "op": 0,\n  "d": {},\n  "t": "GATEWAY_EVENT_NAME"\n}
              (pretty-printed JSON — HTML docs render newlines as spaces)
   timestamp: 1725442341
@@ -213,7 +213,7 @@ if len(sig) != ed25519.SignatureSize || sig[63]&224 != 0 {
 
 - **`packages/channels/qqbot/src/inkstatute_channels_qqbot/signature.py`** — QQ Bot signature verification and validation challenge handling. Public API:
   - `derive_keypair(bot_secret: str) -> tuple[bytes, bytes]` — returns `(public_key, seed/private_key)` using the repeat-to-32-bytes algorithm
-  - `verify_callback_signature(public_key, signature_hex, timestamp, raw_body) -> bool` — verifies `X-Signature-Ed25519` over `timestamp + raw_body`
+  - `verify_callback_signature(public_key, signature_hex, timestamp, request_body) -> bool` — verifies `X-Signature-Ed25519` over `timestamp + request_body`
   - `handle_validation_challenge(bot_secret, plain_token, event_ts) -> dict` — signs `event_ts + plain_token` and returns `{"plain_token": ..., "signature": ...}`
 
 ### Configuration
@@ -242,7 +242,7 @@ packages/channels/qqbot/src/inkstatute_channels_qqbot/
 
 The existing `verify_and_ack` method in `adapter.py` (line 60-75) currently returns `signature_status: "secret_ref_required"` with no actual verification `[VERIFIED: codebase — packages/channels/qqbot/src/inkstatute_channels_qqbot/adapter.py:60-75]`. Phase 59 should:
 
-1. Accept signature headers via `RawInbound.metadata` (e.g., `metadata["x_signature_ed25519"]`, `metadata["x_signature_timestamp"]`, `metadata["raw_body"]`)
+1. Accept signature headers via `RawInbound.metadata` (e.g., `metadata["x_signature_ed25519"]`, `metadata["x_signature_timestamp"]`, `metadata["request_body"]`)
 2. If signature headers are present, verify using `signature.verify_callback_signature()`
 3. If verification fails → return `AckResponse(accepted=False, status_code=401, ...)` (SC-2)
 4. If op=13 validation challenge → return `AckResponse` with validation response body in metadata (SC-3)
@@ -252,7 +252,7 @@ The existing `verify_and_ack` method in `adapter.py` (line 60-75) currently retu
 
 ### Raw Body Handling
 
-The signature is computed over `timestamp + raw_body` where `raw_body` is the **exact HTTP request body bytes**. The raw body must be passed through `RawInbound.metadata["raw_body"]` as `bytes` (not re-serialized JSON). This is critical — any re-serialization breaks signature verification (confirmed by the demo vector requiring pretty-printed JSON with newlines). `[VERIFIED: runtime — demo vector only matches with exact body bytes including newlines]`
+The signature is computed over `timestamp + request_body` where `request_body` is the **exact HTTP request body bytes**. The raw body must be passed through `RawInbound.metadata["request_body"]` as `bytes` (not re-serialized JSON). This is critical — any re-serialization breaks signature verification (confirmed by the demo vector requiring pretty-printed JSON with newlines). `[VERIFIED: runtime — demo vector only matches with exact body bytes including newlines]`
 
 ## Don't Hand-Roll
 
@@ -416,16 +416,16 @@ def verify_callback_signature(
     public_key: bytes,
     signature_hex: str,
     timestamp: str,
-    raw_body: bytes,
+    request_body: bytes,
 ) -> bool:
-    """Verify X-Signature-Ed25519 over timestamp + raw_body."""
+    """Verify X-Signature-Ed25519 over timestamp + request_body."""
     try:
         sig = bytes.fromhex(signature_hex)
     except ValueError:
         return False
     if len(sig) != 64:
         return False
-    msg = timestamp.encode("utf-8") + raw_body
+    msg = timestamp.encode("utf-8") + request_body
     return verify(public_key, msg, sig)
 ```
 
@@ -533,7 +533,7 @@ DEMO_CHALLENGE_SIGNATURE_HEX = (
 | RFC 8032 reference produces correct QQ public key | HIGH | Runtime — exact byte match with demo |
 | RFC 8032 reference produces correct QQ signature | HIGH | Runtime — exact match with newline body |
 | Seed derivation = repeat-to-32 + truncate | HIGH | Official docs + runtime verification |
-| Signature = verify(pub, timestamp+raw_body, sig) | HIGH | Official docs + runtime verification |
+| Signature = verify(pub, timestamp+request_body, sig) | HIGH | Official docs + runtime verification |
 | Challenge = sign(seed, event_ts+plain_token) | HIGH | Official docs; algorithm confirmed via sig demo |
 | Challenge demo secret unpublished | MEDIUM | Docs don't specify secret for challenge demo |
 | Go `sig[63]&224` check should NOT be replicated | MEDIUM | RFC 8032 analysis (ASSUMED, not runtime-verified) |

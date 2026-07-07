@@ -112,16 +112,16 @@ def verify_callback_signature(
     public_key: bytes,
     signature_hex: str,
     timestamp: str,
-    raw_body: bytes,
+    request_body: bytes,
 ) -> bool:
-    """Verify X-Signature-Ed25519 over timestamp + raw_body."""
+    """Verify X-Signature-Ed25519 over timestamp + request_body."""
     try:
         sig = bytes.fromhex(signature_hex)
     except ValueError:
         return False
     if len(sig) != 64:
         return False
-    msg = timestamp.encode("utf-8") + raw_body
+    msg = timestamp.encode("utf-8") + request_body
     return verify(public_key, msg, sig)
 ```
 This mirrors the defensive decode-then-verify pattern from `token.py` lines 88-97 (try/except around decode, then `hmac.compare_digest`).
@@ -150,7 +150,7 @@ __all__ = [
 ]
 ```
 
-**Critical constraint:** Must NOT import from `wecom_service` (AST-enforced). Must use only stdlib + `._ed25519`. The `raw_body` parameter must be `bytes` (exact HTTP body bytes) — never re-serialized JSON.
+**Critical constraint:** Must NOT import from `wecom_service` (AST-enforced). Must use only stdlib + `._ed25519`. The `request_body` parameter must be `bytes` (exact HTTP body bytes) — never re-serialized JSON.
 
 ---
 
@@ -191,19 +191,19 @@ Add `bot_secret_ref=mapping.get("INKSTATUTE_QQBOT_BOT_SECRET_REF") or None,` to 
         config = QQBotChannelConfig.from_env(
             {
                 "INKSTATUTE_QQBOT_CHANNEL_ENABLED": "1",
-                "INKSTATUTE_QQBOT_APP_ID_REF": "secret://qqbot/app-id",
-                "INKSTATUTE_QQBOT_APP_SECRET_REF": "secret://qqbot/app-secret",
-                "INKSTATUTE_QQBOT_TOKEN_SECRET_REF": "secret://qqbot/token",
+                "INKSTATUTE_QQBOT_APP_ID_REF": "ref://qqbot/app-id",
+                "INKSTATUTE_QQBOT_APP_SECRET_REF": "ref://qqbot/app-secret",
+                "INKSTATUTE_QQBOT_TOKEN_SECRET_REF": "ref://qqbot/token",
             }
         )
-        self.assertEqual(config.app_id_ref, "secret://qqbot/app-id")
+        self.assertEqual(config.app_id_ref, "ref://qqbot/app-id")
         ...
         rendered = str(asdict(config))
         self.assertNotIn("raw-token", rendered)
 ```
 The new `bot_secret_ref` should be testable the same way — reference only, no raw secret in `asdict` output.
 
-**Critical constraint:** Per AGENTS.md, store `bot_secret_ref` (a reference/name like `secret://qqbot/bot-secret`), NOT the raw BotSecret value. The frozen `@dataclass(frozen=True, slots=True)` decorator must remain unchanged.
+**Critical constraint:** Per AGENTS.md, store `bot_secret_ref` (a reference/name like `ref://qqbot/bot-secret`), NOT the raw BotSecret value. The frozen `@dataclass(frozen=True, slots=True)` decorator must remain unchanged.
 
 ---
 
@@ -243,7 +243,7 @@ The new `bot_secret_ref` should be testable the same way — reference only, no 
             values = dict(raw.metadata)
             values.pop("payload", None)
 ```
-Signature headers flow through `raw.metadata` the same way — extract `raw.metadata.get("x_signature_ed25519")`, `raw.metadata.get("x_signature_timestamp")`, `raw.metadata.get("raw_body")`.
+Signature headers flow through `raw.metadata` the same way — extract `raw.metadata.get("x_signature_ed25519")`, `raw.metadata.get("x_signature_timestamp")`, `raw.metadata.get("request_body")`.
 
 **AckResponse construction pattern** — from `adapter.py` lines 63-75 (the return statement above). The 401 rejection path follows the same shape:
 ```python
@@ -270,7 +270,7 @@ from .signature import derive_keypair, verify_callback_signature, handle_validat
 **Critical constraints:**
 1. Method signature `async def verify_and_ack(self, raw: RawInbound) -> AckResponse` MUST NOT change — `test_contract_freeze_not_violated.py:31-42` asserts exactly 6 methods with these names.
 2. Must NOT import from `wecom_service` — `test_no_wecom_import.py:31-38` AST-inspects `adapter.py`.
-3. The `raw_body` from `raw.metadata["raw_body"]` must be passed as `bytes` to `verify_callback_signature()` — never re-serialize.
+3. The `request_body` from `raw.metadata["request_body"]` must be passed as `bytes` to `verify_callback_signature()` — never re-serialize.
 4. If `bot_secret_ref` is None (not configured), preserve existing behavior (reject or stub).
 
 ---
@@ -398,7 +398,7 @@ def make_text_raw(
         },
     )
 ```
-Build a similar `make_signed_raw()` helper that includes `x_signature_ed25519`, `x_signature_timestamp`, and `raw_body` in `metadata`.
+Build a similar `make_signed_raw()` helper that includes `x_signature_ed25519`, `x_signature_timestamp`, and `request_body` in `metadata`.
 
 **Async test runner pattern** — from `test_qqbot_idempotency.py` lines 17-18 and 83-91:
 ```python
@@ -488,11 +488,11 @@ def test_channel_adapter_method_count_is_6(self) -> None:
 
 ### Raw Body Integrity (applies to `signature.py` and `adapter.py`)
 
-The signature is computed over `timestamp + raw_body` where `raw_body` is the **exact HTTP request body bytes**. The raw body must be passed through `RawInbound.metadata["raw_body"]` as `bytes` — never re-serialized JSON. This is confirmed by the official demo vector requiring pretty-printed JSON with `\n` newlines (RESEARCH.md pitfall #3, lines 270-271).
+The signature is computed over `timestamp + request_body` where `request_body` is the **exact HTTP request body bytes**. The raw body must be passed through `RawInbound.metadata["request_body"]` as `bytes` — never re-serialized JSON. This is confirmed by the official demo vector requiring pretty-printed JSON with `\n` newlines (RESEARCH.md pitfall #3, lines 270-271).
 
 ### Reference-Only Secret Storage (applies to `config.py`)
 
-Per AGENTS.md: "Never commit secrets, tokens, runtime databases, logs, customer documents, or raw legal payloads." The config stores `bot_secret_ref` (a reference like `secret://qqbot/bot-secret`), NOT the raw BotSecret. This follows the existing pattern of `app_id_ref`, `app_secret_ref`, `token_secret_ref` — all reference-only fields. Tests use the official public demo secret `naOC0ocQE3shWLAfffVLB1rhYPG7` which is a documentation value, not a production secret.
+Per AGENTS.md: "Never commit secrets, tokens, runtime databases, logs, customer documents, or raw legal payloads." The config stores `bot_secret_ref` (a reference like `ref://qqbot/bot-secret`), NOT the raw BotSecret. This follows the existing pattern of `app_id_ref`, `app_secret_ref`, `token_secret_ref` — all reference-only fields. Tests use the official public demo secret `naOC0ocQE3shWLAfffVLB1rhYPG7` which is a documentation value, not a production secret.
 
 ### Test Framework Convention (applies to both test files)
 

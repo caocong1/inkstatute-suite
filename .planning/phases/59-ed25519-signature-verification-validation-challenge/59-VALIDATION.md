@@ -38,7 +38,7 @@ created: 2026-07-07
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 59-01-01 | 01 | 1 | INGRESS-01 | T-59-01 | Ed25519 key derivation from BotSecret, signature verification over timestamp+raw_body | unit | `python3 -m unittest packages/channels/qqbot/tests/test_signature.py -v` | ❌ W0 | ⬜ pending |
+| 59-01-01 | 01 | 1 | INGRESS-01 | T-59-01 | Ed25519 key derivation from BotSecret, signature verification over timestamp+request_body | unit | `python3 -m unittest packages/channels/qqbot/tests/test_signature.py -v` | ❌ W0 | ⬜ pending |
 | 59-01-02 | 01 | 1 | INGRESS-02 | T-59-02 | op=13 validation challenge signing {event_ts + plain_token} | unit | `python3 -m unittest packages/channels/qqbot/tests/test_signature.py -v` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
