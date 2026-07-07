@@ -10,11 +10,22 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: None (v1.7 shipped — next milestone TBD)
+## Current Milestone: v1.8 QQBot Channel Production
+
+**Goal:** Upgrade the QQBot channel from v1.6 fixture-only proof to a complete V2 production-grade channel loop aligned with WeCom behavior (including QQ-platform-required differences), and deliver a one-click live-platform smoke-test toolkit.
+
+**Target features:**
+- Real QQ Bot platform ingress + ACK (callback signature verification, message normalization, ACK) replacing fixture-only ingress.
+- Real QQ Bot egress + cards (text/image/file/card delivery, retry, idempotency, output boundary enforcement — no backend gateway/system notices leak to users).
+- QQBot feedback loop parity with WeCom (template card dispatch, callback shim, FeedbackEvent normalization, dedupe).
+- Runtime session continuity for QQBot (continuous conversation, interrupt resume, memory recall via channel-generic runtime).
+- One-click smoke-test toolkit (CLI script + fixtures + operator runbook with detailed steps, credential injection via env vars, evidence collection format). Live platform run remains a human gate but the toolkit ships in this milestone.
+
+**Alignment strategy:** WeCom is the baseline; QQ-platform-required differences (QQ message types, card formats, @-bot trigger, etc.) are allowed.
+
+**Safety:** Credentials never enter the repo (env vars / local `.env`). All 24 V2 gates must stay green. Frozen ChannelAdapter Protocol (6 methods) must not be modified. Hermes core / channel-core (already extracted in v1.6) are not rebuilt.
 
 **Last shipped:** v1.7 M3 Platform Extensions (2026-07-06) — 14 phases, 34 plans, 38/38 requirements, 24/24 V2 gates green (1,547+ tests).
-
-**Next steps:** Run `/gsd-new-milestone` to define the next milestone. Candidate areas: encryption/retention (M4), QQBot extensions, live V2 human gates (Phase 5 WeCom UAT + Phase 8 lawyer trial).
 
 <details>
 <summary>Previous: v1.6 M2 Multi-Backend & Platform Extensions — SHIPPED (historical)</summary>
@@ -194,7 +205,7 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 ## Current State
 
 - **Last shipped:** v1.7 M3 Platform Extensions (2026-07-06) — archived.
-- **Active milestone:** None — next milestone TBD (run `/gsd-new-milestone`).
+- **Active milestone:** v1.8 QQBot Channel Production — defining requirements.
 - **V2 gate status:** All 24 gates green (1,547+ tests across platform-contract, wecom-service, hermes-contract-layer, conversation-read-view, feedback-service, phase7-privacy-boundary, contract-test-suite, v2-acceptance-traceability, compileall, skill-registry, router-service, mcp-registry, codex-backend, provider-model-backend, model-gateway, admin-console-api, rbac, qqbot-channel, web-sse-channel, wecom-channel, platform-sdk-ts, gate-coverage-meta-test, admin-web-ui, lawyer-web-chat).
 - **V2 acceptance:** BLOCKED ON HUMAN GATES (carried) — Phase 5 live WeCom UAT and Phase 8 five-workday lawyer trial require live evidence.
 - **Carried human gates (not autonomous-completable):**
@@ -224,4 +235,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-07 after v1.7 M3 milestone completion*
+*Last updated: 2026-07-07 — milestone v1.8 QQBot Channel Production started*
