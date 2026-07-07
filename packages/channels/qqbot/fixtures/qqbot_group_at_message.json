@@ -1,0 +1,36 @@
+{
+  "fixture_id": "phase60-qqbot-group-at-message-001",
+  "description": "Sanitized Phase 60 fixture: QQ Bot GROUP_AT_MESSAGE_CREATE gateway envelope with @-bot prefix residual (leading space). No real openids or raw payloads.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "envelope": {
+    "op": 0,
+    "t": "GROUP_AT_MESSAGE_CREATE",
+    "id": "evt-group-001",
+    "s": 2,
+    "d": {
+      "author": {
+        "member_openid": "FIXTURE_MEMBER_OPENID_001"
+      },
+      "content": " 123",
+      "group_openid": "FIXTURE_GROUP_OPENID_001",
+      "id": "ROBOT1.0_fixture_group_msg_001",
+      "timestamp": "2026-07-07T12:00:00+08:00",
+      "attachments": []
+    }
+  },
+  "expected_category": "group_at_message",
+  "expected_agent_turn": {
+    "conversation_id": "qqbot:group:FIXTURE_GROUP_OPENID_001:FIXTURE_MEMBER_OPENID_001",
+    "channel": "qqbot",
+    "user_id": "FIXTURE_MEMBER_OPENID_001",
+    "message_type": "text",
+    "content": "123",
+    "metadata": {
+      "scene": "group",
+      "scene_id": "FIXTURE_GROUP_OPENID_001",
+      "source_event": "GROUP_AT_MESSAGE_CREATE"
+    }
+  }
+}

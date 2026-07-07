@@ -1,0 +1,34 @@
+{
+  "fixture_id": "phase60-qqbot-c2c-message-001",
+  "description": "Sanitized Phase 60 fixture: QQ Bot C2C_MESSAGE_CREATE gateway envelope. No real openids or raw payloads.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "envelope": {
+    "op": 0,
+    "t": "C2C_MESSAGE_CREATE",
+    "id": "evt-c2c-001",
+    "s": 1,
+    "d": {
+      "author": {
+        "user_openid": "FIXTURE_USER_OPENID_C2C_001"
+      },
+      "content": "请检索合同解除的裁判观点",
+      "id": "ROBOT1.0_fixture_c2c_msg_001",
+      "timestamp": "2026-07-07T12:00:00+08:00",
+      "attachments": []
+    }
+  },
+  "expected_category": "c2c_message",
+  "expected_agent_turn": {
+    "conversation_id": "qqbot:c2c:FIXTURE_USER_OPENID_C2C_001:FIXTURE_USER_OPENID_C2C_001",
+    "channel": "qqbot",
+    "user_id": "FIXTURE_USER_OPENID_C2C_001",
+    "message_type": "text",
+    "content": "请检索合同解除的裁判观点",
+    "metadata": {
+      "scene": "c2c",
+      "source_event": "C2C_MESSAGE_CREATE"
+    }
+  }
+}

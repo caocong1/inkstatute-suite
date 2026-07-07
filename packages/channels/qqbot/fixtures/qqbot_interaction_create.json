@@ -1,0 +1,37 @@
+{
+  "fixture_id": "phase60-qqbot-interaction-create-001",
+  "description": "Sanitized Phase 60 fixture: QQ Bot INTERACTION_CREATE gateway envelope (chat_type=2 c2c, button_data=up). No real openids or raw payloads.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "envelope": {
+    "op": 0,
+    "t": "INTERACTION_CREATE",
+    "id": "evt-interaction-001",
+    "s": 3,
+    "d": {
+      "chat_type": 2,
+      "user_openid": "FIXTURE_USER_OPENID_INTERACTION_001",
+      "data": {
+        "resolved": {
+          "button_data": "up",
+          "button_id": "21",
+          "user_id": "FIXTURE_USER_OPENID_INTERACTION_001"
+        },
+        "type": 11
+      },
+      "id": "FIXTURE_INTERACTION_ID_001",
+      "type": 11,
+      "version": 1
+    }
+  },
+  "expected_category": "interaction",
+  "expected_feedback_event": {
+    "source": "card_button",
+    "action": "up",
+    "event_type": "rating",
+    "status": "pending",
+    "rating": 1.0,
+    "conversation_id": "qqbot:c2c:FIXTURE_USER_OPENID_INTERACTION_001:FIXTURE_USER_OPENID_INTERACTION_001"
+  }
+}

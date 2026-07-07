@@ -1,0 +1,15 @@
+{
+  "fixture_id": "phase60-qqbot-validation-challenge-001",
+  "description": "Sanitized Phase 60 fixture: QQ Bot op=13 validation challenge gateway envelope. No real tokens or raw payloads.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "envelope": {
+    "op": 13,
+    "d": {
+      "plain_token": "FIXTURE_PLAIN_TOKEN_001",
+      "event_ts": "FIXTURE_EVENT_TS_001"
+    }
+  },
+  "expected_category": "validation_challenge"
+}
