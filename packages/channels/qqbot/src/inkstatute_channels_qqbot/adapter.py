@@ -174,6 +174,12 @@ class QQBotChannelAdapter:
 
     async def normalize_inbound(self, raw: RawInbound) -> InboundNormalized:
         payload = self._payload_from_raw(raw)
+
+        # Real QQ Bot gateway envelope {op, t, d} → delegate to normalization.py
+        if _is_gateway_envelope(payload):
+            return _normalize_gateway_envelope(raw, payload, self._config.channel_id)
+
+        # Legacy fixture format (pre-normalized fields) → existing path
         if _is_feedback_payload(payload):
             return InboundNormalized(
                 feedback=_feedback_from_payload(raw, payload),
@@ -354,6 +360,78 @@ def _metadata(payload: Mapping[str, Any], raw: RawInbound) -> JsonObject:
 def _is_feedback_payload(payload: Mapping[str, Any]) -> bool:
     kind = str(payload.get("type") or payload.get("kind") or "").lower()
     return kind == "feedback" or "feedback_target" in payload or "action" in payload
+
+
+def _is_gateway_envelope(payload: Mapping[str, Any]) -> bool:
+    """Detect real QQ Bot gateway envelope {op, t, d}.
+
+    Requires ``op`` and ``d`` keys. The ``t`` key is absent on op=13
+    validation challenge envelopes, so it is not required. Legacy fixture
+    payloads contain neither ``op`` nor ``d``, so this cleanly separates
+    gateway envelopes from the pre-normalized fixture format.
+    """
+    return "op" in payload and "d" in payload
+
+
+def _normalize_gateway_envelope(
+    raw: RawInbound, payload: Mapping[str, Any], channel_id: str
+) -> InboundNormalized:
+    """Delegate a real QQ Bot gateway envelope to normalization.py pure functions."""
+    from .normalization import (
+        QQBotEventCategory,
+        normalize_interaction_event,
+        normalize_message_event,
+        parse_envelope,
+    )
+
+    event = parse_envelope(payload)
+
+    if event.category == QQBotEventCategory.INTERACTION:
+        feedback = normalize_interaction_event(
+            event, created_at=raw.received_at, payload_ref=raw.payload_ref
+        )
+        return InboundNormalized(
+            feedback=feedback,
+            metadata={
+                "channel_id": channel_id,
+                "payload_ref": raw.payload_ref,
+                "normalized_type": "feedback_event",
+                "idempotency_key": raw.idempotency_key
+                or channel_idempotency_key(payload, channel_prefix="qqbot"),
+                "fixture_only": True,
+            },
+        )
+
+    if event.category in (
+        QQBotEventCategory.C2C_MESSAGE,
+        QQBotEventCategory.GROUP_AT_MESSAGE,
+    ):
+        turn = normalize_message_event(
+            event, received_at=raw.received_at, payload_ref=raw.payload_ref
+        )
+        return InboundNormalized(
+            message=turn,
+            metadata={
+                "channel_id": channel_id,
+                "payload_ref": raw.payload_ref,
+                "normalized_type": "agent_turn",
+                "idempotency_key": raw.idempotency_key
+                or channel_idempotency_key(payload, channel_prefix="qqbot"),
+                "fixture_only": True,
+            },
+        )
+
+    # VALIDATION_CHALLENGE or UNKNOWN → return empty InboundNormalized
+    return InboundNormalized(
+        metadata={
+            "channel_id": channel_id,
+            "payload_ref": raw.payload_ref,
+            "normalized_type": event.category.value,
+            "idempotency_key": raw.idempotency_key
+            or channel_idempotency_key(payload, channel_prefix="qqbot"),
+            "fixture_only": True,
+        },
+    )
 
 
 def _feedback_action(payload: Mapping[str, Any]) -> str:
