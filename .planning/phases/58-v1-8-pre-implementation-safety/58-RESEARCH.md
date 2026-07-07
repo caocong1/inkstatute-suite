@@ -354,17 +354,19 @@ class V18SafetyBaselineTests(unittest.TestCase):
 
 The 2 assumptions above are LOW risk and do not block planning. Both are verifiable by running the gate suite.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the `gate-coverage-meta-test` baseline floor be raised from 19 to 24 or 26?**
    - What we know: `test_gate_count_meets_baseline` uses `assertGreaterEqual(len(_gates()), 19)`. The current count is 26.
    - What's unclear: Whether Phase 58 should raise the floor as part of "baseline verification" or leave it for a future phase.
    - Recommendation: Optional — raising the floor to 24 or 26 is a nice-to-have but not a success criterion. The floor at 19 already prevents regression below v1.6 levels.
+   - RESOLVED: Not raising the floor in Phase 58 — it is optional and not a success criterion. The existing floor at 19 is sufficient.
 
 2. **Should a new consolidated `test_v1_8_safety_baseline.py` be created, or are the existing scattered tests sufficient?**
    - What we know: The 5 success criteria are already covered by existing tests across 3 packages (`contract-test-suite`, `platform-runtime`, `channels/qqbot`).
    - What's unclear: Whether a single consolidated test adds value or is redundant.
    - Recommendation: Optional — a consolidated test is nice for operator visibility but not strictly necessary. The existing tests already cover all criteria. If created, it should go in `packages/channels/qqbot/tests/` to be picked up by the `qqbot-channel` gate.
+   - RESOLVED: Creating the consolidated test for operator visibility — Plan 58-01 Task 02 creates `test_v1_8_safety_baseline.py` in `packages/channels/qqbot/tests/`.
 
 ## Environment Availability
 
