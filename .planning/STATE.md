@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: QQBot Channel Production
 status: executing
-last_updated: "2026-07-07T16:00:00.000Z"
+last_updated: "2026-07-07T16:50:00.000Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 10
+  total_plans: 2
+  completed_plans: 2
+  percent: 20
 ---
 
 # Project State
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 58 — v1.8 Pre-Implementation Safety
+**Current focus:** Phase 59 — Ed25519 Signature Verification + Validation Challenge
 
 ## Current Position
 
-Phase: 58 (v1.8 Pre-Implementation Safety) — complete
-Plan: 58-01 — complete
-Status: Phase 58 safety baseline verified — all 26 V2 gates green, consolidated safety baseline test passes
-Last activity: 2026-07-07 — Phase 58 Plan 01 executed (restored trial evidence template + v1.8 safety baseline test)
+Phase: 59 (Ed25519 Signature Verification + Validation Challenge) — in progress
+Plan: 59-01 — complete
+Status: Phase 59 Plan 01 complete — vendored RFC 8032 Ed25519 + QQ Bot signature module with 23 tests passing against official QQ demo vectors
+Last activity: 2026-07-07 — Phase 59 Plan 01 executed (vendored _ed25519.py + signature.py + test_ed25519_vectors.py + test_signature.py)
 
 ### Deferred Items
 
