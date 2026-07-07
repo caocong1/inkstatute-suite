@@ -2,12 +2,16 @@
 
 Tests key derivation, callback signature verification, validation challenge
 signing, and edge cases (short/long BotSecret, empty body, invalid hex).
+Also includes adapter integration tests for ``verify_and_ack`` signature
+verification, 401 rejection, and op=13 validation challenge handling.
 """
 
 from __future__ import annotations
 
+import asyncio
 import unittest
 
+from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
 from inkstatute_channels_qqbot._ed25519 import verify as ed25519_verify
 from inkstatute_channels_qqbot.signature import (
     derive_keypair,
@@ -15,6 +19,7 @@ from inkstatute_channels_qqbot.signature import (
     handle_validation_challenge,
     verify_callback_signature,
 )
+from platform_runtime.protocols import RawInbound
 
 # Official QQ demo vectors (public documentation values, NOT production secrets)
 DEMO_BOT_SECRET = "naOC0ocQE3shWLAfffVLB1rhYPG7"
@@ -163,6 +168,141 @@ class HandleValidationChallengeTests(unittest.TestCase):
         tampered_msg = (event_ts + "wrong-token").encode("utf-8")
         sig = bytes.fromhex(result["signature"])
         self.assertFalse(ed25519_verify(public_key, tampered_msg, sig))
+
+
+def run(coro):
+    return asyncio.run(coro)
+
+
+def make_signed_raw(
+    *,
+    body: bytes = DEMO_SIG_BODY,
+    timestamp: str = DEMO_SIG_TIMESTAMP,
+    signature_hex: str = DEMO_SIGNATURE_HEX,
+    bot_secret: str = DEMO_BOT_SECRET,
+    payload: dict | None = None,
+    idempotency_key: str | None = "qqbot-sig-idem-1",
+) -> RawInbound:
+    """Construct a RawInbound with signature headers in metadata."""
+    meta: dict = {
+        "x_signature_ed25519": signature_hex,
+        "x_signature_timestamp": timestamp,
+        "request_body": body,
+        "bot_secret": bot_secret,
+    }
+    if payload is not None:
+        meta["payload"] = payload
+    return RawInbound(
+        channel_id="qqbot",
+        payload_ref="fixture://qqbot/inbound/signed-1",
+        received_at="2026-07-07T00:00:00Z",
+        idempotency_key=idempotency_key,
+        metadata=meta,
+    )
+
+
+class QQBotAdapterSignatureTests(unittest.TestCase):
+    """Adapter integration tests for verify_and_ack signature verification."""
+
+    def setUp(self) -> None:
+        self.adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True, bot_secret_ref="ref://qqbot/bot-secret")
+        )
+
+    def test_valid_signature_accepted(self) -> None:
+        """verify_and_ack with a valid signature returns accepted=True, 200."""
+        ack = run(self.adapter.verify_and_ack(make_signed_raw()))
+        self.assertTrue(ack.accepted)
+        self.assertEqual(ack.status_code, 200)
+        self.assertEqual(ack.metadata["signature_status"], "verified")
+
+    def test_missing_signature_headers_rejected_401(self) -> None:
+        """verify_and_ack with missing signature headers returns 401."""
+        raw = RawInbound(
+            channel_id="qqbot",
+            payload_ref="fixture://qqbot/inbound/unsigned-1",
+            received_at="2026-07-07T00:00:00Z",
+            idempotency_key="qqbot-sig-idem-missing",
+            metadata={"payload": {"type": "message"}},
+        )
+        ack = run(self.adapter.verify_and_ack(raw))
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 401)
+        self.assertEqual(ack.metadata["signature_status"], "missing")
+
+    def test_invalid_signature_rejected_401(self) -> None:
+        """verify_and_ack with an invalid signature returns 401."""
+        ack = run(
+            self.adapter.verify_and_ack(
+                make_signed_raw(signature_hex="00" * 64)
+            )
+        )
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 401)
+        self.assertEqual(ack.metadata["signature_status"], "invalid")
+
+    def test_tampered_request_body_rejected_401(self) -> None:
+        """verify_and_ack with a tampered request_body returns 401."""
+        tampered = DEMO_SIG_BODY.replace(b"op", b"ip", 1)
+        ack = run(
+            self.adapter.verify_and_ack(make_signed_raw(body=tampered))
+        )
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 401)
+        self.assertEqual(ack.metadata["signature_status"], "invalid")
+
+    def test_op13_validation_challenge_response(self) -> None:
+        """verify_and_ack with op=13 returns validation_challenge_response."""
+        plain_token = "Arq0D5A61EgUu4OxUvOp"
+        event_ts = "1725442341"
+        challenge_body = (
+            b'{"d":{"plain_token":"' + plain_token.encode()
+            + b'","event_ts":"' + event_ts.encode() + b'"},"op":13}'
+        )
+        # Sign the challenge body so the signature verifies.
+        public_key, seed = derive_keypair(DEMO_BOT_SECRET)
+        from inkstatute_channels_qqbot._ed25519 import sign as ed25519_sign
+
+        msg = DEMO_SIG_TIMESTAMP.encode("utf-8") + challenge_body
+        sig_hex = ed25519_sign(seed, msg).hex()
+
+        payload = {
+            "op": 13,
+            "d": {"plain_token": plain_token, "event_ts": event_ts},
+        }
+        raw = make_signed_raw(
+            body=challenge_body,
+            signature_hex=sig_hex,
+            payload=payload,
+            idempotency_key="qqbot-sig-idem-op13",
+        )
+        ack = run(self.adapter.verify_and_ack(raw))
+        self.assertTrue(ack.accepted)
+        self.assertEqual(ack.status_code, 200)
+        self.assertEqual(ack.metadata["signature_status"], "verified")
+        challenge = ack.metadata.get("validation_challenge_response")
+        self.assertIsNotNone(challenge)
+        assert challenge is not None
+        self.assertIn("plain_token", challenge)
+        self.assertIn("signature", challenge)
+        self.assertEqual(challenge["plain_token"], plain_token)
+
+    def test_bot_secret_not_configured_preserves_stub(self) -> None:
+        """When bot_secret_ref is None, stub behavior is preserved."""
+        adapter = QQBotChannelAdapter(QQBotChannelConfig(enabled=True))
+        ack = run(adapter.verify_and_ack(make_signed_raw()))
+        self.assertTrue(ack.accepted)
+        self.assertEqual(ack.status_code, 200)
+        self.assertEqual(ack.metadata["signature_status"], "secret_ref_required")
+
+    def test_channel_disabled_returns_503(self) -> None:
+        """When channel is disabled, 503 behavior is preserved."""
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=False, bot_secret_ref="ref://qqbot/bot-secret")
+        )
+        ack = run(adapter.verify_and_ack(make_signed_raw()))
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 503)
 
 
 if __name__ == "__main__":

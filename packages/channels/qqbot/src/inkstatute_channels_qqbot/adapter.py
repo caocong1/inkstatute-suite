@@ -21,6 +21,11 @@ from platform_runtime.protocols import (
 )
 
 from .config import QQBotChannelConfig
+from .signature import (
+    derive_keypair,
+    handle_validation_challenge,
+    verify_callback_signature,
+)
 
 JsonObject = dict[str, Any]
 
@@ -53,6 +58,7 @@ class QQBotChannelAdapter:
                     "app_id_ref": self._config.app_id_ref is not None,
                     "app_secret_ref": self._config.app_secret_ref is not None,
                     "token_secret_ref": self._config.token_secret_ref is not None,
+                    "bot_secret_ref": self._config.bot_secret_ref is not None,
                 },
             },
         )
@@ -60,18 +66,85 @@ class QQBotChannelAdapter:
     async def verify_and_ack(self, raw: RawInbound) -> AckResponse:
         payload = self._payload_from_raw(raw)
         idem_key = raw.idempotency_key or _stable_id("qqbot-ack", raw.payload_ref)
+        base_meta: JsonObject = {
+            "channel_id": self._config.channel_id,
+            "payload_ref": raw.payload_ref,
+            "fixture_only": True,
+            "network_io": False,
+            "payload_kind": payload.get("type") or payload.get("kind") or "message",
+        }
+
+        # Channel disabled → preserve existing 503 behavior.
+        if not self._config.enabled:
+            return AckResponse(
+                accepted=False,
+                status_code=503,
+                idempotency_key=idem_key,
+                metadata={**base_meta, "signature_status": "channel_disabled"},
+            )
+
+        # BotSecret not configured → preserve existing stub behavior.
+        if self._config.bot_secret_ref is None:
+            return AckResponse(
+                accepted=True,
+                status_code=200,
+                idempotency_key=idem_key,
+                metadata={**base_meta, "signature_status": "secret_ref_required"},
+            )
+
+        # Signature verification path (bot_secret_ref configured).
+        sig_hex = raw.metadata.get("x_signature_ed25519")
+        timestamp = raw.metadata.get("x_signature_timestamp")
+        request_body = raw.metadata.get("request_body")
+        bot_secret = raw.metadata.get("bot_secret")
+
+        # Missing signature headers → reject with 401.
+        if sig_hex is None or timestamp is None or request_body is None:
+            return AckResponse(
+                accepted=False,
+                status_code=401,
+                idempotency_key=idem_key,
+                metadata={**base_meta, "signature_status": "missing"},
+            )
+
+        # Derive keypair and verify the signature over timestamp + request_body.
+        public_key, _seed = derive_keypair(bot_secret)
+        verified = verify_callback_signature(
+            public_key, sig_hex, timestamp, request_body
+        )
+        if not verified:
+            return AckResponse(
+                accepted=False,
+                status_code=401,
+                idempotency_key=idem_key,
+                metadata={**base_meta, "signature_status": "invalid"},
+            )
+
+        # Signature verified — check for op=13 validation challenge.
+        if payload.get("op") == 13:
+            challenge_data = payload.get("d")
+            if isinstance(challenge_data, Mapping):
+                plain_token = _optional_string(challenge_data.get("plain_token")) or ""
+                event_ts = _optional_string(challenge_data.get("event_ts")) or ""
+                challenge_response = handle_validation_challenge(
+                    bot_secret, plain_token, event_ts
+                )
+                return AckResponse(
+                    accepted=True,
+                    status_code=200,
+                    idempotency_key=idem_key,
+                    metadata={
+                        **base_meta,
+                        "signature_status": "verified",
+                        "validation_challenge_response": challenge_response,
+                    },
+                )
+
         return AckResponse(
-            accepted=self._config.enabled,
-            status_code=200 if self._config.enabled else 503,
+            accepted=True,
+            status_code=200,
             idempotency_key=idem_key,
-            metadata={
-                "channel_id": self._config.channel_id,
-                "payload_ref": raw.payload_ref,
-                "signature_status": "secret_ref_required",
-                "fixture_only": True,
-                "network_io": False,
-                "payload_kind": payload.get("type") or payload.get("kind") or "message",
-            },
+            metadata={**base_meta, "signature_status": "verified"},
         )
 
     async def normalize_inbound(self, raw: RawInbound) -> InboundNormalized:
@@ -144,6 +217,7 @@ class QQBotChannelAdapter:
                     "app_id_ref": self._config.app_id_ref is not None,
                     "app_secret_ref": self._config.app_secret_ref is not None,
                     "token_secret_ref": self._config.token_secret_ref is not None,
+                    "bot_secret_ref": self._config.bot_secret_ref is not None,
                 },
             },
         )
