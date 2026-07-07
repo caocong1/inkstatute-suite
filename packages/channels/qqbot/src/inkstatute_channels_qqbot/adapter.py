@@ -98,8 +98,8 @@ class QQBotChannelAdapter:
         request_body = raw.metadata.get("request_body")
         bot_secret = raw.metadata.get("bot_secret")
 
-        # Missing signature headers → reject with 401.
-        if sig_hex is None or timestamp is None or request_body is None:
+        # Missing signature headers or bot_secret → reject with 401.
+        if sig_hex is None or timestamp is None or request_body is None or bot_secret is None:
             return AckResponse(
                 accepted=False,
                 status_code=401,
@@ -108,7 +108,16 @@ class QQBotChannelAdapter:
             )
 
         # Derive keypair and verify the signature over timestamp + request_body.
-        public_key, _seed = derive_keypair(bot_secret)
+        try:
+            public_key, _seed = derive_keypair(bot_secret)
+        except ValueError:
+            # Empty or invalid bot_secret — reject without crash.
+            return AckResponse(
+                accepted=False,
+                status_code=401,
+                idempotency_key=idem_key,
+                metadata={**base_meta, "signature_status": "invalid"},
+            )
         verified = verify_callback_signature(
             public_key, sig_hex, timestamp, request_body
         )
@@ -124,21 +133,37 @@ class QQBotChannelAdapter:
         if payload.get("op") == 13:
             challenge_data = payload.get("d")
             if isinstance(challenge_data, Mapping):
-                plain_token = _optional_string(challenge_data.get("plain_token")) or ""
-                event_ts = _optional_string(challenge_data.get("event_ts")) or ""
-                challenge_response = handle_validation_challenge(
-                    bot_secret, plain_token, event_ts
-                )
+                plain_token = _optional_string(challenge_data.get("plain_token"))
+                event_ts = _optional_string(challenge_data.get("event_ts"))
+                # Both fields required for a valid challenge — reject if missing.
+                if plain_token and event_ts:
+                    challenge_response = handle_validation_challenge(
+                        bot_secret, plain_token, event_ts
+                    )
+                    return AckResponse(
+                        accepted=True,
+                        status_code=200,
+                        idempotency_key=idem_key,
+                        metadata={
+                            **base_meta,
+                            "signature_status": "verified",
+                            "validation_challenge_response": challenge_response,
+                        },
+                    )
+                # op=13 with missing plain_token/event_ts → reject as invalid.
                 return AckResponse(
-                    accepted=True,
-                    status_code=200,
+                    accepted=False,
+                    status_code=401,
                     idempotency_key=idem_key,
-                    metadata={
-                        **base_meta,
-                        "signature_status": "verified",
-                        "validation_challenge_response": challenge_response,
-                    },
+                    metadata={**base_meta, "signature_status": "invalid_challenge"},
                 )
+            # op=13 with non-Mapping d → reject as invalid.
+            return AckResponse(
+                accepted=False,
+                status_code=401,
+                idempotency_key=idem_key,
+                metadata={**base_meta, "signature_status": "invalid_challenge"},
+            )
 
         return AckResponse(
             accepted=True,

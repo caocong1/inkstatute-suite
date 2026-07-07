@@ -64,6 +64,16 @@ class DeriveSeedTests(unittest.TestCase):
         self.assertEqual(len(seed), 32)
         self.assertEqual(seed, (b"x" * 40)[:32])
 
+    def test_derive_seed_empty_secret_raises(self) -> None:
+        """derive_seed with empty string raises ValueError (no infinite loop)."""
+        with self.assertRaises(ValueError):
+            derive_seed("")
+
+    def test_derive_seed_non_string_raises(self) -> None:
+        """derive_seed with None or non-string raises ValueError."""
+        with self.assertRaises(ValueError):
+            derive_seed(None)  # type: ignore[arg-type]
+
 
 class DeriveKeypairTests(unittest.TestCase):
     """Tests for derive_keypair."""
@@ -303,6 +313,81 @@ class QQBotAdapterSignatureTests(unittest.TestCase):
         ack = run(adapter.verify_and_ack(make_signed_raw()))
         self.assertFalse(ack.accepted)
         self.assertEqual(ack.status_code, 503)
+
+    def test_bot_secret_none_rejected_401(self) -> None:
+        """When bot_secret_ref is configured but bot_secret not injected, 401."""
+        raw = make_signed_raw()
+        # Remove bot_secret from metadata to simulate missing runtime injection.
+        raw.metadata.pop("bot_secret")
+        ack = run(self.adapter.verify_and_ack(raw))
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 401)
+        self.assertEqual(ack.metadata["signature_status"], "missing")
+
+    def test_empty_bot_secret_rejected_401(self) -> None:
+        """When bot_secret is empty string, 401 (no infinite loop)."""
+        raw = make_signed_raw(bot_secret="")
+        ack = run(self.adapter.verify_and_ack(raw))
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 401)
+        self.assertEqual(ack.metadata["signature_status"], "invalid")
+
+    def test_op13_missing_plain_token_rejected_401(self) -> None:
+        """op=13 with missing plain_token returns 401 invalid_challenge."""
+        challenge_body = b'{"d":{"event_ts":"1725442341"},"op":13}'
+        public_key, seed = derive_keypair(DEMO_BOT_SECRET)
+        from inkstatute_channels_qqbot._ed25519 import sign as ed25519_sign
+
+        msg = DEMO_SIG_TIMESTAMP.encode("utf-8") + challenge_body
+        sig_hex = ed25519_sign(seed, msg).hex()
+        payload = {"op": 13, "d": {"event_ts": "1725442341"}}
+        raw = make_signed_raw(
+            body=challenge_body,
+            signature_hex=sig_hex,
+            payload=payload,
+            idempotency_key="qqbot-sig-idem-op13-no-plain",
+        )
+        ack = run(self.adapter.verify_and_ack(raw))
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 401)
+        self.assertEqual(ack.metadata["signature_status"], "invalid_challenge")
+
+    def test_op13_non_mapping_d_rejected_401(self) -> None:
+        """op=13 with non-Mapping d returns 401 invalid_challenge."""
+        challenge_body = b'{"d":"not-a-mapping","op":13}'
+        public_key, seed = derive_keypair(DEMO_BOT_SECRET)
+        from inkstatute_channels_qqbot._ed25519 import sign as ed25519_sign
+
+        msg = DEMO_SIG_TIMESTAMP.encode("utf-8") + challenge_body
+        sig_hex = ed25519_sign(seed, msg).hex()
+        payload = {"op": 13, "d": "not-a-mapping"}
+        raw = make_signed_raw(
+            body=challenge_body,
+            signature_hex=sig_hex,
+            payload=payload,
+            idempotency_key="qqbot-sig-idem-op13-bad-d",
+        )
+        ack = run(self.adapter.verify_and_ack(raw))
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 401)
+        self.assertEqual(ack.metadata["signature_status"], "invalid_challenge")
+
+    def test_verify_callback_signature_non_string_timestamp(self) -> None:
+        """verify_callback_signature with int timestamp returns False (no crash)."""
+        public_key, _ = derive_keypair(DEMO_BOT_SECRET)
+        result = verify_callback_signature(
+            public_key, DEMO_SIGNATURE_HEX, 1725442341, DEMO_SIG_BODY  # type: ignore[arg-type]
+        )
+        self.assertFalse(result)
+
+    def test_verify_callback_signature_str_body_returns_false(self) -> None:
+        """verify_callback_signature with str body returns False (no crash)."""
+        public_key, _ = derive_keypair(DEMO_BOT_SECRET)
+        result = verify_callback_signature(
+            public_key, DEMO_SIGNATURE_HEX, DEMO_SIG_TIMESTAMP,
+            DEMO_SIG_BODY.decode("utf-8"),  # type: ignore[arg-type]
+        )
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":

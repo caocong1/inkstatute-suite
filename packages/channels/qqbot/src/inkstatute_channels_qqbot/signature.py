@@ -24,7 +24,12 @@ def derive_seed(bot_secret: str) -> bytes:
     The BotSecret is encoded as UTF-8, repeated until it reaches at least
     32 bytes, then truncated to 32 bytes. This matches the official QQ Bot
     key derivation algorithm.
+
+    Raises ``ValueError`` if ``bot_secret`` is empty or not a string —
+    callers must validate before calling.
     """
+    if not isinstance(bot_secret, str) or not bot_secret:
+        raise ValueError("bot_secret must be a non-empty string")
     seed = bot_secret.encode("utf-8")
     while len(seed) < 32:
         seed = seed * 2
@@ -51,16 +56,19 @@ def verify_callback_signature(
     """Verify an ``X-Signature-Ed25519`` over ``timestamp + raw_body``.
 
     Returns ``True`` if the signature is valid, ``False`` otherwise (including
-    invalid hex, wrong signature length, or failed verification). Never raises
-    on malformed input — callers can safely reject without crash.
+    invalid hex, wrong signature length, type errors, or failed verification).
+    Never raises on malformed input — callers can safely reject without crash.
     """
     try:
         sig = bytes.fromhex(signature_hex)
-    except ValueError:
+    except (ValueError, TypeError, AttributeError):
         return False
     if len(sig) != 64:
         return False
-    msg = timestamp.encode("utf-8") + raw_body
+    try:
+        msg = timestamp.encode("utf-8") + raw_body
+    except (AttributeError, TypeError):
+        return False
     return verify(public_key, msg, sig)
 
 
