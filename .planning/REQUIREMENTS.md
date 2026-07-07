@@ -11,12 +11,12 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 - [ ] **INGRESS-01**: QQ Bot webhook callback signature is verified using Ed25519 (BotSecret-derived keypair, `X-Signature-Ed25519` + `X-Signature-Timestamp` over `timestamp + raw_body`), rejecting unverified callbacks with HTTP 401.
 - [ ] **INGRESS-02**: QQ Bot callback URL validation handshake (op=13) is handled by signing `{event_ts + plain_token}` with the Ed25519 private key and returning `{plain_token, signature}`, enabling webhook URL registration.
-- [ ] **INGRESS-03**: QQ Bot gateway envelope `{op, t, d}` is parsed into typed event categories (C2C message, GROUP_AT_MESSAGE_CREATE, INTERACTION_CREATE, validation challenge) with correct dispatch before normal event processing.
+- [x] **INGRESS-03**: QQ Bot gateway envelope `{op, t, d}` is parsed into typed event categories (C2C message, GROUP_AT_MESSAGE_CREATE, INTERACTION_CREATE, validation challenge) with correct dispatch before normal event processing.
 
 ### Ingress — Event Normalization
 
-- [ ] **INGRESS-04**: QQ Bot C2C and group @-bot message events are normalized into `AgentTurn` records with @-bot prefix stripped, scene-aware composite `conversation_id` (`qqbot:{scene}:{scene_id}:{user_openid}`), and platform contract channel metadata.
-- [ ] **INGRESS-05**: QQ Bot `INTERACTION_CREATE` events are normalized into `FeedbackEvent` records with `source="card_button"` (frozen enum), `action` mapped from button `data.resolved.button_data` (up/down/needs_fix/route_wrong), and no new `FeedbackSource` enum values added.
+- [x] **INGRESS-04**: QQ Bot C2C and group @-bot message events are normalized into `AgentTurn` records with @-bot prefix stripped, scene-aware composite `conversation_id` (`qqbot:{scene}:{scene_id}:{user_openid}`), and platform contract channel metadata.
+- [x] **INGRESS-05**: QQ Bot `INTERACTION_CREATE` events are normalized into `FeedbackEvent` records with `source="card_button"` (frozen enum), `action` mapped from button `data.resolved.button_data` (up/down/needs_fix/route_wrong), and no new `FeedbackSource` enum values added.
 - [ ] **INGRESS-06**: QQ Bot webhook ACK uses two-tier strategy: HTTP 200 with op=12 envelope for message events, plus `PUT /interactions/{id}` for button-click events (without which the QQ client hangs in loading state).
 
 ### Egress — Token & Delivery
@@ -104,9 +104,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | INGRESS-01 | 59 | Pending |
 | INGRESS-02 | 59 | Pending |
-| INGRESS-03 | 60 | Pending |
-| INGRESS-04 | 60 | Pending |
-| INGRESS-05 | 60 | Pending |
+| INGRESS-03 | 60 | Complete |
+| INGRESS-04 | 60 | Complete |
+| INGRESS-05 | 60 | Complete |
 | INGRESS-06 | 65 | Pending |
 | EGRESS-01 | 61 | Pending |
 | EGRESS-02 | 62 | Pending |
@@ -132,6 +132,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SMOKE-04 | 67 | Pending |
 
 **Coverage:**
+
 - v1.8 requirements: 28 total
 - Mapped to phases: 28
 - Unmapped: 0

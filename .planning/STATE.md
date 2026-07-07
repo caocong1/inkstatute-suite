@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: QQBot Channel Production
-status: completed
+status: executing
 stopped_at: Roadmap created for v1.8 QQBot Channel Production (Phases 58-67)
-last_updated: "2026-07-07T15:54:32.402Z"
-last_activity: 2026-07-07 — Phase 59 Plan 01 executed (vendored _ed25519.py + signature.py + test_ed25519_vectors.py + test_signature.py)
+last_updated: "2026-07-07T23:56:22.433Z"
+last_activity: 2026-07-07
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 20
+  total_plans: 7
+  completed_plans: 5
+  percent: 10
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 59 — Ed25519 Signature Verification + Validation Challenge
+**Current focus:** Phase 60 — qq-event-normalization
 
 ## Current Position
 
-Phase: 59 (Ed25519 Signature Verification + Validation Challenge) — in progress
-Plan: 59-01 — complete
-Status: Phase 59 Plan 01 complete — vendored RFC 8032 Ed25519 + QQ Bot signature module with 23 tests passing against official QQ demo vectors
-Last activity: 2026-07-07 — Phase 59 Plan 01 executed (vendored _ed25519.py + signature.py + test_ed25519_vectors.py + test_signature.py)
+Phase: 61
+Plan: Not started
+Status: Executing Phase 60
+Last activity: 2026-07-07
 
 ### Deferred Items
 
@@ -63,7 +63,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 
 **Velocity:**
 
-- Total plans completed: 66
+- Total plans completed: 68
 - Average duration: N/A
 - Total execution time: 0.0 hours
 
@@ -85,6 +85,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | 8 | 4 | - | - |
 | 16 | 3 | - | - |
 | 17 | 3 | - | - |
+| 60 | 2 | - | - |
 
 **Recent Trend:**
 
