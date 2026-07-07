@@ -80,6 +80,12 @@ Plans:
 3. op=13 validation challenge is handled by signing `{event_ts + plain_token}` and returning `{plain_token, signature}`.
 4. Tests pass with official QQ demo vectors for signature verification and validation challenge.
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 59-01-PLAN.md — Vendored RFC 8032 Ed25519 module + signature.py (derive_keypair, verify_callback_signature, handle_validation_challenge) + known-answer tests with official QQ demo vectors
+- [ ] 59-02-PLAN.md — Config bot_secret_ref + adapter verify_and_ack integration (401 rejection, op=13 challenge handling) + import isolation coverage
+
 ### Phase 60: QQ Event Normalization
 
 **Goal:** QQ Bot gateway envelope `{op, t, d}` is parsed into typed event categories (C2C message, GROUP_AT_MESSAGE_CREATE, INTERACTION_CREATE, validation challenge) with correct dispatch; C2C/group @-bot messages normalize into `AgentTurn` with @-bot prefix stripped and scene-aware `conversation_id`; INTERACTION_CREATE normalizes into `FeedbackEvent` with `source="card_button"` frozen enum.
