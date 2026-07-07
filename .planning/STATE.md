@@ -2,9 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: QQBot Channel Production
-status: executing
-last_updated: "2026-07-07T16:50:00.000Z"
-last_activity: 2026-07-07
+status: completed
+stopped_at: Roadmap created for v1.8 QQBot Channel Production (Phases 58-67)
+last_updated: "2026-07-07T15:54:32.402Z"
+last_activity: 2026-07-07 — Phase 59 Plan 01 executed (vendored _ed25519.py + signature.py + test_ed25519_vectors.py + test_signature.py)
 progress:
   total_phases: 10
   completed_phases: 1
