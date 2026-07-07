@@ -55,6 +55,24 @@ class NoWecomImportTests(unittest.TestCase):
                 f"__init__.py imports from wecom_service: {module}",
             )
 
+    def test_ed25519_does_not_import_wecom_service(self) -> None:
+        source = (PACKAGE_SRC / "_ed25519.py").read_text(encoding="utf-8")
+        modules = _imported_modules(source)
+        for module in modules:
+            self.assertFalse(
+                module.startswith("wecom_service"),
+                f"_ed25519.py imports from wecom_service: {module}",
+            )
+
+    def test_signature_does_not_import_wecom_service(self) -> None:
+        source = (PACKAGE_SRC / "signature.py").read_text(encoding="utf-8")
+        modules = _imported_modules(source)
+        for module in modules:
+            self.assertFalse(
+                module.startswith("wecom_service"),
+                f"signature.py imports from wecom_service: {module}",
+            )
+
     def test_adapter_imports_channel_core(self) -> None:
         source = (PACKAGE_SRC / "adapter.py").read_text(encoding="utf-8")
         modules = _imported_modules(source)

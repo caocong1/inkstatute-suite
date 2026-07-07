@@ -21,6 +21,7 @@ class QQBotChannelConfig:
     app_id_ref: str | None = None
     app_secret_ref: str | None = None
     token_secret_ref: str | None = None
+    bot_secret_ref: str | None = None
     metadata: JsonObject = field(default_factory=dict)
 
     @classmethod
@@ -31,6 +32,7 @@ class QQBotChannelConfig:
             app_id_ref=mapping.get("INKSTATUTE_QQBOT_APP_ID_REF") or None,
             app_secret_ref=mapping.get("INKSTATUTE_QQBOT_APP_SECRET_REF") or None,
             token_secret_ref=mapping.get("INKSTATUTE_QQBOT_TOKEN_SECRET_REF") or None,
+            bot_secret_ref=mapping.get("INKSTATUTE_QQBOT_BOT_SECRET_REF") or None,
         )
 
 
