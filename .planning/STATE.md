@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: QQBot Channel Production
 status: planning
-last_updated: "2026-07-07T02:27:45.328Z"
+last_updated: "2026-07-07T12:50:00.000Z"
 last_activity: 2026-07-07
 progress:
-  total_phases: 0
+  total_phases: 10
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 45 — m3-pre-implementation-safety
+**Current focus:** Phase 58 — v1.8 Pre-Implementation Safety
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 58 (v1.8 Pre-Implementation Safety) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-07 — Milestone v1.8 started
+Status: Roadmap created — ready for Phase 58 planning
+Last activity: 2026-07-07 — v1.8 QQBot Channel Production roadmap created (Phases 58-67, 28 requirements mapped)
 
 ### Deferred Items
 
@@ -148,6 +148,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 - v1.5 roadmap created: Phases 33-35 (V2 Requirement Audit → Code Gap Closure → Acceptance Readiness Report & Traceability Update)
 - v1.6 roadmap created: Phases 36-44 (M2 Pre-Implementation Safety → Skill Registry → Router Service → Codex Adapter → Provider Model Adapter → Read-View Completion → Admin Console API → QQBot Channel Loop → Gate Integration)
 - Phase 57.1 inserted after Phase 57: Close gap: TENANT-01/02/03/04 — wire TenantGuard into Web UIs and admin-console-api views (URGENT)
+- v1.8 roadmap created: Phases 58-67 (Pre-Implementation Safety → Ed25519 Signature → Event Normalization → Token Manager → Egress Sender → Rich Media → Session Runtime → Adapter Integration → Feedback Loop Parity + Recall → Smoke-Test Toolkit)
 
 ### Decisions
 
@@ -275,8 +276,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-03T14:30:00.000Z
-Stopped at: Roadmap created for v1.5 V2 Acceptance Closure (Phases 33-35)
+Last session: 2026-07-07T12:50:00.000Z
+Stopped at: Roadmap created for v1.8 QQBot Channel Production (Phases 58-67)
 Resume file: None
 Architecture basis: .planning/drafts/agent-platform-north-star.md
 Execution plan: .planning/ROADMAP.md
@@ -287,7 +288,8 @@ v1.1 archive: .planning/milestones/v1.1-ROADMAP.md
 v1.2 archive: .planning/milestones/v1.2-ROADMAP.md
 v1.3 archive: .planning/milestones/v1.3-ROADMAP.md
 v1.4 archive: .planning/milestones/v1.4-ROADMAP.md
+v1.7 archive: .planning/milestones/v1.7-ROADMAP.md
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start Phase 58 planning with /gsd-plan-phase 58

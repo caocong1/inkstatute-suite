@@ -102,40 +102,40 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INGRESS-01 | TBD | Pending |
-| INGRESS-02 | TBD | Pending |
-| INGRESS-03 | TBD | Pending |
-| INGRESS-04 | TBD | Pending |
-| INGRESS-05 | TBD | Pending |
-| INGRESS-06 | TBD | Pending |
-| EGRESS-01 | TBD | Pending |
-| EGRESS-02 | TBD | Pending |
-| EGRESS-03 | TBD | Pending |
-| EGRESS-04 | TBD | Pending |
-| EGRESS-05 | TBD | Pending |
-| EGRESS-06 | TBD | Pending |
-| EGRESS-07 | TBD | Pending |
-| SESS-01 | TBD | Pending |
-| SESS-02 | TBD | Pending |
-| SESS-03 | TBD | Pending |
-| FEEDBACK-01 | TBD | Pending |
-| FEEDBACK-02 | TBD | Pending |
-| FEEDBACK-03 | TBD | Pending |
-| RECALL-01 | TBD | Pending |
-| ADAPTER-01 | TBD | Pending |
-| ADAPTER-02 | TBD | Pending |
-| ADAPTER-03 | TBD | Pending |
-| ADAPTER-04 | TBD | Pending |
-| SMOKE-01 | TBD | Pending |
-| SMOKE-02 | TBD | Pending |
-| SMOKE-03 | TBD | Pending |
-| SMOKE-04 | TBD | Pending |
+| INGRESS-01 | 59 | Pending |
+| INGRESS-02 | 59 | Pending |
+| INGRESS-03 | 60 | Pending |
+| INGRESS-04 | 60 | Pending |
+| INGRESS-05 | 60 | Pending |
+| INGRESS-06 | 65 | Pending |
+| EGRESS-01 | 61 | Pending |
+| EGRESS-02 | 62 | Pending |
+| EGRESS-03 | 62 | Pending |
+| EGRESS-04 | 62 | Pending |
+| EGRESS-05 | 63 | Pending |
+| EGRESS-06 | 63 | Pending |
+| EGRESS-07 | 62 | Pending |
+| SESS-01 | 64 | Pending |
+| SESS-02 | 64 | Pending |
+| SESS-03 | 64 | Pending |
+| FEEDBACK-01 | 66 | Pending |
+| FEEDBACK-02 | 66 | Pending |
+| FEEDBACK-03 | 66 | Pending |
+| RECALL-01 | 66 | Pending |
+| ADAPTER-01 | 65 | Pending |
+| ADAPTER-02 | 65 | Pending |
+| ADAPTER-03 | 65 | Pending |
+| ADAPTER-04 | 58 | Pending |
+| SMOKE-01 | 67 | Pending |
+| SMOKE-02 | 67 | Pending |
+| SMOKE-03 | 67 | Pending |
+| SMOKE-04 | 67 | Pending |
 
 **Coverage:**
 - v1.8 requirements: 28 total
-- Mapped to phases: 0
-- Unmapped: 28 ⚠️ (will be filled by roadmap creation)
+- Mapped to phases: 28
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-07-07*
-*Last updated: 2026-07-07 after v1.8 milestone requirements definition*
+*Last updated: 2026-07-07 after v1.8 roadmap creation (28/28 requirements mapped to Phases 58-67)*
