@@ -63,6 +63,11 @@
 4. `test_no_wecom_import.py` passes — QQBot adapter does not import from `wecom_service`.
 5. `dependencies = []` invariant holds — no new runtime dependencies added to QQBot channel package.
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 58-01-PLAN.md — Restore deleted trial evidence template from git history + create consolidated v1.8 safety baseline test + verify all 26 V2 gates green
+
 ### Phase 59: Ed25519 Signature Verification + Validation Challenge
 
 **Goal:** QQ Bot webhook callback signatures are verified using Ed25519 (BotSecret-derived keypair, `X-Signature-Ed25519` + `X-Signature-Timestamp` over `timestamp + raw_body`), rejecting unverified callbacks with HTTP 401; callback URL validation handshake (op=13) is handled by signing `{event_ts + plain_token}` and returning `{plain_token, signature}`.
