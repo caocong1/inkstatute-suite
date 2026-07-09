@@ -43,13 +43,13 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 ### Feedback Loop Parity
 
-- [ ] **FEEDBACK-01**: QQ Bot feedback loop is wired end-to-end: keyboard card dispatch (egress) → user button click → `INTERACTION_CREATE` (ingress) → `FeedbackEvent` normalization → feedback-service dedupe/classify/queue, achieving parity with WeCom feedback pipeline.
-- [ ] **FEEDBACK-02**: QQ Bot interaction ACK (`PUT /interactions/{id}`) is sent after feedback normalization, completing the two-tier ACK for button-click events.
-- [ ] **FEEDBACK-03**: QQ Bot feedback dedupe uses `msg_id` + button identity, preventing duplicate `FeedbackEvent` records from repeated clicks or platform retries.
+- [x] **FEEDBACK-01**: QQ Bot feedback loop is wired end-to-end: keyboard card dispatch (egress) → user button click → `INTERACTION_CREATE` (ingress) → `FeedbackEvent` normalization → feedback-service dedupe/classify/queue, achieving parity with WeCom feedback pipeline.
+- [x] **FEEDBACK-02**: QQ Bot interaction ACK (`PUT /interactions/{id}`) is sent after feedback normalization, completing the two-tier ACK for button-click events.
+- [x] **FEEDBACK-03**: QQ Bot feedback dedupe uses `msg_id` + button identity, preventing duplicate `FeedbackEvent` records from repeated clicks or platform retries.
 
 ### Session Recall (P2)
 
-- [ ] **RECALL-01**: QQ Bot `is_wakeup` interaction recall is supported for over-window long-task completion (windowed: 30-day periods, 1 per period), allowing the bot to notify users when a long task finishes after the passive-reply window expires.
+- [x] **RECALL-01**: QQ Bot `is_wakeup` interaction recall is supported for over-window long-task completion (windowed: 30-day periods, 1 per period), allowing the bot to notify users when a long task finishes after the passive-reply window expires.
 
 ### Adapter Integration & Safety
 
@@ -118,10 +118,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-01 | 64 | Complete |
 | SESS-02 | 64 | Complete |
 | SESS-03 | 64 | Complete |
-| FEEDBACK-01 | 66 | Pending |
-| FEEDBACK-02 | 66 | Pending |
-| FEEDBACK-03 | 66 | Pending |
-| RECALL-01 | 66 | Pending |
+| FEEDBACK-01 | 66 | Complete |
+| FEEDBACK-02 | 66 | Complete |
+| FEEDBACK-03 | 66 | Complete |
+| RECALL-01 | 66 | Complete |
 | ADAPTER-01 | 65 | Complete |
 | ADAPTER-02 | 65 | Complete |
 | ADAPTER-03 | 65 | Complete |
