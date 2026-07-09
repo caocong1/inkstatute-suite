@@ -235,6 +235,29 @@ class QQBotIngressRuntimeTests(unittest.IsolatedAsyncioTestCase):
         ):
             self.assertNotIn(forbidden, created.metadata)
 
+    async def test_message_id_used_as_idempotency_key_on_redelivery(self) -> None:
+        """WR-01: Phase 60 stores message_id; ingress must map it to idempotency_key."""
+        runtime = RecordingRuntime()
+        ingress = self.ingress(runtime)
+        envelope = self.envelope("qqbot_c2c_message.json")
+        message_id = envelope["d"]["id"]
+        assert isinstance(message_id, str)
+
+        first = await ingress.handle_callback(envelope, received_at=FIXED_NOW)
+        second = await ingress.handle_callback(envelope, received_at=FIXED_NOW)
+
+        self.assertIn(
+            first.action,
+            {
+                QQBotSessionRuntimeAction.CONTINUE_SESSION,
+                QQBotSessionRuntimeAction.START_NEW_SESSION,
+            },
+        )
+        self.assertEqual(second.action, QQBotSessionRuntimeAction.DUPLICATE_ANSWER_IGNORED)
+        self.assertEqual(len(runtime.created), 1)
+        self.assertEqual(second.evidence.get("idempotency_key"), message_id)
+        self.assertEqual(first.run_id, second.run_id)
+
     def ingress(
         self,
         runtime: RecordingRuntime,

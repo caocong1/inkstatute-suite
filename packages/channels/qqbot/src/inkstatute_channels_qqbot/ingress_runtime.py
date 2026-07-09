@@ -132,7 +132,11 @@ class QQBotRuntimeIngress:
             run_request=run_request,
             recent_session=recent_session,
             active_task=active_task,
-            idempotency_key=_string(turn.metadata.get("idempotency_key")),
+            idempotency_key=(
+                _string(turn.metadata.get("idempotency_key"))
+                or _string(turn.metadata.get("message_id"))
+                or turn.turn_id
+            ),
             metadata={"source": "qqbot_ingress_runtime"},
         )
 
