@@ -71,7 +71,7 @@ Each task was committed atomically:
 1. **Task 1: Create test_sender.py envelope, keyboard, and output-policy tests (Wave 0 + RED)** - `e976ce2` (test)
 2. **Task 2: Implement sender.py envelope builders, FEEDBACK_ACTIONS, and strip_for_wire** - `3567801` (feat)
 
-**Plan metadata:** `d8bc917` (docs: complete plan)
+**Plan metadata:** `733831a` (docs: complete plan)
 
 ## Files Created/Modified
 
