@@ -20,7 +20,7 @@
 
 ## Current Milestone: (awaiting next)
 
-> v1.8 QQBot Channel Production shipped 2026-07-09. See archive links above. Phase details below retained until `$gsd-cleanup` archives phase dirs.
+> v1.8 QQBot Channel Production shipped 2026-07-09. Phase directories archived to `.planning/milestones/v1.8-phases/`. See archive links above.
 
 ## Archived Milestone Detail: v1.8 QQBot Channel Production
 
