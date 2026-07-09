@@ -137,6 +137,7 @@ class QQBotRuntimeIngress:
                 or _string(turn.metadata.get("message_id"))
                 or turn.turn_id
             ),
+            now=received_at,
             metadata={"source": "qqbot_ingress_runtime"},
         )
 

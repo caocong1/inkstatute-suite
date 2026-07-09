@@ -258,6 +258,56 @@ class QQBotIngressRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second.evidence.get("idempotency_key"), message_id)
         self.assertEqual(first.run_id, second.run_id)
 
+    async def test_received_at_forwarded_for_interrupt_expiry(self) -> None:
+        """WR-02: callback received_at must drive interrupt expiry when clock differs."""
+        # Clock is before expires_at; received_at is after — only forwarding now=received_at expires.
+        early_clock = "2026-07-09T02:00:00Z"
+        late_received_at = "2026-07-09T03:00:00Z"
+        expires_at = "2026-07-09T02:30:00Z"
+        interrupt_store = InMemoryInterruptStore(
+            clock=FakeRuntimeClock(start=early_clock),
+            id_factory=FakeIdFactory(),
+        )
+        pending = interrupt_store.create_clarification(
+            scope=self.c2c_scope,
+            run_id="run-waiting-expired-001",
+            session_id="session-waiting-expired-001",
+            prompt_ref="fixture://phase64/prompts/clarify-expired-001",
+            resume_state_ref="runtime://phase64/continuation-state/run-waiting-expired-001",
+            reason="backend_needs_clarification",
+            expires_at=expires_at,
+        )
+        runtime = RecordingRuntime(interrupt_store=interrupt_store)
+        ingress = QQBotRuntimeIngress(
+            runtime=runtime,
+            solution=SolutionBinding(solution_id="solution-lawyer-assistant-001", version="1.0.0"),
+            tenant_id="tenant-001",
+            workspace_id="workspace-001",
+            bot_instance_id="bot-001",
+            interrupt_store=interrupt_store,
+            clock=FakeRuntimeClock(start=early_clock),
+            id_factory=FakeIdFactory(),
+        )
+
+        outcome = await ingress.handle_callback(
+            self.envelope("qqbot_c2c_message.json"),
+            received_at=late_received_at,
+            recent_session=self.recent_session(
+                scope=self.c2c_scope,
+                session_id="session-waiting-expired-001",
+                last_run_id="run-waiting-expired-001",
+            ),
+        )
+
+        self.assertEqual(outcome.action, QQBotSessionRuntimeAction.INTERRUPT_EXPIRED)
+        self.assertFalse(outcome.evidence["resume_attempted"])
+        self.assertEqual(runtime.created, [])
+        self.assertEqual(runtime.resumed, [])
+        self.assertEqual(
+            interrupt_store.get(pending.event.interrupt_id).event.status.value,
+            "expired",
+        )
+
     def ingress(
         self,
         runtime: RecordingRuntime,
