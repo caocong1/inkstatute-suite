@@ -102,8 +102,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INGRESS-01 | 59 | Pending |
-| INGRESS-02 | 59 | Pending |
+| INGRESS-01 | 59 | Complete |
+| INGRESS-02 | 59 | Complete |
 | INGRESS-03 | 60 | Complete |
 | INGRESS-04 | 60 | Complete |
 | INGRESS-05 | 60 | Complete |
@@ -125,7 +125,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADAPTER-01 | 65 | Complete |
 | ADAPTER-02 | 65 | Complete |
 | ADAPTER-03 | 65 | Complete |
-| ADAPTER-04 | 58 | Pending |
+| ADAPTER-04 | 58 | Complete |
 | SMOKE-01 | 67 | Complete |
 | SMOKE-02 | 67 | Complete |
 | SMOKE-03 | 67 | Complete |
