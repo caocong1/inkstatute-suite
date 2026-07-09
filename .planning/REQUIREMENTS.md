@@ -1,17 +1,96 @@
-# Requirements
+# Requirements: 墨律 InkStatute — v1.9 QQBot Host Composition
 
-**Milestone:** (awaiting next)
-**Updated:** 2026-07-09
+**Defined:** 2026-07-09
+**Core Value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-v1.8 QQBot Channel Production requirements are archived at
-[`.planning/milestones/v1.8-REQUIREMENTS.md`](milestones/v1.8-REQUIREMENTS.md).
+**Milestone Goal:** Assemble the v1.8 QQBot package-level channel into a deployable production webhook host path, harden smoke coverage across the full adapter/session Protocol stack, and enable controlled live QQ integration while keeping live acceptance as a human gate.
 
-Define the next milestone with `$gsd-new-milestone` (or ingest docs) to populate this file.
+## v1.9 Requirements
 
-## Active Requirements
+Requirements for this milestone. Each maps to roadmap phases.
 
-_(none — awaiting next milestone)_
+### Host Webhook
+
+- [ ] **HOST-01**: Operator can deploy a thin InkStatute-owned QQBot webhook host that composes `verify_and_ack` → ingress/session/feedback → `deliver` without reimplementing package crypto/normalize/send logic
+- [ ] **HOST-02**: Webhook host returns verify-and-ACK promptly (op=13 validation challenge and op=12 body ACK) before heavy agent work
+- [ ] **HOST-03**: When QQBot is disabled (flags/config OFF), webhook refuses live IO with explicit non-success behavior (e.g. 503/refuse) and does not call OpenAPI transports
+
+### Runtime Registration
+
+- [ ] **REG-01**: Host factory maps `RuntimeFeatureFlags.qqbot_channel_enabled` → `QQBotChannelConfig.enabled` and injects token_manager/transport only when live-ready (`_live_io_ready`)
+- [ ] **REG-02**: Host constructs `DefaultRunRuntime` with explicit `channels=(QQBotChannelAdapter,)` injection — no auto-discovery inside platform-runtime
+
+### Smoke Hardening
+
+- [ ] **SMOKE-01**: `scripts/smoke_test.py --dry-run` exercises the full adapter/session Protocol path (verify_and_ack → ingress/session → deliver) using Fake transports — not leaf helpers only
+- [ ] **SMOKE-02**: Protocol-path dry-run emits sanitized evidence under the existing allowlist schema (`not_live_acceptance=true`; no secrets/raw bodies)
+
+### Live Integration
+
+- [ ] **LIVE-01**: Controlled `--live` path remains available with fail-closed env checks and is explicitly a HUMAN GATE (CI/phase complete must not auto-claim live acceptance)
+- [ ] **LIVE-02**: Operator runbook documents host enablement, dual-knob mapping, dry-run vs live, and interaction ACK safety windows
+
+### Safety Baseline
+
+- [ ] **SAFE-01**: Host layer preserves ADAPTER-04 invariants: Protocol freeze (ChannelAdapter 6 methods), no `wecom_service` import into qqbot host/package path, feature flags default OFF
+- [ ] **SAFE-02**: Secrets remain refs in config; values resolve only at process edge — never committed; evidence/logs stay reference-first
+
+## Future Requirements
+
+Deferred beyond v1.9. Tracked but not in current roadmap.
+
+### Host / Ops
+
+- **HOST-F01**: Durable wakeup/idempotency stores for multi-instance hosts
+- **HOST-F02**: Async verify→enqueue→ACK queue service under load
+- **HOST-F03**: Host health/readiness endpoints aligned with admin-console views
+
+### Platform
+
+- **PLAT-F01**: Multi-channel mega-gateway unifying WeCom + QQ + WeChat in one process
+- **PLAT-F02**: WebSocket QQ ingress mode
+- **PLAT-F03**: Auto live acceptance / synthetic lawyer trial from smoke
+
+## Out of Scope
+
+Explicitly excluded for v1.9. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Reimplement signature/normalize/send in the host | Package owns channel logic; host is composition only |
+| Unfreeze ChannelAdapter / add webhook Protocol method | Contract freeze; host HTTP calls existing 6 methods |
+| Import wecom_service into qqbot host | ADAPTER-04 / no-wecom isolation |
+| New queue/DB/Redis for v1.9 scale | Not required to close host gap; adds ops surface early |
+| Enable QQBot flag by default | Accidental live IO; default-OFF safety culture |
+| Auto-claim live QQ acceptance from CI | Live needs secrets, fresh msg_id, human judgment |
+| Phase 5 live WeCom UAT as v1.9 done | Carried human gate — not host-composition scope |
+| Phase 8 five-workday lawyer trial as v1.9 done | Carried human gate — not host-composition scope |
+| Auto-synthesize/modify legal skills from QQ feedback | Legal safety: human-reviewed `skill_candidate` only |
+| Delete `.planning/phases/08-lawyer-trial-acceptance/` | Carried human-gate artifacts must be preserved |
 
 ## Traceability
 
-_(none — awaiting next milestone)_
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| HOST-01 | TBD | Pending |
+| HOST-02 | TBD | Pending |
+| HOST-03 | TBD | Pending |
+| REG-01 | TBD | Pending |
+| REG-02 | TBD | Pending |
+| SMOKE-01 | TBD | Pending |
+| SMOKE-02 | TBD | Pending |
+| LIVE-01 | TBD | Pending |
+| LIVE-02 | TBD | Pending |
+| SAFE-01 | TBD | Pending |
+| SAFE-02 | TBD | Pending |
+
+**Coverage:**
+- v1.9 requirements: 11 total
+- Mapped to phases: 0
+- Unmapped: 11 (filled by roadmapper)
+
+---
+*Requirements defined: 2026-07-09*
+*Last updated: 2026-07-09 after v1.9 scoping (all categories selected)*
