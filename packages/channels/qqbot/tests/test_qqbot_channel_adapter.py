@@ -283,6 +283,67 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertTrue(result.metadata.get("interim_notice"))
         self.assertFalse(result.metadata["network_io"])
 
+    def test_window_gate_fails_closed_when_scene_missing(self) -> None:
+        """Missing scene must not default to c2c permissive limits."""
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-window-missing-scene",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="缺少 scene",
+            metadata={
+                "delivery_type": "text",
+                "msg_id": "msg-no-scene",
+                # Age would still be within C2C 60min if scene were defaulted.
+                "received_at": "2026-07-09T11:50:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(self.adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata["issue_code"], "qqbot_passive_reply_window_expired"
+        )
+        self.assertTrue(result.metadata.get("interim_notice"))
+        self.assertFalse(result.metadata["network_io"])
+
+    def test_live_send_rejects_missing_scene(self) -> None:
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import (
+            FakeTokenTransport,
+            TokenManager,
+        )
+
+        manager = TokenManager(
+            app_id="fixture-app-id-001",
+            client_secret="fixture-client-secret-001",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-token", "expires_in": 7200}
+            ),
+        )
+        transport = FakeMessageTransport(response={"id": "should-not-send"})
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-no-scene-live",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="根据《民法典》……",
+            metadata={
+                "delivery_type": "text",
+                "user_openid": "user-openid-1",
+            },
+        )
+        result = run(adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(result.metadata["issue_code"], "qqbot_send_failed")
+        self.assertIn("scene", result.metadata["send_error"])
+        self.assertEqual(transport.call_count, 0)
+
     def test_delivery_blocks_internal_notice(self) -> None:
         blocked = ChannelDelivery(
             delivery_id="delivery-qqbot-blocked-1",

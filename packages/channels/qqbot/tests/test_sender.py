@@ -235,6 +235,20 @@ class PassiveReplyWindowTests(unittest.TestCase):
                 self.assertIsInstance(result.interim_notice, str)
                 self.assertTrue(result.interim_notice)
 
+    def test_unknown_scene_fails_closed(self) -> None:
+        received_at = (self.now - timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        for scene in ("", "guild", "unknown"):
+            with self.subTest(scene=scene):
+                result = check_passive_reply_window(
+                    scene=scene,
+                    received_at=received_at,
+                    reply_count=0,
+                    clock=_fixed_clock(self.now),
+                    msg_id="inbound-1",
+                )
+                self.assertFalse(result.ok)
+                self.assertEqual(result.issue_code, ISSUE_WINDOW_EXPIRED)
+
 
 class SendRetryTests(unittest.IsolatedAsyncioTestCase):
     def _token_manager(self, token: str = "fixture-token") -> TokenManager:

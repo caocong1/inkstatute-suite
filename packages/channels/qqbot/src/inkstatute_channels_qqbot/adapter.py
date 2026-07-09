@@ -233,7 +233,8 @@ class QQBotChannelAdapter:
         )
         msg_seq = _int_or_default(metadata.get("msg_seq"), 1)
         reply_count = _int_or_default(metadata.get("reply_count"), 0)
-        scene = _optional_string(metadata.get("scene")) or "c2c"
+        # Do not default missing scene to c2c — fail closed for window gate.
+        scene = _optional_string(metadata.get("scene"))
         received_at = metadata.get("received_at")
         if received_at is not None and not isinstance(received_at, str):
             received_at = str(received_at)
@@ -252,10 +253,11 @@ class QQBotChannelAdapter:
             "network_io": False,
         }
 
-        # Whenever msg_id is present, always gate — missing received_at fails closed.
+        # Whenever msg_id is present, always gate — missing/unknown scene fails closed.
         if msg_id is not None:
+            scene_for_window = scene if scene is not None else ""
             window = check_passive_reply_window(
-                scene=scene,
+                scene=scene_for_window,
                 received_at=received_at if isinstance(received_at, str) else None,
                 reply_count=reply_count,
                 msg_id=msg_id,
@@ -317,30 +319,35 @@ class QQBotChannelAdapter:
             and self._token_manager is not None
             and self._config.enabled
         ):
-            try:
-                await send_message(
-                    envelope=envelope,
-                    scene=scene,
-                    token_manager=self._token_manager,
-                    transport=self._transport,
-                    user_openid=_optional_string(metadata.get("user_openid")),
-                    group_openid=_optional_string(metadata.get("group_openid")),
-                )
-                result_meta["network_io"] = True
-                result_meta["fixture_only"] = False
-            except (SendError, TokenError) as exc:
+            if scene not in {"c2c", "group"}:
                 accepted = False
                 result_meta["issue_code"] = "qqbot_send_failed"
-                if isinstance(exc, TokenError):
-                    result_meta["send_error"] = "QQ Bot token unavailable"
-                else:
-                    result_meta["send_error"] = str(exc)
-                status_code = getattr(exc, "status_code", None)
-                qq_code = getattr(exc, "qq_code", None)
-                if status_code is not None:
-                    result_meta["send_status_code"] = status_code
-                if qq_code is not None:
-                    result_meta["send_qq_code"] = qq_code
+                result_meta["send_error"] = "unsupported or missing QQ Bot scene"
+            else:
+                try:
+                    await send_message(
+                        envelope=envelope,
+                        scene=scene,
+                        token_manager=self._token_manager,
+                        transport=self._transport,
+                        user_openid=_optional_string(metadata.get("user_openid")),
+                        group_openid=_optional_string(metadata.get("group_openid")),
+                    )
+                    result_meta["network_io"] = True
+                    result_meta["fixture_only"] = False
+                except (SendError, TokenError) as exc:
+                    accepted = False
+                    result_meta["issue_code"] = "qqbot_send_failed"
+                    if isinstance(exc, TokenError):
+                        result_meta["send_error"] = "QQ Bot token unavailable"
+                    else:
+                        result_meta["send_error"] = str(exc)
+                    status_code = getattr(exc, "status_code", None)
+                    qq_code = getattr(exc, "qq_code", None)
+                    if status_code is not None:
+                        result_meta["send_status_code"] = status_code
+                    if qq_code is not None:
+                        result_meta["send_qq_code"] = qq_code
 
         return DeliveryResult(
             delivery_id=delivery.delivery_id,
