@@ -6,13 +6,16 @@ Uses FakeTokenTransport and an injectable monotonic clock — no network I/O.
 from __future__ import annotations
 
 import asyncio
+import json
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from inkstatute_channels_qqbot.token_manager import (
     FakeTokenTransport,
     TokenError,
     TokenManager,
+    UrllibTokenTransport,
 )
 
 FIXTURE_APP_ID = "fixture-app-id-001"
@@ -348,6 +351,53 @@ class TokenManagerErrorTests(unittest.IsolatedAsyncioTestCase):
         # Cache must remain the previous successful token+expiry pair.
         self.assertEqual(manager._token, "token-001")
         self.assertEqual(manager._expires_at, previous_expires_at)
+
+
+class UrllibTokenTransportErrorTests(unittest.TestCase):
+    def test_invalid_utf8_body_raises_token_error(self) -> None:
+        transport = UrllibTokenTransport()
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = b"\xff\xfe"
+        mock_resp.__enter__.return_value = mock_resp
+        mock_resp.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with self.assertRaises(TokenError) as ctx:
+                transport._blocking_fetch(FIXTURE_APP_ID, FIXTURE_CLIENT_SECRET)
+
+        self.assertEqual(str(ctx.exception), "QQ Bot token response invalid")
+        self.assertIsNone(ctx.exception.__cause__)
+
+    def test_invalid_json_body_raises_token_error_without_leak(self) -> None:
+        transport = UrllibTokenTransport()
+        raw = b'{"access_token":"secret-token-in-body", NOT JSON'
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = raw
+        mock_resp.__enter__.return_value = mock_resp
+        mock_resp.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with self.assertRaises(TokenError) as ctx:
+                transport._blocking_fetch(FIXTURE_APP_ID, FIXTURE_CLIENT_SECRET)
+
+        message = str(ctx.exception)
+        self.assertEqual(message, "QQ Bot token response invalid")
+        self.assertNotIn("secret-token-in-body", message)
+        self.assertIsNone(ctx.exception.__cause__)
+
+    def test_non_dict_json_body_raises_token_error(self) -> None:
+        transport = UrllibTokenTransport()
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps(["not", "a", "dict"]).encode("utf-8")
+        mock_resp.__enter__.return_value = mock_resp
+        mock_resp.__exit__.return_value = False
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            with self.assertRaises(TokenError) as ctx:
+                transport._blocking_fetch(FIXTURE_APP_ID, FIXTURE_CLIENT_SECRET)
+
+        self.assertEqual(str(ctx.exception), "QQ Bot token response invalid")
+        self.assertIsNone(ctx.exception.__cause__)
 
 
 class TokenManagerImportSafetyTests(unittest.TestCase):

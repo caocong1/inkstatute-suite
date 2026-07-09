@@ -90,14 +90,19 @@ class UrllibTokenTransport:
         try:
             with urllib.request.urlopen(req, timeout=self._timeout) as resp:  # noqa: S310
                 body = resp.read().decode("utf-8")
-                return json.loads(body)
+                parsed = json.loads(body)
         except urllib.error.HTTPError as exc:
             raise TokenError(
                 "QQ Bot token request failed",
                 status_code=exc.code,
-            ) from exc
-        except urllib.error.URLError as exc:
-            raise TokenError("QQ Bot token endpoint unreachable") from exc
+            ) from None
+        except urllib.error.URLError:
+            raise TokenError("QQ Bot token endpoint unreachable") from None
+        except (UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError):
+            raise TokenError("QQ Bot token response invalid") from None
+        if not isinstance(parsed, dict):
+            raise TokenError("QQ Bot token response invalid")
+        return parsed
 
 
 class TokenManager:
