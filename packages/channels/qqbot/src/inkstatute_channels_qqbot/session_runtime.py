@@ -13,7 +13,12 @@ from platform_contract.events import JsonObject
 from platform_runtime import (
     InMemoryInterruptStore,
     Memory,
+    MemoryContentClassifier,
+    MemoryFocusPolicy,
     MemoryOrchestrator,
+    MemoryRecallInput,
+    MemoryRetentionPolicy,
+    MemoryRetainInput,
     Run,
     RunRequest,
     RunRuntime,
@@ -29,6 +34,33 @@ from platform_runtime.session_resolver import (
     PendingInterruptSnapshot,
     resolve_session_turn,
 )
+
+
+class QQBotMemoryFailureMode(StrEnum):
+    """How to behave when a QQBot memory operation fails."""
+
+    FAIL_OPEN = "fail_open"
+    FAIL_CLOSED = "fail_closed"
+
+
+class QQBotMemoryRetentionScope(StrEnum):
+    """What part of a turn to retain as durable memory."""
+
+    USER_TURN = "user_turn"
+    AGENT_REPLY = "agent_reply"
+    BOTH = "both"
+
+
+@dataclass(frozen=True, slots=True)
+class QQBotMemoryIntegrationPolicy:
+    """Local fail-open memory policy for QQBotSessionRuntime (D-01)."""
+
+    enabled: bool = True
+    failure_mode: QQBotMemoryFailureMode = QQBotMemoryFailureMode.FAIL_OPEN
+    recall_max_results: int = 6
+    retention_scope: QQBotMemoryRetentionScope = QQBotMemoryRetentionScope.BOTH
+    retention_policy: MemoryRetentionPolicy | None = None
+    focus_policy: MemoryFocusPolicy | None = None
 
 
 class QQBotSessionRuntimeAction(StrEnum):
@@ -82,7 +114,7 @@ class QQBotSessionRuntime:
         policy: SessionResolutionPolicy | None = None,
         memory_orchestrator: MemoryOrchestrator | None = None,
         memory: Memory | None = None,
-        memory_policy: Any | None = None,
+        memory_policy: QQBotMemoryIntegrationPolicy | None = None,
         clock: Any | None = None,
         id_factory: Any | None = None,
     ) -> None:
@@ -91,7 +123,7 @@ class QQBotSessionRuntime:
         self.policy = policy or SessionResolutionPolicy()
         self.memory_orchestrator = memory_orchestrator
         self.memory = memory
-        self.memory_policy = memory_policy
+        self.memory_policy = memory_policy or QQBotMemoryIntegrationPolicy()
         self.clock = clock
         self.id_factory = id_factory
         self._outcome_by_idempotency_key: dict[str, QQBotSessionRuntimeOutcome] = {}
@@ -248,6 +280,24 @@ class QQBotSessionRuntime:
             else QQBotSessionRuntimeAction.START_NEW_SESSION
         )
         decision_request = _run_request_for_decision(run_request, decision=decision)
+        if self.memory is not None:
+            decision_request = await _with_recall_context_fail_open(
+                decision_request,
+                memory=self.memory,
+                memory_policy=self.memory_policy,
+                scope=scope,
+                turn_text=turn_text,
+            )
+        if self.memory_orchestrator is not None:
+            decision_request = _with_memory_context_fail_open(
+                decision_request,
+                memory_orchestrator=self.memory_orchestrator,
+                memory_policy=self.memory_policy,
+                scope=scope,
+                decision=decision,
+                current_turn_text=turn_text,
+                now=current,
+            )
         run = await self.runtime.create_run(decision_request)
         outcome = QQBotSessionRuntimeOutcome(
             action=action,
@@ -263,6 +313,221 @@ class QQBotSessionRuntime:
         if idempotency_key:
             self._outcome_by_idempotency_key[idempotency_key] = outcome
         return outcome
+
+    async def finalize_memory(
+        self,
+        *,
+        outcome: QQBotSessionRuntimeOutcome,
+        scope: SessionScope,
+        user_turn_text: str,
+        agent_reply_text: str,
+        now: datetime | str | None = None,
+    ) -> int:
+        """Retain durable memory after the agent reply is finalized.
+
+        Separate from ``handle_turn`` because reply text is only available after
+        the runtime result and output policy. Returns retained count; never stores
+        raw texts into ``outcome.evidence``.
+        """
+        del outcome, now  # outcome/now reserved for host correlation; evidence stays refs-only
+        if self.memory is None:
+            return 0
+        return await _retain_turn_memory_fail_open(
+            self.memory,
+            tenant_id=scope.tenant_id,
+            workspace_id=scope.workspace_id,
+            user_id=scope.user_id,
+            user_turn_text=user_turn_text,
+            agent_reply_text=agent_reply_text,
+            policy=self.memory_policy,
+        )
+
+
+async def _recall_for_turn_fail_open(
+    memory: Memory,
+    *,
+    tenant_id: str,
+    workspace_id: str,
+    user_id: str,
+    query: str,
+    policy: QQBotMemoryIntegrationPolicy,
+) -> tuple[str, ...]:
+    if not policy.enabled:
+        return ()
+    try:
+        focus = policy.focus_policy or MemoryFocusPolicy(max_results=policy.recall_max_results)
+        result = await memory.arecall(
+            MemoryRecallInput(
+                tenant_id=tenant_id,
+                workspace_id=workspace_id,
+                user_id=user_id,
+                bank_id="default",
+                query=query,
+                focus_policy=focus,
+            )
+        )
+        return tuple(m.text for m in result.memories)
+    except Exception:
+        if policy.failure_mode == QQBotMemoryFailureMode.FAIL_CLOSED:
+            raise
+        return ()
+
+
+async def _retain_turn_memory_fail_open(
+    memory: Memory,
+    *,
+    tenant_id: str,
+    workspace_id: str,
+    user_id: str,
+    user_turn_text: str,
+    agent_reply_text: str,
+    policy: QQBotMemoryIntegrationPolicy,
+) -> int:
+    if not policy.enabled:
+        return 0
+    retention_policy = policy.retention_policy or MemoryRetentionPolicy()
+    classifier = MemoryContentClassifier()
+    retained = 0
+    contents: list[str] = []
+    if policy.retention_scope in (QQBotMemoryRetentionScope.USER_TURN, QQBotMemoryRetentionScope.BOTH):
+        contents.append(user_turn_text)
+    if policy.retention_scope in (QQBotMemoryRetentionScope.AGENT_REPLY, QQBotMemoryRetentionScope.BOTH):
+        contents.append(agent_reply_text)
+    for content in contents:
+        classification = classifier.classify(content)
+        if classification.category not in retention_policy.allowed_categories:
+            continue
+        try:
+            result = await memory.aretain(
+                MemoryRetainInput(
+                    tenant_id=tenant_id,
+                    workspace_id=workspace_id,
+                    user_id=user_id,
+                    bank_id="default",
+                    content=content,
+                    retention_policy=retention_policy,
+                )
+            )
+            retained += result.retained_count
+        except Exception:
+            if policy.failure_mode == QQBotMemoryFailureMode.FAIL_CLOSED:
+                raise
+            continue
+    return retained
+
+
+async def _with_recall_context_fail_open(
+    run_request: RunRequest,
+    *,
+    memory: Memory,
+    memory_policy: QQBotMemoryIntegrationPolicy,
+    scope: SessionScope,
+    turn_text: str,
+) -> RunRequest:
+    recalled = await _recall_for_turn_fail_open(
+        memory,
+        tenant_id=scope.tenant_id,
+        workspace_id=scope.workspace_id,
+        user_id=scope.user_id,
+        query=turn_text,
+        policy=memory_policy,
+    )
+    metadata = dict(run_request.metadata)
+    metadata["memory_recall_summary"] = {
+        "recalled_count": len(recalled),
+        "memory_refs": [f"memory://recall/{index}" for index in range(len(recalled))],
+        "privacy": "memory_texts_stored_outside_runtime_metadata",
+    }
+    return replace(run_request, metadata=_safe_json(metadata))
+
+
+def _with_memory_context(
+    run_request: RunRequest,
+    *,
+    memory_orchestrator: MemoryOrchestrator,
+    scope: SessionScope,
+    decision: SessionResolutionDecision,
+    current_turn_text: str,
+    now: datetime | str,
+) -> RunRequest:
+    metadata = dict(run_request.metadata)
+    current_turn_ref = (
+        _string(metadata.get("current_turn_ref"))
+        or _raw_payload_ref(run_request.turn)
+        or f"turn://{run_request.turn.turn_id}"
+    )
+    result = memory_orchestrator.recall_and_assemble(
+        scope=scope,
+        session_id=str(decision.session_id),
+        turn_id=str(getattr(run_request.turn, "turn_id", "") or "unknown-turn"),
+        current_turn_ref=current_turn_ref,
+        current_turn_text=current_turn_text,
+        recent_turn_refs=_metadata_sequence(metadata.get("recent_turn_refs")),
+        artifact_refs=_metadata_sequence(metadata.get("artifact_refs")),
+        feedback_correction_refs=_metadata_sequence(metadata.get("feedback_correction_refs")),
+        output_policy_ref=_string(metadata.get("output_policy_ref")),
+        run_id=None,
+        now=_timestamp(now),
+    )
+    bundle = result.bundle
+    bundle_metadata = dict(bundle.metadata)
+    context_metadata = {
+        "context_bundle_id": bundle.context_bundle_id,
+        "context_estimated_tokens": result.estimated_tokens,
+        "context_dropped_sections": result.dropped_sections,
+        "context_protected_sections": list(result.protected_sections),
+        "context_privacy": getattr(result, "privacy", None) or "refs_ids_counts_statuses_only",
+        "memory_refs": list(bundle.memory_refs),
+        "summary_ref": bundle.summary_ref,
+        "recent_turn_refs": list(bundle.recent_turn_refs),
+        "feedback_correction_refs": list(_metadata_sequence(bundle_metadata.get("feedback_correction_refs"))),
+        "artifact_refs": list(bundle.artifact_refs),
+        "output_policy_ref": _string(bundle_metadata.get("output_policy_ref"))
+        or _string(metadata.get("output_policy_ref")),
+    }
+    evidence_metadata = {
+        key: value
+        for key, value in result.metadata.items()
+        if str(key).startswith("memory_use_evidence_")
+    }
+    return replace(
+        run_request,
+        metadata=_safe_json(
+            {
+                **metadata,
+                **context_metadata,
+                **evidence_metadata,
+            }
+        ),
+    )
+
+
+def _with_memory_context_fail_open(
+    run_request: RunRequest,
+    *,
+    memory_orchestrator: MemoryOrchestrator,
+    memory_policy: QQBotMemoryIntegrationPolicy,
+    scope: SessionScope,
+    decision: SessionResolutionDecision,
+    current_turn_text: str,
+    now: datetime | str,
+) -> RunRequest:
+    try:
+        return _with_memory_context(
+            run_request,
+            memory_orchestrator=memory_orchestrator,
+            scope=scope,
+            decision=decision,
+            current_turn_text=current_turn_text,
+            now=now,
+        )
+    except Exception:
+        if memory_policy.failure_mode == QQBotMemoryFailureMode.FAIL_CLOSED:
+            raise
+        metadata = dict(run_request.metadata)
+        metadata["memory_orchestrator_status"] = "degraded"
+        metadata["privacy"] = metadata.get("privacy") or "no_raw_payload_or_legal_text_stored"
+        return replace(run_request, metadata=_safe_json(metadata))
 
 
 def _validate_turn_scope(*, turn: Any, scope: SessionScope, run_request: RunRequest) -> None:
@@ -589,6 +854,9 @@ _FORBIDDEN_FULL_TEXT_KEYS = {
 
 
 __all__ = [
+    "QQBotMemoryFailureMode",
+    "QQBotMemoryIntegrationPolicy",
+    "QQBotMemoryRetentionScope",
     "QQBotSessionRuntime",
     "QQBotSessionRuntimeAction",
     "QQBotSessionRuntimeOutcome",

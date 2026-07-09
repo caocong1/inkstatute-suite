@@ -410,17 +410,17 @@ class QQBotSessionMemoryRuntimeTests(unittest.IsolatedAsyncioTestCase):
             id_factory=FakeIdFactory(),
         )
         outcome = await helper.handle_turn(
-            turn=self.turn("turn-finalize-ok", "请总结合同要点"),
+            turn=self.turn("turn-finalize-ok", "Please summarize the contract points"),
             scope=self.scope,
-            run_request=self.run_request("turn-finalize-ok", "请总结合同要点"),
+            run_request=self.run_request("turn-finalize-ok", "Please summarize the contract points"),
             recent_session=self.recent_session(),
         )
 
         retained = await helper.finalize_memory(
             outcome=outcome,
             scope=self.scope,
-            user_turn_text="请总结合同要点",
-            agent_reply_text="合同要点包括付款期限与违约责任。",
+            user_turn_text="Please summarize the contract points",
+            agent_reply_text="The contract points include payment terms and breach liability.",
         )
         self.assertEqual(retained, 2)
         self.assertEqual(len(memory.aretain_calls), 2)
