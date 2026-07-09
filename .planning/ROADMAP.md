@@ -44,7 +44,7 @@
 - [x] **Phase 64: QQBotSessionRuntime + QQBotIngressRuntime** - `session_runtime.py` (orchestrate continuous conversation via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator`, composing `platform_runtime` primitives directly, no `wecom_service` import); `ingress_runtime.py` (callback → turn → session runtime); scene-aware conversation identity `qqbot:{scene}:{scene_id}:{user_openid}`; interrupt resume across user replies; memory recall (pre-turn recall + post-turn retention) with fail-open degradation. *(SESS-01, SESS-02, SESS-03)* (completed 2026-07-09)
 - [x] **Phase 65: Adapter Integration — Promote to Real IO** - `adapter.py` full modification (all 6 frozen Protocol methods gain real IO behind `qqbot_channel_enabled` flag; QQ-specific behavior via `ChannelDelivery.metadata`, `AckResponse.metadata`, `ChannelCapabilitySet.metadata`; two-tier ACK: op=12 HTTP 200 for messages + `PUT /interactions/{id}` for button clicks); fixture path preserved for CI when flag off; `test_no_wecom_import.py` enforced; no new channel-core modules. *(ADAPTER-01, ADAPTER-02, ADAPTER-03, INGRESS-06)* (completed 2026-07-09)
 - [x] **Phase 66: Feedback Loop Parity + Interaction Recall** - End-to-end feedback wiring (keyboard card dispatch → user button click → INTERACTION_CREATE → FeedbackEvent normalization → feedback-service dedupe/classify/queue); interaction ACK after feedback normalization; feedback dedupe via `msg_id` + button identity; `is_wakeup` interaction recall for over-window long-task completion (windowed 30-day periods, 1 per period); parity with WeCom feedback pipeline. *(FEEDBACK-01, FEEDBACK-02, FEEDBACK-03, RECALL-01)* (completed 2026-07-09)
-- [ ] **Phase 67: One-Click Smoke-Test Toolkit** - `scripts/smoke_test.py` (CLI: validate signature, send text + markdown+keyboard, simulate callback, collect sanitized evidence via env-var credential injection); `--dry-run` mode for CI (fixture credentials, no live platform); `runbook/SMOKE_TEST_RUNBOOK.md` (credential setup, env-var injection, command sequence, expected outputs, evidence format); sanitized evidence output (no tokens, no raw payloads, no attachment URLs). Live run remains a human gate. *(SMOKE-01, SMOKE-02, SMOKE-03, SMOKE-04)*
+- [x] **Phase 67: One-Click Smoke-Test Toolkit** - `scripts/smoke_test.py` (CLI: validate signature, send text + markdown+keyboard, simulate callback, collect sanitized evidence via env-var credential injection); `--dry-run` mode for CI (fixture credentials, no live platform); `runbook/SMOKE_TEST_RUNBOOK.md` (credential setup, env-var injection, command sequence, expected outputs, evidence format); sanitized evidence output (no tokens, no raw payloads, no attachment URLs). Live run remains a human gate. *(SMOKE-01, SMOKE-02, SMOKE-03, SMOKE-04)* (completed 2026-07-09)
 
 **Cross-cutting safety (ADAPTER-04):** All 24 existing V2 gates must remain green throughout v1.8; frozen ChannelAdapter Protocol, BackendAdapter Protocol, platform-contract enums/schemas, and channel-core modules must not be modified. This is a success criterion in every v1.8 phase.
 
@@ -238,12 +238,13 @@ Plans:
 4. Evidence output is sanitized (no tokens, no raw user payloads, no attachment URLs).
 5. Live run remains a human gate (not an autonomous deliverable).
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 67-01-PLAN.md — Wave 0 smoke tests + dry-run CLI (signature, text+keyboard, callback Fake path)
-- [ ] 67-02-PLAN.md — Sanitized evidence schema + operator SMOKE_TEST_RUNBOOK
-- [ ] 67-03-PLAN.md — Live env fail-closed path + ADAPTER-04 / qqbot-channel regression
+
+- [x] 67-01-PLAN.md — Wave 0 smoke tests + dry-run CLI (signature, text+keyboard, callback Fake path)
+- [x] 67-02-PLAN.md — Sanitized evidence schema + operator SMOKE_TEST_RUNBOOK
+- [x] 67-03-PLAN.md — Live env fail-closed path + ADAPTER-04 / qqbot-channel regression
 
 ## Completed Milestones
 

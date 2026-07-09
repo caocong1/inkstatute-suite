@@ -60,10 +60,10 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 ### Smoke-Test Toolkit
 
-- [ ] **SMOKE-01**: One-click smoke-test CLI (`scripts/smoke_test.py`) validates signature verification, sends text + markdown+keyboard, simulates callback, and collects sanitized evidence — all via env-var credential injection (no secrets in code or output).
-- [ ] **SMOKE-02**: Smoke-test `--dry-run` mode runs without live QQ Bot platform connection (CI-able), validating envelope structure, signature logic, and evidence format with fixture credentials.
-- [ ] **SMOKE-03**: Smoke-test operator runbook (`runbook/SMOKE_TEST_RUNBOOK.md`) documents credential setup, env-var injection, command sequence, expected outputs, and evidence collection format — enabling an operator to run the live smoke test without deep platform knowledge.
-- [ ] **SMOKE-04**: Smoke-test evidence output is sanitized (no tokens, no raw user payloads, no attachment URLs); evidence is structured for archival in `.planning/` after live run.
+- [x] **SMOKE-01**: One-click smoke-test CLI (`scripts/smoke_test.py`) validates signature verification, sends text + markdown+keyboard, simulates callback, and collects sanitized evidence — all via env-var credential injection (no secrets in code or output).
+- [x] **SMOKE-02**: Smoke-test `--dry-run` mode runs without live QQ Bot platform connection (CI-able), validating envelope structure, signature logic, and evidence format with fixture credentials.
+- [x] **SMOKE-03**: Smoke-test operator runbook (`runbook/SMOKE_TEST_RUNBOOK.md`) documents credential setup, env-var injection, command sequence, expected outputs, and evidence collection format — enabling an operator to run the live smoke test without deep platform knowledge.
+- [x] **SMOKE-04**: Smoke-test evidence output is sanitized (no tokens, no raw user payloads, no attachment URLs); evidence is structured for archival in `.planning/` after live run.
 
 ## v2 Requirements (Deferred)
 
@@ -126,10 +126,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADAPTER-02 | 65 | Complete |
 | ADAPTER-03 | 65 | Complete |
 | ADAPTER-04 | 58 | Pending |
-| SMOKE-01 | 67 | Pending |
-| SMOKE-02 | 67 | Pending |
-| SMOKE-03 | 67 | Pending |
-| SMOKE-04 | 67 | Pending |
+| SMOKE-01 | 67 | Complete |
+| SMOKE-02 | 67 | Complete |
+| SMOKE-03 | 67 | Complete |
+| SMOKE-04 | 67 | Complete |
 
 **Coverage:**
 
