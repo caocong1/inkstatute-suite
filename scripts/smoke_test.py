@@ -36,6 +36,9 @@ from inkstatute_channels_qqbot.feedback_ingress import handle_feedback_callback 
 from inkstatute_channels_qqbot.sender import (  # noqa: E402
     FEEDBACK_ACTIONS,
     FakeMessageTransport,
+    SendError,
+    UrllibMessageTransport,
+    ack_interaction,
     build_feedback_keyboard_envelope,
     build_text_envelope,
     send_message,
@@ -48,6 +51,7 @@ from inkstatute_channels_qqbot.signature import (  # noqa: E402
 from inkstatute_channels_qqbot.token_manager import (  # noqa: E402
     FakeTokenTransport,
     TokenManager,
+    UrllibTokenTransport,
 )
 
 # Official QQ demo vectors (public documentation — NOT production secrets).
@@ -121,6 +125,8 @@ _STEP_KEY_ALLOW: dict[str, frozenset[str]] = {
             "category",
             "idempotency_key_present",
             "idempotency_key_hash",
+            "ack_skipped",
+            "ack_status",
         }
     ),
 }
@@ -231,16 +237,8 @@ def sanitize_evidence(evidence: Mapping[str, Any]) -> dict[str, Any]:
     return json.loads(json.dumps(remnant, default=str))
 
 
-def load_credentials(mode: str) -> dict[str, str]:
-    """Load credentials for the selected mode. Never log secret values."""
-    if mode == "dry-run":
-        return {
-            "bot_secret": DEMO_BOT_SECRET,
-            "user_openid": FIXTURE_USER_OPENID,
-            "msg_id": FIXTURE_MSG_ID,
-            "app_id": "fixture-app-id",
-            "client_secret": "fixture-secret",
-        }
+def load_live_credentials() -> dict[str, str]:
+    """Load live value env vars. Fail closed on missing keys; never log values."""
     missing = [k for k in LIVE_ENV_KEYS if not os.environ.get(k)]
     if missing:
         # Fail closed — list key *names* only, never values.
@@ -254,6 +252,19 @@ def load_credentials(mode: str) -> dict[str, str]:
         "app_id": os.environ["INKSTATUTE_QQBOT_APP_ID"],
         "client_secret": os.environ["INKSTATUTE_QQBOT_CLIENT_SECRET"],
     }
+
+
+def load_credentials(mode: str) -> dict[str, str]:
+    """Load credentials for the selected mode. Never log secret values."""
+    if mode == "dry-run":
+        return {
+            "bot_secret": DEMO_BOT_SECRET,
+            "user_openid": FIXTURE_USER_OPENID,
+            "msg_id": FIXTURE_MSG_ID,
+            "app_id": "fixture-app-id",
+            "client_secret": "fixture-secret",
+        }
+    return load_live_credentials()
 
 
 def _step_signature(*, bot_secret: str) -> dict[str, Any]:
@@ -278,7 +289,7 @@ def _step_signature(*, bot_secret: str) -> dict[str, Any]:
 async def _step_egress(
     *,
     token_manager: TokenManager,
-    transport: FakeMessageTransport,
+    transport: Any,
     user_openid: str,
     msg_id: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -287,18 +298,24 @@ async def _step_egress(
         msg_id=msg_id,
         msg_seq=1,
     )
-    await send_message(
-        envelope=text_env,
-        scene="c2c",
-        token_manager=token_manager,
-        transport=transport,
-        user_openid=user_openid,
-    )
-    text_step = {
+    try:
+        text_result = await send_message(
+            envelope=text_env,
+            scene="c2c",
+            token_manager=token_manager,
+            transport=transport,
+            user_openid=user_openid,
+        )
+    except SendError as exc:
+        raise SystemExit(
+            f"send_text step failed (status_code={exc.status_code}, qq_code={exc.qq_code})"
+        ) from None
+    text_step: dict[str, Any] = {
         "ok": True,
         "msg_type": int(text_env.get("msg_type", -1)),
         "openid_hash": _hash16(user_openid),
     }
+    _stamp_send_status(text_step, text_result)
 
     kb_env = build_feedback_keyboard_envelope(
         title="墨律冒烟：请评价",
@@ -306,20 +323,39 @@ async def _step_egress(
         msg_id=msg_id,
         msg_seq=2,
     )
-    await send_message(
-        envelope=kb_env,
-        scene="c2c",
-        token_manager=token_manager,
-        transport=transport,
-        user_openid=user_openid,
-    )
-    keyboard_step = {
+    try:
+        kb_result = await send_message(
+            envelope=kb_env,
+            scene="c2c",
+            token_manager=token_manager,
+            transport=transport,
+            user_openid=user_openid,
+        )
+    except SendError as exc:
+        raise SystemExit(
+            f"send_keyboard step failed (status_code={exc.status_code}, qq_code={exc.qq_code})"
+        ) from None
+    keyboard_step: dict[str, Any] = {
         "ok": True,
         "msg_type": int(kb_env.get("msg_type", -1)),
         "actions": list(FEEDBACK_ACTIONS),
         "openid_hash": _hash16(user_openid),
     }
+    _stamp_send_status(keyboard_step, kb_result)
     return text_step, keyboard_step
+
+
+def _stamp_send_status(step: dict[str, Any], result: Any) -> None:
+    """Attach sanitized status/qq_code from send result (never tokens/URLs)."""
+    if not isinstance(result, Mapping):
+        return
+    qq_code = result.get("code", result.get("err_code"))
+    if isinstance(qq_code, (int, float)) and not isinstance(qq_code, bool):
+        step["qq_code"] = int(qq_code)
+    status = result.get("status")
+    if isinstance(status, int):
+        step["status_code"] = status
+        step["send_status_code"] = status
 
 
 def _load_callback_envelope(callback_json: Path | None) -> Mapping[str, Any]:
@@ -334,7 +370,30 @@ def _load_callback_envelope(callback_json: Path | None) -> Mapping[str, Any]:
     return envelope
 
 
-def _step_callback(
+def _extract_interaction_id(envelope: Mapping[str, Any]) -> str | None:
+    """Return interaction id from INTERACTION_CREATE envelope, else None."""
+    data = envelope.get("d")
+    if isinstance(data, Mapping):
+        raw = data.get("id")
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip()
+    top = envelope.get("id")
+    if isinstance(top, str) and top.strip() and envelope.get("t") == "INTERACTION_CREATE":
+        return top.strip()
+    return None
+
+
+def _is_fixture_interaction_id(interaction_id: str) -> bool:
+    """Fixture / demo ids must never trigger live ACK PUT."""
+    upper = interaction_id.upper()
+    return (
+        upper.startswith("FIXTURE_")
+        or "FIXTURE" in upper
+        or interaction_id.startswith("evt-interaction-")
+    )
+
+
+def _step_callback_dry_run(
     *,
     callback_json: Path | None,
     transport: FakeMessageTransport,
@@ -355,10 +414,80 @@ def _step_callback(
         "status": status,
         "category": "interaction",
         "idempotency_key_present": bool(idem),
-        # Never embed the raw key value if it looks like a secret; fixture keys are ok to omit.
         "idempotency_key_hash": _hash16(str(idem)) if idem else None,
+        "ack_skipped": True,
     }
     return step, put_delta
+
+
+async def _step_callback_live(
+    *,
+    callback_json: Path | None,
+    token_manager: TokenManager,
+    transport: UrllibMessageTransport,
+) -> tuple[dict[str, Any], int]:
+    """Normalize always; PUT ACK only when a real (non-fixture) interaction_id is present."""
+    envelope = _load_callback_envelope(callback_json)
+    outcome = handle_feedback_callback(
+        envelope,
+        received_at="2026-07-09T12:00:00+00:00",
+        payload_ref="operator://qqbot/smoke/interaction",
+    )
+    idem = outcome.get("idempotency_key")
+    status = outcome.get("status")
+    interaction_id = _extract_interaction_id(envelope)
+    put_delta = 0
+    ack_skipped = True
+    ack_status = "skipped"
+
+    # OQ-1: live PUT only when --callback-json yields a real interaction_id.
+    if (
+        callback_json is not None
+        and interaction_id
+        and not _is_fixture_interaction_id(interaction_id)
+    ):
+        try:
+            await ack_interaction(
+                interaction_id=interaction_id,
+                token_manager=token_manager,
+                transport=transport,
+                code=0,
+            )
+            put_delta = 1
+            ack_skipped = False
+            ack_status = "sent"
+        except SendError as exc:
+            # Record sanitized failure; do not leak Authorization / tokens.
+            raise SystemExit(
+                f"live interaction ACK failed (status_code={exc.status_code}, "
+                f"qq_code={exc.qq_code})"
+            ) from None
+    else:
+        # OQ-1: normalize-only when no real interaction_id (ACK optional follow-up).
+        ack_skipped = True
+        ack_status = "skipped"
+
+    step = {
+        "ok": status == "normalized" and bool(idem),
+        "status": status,
+        "category": "interaction",
+        "idempotency_key_present": bool(idem),
+        "idempotency_key_hash": _hash16(str(idem)) if idem else None,
+        "ack_skipped": ack_skipped,
+        "ack_status": ack_status,
+    }
+    return step, put_delta
+
+
+def _write_evidence(evidence: dict[str, Any], evidence_out: Path | None) -> dict[str, Any]:
+    evidence = sanitize_evidence(evidence)
+    if evidence_out is not None:
+        evidence_out.parent.mkdir(parents=True, exist_ok=True)
+        evidence_out.write_text(
+            json.dumps(evidence, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    return evidence
 
 
 def run_smoke(
@@ -372,12 +501,7 @@ def run_smoke(
         raise ValueError(f"unsupported mode: {mode}")
 
     if mode == "live":
-        # Plan 03 owns full live path; fail closed if credentials incomplete.
-        creds = load_credentials("live")
-        raise SystemExit(
-            "live mode is a HUMAN GATE — full OpenAPI path lands in Plan 03 "
-            f"(credentials present for app_id={_hash16(creds['app_id'])})"
-        )
+        return _run_smoke_live(callback_json=callback_json, evidence_out=evidence_out)
 
     creds = load_credentials("dry-run")
     # Dry-run: Fake transports only — never construct Urllib* transports.
@@ -408,7 +532,7 @@ def run_smoke(
     if not keyboard_step["ok"] or keyboard_step["msg_type"] != 2:
         raise SystemExit("send_keyboard step failed")
 
-    callback_step, put_delta = _step_callback(
+    callback_step, put_delta = _step_callback_dry_run(
         callback_json=callback_json,
         transport=message_transport,
     )
@@ -428,14 +552,7 @@ def run_smoke(
             "callback": callback_step,
         },
     }
-    evidence = sanitize_evidence(evidence)
-
-    if evidence_out is not None:
-        evidence_out.parent.mkdir(parents=True, exist_ok=True)
-        evidence_out.write_text(
-            json.dumps(evidence, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+    evidence = _write_evidence(evidence, evidence_out)
 
     return {
         "evidence": evidence,
@@ -445,6 +562,83 @@ def run_smoke(
         "fake_send_count": sum(
             1 for c in message_transport.calls if c.get("method") == "POST"
         ),
+        "callback_put_count": put_delta,
+    }
+
+
+def _run_smoke_live(
+    *,
+    callback_json: Path | None,
+    evidence_out: Path | None,
+) -> dict[str, Any]:
+    """HUMAN GATE live path: fail-closed env, then Urllib OpenAPI Steps A–C.
+
+    Never call this from CI. Credentials come from value env vars only.
+    """
+    # Validate env BEFORE constructing any Urllib transport (T-67-01 / Pattern 2).
+    creds = load_live_credentials()
+
+    token_transport = UrllibTokenTransport()
+    token_manager = TokenManager(
+        app_id=creds["app_id"],
+        client_secret=creds["client_secret"],
+        transport=token_transport,
+    )
+    message_transport = UrllibMessageTransport()
+
+    sig_step = _step_signature(bot_secret=creds["bot_secret"])
+    if not sig_step["ok"]:
+        raise SystemExit("signature step failed")
+    # Live signature uses operator BotSecret (not DEMO vector label).
+    sig_step = {
+        "ok": True,
+        "vector": "live_bot_secret",
+        "challenge_ok": sig_step["challenge_ok"],
+    }
+
+    text_step, keyboard_step = asyncio.run(
+        _step_egress(
+            token_manager=token_manager,
+            transport=message_transport,
+            user_openid=creds["user_openid"],
+            msg_id=creds["msg_id"],
+        )
+    )
+    if not text_step["ok"] or text_step["msg_type"] != 0:
+        raise SystemExit("send_text step failed")
+    if not keyboard_step["ok"] or keyboard_step["msg_type"] != 2:
+        raise SystemExit("send_keyboard step failed")
+
+    callback_step, put_delta = asyncio.run(
+        _step_callback_live(
+            callback_json=callback_json,
+            token_manager=token_manager,
+            transport=message_transport,
+        )
+    )
+    if not callback_step["ok"]:
+        raise SystemExit("callback step failed")
+
+    # Prefer keep not_live_acceptance=true from script; human may relabel archive.
+    evidence = {
+        "schema": EVIDENCE_SCHEMA,
+        "mode": "live",
+        "not_live_acceptance": True,
+        "steps": {
+            "signature": sig_step,
+            "send_text": text_step,
+            "send_keyboard": keyboard_step,
+            "callback": callback_step,
+        },
+    }
+    evidence = _write_evidence(evidence, evidence_out)
+
+    return {
+        "evidence": evidence,
+        "transport": "urllib",
+        "transport_class": type(message_transport).__name__,
+        "token_transport_class": type(token_transport).__name__,
+        "fake_send_count": 0,
         "callback_put_count": put_delta,
     }
 
