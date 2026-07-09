@@ -196,6 +196,14 @@ Plans:
 5. `test_no_wecom_import.py` is enforced (QQBot adapter does not import from `wecom_service`).
 6. No new channel-core modules are created.
 
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 65-01-PLAN.md — Wave 0 + sender put_json/ack_interaction + verify_and_ack two-tier ACK (INGRESS-06)
+- [ ] 65-02-PLAN.md — Honest live metadata across 6 Protocol methods + flag default-OFF CI fixture path (ADAPTER-01/02)
+- [ ] 65-03-PLAN.md — no-wecom / freeze / deps=[] / privacy metadata safety gates (ADAPTER-03 + ADAPTER-04)
+
 ### Phase 66: Feedback Loop Parity + Interaction Recall
 
 **Goal:** QQ Bot feedback loop is wired end-to-end (keyboard card dispatch → user button click → INTERACTION_CREATE → FeedbackEvent normalization → feedback-service dedupe/classify/queue); interaction ACK is sent after feedback normalization; feedback dedupe uses `msg_id` + button identity; `is_wakeup` interaction recall is supported for over-window long-task completion.

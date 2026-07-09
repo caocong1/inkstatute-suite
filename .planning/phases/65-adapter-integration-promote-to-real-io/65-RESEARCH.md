@@ -427,11 +427,13 @@ return ComponentHealth(
    - What we know: INGRESS-06 and ROADMAP SC require PUT for button clicks; Phase 66 also mentions ACK after feedback normalize.
    - What's unclear: Exact timing relative to feedback-service.
    - Recommendation: Implement helper + call it from `verify_and_ack` when `_live_io_ready()`; always emit metadata; Phase 66 can no-op if `interaction_ack_status=="sent"`.
+   - **RESOLVED (planner 2026-07-09):** Call `ack_interaction` from `verify_and_ack` when `_live_io_ready()`; always emit `interaction_ack_*` metadata. Phase 66 may no-op if `interaction_ack_status=="sent"`.
 
 2. **Exact HTTP body for non-interaction webhook ACK**
    - What we know: Opcode 12 is HTTP Callback ACK Reply. `[CITED: event-emit.html]`
    - What's unclear: Whether some deployments accept empty 200.
    - Recommendation: Standardize on `{"op": 12}` in metadata; Phase 67 smoke confirms live.
+   - **RESOLVED (planner 2026-07-09):** Standardize on `http_callback_ack_body={"op": 12}` in AckResponse.metadata for verified dispatch; host writes that JSON on HTTP 200; Phase 67 confirms live.
 
 ## Environment Availability
 
