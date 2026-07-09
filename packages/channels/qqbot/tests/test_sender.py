@@ -17,7 +17,7 @@ from inkstatute_channels_qqbot.sender import (
     strip_for_wire,
     wire_url_for_scene,
 )
-from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenManager
+from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenError, TokenManager
 
 LEGAL_CONTENT = "根据《民法典》……"
 BLOCKED_NOTICE = "ADMIN_NOTICE: delivery debug stack trace token=secret"
@@ -367,6 +367,62 @@ class SendRetryTests(unittest.IsolatedAsyncioTestCase):
             wire_url_for_scene("group", group_openid="g-openid"),
             "https://api.sgroup.qq.com/v2/groups/g-openid/messages",
         )
+
+    async def test_token_error_on_initial_fetch_maps_to_send_error(self) -> None:
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=FakeTokenTransport(error=TokenError("boom", status_code=503)),
+        )
+        transport = FakeMessageTransport(response={"id": "should-not-send"})
+        envelope = build_text_envelope(
+            content=LEGAL_CONTENT, msg_id="inbound-1", msg_seq=1
+        )
+        with self.assertRaises(SendError) as ctx:
+            await send_message(
+                envelope=envelope,
+                scene="c2c",
+                token_manager=manager,
+                transport=transport,
+                user_openid="user-openid-1",
+                sleep=_noop_sleep,
+            )
+        self.assertEqual(str(ctx.exception), "QQ Bot token unavailable")
+        self.assertEqual(ctx.exception.status_code, 503)
+        self.assertNotIn("boom", str(ctx.exception))
+        self.assertEqual(transport.call_count, 0)
+
+    async def test_token_error_on_401_refresh_maps_to_send_error(self) -> None:
+        token_transport = FakeTokenTransport(
+            response={"access_token": "token-v1", "expires_in": 7200}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=token_transport,
+        )
+        await manager.get_token()
+        message_transport = FakeMessageTransport(
+            responses=[SendError("unauthorized", status_code=401)]
+        )
+        token_transport.error = TokenError("refresh-fail", status_code=500)
+        token_transport.response = None
+        envelope = build_text_envelope(
+            content=LEGAL_CONTENT, msg_id="inbound-1", msg_seq=1
+        )
+        with self.assertRaises(SendError) as ctx:
+            await send_message(
+                envelope=envelope,
+                scene="c2c",
+                token_manager=manager,
+                transport=message_transport,
+                user_openid="user-openid-1",
+                sleep=_noop_sleep,
+            )
+        self.assertEqual(str(ctx.exception), "QQ Bot token unavailable")
+        self.assertEqual(ctx.exception.status_code, 500)
+        self.assertNotIn("refresh-fail", str(ctx.exception))
+        self.assertEqual(message_transport.call_count, 1)
 
 
 if __name__ == "__main__":

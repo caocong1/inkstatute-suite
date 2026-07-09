@@ -16,7 +16,7 @@ from typing import Any, Awaitable, Callable, Protocol
 from channel_core.owned_notices import build_owned_notice
 from channel_core.output_policy import OutputPolicyDecision, apply_output_policy
 
-from .token_manager import TokenManager
+from .token_manager import TokenError, TokenManager
 
 FEEDBACK_ACTIONS = ("up", "down", "needs_fix", "route_wrong")
 
@@ -451,6 +451,18 @@ def _sanitize_send_error(
     )
 
 
+async def _bearer(token_manager: TokenManager) -> str:
+    """Fetch a bearer token, mapping TokenError to sanitized SendError."""
+
+    try:
+        return await token_manager.get_token()
+    except TokenError as exc:
+        raise SendError(
+            "QQ Bot token unavailable",
+            status_code=getattr(exc, "status_code", None),
+        ) from None
+
+
 async def send_message(
     *,
     envelope: dict[str, Any],
@@ -474,7 +486,7 @@ async def send_message(
         scene, user_openid=user_openid, group_openid=group_openid
     )
 
-    token = await token_manager.get_token()
+    token = await _bearer(token_manager)
     auth_retried = False
     attempt = 0
     last_error: SendError | None = None
@@ -492,7 +504,7 @@ async def send_message(
 
             if status_code == 401 and not auth_retried:
                 token_manager.invalidate()
-                token = await token_manager.get_token()
+                token = await _bearer(token_manager)
                 auth_retried = True
                 attempt += 1
                 continue

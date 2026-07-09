@@ -29,6 +29,7 @@ from .sender import (
     check_passive_reply_window,
     send_message,
 )
+from .token_manager import TokenError
 from .signature import (
     derive_keypair,
     handle_validation_challenge,
@@ -327,14 +328,19 @@ class QQBotChannelAdapter:
                 )
                 result_meta["network_io"] = True
                 result_meta["fixture_only"] = False
-            except SendError as exc:
+            except (SendError, TokenError) as exc:
                 accepted = False
                 result_meta["issue_code"] = "qqbot_send_failed"
-                result_meta["send_error"] = str(exc)
-                if exc.status_code is not None:
-                    result_meta["send_status_code"] = exc.status_code
-                if exc.qq_code is not None:
-                    result_meta["send_qq_code"] = exc.qq_code
+                if isinstance(exc, TokenError):
+                    result_meta["send_error"] = "QQ Bot token unavailable"
+                else:
+                    result_meta["send_error"] = str(exc)
+                status_code = getattr(exc, "status_code", None)
+                qq_code = getattr(exc, "qq_code", None)
+                if status_code is not None:
+                    result_meta["send_status_code"] = status_code
+                if qq_code is not None:
+                    result_meta["send_qq_code"] = qq_code
 
         return DeliveryResult(
             delivery_id=delivery.delivery_id,

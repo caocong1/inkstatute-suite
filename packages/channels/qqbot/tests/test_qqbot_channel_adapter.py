@@ -296,6 +296,47 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertFalse(result.accepted)
         self.assertEqual(result.metadata["policy_action"], "block")
 
+    def test_deliver_maps_token_error_to_delivery_failure(self) -> None:
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import (
+            FakeTokenTransport,
+            TokenError,
+            TokenManager,
+        )
+
+        manager = TokenManager(
+            app_id="fixture-app-id-001",
+            client_secret="fixture-client-secret-001",
+            transport=FakeTokenTransport(
+                error=TokenError("secret-token-leak-xyz", status_code=503)
+            ),
+        )
+        transport = FakeMessageTransport(response={"id": "should-not-send"})
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-token-fail",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="根据《民法典》……",
+            metadata={
+                "delivery_type": "text",
+                "scene": "c2c",
+                "user_openid": "user-openid-1",
+            },
+        )
+        result = run(adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(result.metadata["issue_code"], "qqbot_send_failed")
+        self.assertEqual(result.metadata["send_error"], "QQ Bot token unavailable")
+        self.assertNotIn("secret-token-leak-xyz", result.metadata["send_error"])
+        self.assertEqual(result.metadata.get("send_status_code"), 503)
+        self.assertEqual(transport.call_count, 0)
+
     def test_health_reports_enabled_status(self) -> None:
         health = run(self.adapter.health())
         self.assertTrue(health.ok)
