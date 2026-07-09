@@ -39,7 +39,7 @@
 - [x] **Phase 59: Ed25519 Signature Verification + Validation Challenge** - `signature.py` (Ed25519 key derivation from BotSecret, verify `X-Signature-Ed25519` + `X-Signature-Timestamp` over `timestamp + raw_body`, sign op=13 challenge `{event_ts + plain_token}`); reject unverified callbacks with HTTP 401; tests with official QQ demo vectors. *(INGRESS-01, INGRESS-02)* — completed 2026-07-07
 - [x] **Phase 60: QQ Event Normalization** - `normalization.py` (parse gateway envelope `{op, t, d}` → typed event categories; C2C/GROUP_AT_MESSAGE_CREATE → `AgentTurn` with @-bot prefix stripped and scene-aware `conversation_id`; INTERACTION_CREATE → `FeedbackEvent` with `source="card_button"` frozen enum); fixture files + tests. *(INGRESS-03, INGRESS-04, INGRESS-05)* (completed 2026-07-07)
 - [x] **Phase 61: Access Token Manager** - `token_manager.py` (appId + clientSecret → `POST /getAppAccessToken`, 7200s TTL cache, auto-refresh 60s before expiry, single-flight via `asyncio.Lock`); tests for lifecycle, concurrent refresh, error handling. *(EGRESS-01)* (completed 2026-07-09)
-- [ ] **Phase 62: QQ Egress Sender — Text + Markdown + Keyboard** - `sender.py` (text `msg_type=0` with `msg_id`+`msg_seq` dedupe + retry; markdown+keyboard `msg_type=2` with callback buttons up/down/needs_fix/route_wrong; markdown `msg_type=2` for structured legal answers; passive-reply window tracking C2C 60min/4 + group 5min/5 with window-expiry delivery failure + interim service notice; output boundary enforcement); `adapter.py` `deliver()` modification. *(EGRESS-02, EGRESS-03, EGRESS-04, EGRESS-07)*
+- [x] **Phase 62: QQ Egress Sender — Text + Markdown + Keyboard** - `sender.py` (text `msg_type=0` with `msg_id`+`msg_seq` dedupe + retry; markdown+keyboard `msg_type=2` with callback buttons up/down/needs_fix/route_wrong; markdown `msg_type=2` for structured legal answers; passive-reply window tracking C2C 60min/4 + group 5min/5 with window-expiry delivery failure + interim service notice; output boundary enforcement); `adapter.py` `deliver()` modification. *(EGRESS-02, EGRESS-03, EGRESS-04, EGRESS-07)* (completed 2026-07-09)
 - [ ] **Phase 63: QQ Rich Media Inbound + Egress (P2)** - Parse `attachments[]` (image/voice/video/file) → `AttachmentRef` with reference-only policy (`raw_payload_ref`, no raw payload storage); two-step upload (`POST /v2/.../files` → `file_info` → `msg_type=7`) for DOCX/PDF legal document delivery with retry + evidence collection. *(EGRESS-05, EGRESS-06)*
 - [ ] **Phase 64: QQBotSessionRuntime + QQBotIngressRuntime** - `session_runtime.py` (orchestrate continuous conversation via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator`, composing `platform_runtime` primitives directly, no `wecom_service` import); `ingress_runtime.py` (callback → turn → session runtime); scene-aware conversation identity `qqbot:{scene}:{scene_id}:{user_openid}`; interrupt resume across user replies; memory recall (pre-turn recall + post-turn retention) with fail-open degradation. *(SESS-01, SESS-02, SESS-03)*
 - [ ] **Phase 65: Adapter Integration — Promote to Real IO** - `adapter.py` full modification (all 6 frozen Protocol methods gain real IO behind `qqbot_channel_enabled` flag; QQ-specific behavior via `ChannelDelivery.metadata`, `AckResponse.metadata`, `ChannelCapabilitySet.metadata`; two-tier ACK: op=12 HTTP 200 for messages + `PUT /interactions/{id}` for button clicks); fixture path preserved for CI when flag off; `test_no_wecom_import.py` enforced; no new channel-core modules. *(ADAPTER-01, ADAPTER-02, ADAPTER-03, INGRESS-06)*
@@ -134,12 +134,13 @@ Plans:
 5. `adapter.py` `deliver()` is modified to use the new sender.
 6. Output boundary enforcement prevents backend gateway/system notices from leaking to users.
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 62-01-PLAN.md — Envelope builders for text/markdown/keyboard + output policy tests
-- [ ] 62-02-PLAN.md — Passive-reply window gate + MessageTransport send/retry
-- [ ] 62-03-PLAN.md — adapter.deliver() wiring + fixture/wecom-isolation test updates
+
+- [x] 62-01-PLAN.md — Envelope builders for text/markdown/keyboard + output policy tests
+- [x] 62-02-PLAN.md — Passive-reply window gate + MessageTransport send/retry
+- [x] 62-03-PLAN.md — adapter.deliver() wiring + fixture/wecom-isolation test updates
 
 ### Phase 63: QQ Rich Media Inbound + Egress (P2)
 

@@ -22,9 +22,9 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 ### Egress — Token & Delivery
 
 - [x] **EGRESS-01**: QQ Bot access token is acquired via `appId + clientSecret → POST /getAppAccessToken`, cached with 7200s TTL, auto-refreshed 60s before expiry, and single-flight under concurrent refresh via `asyncio.Lock`.
-- [ ] **EGRESS-02**: QQ Bot text messages (`msg_type=0`) are delivered via OpenAPI with `msg_id` + `msg_seq` passive-reply dedupe, retry on transient failure, and output boundary enforcement (no backend gateway/system notices leak to users).
-- [ ] **EGRESS-03**: QQ Bot markdown + keyboard feedback cards (`msg_type=2` + `keyboard` with callback buttons up/down/needs_fix/route_wrong) are delivered, mapping `delivery_type=="card"` to QQ keyboard payload (not WeCom `template_card`).
-- [ ] **EGRESS-04**: QQ Bot passive-reply time window (C2C 60min/4 replies, group 5min/5 replies per `msg_id`) is tracked; window expiry surfaces as a delivery failure with an interim InkStatute-owned service notice (not a silent drop).
+- [x] **EGRESS-02**: QQ Bot text messages (`msg_type=0`) are delivered via OpenAPI with `msg_id` + `msg_seq` passive-reply dedupe, retry on transient failure, and output boundary enforcement (no backend gateway/system notices leak to users).
+- [x] **EGRESS-03**: QQ Bot markdown + keyboard feedback cards (`msg_type=2` + `keyboard` with callback buttons up/down/needs_fix/route_wrong) are delivered, mapping `delivery_type=="card"` to QQ keyboard payload (not WeCom `template_card`).
+- [x] **EGRESS-04**: QQ Bot passive-reply time window (C2C 60min/4 replies, group 5min/5 replies per `msg_id`) is tracked; window expiry surfaces as a delivery failure with an interim InkStatute-owned service notice (not a silent drop).
 
 ### Egress — Rich Media (P2)
 
@@ -33,7 +33,7 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 ### Egress — Markdown Replies (P2)
 
-- [ ] **EGRESS-07**: QQ Bot markdown replies (`msg_type=2`) are delivered for structured legal answers, leveraging QQ's native markdown support (which WeCom lacks), with output boundary enforcement on markdown content.
+- [x] **EGRESS-07**: QQ Bot markdown replies (`msg_type=2`) are delivered for structured legal answers, leveraging QQ's native markdown support (which WeCom lacks), with output boundary enforcement on markdown content.
 
 ### Session Continuity
 
@@ -109,12 +109,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INGRESS-05 | 60 | Complete |
 | INGRESS-06 | 65 | Pending |
 | EGRESS-01 | 61 | Complete |
-| EGRESS-02 | 62 | Pending |
-| EGRESS-03 | 62 | Pending |
-| EGRESS-04 | 62 | Pending |
+| EGRESS-02 | 62 | Complete |
+| EGRESS-03 | 62 | Complete |
+| EGRESS-04 | 62 | Complete |
 | EGRESS-05 | 63 | Pending |
 | EGRESS-06 | 63 | Pending |
-| EGRESS-07 | 62 | Pending |
+| EGRESS-07 | 62 | Complete |
 | SESS-01 | 64 | Pending |
 | SESS-02 | 64 | Pending |
 | SESS-03 | 64 | Pending |
