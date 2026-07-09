@@ -68,7 +68,7 @@ Each task was committed atomically:
 1. **Task 1: Create token_manager.py** - `c97bdae` (feat)
 2. **Task 2: Create test_token_manager.py** - `77d1836` (test)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `d271de9` (docs: complete plan)
 
 ## Files Created/Modified
 
