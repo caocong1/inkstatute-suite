@@ -73,7 +73,7 @@ Each task was committed atomically:
 1. **Task 1: Wire adapter.deliver() to sender builders, window gate, and optional transport** - `39d82b5` (feat)
 2. **Task 2: Update adapter/loop tests and extend test_no_wecom_import for sender.py** - `45d79ed` (test)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `78f0f8a` (docs: complete plan)
 
 ## Files Created/Modified
 
