@@ -64,7 +64,7 @@ Each task was committed atomically:
 1. **Task 1: Extend test_token_manager.py with concurrent single-flight and error-handling tests** - `83711a9` (test)
 2. **Task 2: Add token_manager.py to test_no_wecom_import.py and verify qqbot safety suite** - `0d3fea4` (test)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `eac51e2` (docs: complete plan)
 
 ## Files Created/Modified
 
