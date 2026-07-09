@@ -389,20 +389,14 @@ if msg_id is not None:
 
 ## Open Questions
 
-1. **Strict ACK ordering vs eager ACK**
-   - What we know: Phase 65 eagerly PUTs; CONTEXT asks ACK after normalize; planner previously resolved no-op-if-sent.
-   - What's unclear: Whether product wants ACK withheld until queue write succeeds.
-   - Recommendation: Default no-op-if-sent; add `defer_interaction_ack` only if planner locks it.
+1. **Strict ACK ordering vs eager ACK** — RESOLVED (planner 2026-07-09)
+   - Resolution: Keep Phase 65 eager PUT; after normalize, **no-op if `interaction_ack_status=="sent"`**; only call `ack_interaction` when `pending_host` / retryable failed. Do not withhold ACK until queue write. Implemented in Plan 02 `ensure_interaction_ack`.
 
-2. **Wakeup period timezone**
-   - What we know: Official “当天” is calendar-day based; docs do not specify TZ.
-   - What's unclear: UTC vs Asia/Shanghai.
-   - Recommendation: Implement injectable timezone defaulting to `Asia/Shanghai` for period labels; unit-test with fixed clock. [ASSUMED]
+2. **Wakeup period timezone** — RESOLVED (planner 2026-07-09)
+   - Resolution: Injectable timezone defaulting to `Asia/Shanghai` for period calendar-day labels; unit tests use fixed clock. Half-open P0–P3 intervals documented in Plan 03 / SUMMARY. Live TZ confirmation remains Phase 67 optional.
 
-3. **Where E2E composition module lives**
-   - What we know: WeCom normalizes in `wecom_service`; queue lives in `feedback_service`.
-   - What's unclear: Whether a tiny `services/qqbot-feedback-bridge` is desired.
-   - Recommendation: No new service — `feedback_ingress.py` in qqbot + tests with PYTHONPATH.
+3. **Where E2E composition module lives** — RESOLVED (planner 2026-07-09)
+   - Resolution: No new service — `feedback_ingress.py` in qqbot + host/test PYTHONPATH composition into `feedback_service.normalize_feedback_inputs(contract_feedback_events=…)`.
 
 ## Environment Availability
 

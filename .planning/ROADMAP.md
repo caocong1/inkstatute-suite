@@ -217,6 +217,13 @@ Plans:
 4. `is_wakeup` interaction recall is supported for over-window long-task completion (windowed: 30-day periods, 1 per period).
 5. Parity with WeCom feedback pipeline is achieved.
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 66-01-PLAN.md — FEEDBACK-03 idempotency stamp + feedback_ingress helper + Wave 0 RED tests
+- [ ] 66-02-PLAN.md — FEEDBACK-01 queue parity + FEEDBACK-02 ACK no-op-if-sent
+- [ ] 66-03-PLAN.md — RECALL-01 C2C is_wakeup period gate + ADAPTER-04 safety gates
+
 ### Phase 67: One-Click Smoke-Test Toolkit
 
 **Goal:** One-click smoke-test CLI validates signature verification, sends text + markdown+keyboard, simulates callback, and collects sanitized evidence via env-var credential injection; `--dry-run` mode runs without live platform for CI; operator runbook documents the full process; evidence output is sanitized.
