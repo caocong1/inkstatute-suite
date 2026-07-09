@@ -174,6 +174,18 @@ class NoWecomImportTests(unittest.TestCase):
             f"wecom_service found in qqbot production modules: {offenders}",
         )
 
+    def test_feedback_ingress_does_not_import_wecom_service(self) -> None:
+        path = PACKAGE_SRC / "feedback_ingress.py"
+        self.assertTrue(path.is_file(), "feedback_ingress.py is missing")
+        source = path.read_text(encoding="utf-8")
+        modules = _imported_modules(source)
+        for module in modules:
+            self.assertFalse(
+                module.startswith("wecom_service"),
+                f"feedback_ingress.py imports from wecom_service: {module}",
+            )
+        self.assertNotIn("wecom_service", source)
+
 
 if __name__ == "__main__":
     unittest.main()

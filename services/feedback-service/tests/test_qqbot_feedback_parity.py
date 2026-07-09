@@ -161,6 +161,42 @@ class TestQqbotFeedbackParity(unittest.TestCase):
         events = normalize_feedback_inputs(contract_feedback_events=[up, down])
         self.assertEqual(len(events), 2)
 
+    def test_feedback01_privacy_raw_payload_rejected(self) -> None:
+        event = _qq_feedback_event("qq-raw-payload")
+        event["raw_payload"] = {"secret": True}
+        with self.assertRaises(ValueError) as ctx:
+            normalize_feedback_inputs(contract_feedback_events=[event])
+        self.assertIn("raw_payload", str(ctx.exception))
+
+    def test_feedback01_packages_keep_empty_dependencies(self) -> None:
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[3]
+        qqbot = (root / "packages" / "channels" / "qqbot" / "pyproject.toml").read_text(
+            encoding="utf-8"
+        )
+        feedback = (root / "services" / "feedback-service" / "pyproject.toml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("dependencies = []", qqbot)
+        self.assertIn("dependencies = []", feedback)
+
+    def test_feedback01_parity_module_does_not_import_wecom_normalizer(self) -> None:
+        import ast
+        from pathlib import Path
+
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        imported: list[str] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.extend(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.append(node.module)
+        self.assertTrue(
+            all("wecom_normalizer" not in name for name in imported),
+            msg=f"unexpected wecom_normalizer imports: {imported}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

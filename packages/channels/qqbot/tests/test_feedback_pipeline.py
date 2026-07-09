@@ -194,7 +194,10 @@ class TestFeedbackPipelineE2E(unittest.TestCase):
     def test_feedback01_keyboard_button_data_maps_to_ingress_action(self) -> None:
         """Plan 02: keyboard builder button_data ↔ normalize action mapping."""
         from inkstatute_channels_qqbot.feedback_ingress import handle_feedback_callback
-        from inkstatute_channels_qqbot.sender import build_feedback_keyboard_envelope
+        from inkstatute_channels_qqbot.sender import (
+            FEEDBACK_ACTIONS,
+            build_feedback_keyboard_envelope,
+        )
 
         keyboard = build_feedback_keyboard_envelope(
             title="请评价本次回复",
@@ -203,12 +206,88 @@ class TestFeedbackPipelineE2E(unittest.TestCase):
         )
         buttons = keyboard["keyboard"]["content"]["rows"][0]["buttons"]
         button_datas = {button["action"]["data"] for button in buttons}
-        self.assertIn("up", button_datas)
+        self.assertEqual(button_datas, set(FEEDBACK_ACTIONS))
 
+        # Fixture INTERACTION button_data=up must match keyboard egress action data.
         envelope = _load_fixture("qqbot_interaction_create.json")["envelope"]
         result = handle_feedback_callback(envelope, received_at=RECEIVED_AT)
         self.assertEqual(result["feedback_dict"]["action"], "up")
         self.assertIn(result["feedback_dict"]["action"], button_datas)
+
+        # Each keyboard action round-trips through normalize_interaction_event mapping.
+        for action in FEEDBACK_ACTIONS:
+            action_envelope = {
+                "op": 0,
+                "t": "INTERACTION_CREATE",
+                "id": f"evt-kb-{action}",
+                "d": {
+                    "chat_type": 1,
+                    "user_openid": "FIXTURE_USER_KB",
+                    "data": {
+                        "resolved": {
+                            "button_data": action,
+                            "button_id": action,
+                            "message_id": "FIXTURE_CARD_MSG_ID_001",
+                        }
+                    },
+                    "id": f"FIXTURE_INTERACTION_KB_{action.upper()}",
+                },
+            }
+            mapped = handle_feedback_callback(action_envelope, received_at=RECEIVED_AT)
+            self.assertEqual(mapped["status"], "normalized")
+            self.assertEqual(mapped["feedback_dict"]["action"], action)
+            self.assertIn(action, button_datas)
+
+    def test_feedback01_privacy_raw_payload_rejected_at_normalize(self) -> None:
+        from feedback_service.queue import normalize_feedback_inputs
+        from inkstatute_channels_qqbot.feedback_ingress import handle_feedback_callback
+
+        envelope = _load_fixture("qqbot_interaction_create.json")["envelope"]
+        result = handle_feedback_callback(
+            envelope,
+            received_at=RECEIVED_AT,
+            payload_ref="fixture://qqbot/interaction/privacy",
+        )
+        leaky = dict(result["feedback_dict"])
+        leaky["raw_payload"] = {"button": "up"}
+        with self.assertRaises(ValueError) as ctx:
+            normalize_feedback_inputs(contract_feedback_events=[leaky])
+        self.assertIn("raw_payload", str(ctx.exception))
+
+    def test_feedback02_e2e_ensure_ack_noop_after_normalize_when_sent(self) -> None:
+        """Composition: normalize then ensure_interaction_ack no-ops if Phase 65 sent."""
+        from inkstatute_channels_qqbot.feedback_ingress import (
+            ensure_interaction_ack,
+            handle_feedback_callback,
+        )
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+
+        envelope = _load_fixture("qqbot_interaction_create.json")["envelope"]
+        result = handle_feedback_callback(envelope, received_at=RECEIVED_AT)
+        self.assertEqual(result["status"], "normalized")
+
+        transport = FakeMessageTransport(response={"code": 0})
+        ack = ensure_interaction_ack(
+            interaction_id="FIXTURE_INTERACTION_ID_001",
+            prior_ack_metadata={"interaction_ack_status": "sent"},
+            message_transport=transport,
+            access_token="fixture-token",
+        )
+        self.assertEqual(ack["status"], "noop")
+        self.assertEqual(len(transport.calls), 0)
+
+    def test_feedback01_qqbot_and_feedback_service_keep_empty_dependencies(self) -> None:
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[4]
+        qqbot_pyproject = (
+            root / "packages" / "channels" / "qqbot" / "pyproject.toml"
+        ).read_text(encoding="utf-8")
+        feedback_pyproject = (
+            root / "services" / "feedback-service" / "pyproject.toml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("dependencies = []", qqbot_pyproject)
+        self.assertIn("dependencies = []", feedback_pyproject)
 
 
 if __name__ == "__main__":
