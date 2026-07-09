@@ -28,8 +28,8 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 ### Egress — Rich Media (P2)
 
-- [ ] **EGRESS-05**: QQ Bot rich media inbound (image/voice/video/file `attachments[]`) is parsed into `AttachmentRef` records with reference-only policy (no raw payload storage, URL stored as `raw_payload_ref`).
-- [ ] **EGRESS-06**: QQ Bot rich media egress uses two-step upload (`POST /v2/.../files` → `file_info` → `msg_type=7`) for DOCX/PDF legal document delivery, with retry and evidence collection.
+- [x] **EGRESS-05**: QQ Bot rich media inbound (image/voice/video/file `attachments[]`) is parsed into `AttachmentRef` records with reference-only policy (no raw payload storage, URL stored as `raw_payload_ref`).
+- [x] **EGRESS-06**: QQ Bot rich media egress uses two-step upload (`POST /v2/.../files` → `file_info` → `msg_type=7`) for DOCX/PDF legal document delivery, with retry and evidence collection.
 
 ### Egress — Markdown Replies (P2)
 
@@ -112,8 +112,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EGRESS-02 | 62 | Complete |
 | EGRESS-03 | 62 | Complete |
 | EGRESS-04 | 62 | Complete |
-| EGRESS-05 | 63 | Pending |
-| EGRESS-06 | 63 | Pending |
+| EGRESS-05 | 63 | Complete |
+| EGRESS-06 | 63 | Complete |
 | EGRESS-07 | 62 | Complete |
 | SESS-01 | 64 | Pending |
 | SESS-02 | 64 | Pending |
