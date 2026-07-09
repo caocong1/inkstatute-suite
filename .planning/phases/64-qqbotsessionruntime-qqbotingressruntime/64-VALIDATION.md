@@ -39,8 +39,8 @@ created: 2026-07-09
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 64-W0-01 | 01 | 0 | SESS-01 | T-64-01 | Wave 0: RED stubs for QQBotSessionRuntime + RecordingRuntime create/resume | unit | `test -f packages/channels/qqbot/tests/test_session_runtime.py` | ❌ W0 | ⬜ pending |
-| 64-W0-02 | 01 | 0 | SESS-01 | T-64-02 | Wave 0: RED stubs for QQBotRuntimeIngress callback wiring | unit | `test -f packages/channels/qqbot/tests/test_ingress_runtime.py` | ❌ W0 | ⬜ pending |
-| 64-W0-03 | 02 | 0 | SESS-03 | T-64-03 | Wave 0: RED stubs for fail-open memory + orchestrator metadata | unit | `test -f packages/channels/qqbot/tests/test_session_memory_runtime.py` | ❌ W0 | ⬜ pending |
+| 64-W0-02 | 02 | 0 | SESS-01 | T-64-02 | Wave 0: RED stubs for QQBotRuntimeIngress callback wiring | unit | `test -f packages/channels/qqbot/tests/test_ingress_runtime.py` | ❌ W0 | ⬜ pending |
+| 64-W0-03 | 03 | 0 | SESS-03 | T-64-03 | Wave 0: RED stubs for fail-open memory + orchestrator metadata | unit | `test -f packages/channels/qqbot/tests/test_session_memory_runtime.py` | ❌ W0 | ⬜ pending |
 | 64-01-01 | 01 | 1 | SESS-01 | T-64-01 | handle_turn CONTINUE/START calls RunRuntime.create_run; metadata source qqbot | unit | `PYTHONPATH="packages/channels/qqbot/src:packages/channel-core/src:packages/platform-contract/src:packages/platform-runtime/src" python3 -m unittest packages.channels.qqbot.tests.test_session_runtime -v` | ❌ W0 | ⬜ pending |
 | 64-01-02 | 01 | 1 | SESS-02 | T-64-04 | pending clarification → resume_interrupt; duplicate answer ignored; expired interrupt | unit | same as 64-01-01 | ❌ W0 | ⬜ pending |
 | 64-01-03 | 01 | 1 | SESS-02 | T-64-05 | c2c vs group conversation_id isolation (shared openid, no cross resume) | unit | same as 64-01-01 | ❌ W0 | ⬜ pending |
