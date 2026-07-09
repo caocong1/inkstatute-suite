@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import copy
 import inspect
-import sys
 import unittest
 from typing import Any
 
@@ -85,12 +84,21 @@ class TestQqbotFeedbackParity(unittest.TestCase):
     """FEEDBACK-01: QQ dicts through contract_feedback_events without wecom."""
 
     def test_feedback01_no_wecom_service_import(self) -> None:
-        """QQ parity path must not import wecom_service (channel-agnostic compose)."""
-        this_source = inspect.getsource(sys.modules[__name__])
-        self.assertNotIn("wecom_service", this_source)
-        self.assertNotIn("from wecom_service", this_source)
-        self.assertNotIn("import wecom_service", this_source)
-        # contract_feedback_events path in queue.py must remain usable without wecom_service
+        """QQ parity path must not import the WeCom service package."""
+        import ast
+        from pathlib import Path
+
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        imported: list[str] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.extend(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.append(node.module)
+        self.assertTrue(
+            all(not name.startswith("wecom_service") for name in imported),
+            msg=f"unexpected WeCom service imports: {imported}",
+        )
         queue_source = inspect.getsource(feedback_queue)
         self.assertNotIn("wecom_service", queue_source)
         # Exercise QQ path only — no wecom_callback_events / compatibility records

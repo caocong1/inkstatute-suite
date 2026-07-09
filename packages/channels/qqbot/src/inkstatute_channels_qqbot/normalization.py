@@ -376,6 +376,15 @@ def normalize_interaction_event(
     feedback_id = _stable_id("qqbot-feedback", interaction_id or conversation_id)
     turn_id = _stable_id("qqbot-turn", interaction_id)
 
+    # FEEDBACK-03: stable msg_id + button_identity for feedback-service dedupe
+    msg_id = _optional_string(resolved.get("message_id")) or interaction_id
+    button_identity = (
+        _optional_string(button_id)
+        or button_data
+        or action
+    )
+    idempotency_key = f"{msg_id}:{button_identity}"
+
     fields_map: JsonObject = {
         "feedback_id": feedback_id,
         "turn_id": turn_id,
@@ -386,7 +395,7 @@ def normalize_interaction_event(
         "status": "pending",
         "created_at": created_at,
         "action": action,
-        "feedback_target": _optional_string(resolved.get("message_id")) or interaction_id,
+        "feedback_target": msg_id,
         "raw_payload_ref": payload_ref or event.raw_payload_ref,
         "metadata": {
             "source_event": "INTERACTION_CREATE",
@@ -398,6 +407,9 @@ def normalize_interaction_event(
             "chat_type": chat_type,
             "raw_payload_ref": payload_ref or event.raw_payload_ref,
             "no_auto_modify": action == "route_wrong",
+            "idempotency_key": idempotency_key,
+            "dedupe_strategy": "msg_id + button_identity",
+            "msg_id": msg_id,
         },
     }
 
