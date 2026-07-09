@@ -75,7 +75,7 @@ Each task was committed atomically:
 2. **Task 2: Stamp FEEDBACK-03 idempotency_key in normalize_interaction_event** - `9db7223` (feat)
 3. **Task 3: Pure feedback_ingress handle_feedback_callback helper** - `712a0eb` (feat)
 
-**Plan metadata:** `231712e` (docs: SUMMARY only — STATE.md / ROADMAP.md not updated per executor instructions)
+**Plan metadata:** `670e220` (docs: SUMMARY only — STATE.md / ROADMAP.md not updated per executor instructions)
 
 ## Files Created/Modified
 - `packages/channels/qqbot/fixtures/qqbot_interaction_create.json` - Added sanitized `resolved.message_id`
