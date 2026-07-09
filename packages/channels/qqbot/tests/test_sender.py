@@ -9,7 +9,9 @@ from inkstatute_channels_qqbot.sender import (
     FEEDBACK_ACTIONS,
     FakeMessageTransport,
     SendError,
+    UrllibMessageTransport,
     _rich_media_evidence,
+    ack_interaction,
     build_feedback_keyboard_envelope,
     build_markdown_envelope,
     build_media_envelope,
@@ -810,5 +812,74 @@ class RichMediaRetryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(evidence["issue_code"], "qqbot_rich_media_upload_failed")
 
 
+class PutJsonAndAckInteractionTests(unittest.IsolatedAsyncioTestCase):
+    """INGRESS-06 transport PUT seam + ack_interaction helper."""
+
+    def _token_manager(self, token: str = "fixture-token") -> TokenManager:
+        return TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=FakeTokenTransport(
+                response={"access_token": token, "expires_in": 7200}
+            ),
+        )
+
+    async def test_fake_put_json_records_call_and_defaults_code_zero(self) -> None:
+        transport = FakeMessageTransport()
+        result = await transport.put_json(
+            url="https://api.sgroup.qq.com/interactions/FIXTURE_INTERACTION_ID_001",
+            authorization="QQBot fixture-token",
+            body={"code": 0},
+        )
+        self.assertEqual(result, {"code": 0})
+        self.assertEqual(transport.call_count, 1)
+        call = transport.calls[0]
+        self.assertEqual(call["method"], "PUT")
+        self.assertTrue(call["url"].endswith("/interactions/FIXTURE_INTERACTION_ID_001"))
+        self.assertEqual(call["body"], {"code": 0})
+        self.assertTrue(call["authorization"].startswith("QQBot "))
+
+    async def test_urllib_put_json_rejects_non_allowlisted_host(self) -> None:
+        transport = UrllibMessageTransport()
+        with self.assertRaises(SendError) as ctx:
+            await transport.put_json(
+                url="https://evil.example/interactions/x",
+                authorization="QQBot fixture-token",
+                body={"code": 0},
+            )
+        self.assertIn("host not allowed", str(ctx.exception))
+
+    async def test_ack_interaction_builds_url_and_body(self) -> None:
+        transport = FakeMessageTransport()
+        result = await ack_interaction(
+            interaction_id="FIXTURE_INTERACTION_ID_001",
+            token_manager=self._token_manager(),
+            transport=transport,
+            code=0,
+        )
+        self.assertEqual(result, {"code": 0})
+        self.assertEqual(len(transport.calls), 1)
+        call = transport.calls[0]
+        self.assertEqual(call["method"], "PUT")
+        self.assertEqual(
+            call["url"],
+            "https://api.sgroup.qq.com/interactions/FIXTURE_INTERACTION_ID_001",
+        )
+        self.assertEqual(call["body"], {"code": 0})
+        self.assertEqual(call["authorization"], "QQBot fixture-token")
+
+    async def test_ack_interaction_rejects_invalid_interaction_id(self) -> None:
+        transport = FakeMessageTransport()
+        with self.assertRaises(SendError) as ctx:
+            await ack_interaction(
+                interaction_id="../evil",
+                token_manager=self._token_manager(),
+                transport=transport,
+            )
+        self.assertIn("interaction_id", str(ctx.exception))
+        self.assertEqual(transport.call_count, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
+

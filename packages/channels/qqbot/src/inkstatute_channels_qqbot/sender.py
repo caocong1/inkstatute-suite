@@ -282,6 +282,7 @@ class MessageTransport(Protocol):
     """Transport abstraction for QQ OpenAPI message POST.
 
     Tests inject FakeMessageTransport so no real network I/O is required.
+    Optional ``put_json`` extension supports interaction ACK (INGRESS-06).
     """
 
     async def post_message(
@@ -314,12 +315,44 @@ class FakeMessageTransport:
     async def post_message(
         self, *, url: str, authorization: str, body: dict[str, Any]
     ) -> dict[str, Any]:
+        return await self._dispatch(
+            method="POST", url=url, authorization=authorization, body=body
+        )
+
+    async def put_json(
+        self, *, url: str, authorization: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Record PUT like post_message; default empty-queue response is {"code": 0}."""
+        return await self._dispatch(
+            method="PUT",
+            url=url,
+            authorization=authorization,
+            body=body,
+            empty_default={"code": 0},
+        )
+
+    async def _dispatch(
+        self,
+        *,
+        method: str,
+        url: str,
+        authorization: str,
+        body: dict[str, Any],
+        empty_default: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         self.call_count += 1
         self.last_authorization = authorization
         self.calls.append(
-            {"url": url, "authorization": authorization, "body": body}
+            {
+                "method": method,
+                "url": url,
+                "authorization": authorization,
+                "body": body,
+            }
         )
         if not self._queue:
+            if empty_default is not None:
+                return dict(empty_default)
             return {"id": "fixture-message", "status": 200}
         item = self._queue.pop(0)
         if isinstance(item, Exception):
@@ -333,7 +366,7 @@ class UrllibMessageTransport:
     """Production transport using lazy urllib.request + asyncio.to_thread.
 
     Host is constrained via wire_url_for_scene (api.sgroup.qq.com only).
-    urllib is imported inside _blocking_post — never at module top level.
+    urllib is imported inside _blocking_request — never at module top level.
     """
 
     def __init__(self, *, timeout: float = 10.0) -> None:
@@ -345,11 +378,24 @@ class UrllibMessageTransport:
         if not url.startswith(_API_BASE + "/"):
             raise SendError("QQ Bot message URL host not allowed")
         return await asyncio.to_thread(
-            self._blocking_post, url, authorization, body
+            self._blocking_request, url, authorization, body, "POST"
         )
 
-    def _blocking_post(
-        self, url: str, authorization: str, body: dict[str, Any]
+    async def put_json(
+        self, *, url: str, authorization: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        if not url.startswith(_API_BASE + "/"):
+            raise SendError("QQ Bot message URL host not allowed")
+        return await asyncio.to_thread(
+            self._blocking_request, url, authorization, body, "PUT"
+        )
+
+    def _blocking_request(
+        self,
+        url: str,
+        authorization: str,
+        body: dict[str, Any],
+        method: str,
     ) -> dict[str, Any]:
         import urllib.error
         import urllib.request
@@ -362,7 +408,7 @@ class UrllibMessageTransport:
                 "Content-Type": "application/json",
                 "Authorization": authorization,
             },
-            method="POST",
+            method=method,
         )
         try:
             with urllib.request.urlopen(req, timeout=self._timeout) as resp:  # noqa: S310
@@ -532,6 +578,32 @@ async def _bearer(token_manager: TokenManager) -> str:
             "QQ Bot token unavailable",
             status_code=getattr(exc, "status_code", None),
         ) from None
+
+
+async def ack_interaction(
+    *,
+    interaction_id: str,
+    token_manager: TokenManager,
+    transport: Any,
+    code: int = 0,
+) -> dict[str, Any]:
+    """PUT /interactions/{id} with {"code": code} (INGRESS-06 tier-2 ACK).
+
+    Validates ``interaction_id`` with the same charset discipline as openids
+    before path interpolation. Requires transport.put_json (duck-typed).
+    """
+
+    safe_id = _require_openid(interaction_id, label="interaction_id")
+    put_json = getattr(transport, "put_json", None)
+    if put_json is None or not callable(put_json):
+        raise SendError("QQ Bot transport does not support put_json")
+    token = await _bearer(token_manager)
+    url = f"{_API_BASE}/interactions/{safe_id}"
+    return await put_json(
+        url=url,
+        authorization=f"QQBot {token}",
+        body={"code": code},
+    )
 
 
 async def send_message(
@@ -920,6 +992,7 @@ __all__ = [
     "PassiveReplyWindowResult",
     "SendError",
     "UrllibMessageTransport",
+    "ack_interaction",
     "build_feedback_keyboard_envelope",
     "build_markdown_envelope",
     "build_media_envelope",
