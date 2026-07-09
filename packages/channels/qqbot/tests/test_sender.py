@@ -9,12 +9,17 @@ from inkstatute_channels_qqbot.sender import (
     FEEDBACK_ACTIONS,
     FakeMessageTransport,
     SendError,
+    _rich_media_evidence,
     build_feedback_keyboard_envelope,
     build_markdown_envelope,
+    build_media_envelope,
     build_text_envelope,
     check_passive_reply_window,
     send_message,
+    send_rich_media,
     strip_for_wire,
+    upload_rich_media,
+    wire_files_url_for_scene,
     wire_url_for_scene,
 )
 from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenError, TokenManager
@@ -140,6 +145,31 @@ class SenderEnvelopeTests(unittest.TestCase):
         self.assertNotIn("rows", keyboard)
         self.assertIn("rows", keyboard["content"])
         self.assertIsInstance(keyboard["content"]["rows"], list)
+
+    def test_build_media_envelope_msg_type_7(self) -> None:
+        envelope = build_media_envelope(
+            file_info="fixture-file-info-token",
+            msg_id="inbound-1",
+            msg_seq=2,
+        )
+
+        self.assertIsInstance(envelope["msg_type"], int)
+        self.assertEqual(envelope["msg_type"], 7)
+        self.assertEqual(envelope["media"], {"file_info": "fixture-file-info-token"})
+        self.assertEqual(envelope["content"], "")
+        self.assertEqual(envelope["msg_id"], "inbound-1")
+        self.assertEqual(envelope["msg_seq"], 2)
+
+        # Optional audit key must be stripped for wire.
+        envelope_with_policy = dict(envelope)
+        envelope_with_policy["policy"] = {"action": "allow", "reason": "n/a"}
+        wire = strip_for_wire(envelope_with_policy)
+        self.assertEqual(wire["msg_type"], 7)
+        self.assertEqual(wire["media"], {"file_info": "fixture-file-info-token"})
+        self.assertEqual(wire["content"], "")
+        self.assertIn("msg_id", wire)
+        self.assertIn("msg_seq", wire)
+        self.assertNotIn("policy", wire)
 
 
 class PassiveReplyWindowTests(unittest.TestCase):
@@ -447,6 +477,251 @@ class SendRetryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(ctx.exception.status_code, 500)
         self.assertNotIn("refresh-fail", str(ctx.exception))
         self.assertEqual(message_transport.call_count, 1)
+
+
+class RichMediaUploadTests(unittest.IsolatedAsyncioTestCase):
+    FIXTURE_FILE_URL = "https://example.invalid/artifact.docx"
+    FIXTURE_USER = "user-openid-1"
+    FIXTURE_GROUP = "group-openid-1"
+
+    def _token_manager(self, token: str = "fixture-token") -> TokenManager:
+        return TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=FakeTokenTransport(
+                response={"access_token": token, "expires_in": 7200}
+            ),
+        )
+
+    def test_wire_files_url_c2c_and_group(self) -> None:
+        self.assertEqual(
+            wire_files_url_for_scene("c2c", user_openid=self.FIXTURE_USER),
+            f"https://api.sgroup.qq.com/v2/users/{self.FIXTURE_USER}/files",
+        )
+        self.assertEqual(
+            wire_files_url_for_scene("group", group_openid=self.FIXTURE_GROUP),
+            f"https://api.sgroup.qq.com/v2/groups/{self.FIXTURE_GROUP}/files",
+        )
+        with self.assertRaises(SendError):
+            wire_files_url_for_scene("c2c", user_openid="../evil")
+        with self.assertRaises(SendError):
+            wire_files_url_for_scene("group", group_openid="u?q=1")
+
+    async def test_upload_rich_media_posts_file_type_4_with_url(self) -> None:
+        transport = FakeMessageTransport(
+            response={
+                "file_uuid": "uuid-fixture-001",
+                "file_info": "file-info-token-001",
+                "ttl": 3600,
+            }
+        )
+        result = await upload_rich_media(
+            scene="c2c",
+            token_manager=self._token_manager(),
+            transport=transport,
+            file_type=4,
+            file_url=self.FIXTURE_FILE_URL,
+            user_openid=self.FIXTURE_USER,
+            sleep=_noop_sleep,
+        )
+        self.assertEqual(transport.call_count, 1)
+        body = transport.calls[0]["body"]
+        self.assertEqual(body["file_type"], 4)
+        self.assertEqual(body["url"], self.FIXTURE_FILE_URL)
+        self.assertTrue(
+            transport.calls[0]["url"].endswith(f"/v2/users/{self.FIXTURE_USER}/files")
+        )
+        self.assertEqual(result["file_info"], "file-info-token-001")
+        self.assertEqual(result["file_uuid"], "uuid-fixture-001")
+        self.assertEqual(result["ttl"], 3600)
+
+    async def test_upload_rejects_non_https_file_url(self) -> None:
+        transport = FakeMessageTransport(response={"file_info": "should-not-upload"})
+        for bad_url in ("http://example.invalid/a.docx", "", "ftp://example.invalid/a"):
+            with self.subTest(file_url=bad_url):
+                with self.assertRaises(SendError) as ctx:
+                    await upload_rich_media(
+                        scene="c2c",
+                        token_manager=self._token_manager(),
+                        transport=transport,
+                        file_url=bad_url or None,
+                        user_openid=self.FIXTURE_USER,
+                        sleep=_noop_sleep,
+                    )
+                self.assertEqual(transport.call_count, 0)
+                err = str(ctx.exception).lower()
+                self.assertNotIn("authorization", err)
+                self.assertNotIn("access_token", err)
+
+    async def test_send_rich_media_two_step(self) -> None:
+        transport = FakeMessageTransport(
+            responses=[
+                {
+                    "file_uuid": "uuid-two-step",
+                    "file_info": "file-info-two-step",
+                    "ttl": 7200,
+                },
+                {"id": "msg-media-ok", "status": 200},
+            ]
+        )
+        result = await send_rich_media(
+            scene="c2c",
+            token_manager=self._token_manager(),
+            transport=transport,
+            file_url=self.FIXTURE_FILE_URL,
+            user_openid=self.FIXTURE_USER,
+            msg_id="inbound-media-1",
+            msg_seq=1,
+            sleep=_noop_sleep,
+        )
+        self.assertEqual(transport.call_count, 2)
+        upload_call, send_call = transport.calls
+        self.assertTrue(upload_call["url"].endswith("/files"))
+        self.assertEqual(upload_call["body"]["file_type"], 4)
+        self.assertTrue(send_call["url"].endswith("/messages"))
+        self.assertEqual(send_call["body"]["msg_type"], 7)
+        self.assertEqual(
+            send_call["body"]["media"],
+            {"file_info": "file-info-two-step"},
+        )
+        self.assertEqual(send_call["body"]["content"], "")
+        self.assertEqual(send_call["body"]["msg_id"], "inbound-media-1")
+        self.assertNotIn("policy", send_call["body"])
+        self.assertEqual(result.get("id"), "msg-media-ok")
+
+
+class RichMediaRetryTests(unittest.IsolatedAsyncioTestCase):
+    FIXTURE_FILE_URL = "https://example.invalid/artifact.docx"
+    FIXTURE_USER = "user-openid-1"
+
+    def _token_manager(self, token: str = "fixture-token") -> TokenManager:
+        return TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=FakeTokenTransport(
+                response={"access_token": token, "expires_in": 7200}
+            ),
+        )
+
+    async def test_retry_304082_then_success(self) -> None:
+        transport = FakeMessageTransport(
+            responses=[
+                SendError("media convert fail", status_code=400, qq_code=304082),
+                {
+                    "file_uuid": "uuid-after-304082",
+                    "file_info": "file-info-after-304082",
+                    "ttl": 3600,
+                },
+            ]
+        )
+        result = await upload_rich_media(
+            scene="c2c",
+            token_manager=self._token_manager(),
+            transport=transport,
+            file_url=self.FIXTURE_FILE_URL,
+            user_openid=self.FIXTURE_USER,
+            sleep=_noop_sleep,
+        )
+        self.assertGreaterEqual(transport.call_count, 2)
+        self.assertEqual(result["file_info"], "file-info-after-304082")
+
+    async def test_retry_304083_then_success(self) -> None:
+        transport = FakeMessageTransport(
+            responses=[
+                SendError("media pull fail", status_code=400, qq_code=304083),
+                {
+                    "file_uuid": "uuid-after-304083",
+                    "file_info": "file-info-after-304083",
+                    "ttl": 3600,
+                },
+            ]
+        )
+        result = await upload_rich_media(
+            scene="c2c",
+            token_manager=self._token_manager(),
+            transport=transport,
+            file_url=self.FIXTURE_FILE_URL,
+            user_openid=self.FIXTURE_USER,
+            sleep=_noop_sleep,
+        )
+        self.assertGreaterEqual(transport.call_count, 2)
+        self.assertEqual(result["file_info"], "file-info-after-304083")
+
+    async def test_401_invalidate_once_on_upload(self) -> None:
+        token_transport = FakeTokenTransport(
+            response={"access_token": "token-v1", "expires_in": 7200}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=token_transport,
+        )
+        message_transport = FakeMessageTransport(
+            responses=[
+                SendError("unauthorized", status_code=401),
+                {
+                    "file_uuid": "uuid-after-401",
+                    "file_info": "file-info-after-401",
+                    "ttl": 3600,
+                },
+            ]
+        )
+        await manager.get_token()
+        self.assertEqual(token_transport.call_count, 1)
+        token_transport.response = {
+            "access_token": "token-v2",
+            "expires_in": 7200,
+        }
+
+        result = await upload_rich_media(
+            scene="c2c",
+            token_manager=manager,
+            transport=message_transport,
+            file_url=self.FIXTURE_FILE_URL,
+            user_openid=self.FIXTURE_USER,
+            sleep=_noop_sleep,
+        )
+
+        self.assertEqual(result["file_info"], "file-info-after-401")
+        self.assertEqual(message_transport.call_count, 2)
+        self.assertGreaterEqual(token_transport.call_count, 2)
+        self.assertTrue(
+            message_transport.calls[-1]["authorization"].startswith("QQBot "),
+        )
+
+    def test_rich_media_evidence_sanitized(self) -> None:
+        evidence = _rich_media_evidence(
+            stage="upload",
+            attempts=2,
+            status_code=400,
+            qq_code=304082,
+            file_uuid="uuid-sensitive-fixture",
+            ttl=3600,
+            issue_code="qqbot_rich_media_upload_failed",
+        )
+        forbidden = {
+            "Authorization",
+            "authorization",
+            "access_token",
+            "file_data",
+            "url",
+            "file_url",
+        }
+        for key in forbidden:
+            self.assertNotIn(key, evidence)
+        serialized = str(evidence)
+        self.assertNotIn("https://", serialized)
+        self.assertNotIn("http://", serialized)
+        self.assertNotIn("Authorization", serialized)
+        self.assertNotIn("access_token", serialized)
+        self.assertNotIn("file_data", serialized)
+        self.assertIn("file_uuid_hash", evidence)
+        self.assertEqual(len(evidence["file_uuid_hash"]), 16)
+        self.assertNotEqual(evidence["file_uuid_hash"], "uuid-sensitive-fixture")
+        self.assertEqual(evidence["rich_media_stage"], "upload")
+        self.assertEqual(evidence["attempts"], 2)
+        self.assertEqual(evidence["ttl"], 3600)
+        self.assertEqual(evidence["issue_code"], "qqbot_rich_media_upload_failed")
 
 
 if __name__ == "__main__":
