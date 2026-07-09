@@ -17,7 +17,7 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 - [x] **INGRESS-04**: QQ Bot C2C and group @-bot message events are normalized into `AgentTurn` records with @-bot prefix stripped, scene-aware composite `conversation_id` (`qqbot:{scene}:{scene_id}:{user_openid}`), and platform contract channel metadata.
 - [x] **INGRESS-05**: QQ Bot `INTERACTION_CREATE` events are normalized into `FeedbackEvent` records with `source="card_button"` (frozen enum), `action` mapped from button `data.resolved.button_data` (up/down/needs_fix/route_wrong), and no new `FeedbackSource` enum values added.
-- [ ] **INGRESS-06**: QQ Bot webhook ACK uses two-tier strategy: HTTP 200 with op=12 envelope for message events, plus `PUT /interactions/{id}` for button-click events (without which the QQ client hangs in loading state).
+- [x] **INGRESS-06**: QQ Bot webhook ACK uses two-tier strategy: HTTP 200 with op=12 envelope for message events, plus `PUT /interactions/{id}` for button-click events (without which the QQ client hangs in loading state).
 
 ### Egress — Token & Delivery
 
@@ -53,9 +53,9 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 ### Adapter Integration & Safety
 
-- [ ] **ADAPTER-01**: QQBotChannelAdapter is promoted from fixture-only to real IO across all 6 frozen Protocol methods, with QQ-specific behavior encoded via `ChannelDelivery.metadata`, `AckResponse.metadata`, `ChannelCapabilitySet.metadata` (no Protocol methods added or modified).
-- [ ] **ADAPTER-02**: QQBot channel feature flag (`qqbot_channel_enabled`) defaults to `False`; fixture path is preserved for CI when flag is off; real IO is gated behind the flag.
-- [ ] **ADAPTER-03**: QQBot adapter does not import from `wecom_service` (enforced by `test_no_wecom_import.py`); channel-core modules are reused as-is (no new channel-core modules).
+- [x] **ADAPTER-01**: QQBotChannelAdapter is promoted from fixture-only to real IO across all 6 frozen Protocol methods, with QQ-specific behavior encoded via `ChannelDelivery.metadata`, `AckResponse.metadata`, `ChannelCapabilitySet.metadata` (no Protocol methods added or modified).
+- [x] **ADAPTER-02**: QQBot channel feature flag (`qqbot_channel_enabled`) defaults to `False`; fixture path is preserved for CI when flag is off; real IO is gated behind the flag.
+- [x] **ADAPTER-03**: QQBot adapter does not import from `wecom_service` (enforced by `test_no_wecom_import.py`); channel-core modules are reused as-is (no new channel-core modules).
 - [ ] **ADAPTER-04**: All 24 existing V2 gates remain green throughout v1.8; frozen ChannelAdapter Protocol, BackendAdapter Protocol, platform-contract enums/schemas, and channel-core modules are not modified.
 
 ### Smoke-Test Toolkit
@@ -107,7 +107,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INGRESS-03 | 60 | Complete |
 | INGRESS-04 | 60 | Complete |
 | INGRESS-05 | 60 | Complete |
-| INGRESS-06 | 65 | Pending |
+| INGRESS-06 | 65 | Complete |
 | EGRESS-01 | 61 | Complete |
 | EGRESS-02 | 62 | Complete |
 | EGRESS-03 | 62 | Complete |
@@ -122,9 +122,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FEEDBACK-02 | 66 | Pending |
 | FEEDBACK-03 | 66 | Pending |
 | RECALL-01 | 66 | Pending |
-| ADAPTER-01 | 65 | Pending |
-| ADAPTER-02 | 65 | Pending |
-| ADAPTER-03 | 65 | Pending |
+| ADAPTER-01 | 65 | Complete |
+| ADAPTER-02 | 65 | Complete |
+| ADAPTER-03 | 65 | Complete |
 | ADAPTER-04 | 58 | Pending |
 | SMOKE-01 | 67 | Pending |
 | SMOKE-02 | 67 | Pending |
