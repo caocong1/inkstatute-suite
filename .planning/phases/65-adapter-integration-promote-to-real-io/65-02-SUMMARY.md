@@ -76,7 +76,7 @@ Each task was committed atomically:
 1. **Task 1: Complete ADAPTER-01 real-IO test expectations** - `1f1c067` (test)
 2. **Task 2: Honest live metadata across six Protocol methods** - `1b8771d` (feat)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `1e40500` (docs: complete plan)
 
 ## Files Created/Modified
 
