@@ -116,6 +116,27 @@ class NoWecomImportTests(unittest.TestCase):
             "adapter.py source contains the string 'wecom_service'",
         )
 
+    def test_session_runtime_does_not_import_wecom_service(self) -> None:
+        path = PACKAGE_SRC / "session_runtime.py"
+        self.assertTrue(path.is_file(), "session_runtime.py is missing")
+        source = path.read_text(encoding="utf-8")
+        modules = _imported_modules(source)
+        for module in modules:
+            self.assertFalse(
+                module.startswith("wecom_service"),
+                f"session_runtime.py imports from wecom_service: {module}",
+            )
+
+    def test_session_runtime_has_no_wecom_service_string(self) -> None:
+        path = PACKAGE_SRC / "session_runtime.py"
+        self.assertTrue(path.is_file(), "session_runtime.py is missing")
+        source = path.read_text(encoding="utf-8")
+        self.assertNotIn(
+            "wecom_service",
+            source,
+            "session_runtime.py source contains the string 'wecom_service'",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
