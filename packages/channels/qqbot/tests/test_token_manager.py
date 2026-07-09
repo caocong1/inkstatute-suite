@@ -285,6 +285,23 @@ class TokenManagerErrorTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(TokenError):
             await manager.get_token()
 
+    async def test_expires_in_too_short_for_refresh_margin(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": 30}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+            refresh_margin=60.0,
+        )
+
+        with self.assertRaises(TokenError) as ctx:
+            await manager.get_token()
+
+        self.assertIn("refresh margin", str(ctx.exception))
+        self.assertIsNone(manager._token)
+
     async def test_error_message_does_not_leak_token_value(self) -> None:
         transport = FakeTokenTransport(
             response={"access_token": "secret-token-leak", "expires_in": "bad"}

@@ -170,6 +170,8 @@ class TokenManager:
         value = float(expires_in)
         if not math.isfinite(value) or value <= 0:
             raise TokenError("QQ Bot token response missing or invalid expires_in")
+        if value <= self._refresh_margin:
+            raise TokenError("QQ Bot token expires_in too short for refresh margin")
         return value
 
     def invalidate(self) -> None:
