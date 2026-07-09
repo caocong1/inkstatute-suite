@@ -879,6 +879,19 @@ class PutJsonAndAckInteractionTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("interaction_id", str(ctx.exception))
         self.assertEqual(transport.call_count, 0)
 
+    async def test_ack_interaction_rejects_nonzero_qq_code(self) -> None:
+        """Non-zero QQ response code must raise SendError (not silent success)."""
+        transport = FakeMessageTransport(response={"code": 5})
+        with self.assertRaises(SendError) as ctx:
+            await ack_interaction(
+                interaction_id="FIXTURE_INTERACTION_ID_001",
+                token_manager=self._token_manager(),
+                transport=transport,
+            )
+        self.assertEqual(ctx.exception.qq_code, 5)
+        self.assertIn("interaction ACK failed", str(ctx.exception))
+        self.assertEqual(transport.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

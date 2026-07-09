@@ -599,11 +599,18 @@ async def ack_interaction(
         raise SendError("QQ Bot transport does not support put_json")
     token = await _bearer(token_manager)
     url = f"{_API_BASE}/interactions/{safe_id}"
-    return await put_json(
+    result = await put_json(
         url=url,
         authorization=f"QQBot {token}",
         body={"code": code},
     )
+    qq_code = _extract_qq_code(result if isinstance(result, dict) else None)
+    if qq_code is not None and qq_code != 0:
+        raise SendError(
+            "QQ Bot interaction ACK failed",
+            qq_code=qq_code,
+        )
+    return result
 
 
 async def send_message(

@@ -121,6 +121,36 @@ class TwoTierAckTests(unittest.TestCase):
         self.assertTrue(str(put["url"]).endswith(f"/interactions/{INTERACTION_ID}"))
         self.assertEqual(put["body"], {"code": 0})
 
+    def test_interaction_nonzero_qq_code_marks_failed(self) -> None:
+        """Non-zero QQ ACK code must not be marked interaction_ack_status=sent."""
+        envelope = _load_fixture("qqbot_interaction_create.json")["envelope"]
+        transport = FakeMessageTransport(response={"code": 5})
+        token_manager = TokenManager(
+            app_id="fixture-app-id",
+            client_secret="fixture-client-secret",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-token", "expires_in": 7200}
+            ),
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True, bot_secret_ref="ref://qqbot/bot-secret"),
+            token_manager=token_manager,
+            transport=transport,
+        )
+        ack = run(adapter.verify_and_ack(make_signed_raw(payload=envelope)))
+        self.assertTrue(ack.accepted)
+        self.assertEqual(ack.status_code, 200)
+        self.assertEqual(ack.metadata.get("http_callback_ack_body"), {"op": 12})
+        self.assertTrue(ack.metadata.get("interaction_ack_required"))
+        self.assertEqual(ack.metadata.get("interaction_ack_status"), "failed")
+        self.assertEqual(ack.metadata.get("interaction_ack_qq_code"), 5)
+        self.assertEqual(
+            ack.metadata.get("interaction_ack_issue_code"),
+            "qqbot_interaction_ack_failed",
+        )
+        self.assertNotEqual(ack.metadata.get("ack_tier"), "webhook_op12+interaction_put")
+        self.assertEqual(len(_put_calls(transport)), 1)
+
     def test_flag_off_skips_interaction_put(self) -> None:
         """enabled=False → 503 and zero PUT calls on Fake transport."""
         envelope = _load_fixture("qqbot_interaction_create.json")["envelope"]
