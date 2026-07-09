@@ -244,6 +244,47 @@ class TokenManagerErrorTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(TokenError):
             await manager.get_token()
 
+    async def test_invalid_expires_in_bool_rejected(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": True}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError) as ctx:
+            await manager.get_token()
+
+        self.assertIn("expires_in", str(ctx.exception))
+
+    async def test_invalid_expires_in_nan_rejected(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": float("nan")}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError):
+            await manager.get_token()
+
+    async def test_invalid_expires_in_inf_rejected(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": float("inf")}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError):
+            await manager.get_token()
+
     async def test_error_message_does_not_leak_token_value(self) -> None:
         transport = FakeTokenTransport(
             response={"access_token": "secret-token-leak", "expires_in": "bad"}

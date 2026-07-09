@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import time
 from typing import Any, Callable, Protocol
 
@@ -162,12 +163,14 @@ class TokenManager:
             raise TokenError("QQ Bot token response missing access_token")
         return token
 
-    @staticmethod
-    def _extract_expiry(response: dict[str, Any]) -> float:
+    def _extract_expiry(self, response: dict[str, Any]) -> float:
         expires_in = response.get("expires_in")
-        if not isinstance(expires_in, (int, float)) or expires_in <= 0:
+        if isinstance(expires_in, bool) or not isinstance(expires_in, (int, float)):
             raise TokenError("QQ Bot token response missing or invalid expires_in")
-        return float(expires_in)
+        value = float(expires_in)
+        if not math.isfinite(value) or value <= 0:
+            raise TokenError("QQ Bot token response missing or invalid expires_in")
+        return value
 
     def invalidate(self) -> None:
         """Force the next get_token() call to refresh (e.g., after a 401)."""
