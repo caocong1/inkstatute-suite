@@ -1,10 +1,11 @@
-"""Lifecycle and import-safety unit tests for TokenManager.
+"""Lifecycle, concurrent, error-handling, and import-safety unit tests for TokenManager.
 
 Uses FakeTokenTransport and an injectable monotonic clock — no network I/O.
 """
 
 from __future__ import annotations
 
+import asyncio
 import unittest
 from pathlib import Path
 
@@ -147,6 +148,119 @@ class TokenManagerLifecycleTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(token, "token-002")
         self.assertEqual(transport.call_count, 2)
+
+
+class TokenManagerConcurrentRefreshTests(unittest.IsolatedAsyncioTestCase):
+    async def test_concurrent_refresh_is_single_flight(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": 7200}
+        )
+        now = 1000.0
+
+        def clock() -> float:
+            return now
+
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+            clock=clock,
+        )
+
+        first = await manager.get_token()
+        self.assertEqual(first, "token-001")
+        self.assertEqual(transport.call_count, 1)
+
+        transport.response = {"access_token": "token-002", "expires_in": 7200}
+        now = 1000.0 + 7141.0
+
+        results = await asyncio.gather(*[manager.get_token() for _ in range(10)])
+
+        self.assertEqual(transport.call_count, 2)
+        self.assertTrue(all(token == "token-002" for token in results))
+
+
+class TokenManagerErrorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_http_error_raises_token_error(self) -> None:
+        transport = FakeTokenTransport(
+            error=TokenError("QQ Bot token request failed", status_code=401)
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError) as ctx:
+            await manager.get_token()
+
+        self.assertEqual(ctx.exception.status_code, 401)
+
+    async def test_missing_access_token_in_response(self) -> None:
+        transport = FakeTokenTransport(response={"expires_in": 7200})
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError):
+            await manager.get_token()
+
+    async def test_missing_expires_in_in_response(self) -> None:
+        transport = FakeTokenTransport(response={"access_token": "token-001"})
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError):
+            await manager.get_token()
+
+    async def test_invalid_expires_in_zero(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": 0}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError):
+            await manager.get_token()
+
+    async def test_invalid_expires_in_negative(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": -1}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError):
+            await manager.get_token()
+
+    async def test_error_message_does_not_leak_token_value(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "secret-token-leak", "expires_in": "bad"}
+        )
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+        )
+
+        with self.assertRaises(TokenError) as ctx:
+            await manager.get_token()
+
+        message = str(ctx.exception)
+        self.assertNotIn("secret-token-leak", message)
+        self.assertNotIn(FIXTURE_CLIENT_SECRET, message)
+        self.assertNotIn(FIXTURE_APP_ID, message)
 
 
 class TokenManagerImportSafetyTests(unittest.TestCase):
