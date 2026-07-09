@@ -7,13 +7,17 @@ deliver/verify_and_ack/channel_id behind the default-OFF `_live_io_ready` gate.
 from __future__ import annotations
 
 import asyncio
+import json
 import unittest
+from pathlib import Path
 from typing import Any
 
 from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
 from inkstatute_channels_qqbot.sender import FakeMessageTransport
 from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenManager
 from platform_runtime.protocols import ChannelDelivery, RawInbound
+
+from packages.channels.qqbot.tests.test_adapter_two_tier_ack import make_signed_raw
 
 FORBIDDEN_SECRET_KEYS = frozenset(
     {
@@ -28,6 +32,7 @@ FORBIDDEN_SECRET_VALUES = (
     "fixture-token",
     "fixture-client-secret",
 )
+FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
 
 
 def run(coro):
@@ -247,6 +252,53 @@ class AdapterRealIoTests(unittest.TestCase):
         self.assertFalse(ack.metadata.get("network_io", False))
         self.assertTrue(ack.metadata.get("fixture_only"))
         _assert_no_secrets(self, ack.metadata)
+
+    def test_verify_and_ack_live_metadata_privacy(self) -> None:
+        """T-65-08: live Fake ACK metadata must not leak tokens/Authorization."""
+        with open(FIXTURES_DIR / "qqbot_interaction_create.json", encoding="utf-8") as fh:
+            envelope = json.load(fh)["envelope"]
+        adapter, transport = _live_adapter(
+            transport=FakeMessageTransport(response={"code": 0})
+        )
+        ack = run(adapter.verify_and_ack(make_signed_raw(payload=envelope)))
+        self.assertTrue(ack.accepted)
+        self.assertEqual(ack.status_code, 200)
+        self.assertEqual(ack.metadata.get("interaction_ack_status"), "sent")
+        self.assertGreaterEqual(transport.call_count, 1)
+        _assert_no_secrets(self, ack.metadata)
+        # Explicit case-insensitive key + dump scan (acceptance: fail if present).
+        keys = _collect_keys(ack.metadata)
+        self.assertNotIn("access_token", keys)
+        self.assertNotIn("authorization", keys)
+        self.assertNotIn("bot_secret", keys)
+        dumped = json.dumps(ack.metadata, default=str)
+        self.assertNotIn("Authorization", dumped)
+        self.assertNotIn("access_token", dumped)
+        self.assertNotIn("fixture-token", dumped)
+
+    def test_deliver_live_metadata_privacy_rejects_secret_keys(self) -> None:
+        """T-65-08: DeliveryResult.metadata after live Fake deliver is secret-free."""
+        adapter, transport = _live_adapter()
+        result = run(adapter.deliver(_text_delivery()))
+        self.assertTrue(result.accepted)
+        self.assertGreaterEqual(transport.call_count, 1)
+        _assert_no_secrets(self, result.metadata)
+        keys = _collect_keys(result.metadata)
+        for forbidden in ("access_token", "authorization", "bot_secret"):
+            self.assertNotIn(forbidden, keys)
+        dumped = json.dumps(result.metadata, default=str)
+        self.assertNotIn("Authorization", dumped)
+        self.assertNotIn("access_token", dumped)
+        self.assertNotIn("fixture-token", dumped)
+
+    def test_privacy_helper_rejects_forbidden_metadata_keys(self) -> None:
+        """Guard: _assert_no_secrets must fail when secrets appear in metadata."""
+        with self.assertRaises(AssertionError):
+            _assert_no_secrets(self, {"access_token": "leaked"})
+        with self.assertRaises(AssertionError):
+            _assert_no_secrets(self, {"Authorization": "Bearer x"})
+        with self.assertRaises(AssertionError):
+            _assert_no_secrets(self, {"nested": {"bot_secret": "raw"}})
 
     # -- _live_io_ready helper -------------------------------------------------
 

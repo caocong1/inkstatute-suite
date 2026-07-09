@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import fields
+from pathlib import Path
 
 from platform_contract.enums import Channel, FeedbackSource
 from platform_runtime.feature_flags import RuntimeFeatureFlags
@@ -40,6 +41,12 @@ class ContractFreezeNotViolatedTests(unittest.TestCase):
             "health",
         }
         self.assertEqual(set(methods), expected)
+
+    def test_qqbot_pyproject_dependencies_remain_empty(self) -> None:
+        """ADAPTER-04 / T-65-SC: Phase 65 must not add qqbot package dependencies."""
+        pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        content = pyproject.read_text(encoding="utf-8")
+        self.assertIn("dependencies = []", content)
 
     def test_feedback_source_has_exactly_4_values(self) -> None:
         values = [v.value for v in FeedbackSource]
