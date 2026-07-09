@@ -74,7 +74,7 @@ Each task was committed atomically:
 2. **Task 2: Freeze Protocol, deps=[], privacy metadata gates** - `21fb5a1` (test)
 3. **Task 3: Full qqbot suite regression gate** - verification-only (no code changes; suite OK)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `0c61839` (docs: complete plan)
 
 ## Files Created/Modified
 
