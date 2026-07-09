@@ -1,25 +1,67 @@
-"""Wave 0 RED stubs for ADAPTER-01 live vs fixture metadata (Plan 02 greens).
+"""ADAPTER-01 real-IO metadata honesty across all 6 ChannelAdapter methods.
 
-Documents expected honesty for capabilities/health/normalize/deliver/verify_and_ack
-when `_live_io_ready()` is true vs fixture-only default-OFF path.
+Covers live vs fixture Fake injection for capabilities/health/normalize/
+deliver/verify_and_ack/channel_id behind the default-OFF `_live_io_ready` gate.
 """
 
 from __future__ import annotations
 
 import asyncio
 import unittest
+from typing import Any
 
 from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
 from inkstatute_channels_qqbot.sender import FakeMessageTransport
 from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenManager
 from platform_runtime.protocols import ChannelDelivery, RawInbound
 
+FORBIDDEN_SECRET_KEYS = frozenset(
+    {
+        "access_token",
+        "authorization",
+        "bot_secret",
+        "client_secret",
+        "app_secret",
+    }
+)
+FORBIDDEN_SECRET_VALUES = (
+    "fixture-token",
+    "fixture-client-secret",
+)
+
 
 def run(coro):
     return asyncio.run(coro)
 
 
-def _live_adapter() -> QQBotChannelAdapter:
+def _collect_keys(value: Any, found: set[str] | None = None) -> set[str]:
+    keys = found if found is not None else set()
+    if isinstance(value, dict):
+        for key, child in value.items():
+            keys.add(str(key).lower())
+            _collect_keys(child, keys)
+    elif isinstance(value, list):
+        for child in value:
+            _collect_keys(child, keys)
+    return keys
+
+
+def _assert_no_secrets(testcase: unittest.TestCase, metadata: Any) -> None:
+    keys = _collect_keys(metadata)
+    for forbidden in FORBIDDEN_SECRET_KEYS:
+        testcase.assertNotIn(forbidden, keys)
+    dumped = str(metadata)
+    for fragment in FORBIDDEN_SECRET_VALUES:
+        testcase.assertNotIn(fragment, dumped)
+    # Header-style Authorization must never appear in metadata dumps.
+    testcase.assertNotIn("Authorization", dumped)
+    testcase.assertNotIn("access_token", dumped)
+
+
+def _live_adapter(
+    *,
+    transport: FakeMessageTransport | None = None,
+) -> tuple[QQBotChannelAdapter, FakeMessageTransport]:
     token_manager = TokenManager(
         app_id="fixture-app-id",
         client_secret="fixture-client-secret",
@@ -27,7 +69,10 @@ def _live_adapter() -> QQBotChannelAdapter:
             response={"access_token": "fixture-token", "expires_in": 7200}
         ),
     )
-    return QQBotChannelAdapter(
+    message_transport = transport or FakeMessageTransport(
+        response={"id": "msg-real-io-ok", "status": 200}
+    )
+    adapter = QQBotChannelAdapter(
         QQBotChannelConfig(
             enabled=True,
             bot_secret_ref="ref://qqbot/bot-secret",
@@ -35,80 +80,178 @@ def _live_adapter() -> QQBotChannelAdapter:
             app_secret_ref="ref://qqbot/app-secret",
         ),
         token_manager=token_manager,
-        transport=FakeMessageTransport(),
+        transport=message_transport,
+    )
+    return adapter, message_transport
+
+
+def _c2c_gateway_raw() -> RawInbound:
+    return RawInbound(
+        channel_id="qqbot",
+        payload_ref="fixture://qqbot/inbound/real-io-normalize",
+        received_at="2026-07-09T00:00:00Z",
+        idempotency_key="qqbot-real-io-norm-1",
+        metadata={
+            "payload": {
+                "op": 0,
+                "t": "C2C_MESSAGE_CREATE",
+                "id": "evt-real-io-c2c-001",
+                "s": 1,
+                "d": {
+                    "author": {"user_openid": "FIXTURE_USER_OPENID_C2C_001"},
+                    "content": "test",
+                    "id": "ROBOT1.0_fixture_c2c_msg_001",
+                    "timestamp": "2026-07-09T12:00:00+08:00",
+                    "attachments": [],
+                },
+            }
+        },
     )
 
 
-class AdapterRealIoStubTests(unittest.TestCase):
-    """Plan 02: capabilities/health advertise fixture_only/network_io via live gate."""
+def _text_delivery() -> ChannelDelivery:
+    return ChannelDelivery(
+        delivery_id="deliv-real-io-1",
+        channel_id="qqbot",
+        run_id="run-real-io-1",
+        content="根据《民法典》……",
+        metadata={
+            "delivery_type": "text",
+            "scene": "c2c",
+            "user_openid": "FIXTURE_USER_OPENID_C2C_001",
+            "msg_id": "ROBOT1.0_fixture_c2c_msg_001",
+            "received_at": "2026-07-09T11:59:00Z",
+            "reply_count": 0,
+        },
+    )
 
-    def test_capabilities_live_ready_advertises_network_io(self) -> None:
-        """When enabled+token+transport, capabilities.metadata is not fixture-only."""
-        caps = _live_adapter().capabilities()
-        self.assertFalse(caps.metadata.get("fixture_only"))
-        self.assertTrue(caps.metadata.get("network_io"))
-        self.assertTrue(caps.metadata.get("enabled"))
 
-    def test_capabilities_default_off_stays_fixture_only(self) -> None:
-        """Default/disabled adapter keeps fixture_only=True and network_io=False."""
+class AdapterRealIoTests(unittest.TestCase):
+    """ADAPTER-01: honest live vs fixture metadata across six Protocol methods."""
+
+    # -- channel_id ------------------------------------------------------------
+
+    def test_channel_id_unchanged(self) -> None:
+        self.assertEqual(QQBotChannelAdapter().channel_id(), "qqbot")
+        adapter, _ = _live_adapter()
+        self.assertEqual(adapter.channel_id(), "qqbot")
+        self.assertEqual(adapter.channel_id(), adapter._config.channel_id)
+
+    # -- capabilities ----------------------------------------------------------
+
+    def test_capabilities_fixture_when_disabled(self) -> None:
         caps = QQBotChannelAdapter().capabilities()
         self.assertTrue(caps.metadata.get("fixture_only"))
         self.assertFalse(caps.metadata.get("network_io"))
         self.assertFalse(caps.metadata.get("enabled"))
+        _assert_no_secrets(self, caps.metadata)
 
-    def test_health_reports_live_io_ready_without_network_call(self) -> None:
-        """health.metadata.live_io_ready True when gated; health itself network_io False."""
-        health = run(_live_adapter().health())
+    def test_capabilities_live_when_ready(self) -> None:
+        adapter, _ = _live_adapter()
+        caps = adapter.capabilities()
+        self.assertFalse(caps.metadata.get("fixture_only"))
+        self.assertTrue(caps.metadata.get("network_io"))
+        self.assertTrue(caps.metadata.get("enabled"))
+        ack_strategy = str(caps.metadata.get("ack_strategy") or "")
+        self.assertIn("op12", ack_strategy)
+        self.assertIn("interaction_put", ack_strategy)
+        _assert_no_secrets(self, caps.metadata)
+
+    # -- health (A5: presence-only, no get_token) ------------------------------
+
+    def test_health_presence_only_when_live(self) -> None:
+        adapter, _ = _live_adapter()
+        health = run(adapter.health())
         self.assertTrue(health.ok)
         self.assertTrue(health.metadata.get("live_io_ready"))
+        self.assertTrue(health.metadata.get("token_manager_present"))
+        self.assertTrue(health.metadata.get("transport_present"))
         self.assertFalse(health.metadata.get("network_io"))
         self.assertFalse(health.metadata.get("fixture_only"))
+        _assert_no_secrets(self, health.metadata)
 
-    def test_normalize_inbound_marks_live_ready_metadata(self) -> None:
-        """normalize_inbound metadata fixture_only reflects live readiness (Plan 02)."""
-        adapter = _live_adapter()
-        raw = RawInbound(
-            channel_id="qqbot",
-            payload_ref="fixture://qqbot/inbound/real-io-normalize",
-            received_at="2026-07-09T00:00:00Z",
-            idempotency_key="qqbot-real-io-norm-1",
-            metadata={
-                "payload": {
-                    "type": "message",
-                    "conversation_id": "qqbot:c2c:fixture:fixture",
-                    "user_id": "FIXTURE_USER_OPENID_C2C_001",
-                    "content_ref": "ref://fixture/content",
-                }
-            },
-        )
-        inbound = run(adapter.normalize_inbound(raw))
+    def test_health_presence_only_when_disabled(self) -> None:
+        health = run(QQBotChannelAdapter().health())
+        self.assertFalse(health.ok)
+        self.assertFalse(health.metadata.get("live_io_ready"))
+        self.assertFalse(health.metadata.get("token_manager_present"))
+        self.assertFalse(health.metadata.get("transport_present"))
+        self.assertFalse(health.metadata.get("network_io"))
+        self.assertTrue(health.metadata.get("fixture_only"))
+        _assert_no_secrets(self, health.metadata)
+
+    # -- normalize_inbound (local; no network_io claim) ------------------------
+
+    def test_normalize_inbound_metadata_honesty_live(self) -> None:
+        adapter, _ = _live_adapter()
+        inbound = run(adapter.normalize_inbound(_c2c_gateway_raw()))
+        self.assertIsNotNone(inbound.message)
         self.assertFalse(inbound.metadata.get("fixture_only"))
+        # Normalize is local — must not claim network_io.
+        self.assertFalse(inbound.metadata.get("network_io", False))
+        _assert_no_secrets(self, inbound.metadata)
 
-    def test_deliver_live_path_sets_network_io_when_sent(self) -> None:
-        """deliver with live gate + scene may set network_io True (existing sender path)."""
-        adapter = _live_adapter()
-        delivery = ChannelDelivery(
-            delivery_id="deliv-real-io-1",
-            channel_id="qqbot",
-            run_id="run-real-io-1",
-            content="根据《民法典》……",
-            metadata={
-                "delivery_type": "text",
-                "scene": "c2c",
-                "user_openid": "FIXTURE_USER_OPENID_C2C_001",
-                "msg_id": "ROBOT1.0_fixture_c2c_msg_001",
-                "received_at": "2026-07-09T11:59:00Z",
-                "reply_count": 0,
-            },
-        )
-        result = run(adapter.deliver(delivery))
+    def test_normalize_inbound_metadata_honesty_fixture(self) -> None:
+        inbound = run(QQBotChannelAdapter().normalize_inbound(_c2c_gateway_raw()))
+        self.assertIsNotNone(inbound.message)
+        self.assertTrue(inbound.metadata.get("fixture_only"))
+        self.assertFalse(inbound.metadata.get("network_io", False))
+
+    # -- deliver ---------------------------------------------------------------
+
+    def test_deliver_text_live_sets_network_io(self) -> None:
+        adapter, transport = _live_adapter()
+        result = run(adapter.deliver(_text_delivery()))
         self.assertTrue(result.accepted)
         self.assertTrue(result.metadata.get("network_io"))
         self.assertFalse(result.metadata.get("fixture_only"))
+        self.assertGreaterEqual(transport.call_count, 1)
+        _assert_no_secrets(self, result.metadata)
+
+    def test_deliver_refuses_or_fixture_when_disabled(self) -> None:
+        transport = FakeMessageTransport(response={"id": "should-not-send"})
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=False),
+            token_manager=TokenManager(
+                app_id="fixture-app-id",
+                client_secret="fixture-client-secret",
+                transport=FakeTokenTransport(
+                    response={"access_token": "fixture-token", "expires_in": 7200}
+                ),
+            ),
+            transport=transport,
+        )
+        result = run(adapter.deliver(_text_delivery()))
+        self.assertFalse(result.accepted)
+        self.assertFalse(result.metadata.get("network_io", False))
+        self.assertEqual(transport.call_count, 0)
+        _assert_no_secrets(self, result.metadata)
+
+    # -- verify_and_ack (privacy on Ack metadata) ------------------------------
+
+    def test_verify_and_ack_disabled_metadata_privacy(self) -> None:
+        adapter = QQBotChannelAdapter(QQBotChannelConfig(enabled=False))
+        ack = run(
+            adapter.verify_and_ack(
+                RawInbound(
+                    channel_id="qqbot",
+                    payload_ref="fixture://qqbot/ack/disabled",
+                    received_at="2026-07-09T00:00:00Z",
+                    idempotency_key="qqbot-real-io-ack-disabled",
+                    metadata={"payload": {"type": "message"}},
+                )
+            )
+        )
+        self.assertFalse(ack.accepted)
+        self.assertEqual(ack.status_code, 503)
+        self.assertFalse(ack.metadata.get("network_io", False))
+        self.assertTrue(ack.metadata.get("fixture_only"))
+        _assert_no_secrets(self, ack.metadata)
+
+    # -- _live_io_ready helper -------------------------------------------------
 
     def test_live_io_ready_helper_exists(self) -> None:
-        """Plan 02/01 share private _live_io_ready on the adapter."""
-        adapter = _live_adapter()
+        adapter, _ = _live_adapter()
         self.assertTrue(hasattr(adapter, "_live_io_ready"))
         self.assertTrue(adapter._live_io_ready())
         self.assertFalse(QQBotChannelAdapter()._live_io_ready())

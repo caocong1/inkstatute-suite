@@ -125,6 +125,26 @@ class FeatureFlagDefaultOffTests(unittest.TestCase):
         self.assertIs(flags.codex_backend_enabled, False)
         self.assertIs(flags.provider_model_backend_enabled, False)
 
+    # ------------------------------------------------------------------
+    # Dual-knob default-OFF + fixture-path network_io honesty (ADAPTER-02)
+    # ------------------------------------------------------------------
+
+    def test_dual_knob_defaults_false(self) -> None:
+        """RuntimeFeatureFlags and QQBotChannelConfig both default False."""
+        self.assertIs(RuntimeFeatureFlags().qqbot_channel_enabled, False)
+        self.assertIs(QQBotChannelConfig().enabled, False)
+
+    def test_disabled_capabilities_and_health_network_io_false(self) -> None:
+        """Fixture path advertises network_io=False on capabilities and health."""
+        adapter = QQBotChannelAdapter()
+        caps = adapter.capabilities()
+        self.assertFalse(caps.metadata.get("network_io", True))
+        self.assertTrue(caps.metadata.get("fixture_only"))
+
+        health = run(adapter.health())
+        self.assertFalse(health.metadata.get("network_io", True))
+        self.assertTrue(health.metadata.get("fixture_only"))
+
 
 if __name__ == "__main__":
     unittest.main()
