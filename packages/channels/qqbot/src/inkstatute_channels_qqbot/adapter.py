@@ -1,4 +1,4 @@
-"""QQBot ChannelAdapter implementation — fixture-grade, no network IO."""
+"""QQBot ChannelAdapter implementation — flag-gated real IO with fixture CI path."""
 
 from __future__ import annotations
 
@@ -43,7 +43,11 @@ JsonObject = dict[str, Any]
 
 
 class QQBotChannelAdapter:
-    """Sanitized QQBot channel adapter with no server or network side effects."""
+    """QQBot channel adapter with flag-gated real IO behind injectable transports.
+
+    Live OpenAPI calls require ``config.enabled`` plus injected ``token_manager``
+    and ``transport``. Default config keeps the fixture CI path (no network).
+    """
 
     def __init__(
         self,
@@ -69,6 +73,7 @@ class QQBotChannelAdapter:
         )
 
     def capabilities(self) -> ChannelCapabilitySet:
+        live = self._live_io_ready()
         return ChannelCapabilitySet(
             supports_text=True,
             supports_files=True,
@@ -80,8 +85,9 @@ class QQBotChannelAdapter:
             idempotency_strategy="qqbot_callback_metadata",
             metadata={
                 "enabled": self._config.enabled,
-                "fixture_only": True,
-                "network_io": False,
+                "fixture_only": not live,
+                "network_io": live,
+                "ack_strategy": "op12_plus_interaction_put",
                 "secret_refs_configured": {
                     "app_id_ref": self._config.app_id_ref is not None,
                     "app_secret_ref": self._config.app_secret_ref is not None,
@@ -94,10 +100,12 @@ class QQBotChannelAdapter:
     async def verify_and_ack(self, raw: RawInbound) -> AckResponse:
         payload = self._payload_from_raw(raw)
         idem_key = raw.idempotency_key or _stable_id("qqbot-ack", raw.payload_ref)
+        live = self._live_io_ready()
         base_meta: JsonObject = {
             "channel_id": self._config.channel_id,
             "payload_ref": raw.payload_ref,
-            "fixture_only": True,
+            "fixture_only": not live,
+            # Webhook reply is host-local; interaction PUT is tracked separately.
             "network_io": False,
             "payload_kind": payload.get("type") or payload.get("kind") or "message",
         }
@@ -253,10 +261,13 @@ class QQBotChannelAdapter:
 
     async def normalize_inbound(self, raw: RawInbound) -> InboundNormalized:
         payload = self._payload_from_raw(raw)
+        live = self._live_io_ready()
 
         # Real QQ Bot gateway envelope {op, t, d} → delegate to normalization.py
         if _is_gateway_envelope(payload):
-            return _normalize_gateway_envelope(raw, payload, self._config.channel_id)
+            return _normalize_gateway_envelope(
+                raw, payload, self._config.channel_id, live=live
+            )
 
         # Legacy fixture format (pre-normalized fields) → existing path
         if _is_feedback_payload(payload):
@@ -268,7 +279,7 @@ class QQBotChannelAdapter:
                     "normalized_type": "feedback_event",
                     "idempotency_key": raw.idempotency_key
                     or channel_idempotency_key(payload, channel_prefix="qqbot"),
-                    "fixture_only": True,
+                    "fixture_only": not live,
                 },
             )
         return InboundNormalized(
@@ -279,7 +290,7 @@ class QQBotChannelAdapter:
                 "normalized_type": "agent_turn",
                 "idempotency_key": raw.idempotency_key
                 or channel_idempotency_key(payload, channel_prefix="qqbot"),
-                "fixture_only": True,
+                "fixture_only": not live,
             },
         )
 
@@ -305,13 +316,14 @@ class QQBotChannelAdapter:
             _optional_string(metadata.get("idempotency_key"))
             or _stable_id("qqbot-delivery", delivery.delivery_id)
         )
+        live = self._live_io_ready()
         base_meta: JsonObject = {
             "channel_id": self._config.channel_id,
             "delivery_type": delivery_type,
             "message_type": delivery_type,
             "policy_action": policy.action,
             "policy_reason": policy.reason,
-            "fixture_only": True,
+            "fixture_only": not live,
             "network_io": False,
         }
 
@@ -641,14 +653,18 @@ class QQBotChannelAdapter:
         )
 
     async def health(self) -> ComponentHealth:
+        live = self._live_io_ready()
         return ComponentHealth(
             ok=self._config.enabled,
             component_id="qqbot-channel",
             checked_at=_now(),
             detail="qqbot channel enabled" if self._config.enabled else "qqbot channel disabled",
             metadata={
-                "fixture_only": True,
+                "fixture_only": not live,
                 "network_io": False,
+                "token_manager_present": self._token_manager is not None,
+                "transport_present": self._transport is not None,
+                "live_io_ready": live,
                 "secret_refs_configured": {
                     "app_id_ref": self._config.app_id_ref is not None,
                     "app_secret_ref": self._config.app_secret_ref is not None,
@@ -811,7 +827,7 @@ def _interaction_id_from_payload(payload: Mapping[str, Any]) -> str | None:
 
 
 def _normalize_gateway_envelope(
-    raw: RawInbound, payload: Mapping[str, Any], channel_id: str
+    raw: RawInbound, payload: Mapping[str, Any], channel_id: str, *, live: bool = False
 ) -> InboundNormalized:
     """Delegate a real QQ Bot gateway envelope to normalization.py pure functions."""
     from .normalization import (
@@ -822,6 +838,7 @@ def _normalize_gateway_envelope(
     )
 
     event = parse_envelope(payload)
+    fixture_only = not live
 
     if event.category == QQBotEventCategory.INTERACTION:
         feedback = normalize_interaction_event(
@@ -835,7 +852,7 @@ def _normalize_gateway_envelope(
                 "normalized_type": "feedback_event",
                 "idempotency_key": raw.idempotency_key
                 or channel_idempotency_key(payload, channel_prefix="qqbot"),
-                "fixture_only": True,
+                "fixture_only": fixture_only,
             },
         )
 
@@ -854,7 +871,7 @@ def _normalize_gateway_envelope(
                 "normalized_type": "agent_turn",
                 "idempotency_key": raw.idempotency_key
                 or channel_idempotency_key(payload, channel_prefix="qqbot"),
-                "fixture_only": True,
+                "fixture_only": fixture_only,
             },
         )
 
@@ -866,7 +883,7 @@ def _normalize_gateway_envelope(
             "normalized_type": event.category.value,
             "idempotency_key": raw.idempotency_key
             or channel_idempotency_key(payload, channel_prefix="qqbot"),
-            "fixture_only": True,
+            "fixture_only": fixture_only,
         },
     )
 
