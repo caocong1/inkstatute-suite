@@ -134,6 +134,13 @@ Plans:
 5. `adapter.py` `deliver()` is modified to use the new sender.
 6. Output boundary enforcement prevents backend gateway/system notices from leaking to users.
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 62-01-PLAN.md — Envelope builders for text/markdown/keyboard + output policy tests
+- [ ] 62-02-PLAN.md — Passive-reply window gate + MessageTransport send/retry
+- [ ] 62-03-PLAN.md — adapter.deliver() wiring + fixture/wecom-isolation test updates
+
 ### Phase 63: QQ Rich Media Inbound + Egress (P2)
 
 **Goal:** QQ Bot rich media inbound (image/voice/video/file `attachments[]`) is parsed into `AttachmentRef` records with reference-only policy; rich media egress uses two-step upload for DOCX/PDF legal document delivery with retry and evidence collection.
