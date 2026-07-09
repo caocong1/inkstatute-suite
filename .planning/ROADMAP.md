@@ -174,6 +174,13 @@ Plans:
 4. Interrupt resume preserves skill clarification questions across user replies.
 5. Memory recall (pre-turn recall + post-turn retention) is wired via `MemoryOrchestrator` with fail-open graceful degradation.
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 64-01-PLAN.md — QQBotSessionRuntime core: create_run/resume_interrupt, scene isolation, no wecom import
+- [ ] 64-02-PLAN.md — QQBotRuntimeIngress callback→turn→session + public exports + skip non-message
+- [ ] 64-03-PLAN.md — MemoryOrchestrator fail-open recall + finalize_memory retention (SESS-03)
+
 ### Phase 65: Adapter Integration — Promote to Real IO
 
 **Goal:** QQBotChannelAdapter is promoted from fixture-only to real IO across all 6 frozen Protocol methods, with QQ-specific behavior encoded via metadata fields; `qqbot_channel_enabled` flag gates real IO; fixture path is preserved for CI when flag off; two-tier ACK is implemented; `test_no_wecom_import.py` is enforced; no new channel-core modules.

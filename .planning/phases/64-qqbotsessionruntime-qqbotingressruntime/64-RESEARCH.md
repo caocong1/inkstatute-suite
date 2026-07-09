@@ -342,15 +342,13 @@ def _with_memory_context_fail_open(run_request, *, memory_orchestrator, ...):
 
 ## Open Questions
 
-1. **Orchestrator fail-open vs WeCom strict evidence**
+1. **Orchestrator fail-open vs WeCom strict evidence** — **RESOLVED (planner D-01)**
    - What we know: WeCom `test_fail_closed_memory_evidence_error_blocks_backend_submission` expects raise; SESS-03 asks fail-open matching WeCom *session* memory behavior (MemoryIntegrationPolicy default FAIL_OPEN).
-   - What's unclear: Whether QQ must also support an opt-in fail-closed mode.
-   - Recommendation: Default fail-open for both Memory and MemoryOrchestrator; optional policy flag `fail_closed` for tests only.
+   - Resolution: Default fail-open for both Memory and MemoryOrchestrator paths in QQ; optional `failure_mode=FAIL_CLOSED` policy flag for tests only. Planned in `64-03-PLAN.md`.
 
-2. **Export surface in `__init__.py`**
+2. **Export surface in `__init__.py`** — **RESOLVED (planner D-02)**
    - What we know: Today exports only adapter + config.
-   - What's unclear: Whether to export `QQBotSessionRuntime` / `QQBotRuntimeIngress` publicly in Phase 64.
-   - Recommendation: Export from `__init__.py` for host discoverability (low risk).
+   - Resolution: Export `QQBotSessionRuntime`, `QQBotSessionRuntimeAction`, `QQBotSessionRuntimeOutcome`, and `QQBotRuntimeIngress` from `__init__.py` for host discoverability. Planned in `64-02-PLAN.md`.
 
 ## Environment Availability
 
