@@ -501,19 +501,13 @@ def _rich_media_evidence(
 ## Open Questions
 
 1. **Should inbound video set `message_type="file"` or keep `"text"` when caption exists?**
-   - What we know: MessageType has no video; attachments can coexist with content.
-   - What's unclear: Product preference for multi-modal turns.
-   - Recommendation: Primary from first attachment (`video→file`); keep caption in `content`.
+   - **RESOLVED (planner 2026-07-09):** Primary from first attachment (`video→file`); keep caption in `content`. Frozen MessageType has no `video`; AttachmentRef.kind stays `"video"`.
 
 2. **Does Phase 63 update `adapter.capabilities` flags now or wait for Phase 65?**
-   - What we know: Success criteria require AttachmentRef parse + two-step upload; capabilities currently `supports_files=False`.
-   - What's unclear: Whether false advertising breaks host routing.
-   - Recommendation: Set `supports_files=True` (and `supports_images=True`) in this phase when deliver path exists; keep `fixture_only` metadata until Phase 65 live IO.
+   - **RESOLVED (planner 2026-07-09):** Set `supports_files=True` and `supports_images=True` in Phase 63 when deliver file/image path exists; keep `fixture_only` / `network_io=False` metadata until Phase 65 live IO. Leave `supports_voice=False` (voice egress out of scope).
 
 3. **Exact evidence schema for Phase 67 smoke toolkit**
-   - What we know: ROADMAP Phase 67 requires sanitized evidence (no tokens, raw payloads, attachment URLs).
-   - What's unclear: Shared helper vs ad hoc metadata keys.
-   - Recommendation: Keep evidence keys stable as listed in Pattern 2; Phase 67 can formalize.
+   - **RESOLVED (planner 2026-07-09):** Stabilize evidence keys in `_rich_media_evidence` / DeliveryResult.metadata as Pattern 2: `rich_media_stage`, `attempts`, `send_status_code`, `send_qq_code`, `file_uuid_hash`, `ttl`, `issue_code`. Never tokens, upload URLs, `file_data`, or attachment download URLs. Phase 67 may formalize a shared helper later without renaming these keys.
 
 ## Environment Availability
 

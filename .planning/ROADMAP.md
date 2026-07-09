@@ -153,6 +153,14 @@ Plans:
 2. Two-step upload (`POST /v2/.../files` → `file_info` → `msg_type=7`) is implemented for DOCX/PDF legal document delivery.
 3. Retry and evidence collection are implemented for rich media egress failures.
 
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 63-01-PLAN.md — Inbound attachments[] → AttachmentRef (reference-only qqbot-media://) + fixtures/tests
+- [ ] 63-02-PLAN.md — Two-step upload + msg_type=7 media envelope + retry 304082/304083 + sanitized evidence
+- [ ] 63-03-PLAN.md — adapter.deliver file/image wiring + capabilities flags + ADAPTER-04 safety gates
+
 ### Phase 64: QQBotSessionRuntime + QQBotIngressRuntime
 
 **Goal:** QQBotSessionRuntime orchestrates continuous conversation for QQ users via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator` (composing `platform_runtime` primitives directly, no `wecom_service` import); QQBotIngressRuntime wires callback → turn → session runtime; scene-aware conversation identity partitions sessions; interrupt resume and memory recall work with fail-open degradation.

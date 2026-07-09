@@ -80,4 +80,4 @@ Optional human gate (not blocking phase verify): send a fixture DOCX/PDF URL thr
 - [x] Feedback latency < 20s
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending planner review
+**Approval:** planner reviewed 2026-07-09 — Wave 0 tasks mapped into 63-01/02/03 PLAN.md
