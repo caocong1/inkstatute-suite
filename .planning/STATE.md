@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: QQBot Channel Production
-status: executing
+status: Awaiting next milestone
 stopped_at: Roadmap created for v1.8 QQBot Channel Production (Phases 58-67)
-last_updated: "2026-07-09T12:19:40.773Z"
-last_activity: 2026-07-09
+last_updated: "2026-07-09T12:35:12.250Z"
+last_activity: 2026-07-09 — Milestone v1.8 completed and archived
 progress:
   total_phases: 10
-  completed_phases: 8
-  total_plans: 27
+  completed_phases: 10
+  total_plans: 25
   completed_plans: 25
-  percent: 80
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 60 — qq-event-normalization
+**Current focus:** Awaiting next milestone (v1.8 archived)
 
 ## Current Position
 
-Phase: 67
-Plan: Not started
-Status: Executing Phase 60
-Last activity: 2026-07-09
+Phase: Milestone v1.8 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-09 — Milestone v1.8 completed and archived
 
 ### Deferred Items
 
@@ -52,6 +52,9 @@ Items acknowledged and deferred at milestone close on 2026-07-02:
 | tech_debt | Phase 20 SQLite file-backed db_path production injection | deployment configuration step |
 | tech_debt | Phase 24 MemoryEvalRunner in-memory vs SQLite baseline | both modes tested and documented |
 | tech_debt | Phase 25 external adapter spikes | sanitized simulations only; no live provider integration |
+| tech_debt | v1.8 host webhook composition (adapter↔ingress/session/feedback) | deferred at close — accepted audit gap; next milestone candidate |
+| tech_debt | v1.8 smoke dry-run skips adapter/session Protocol path | deferred at close — optional hardening |
+| uat_gap | v1.8 live QQ smoke (`scripts/smoke_test.py --live`) | HUMAN GATE — not autonomous |
 
 ### Parallel Human Gate (v1.0)
 
@@ -301,4 +304,4 @@ v1.7 archive: .planning/milestones/v1.7-ROADMAP.md
 
 ## Operator Next Steps
 
-- Start Phase 58 planning with /gsd-plan-phase 58
+- Start the next milestone with /gsd-new-milestone

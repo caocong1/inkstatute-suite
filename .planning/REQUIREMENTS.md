@@ -1,142 +1,17 @@
-# Requirements: 墨律 InkStatute v1.8 QQBot Channel Production
+# Requirements
 
-**Defined:** 2026-07-07
-**Core Value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. v1.8 extends the platform with a production-grade QQBot channel aligned with WeCom behavior, including QQ-platform-required differences.
+**Milestone:** (awaiting next)
+**Updated:** 2026-07-09
 
-## v1.8 Requirements
+v1.8 QQBot Channel Production requirements are archived at
+[`.planning/milestones/v1.8-REQUIREMENTS.md`](milestones/v1.8-REQUIREMENTS.md).
 
-Requirements for QQBot Channel Production milestone. Each maps to roadmap phases (numbering continues from v1.7, next = 58).
+Define the next milestone with `$gsd-new-milestone` (or ingest docs) to populate this file.
 
-### Ingress — Signature & Validation
+## Active Requirements
 
-- [ ] **INGRESS-01**: QQ Bot webhook callback signature is verified using Ed25519 (BotSecret-derived keypair, `X-Signature-Ed25519` + `X-Signature-Timestamp` over `timestamp + raw_body`), rejecting unverified callbacks with HTTP 401.
-- [ ] **INGRESS-02**: QQ Bot callback URL validation handshake (op=13) is handled by signing `{event_ts + plain_token}` with the Ed25519 private key and returning `{plain_token, signature}`, enabling webhook URL registration.
-- [x] **INGRESS-03**: QQ Bot gateway envelope `{op, t, d}` is parsed into typed event categories (C2C message, GROUP_AT_MESSAGE_CREATE, INTERACTION_CREATE, validation challenge) with correct dispatch before normal event processing.
-
-### Ingress — Event Normalization
-
-- [x] **INGRESS-04**: QQ Bot C2C and group @-bot message events are normalized into `AgentTurn` records with @-bot prefix stripped, scene-aware composite `conversation_id` (`qqbot:{scene}:{scene_id}:{user_openid}`), and platform contract channel metadata.
-- [x] **INGRESS-05**: QQ Bot `INTERACTION_CREATE` events are normalized into `FeedbackEvent` records with `source="card_button"` (frozen enum), `action` mapped from button `data.resolved.button_data` (up/down/needs_fix/route_wrong), and no new `FeedbackSource` enum values added.
-- [x] **INGRESS-06**: QQ Bot webhook ACK uses two-tier strategy: HTTP 200 with op=12 envelope for message events, plus `PUT /interactions/{id}` for button-click events (without which the QQ client hangs in loading state).
-
-### Egress — Token & Delivery
-
-- [x] **EGRESS-01**: QQ Bot access token is acquired via `appId + clientSecret → POST /getAppAccessToken`, cached with 7200s TTL, auto-refreshed 60s before expiry, and single-flight under concurrent refresh via `asyncio.Lock`.
-- [x] **EGRESS-02**: QQ Bot text messages (`msg_type=0`) are delivered via OpenAPI with `msg_id` + `msg_seq` passive-reply dedupe, retry on transient failure, and output boundary enforcement (no backend gateway/system notices leak to users).
-- [x] **EGRESS-03**: QQ Bot markdown + keyboard feedback cards (`msg_type=2` + `keyboard` with callback buttons up/down/needs_fix/route_wrong) are delivered, mapping `delivery_type=="card"` to QQ keyboard payload (not WeCom `template_card`).
-- [x] **EGRESS-04**: QQ Bot passive-reply time window (C2C 60min/4 replies, group 5min/5 replies per `msg_id`) is tracked; window expiry surfaces as a delivery failure with an interim InkStatute-owned service notice (not a silent drop).
-
-### Egress — Rich Media (P2)
-
-- [x] **EGRESS-05**: QQ Bot rich media inbound (image/voice/video/file `attachments[]`) is parsed into `AttachmentRef` records with reference-only policy (no raw payload storage, URL stored as `raw_payload_ref`).
-- [x] **EGRESS-06**: QQ Bot rich media egress uses two-step upload (`POST /v2/.../files` → `file_info` → `msg_type=7`) for DOCX/PDF legal document delivery, with retry and evidence collection.
-
-### Egress — Markdown Replies (P2)
-
-- [x] **EGRESS-07**: QQ Bot markdown replies (`msg_type=2`) are delivered for structured legal answers, leveraging QQ's native markdown support (which WeCom lacks), with output boundary enforcement on markdown content.
-
-### Session Continuity
-
-- [x] **SESS-01**: QQBotSessionRuntime orchestrates continuous conversation for QQ users via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator`, composing `platform_runtime` primitives directly (no `wecom_service` import).
-- [x] **SESS-02**: QQ Bot interrupt resume preserves skill clarification questions across user replies, with scene-aware conversation identity partitioning sessions by channel + scene (no C2C/group cross-scene collision).
-- [x] **SESS-03**: QQ Bot memory recall (pre-turn recall + post-turn retention) is wired via `MemoryOrchestrator` with fail-open graceful degradation, matching WeCom session runtime behavior.
-
-### Feedback Loop Parity
-
-- [x] **FEEDBACK-01**: QQ Bot feedback loop is wired end-to-end: keyboard card dispatch (egress) → user button click → `INTERACTION_CREATE` (ingress) → `FeedbackEvent` normalization → feedback-service dedupe/classify/queue, achieving parity with WeCom feedback pipeline.
-- [x] **FEEDBACK-02**: QQ Bot interaction ACK (`PUT /interactions/{id}`) is sent after feedback normalization, completing the two-tier ACK for button-click events.
-- [x] **FEEDBACK-03**: QQ Bot feedback dedupe uses `msg_id` + button identity, preventing duplicate `FeedbackEvent` records from repeated clicks or platform retries.
-
-### Session Recall (P2)
-
-- [x] **RECALL-01**: QQ Bot `is_wakeup` interaction recall is supported for over-window long-task completion (windowed: 30-day periods, 1 per period), allowing the bot to notify users when a long task finishes after the passive-reply window expires.
-
-### Adapter Integration & Safety
-
-- [x] **ADAPTER-01**: QQBotChannelAdapter is promoted from fixture-only to real IO across all 6 frozen Protocol methods, with QQ-specific behavior encoded via `ChannelDelivery.metadata`, `AckResponse.metadata`, `ChannelCapabilitySet.metadata` (no Protocol methods added or modified).
-- [x] **ADAPTER-02**: QQBot channel feature flag (`qqbot_channel_enabled`) defaults to `False`; fixture path is preserved for CI when flag is off; real IO is gated behind the flag.
-- [x] **ADAPTER-03**: QQBot adapter does not import from `wecom_service` (enforced by `test_no_wecom_import.py`); channel-core modules are reused as-is (no new channel-core modules).
-- [ ] **ADAPTER-04**: All 24 existing V2 gates remain green throughout v1.8; frozen ChannelAdapter Protocol, BackendAdapter Protocol, platform-contract enums/schemas, and channel-core modules are not modified.
-
-### Smoke-Test Toolkit
-
-- [x] **SMOKE-01**: One-click smoke-test CLI (`scripts/smoke_test.py`) validates signature verification, sends text + markdown+keyboard, simulates callback, and collects sanitized evidence — all via env-var credential injection (no secrets in code or output).
-- [x] **SMOKE-02**: Smoke-test `--dry-run` mode runs without live QQ Bot platform connection (CI-able), validating envelope structure, signature logic, and evidence format with fixture credentials.
-- [x] **SMOKE-03**: Smoke-test operator runbook (`runbook/SMOKE_TEST_RUNBOOK.md`) documents credential setup, env-var injection, command sequence, expected outputs, and evidence collection format — enabling an operator to run the live smoke test without deep platform knowledge.
-- [x] **SMOKE-04**: Smoke-test evidence output is sanitized (no tokens, no raw user payloads, no attachment URLs); evidence is structured for archival in `.planning/` after live run.
-
-## v2 Requirements (Deferred)
-
-### WebSocket Ingress Mode
-
-- **WS-01**: QQ Bot WebSocket ingress mode (stateful, Resume/op6, heartbeat/identify/reconnect) as an alternative to webhook mode.
-- **WS-02**: WebSocket Resume (op=6) with durable `s` sequence persistence for event continuity across reconnects.
-
-### Guild & Channel Management
-
-- **GUILD-01**: QQ Bot guild/channel management APIs (roles, permissions, sub-channels, forums, audio stage).
-- **GUILD-02**: Group role-aware routing (owner/admin/member privileges influencing routing decisions).
-
-### Advanced Push
-
-- **PUSH-01**: QQ Bot active push beyond `is_wakeup` (monthly quota-managed broadcasts with user opt-in).
-- **PUSH-02**: QQ-built-in voice ASR passthrough for voice message inbound.
-
-## Out of Scope
-
-| Feature | Reason |
-|---------|--------|
-| Modifying frozen ChannelAdapter Protocol (6 methods) | Protocol is frozen; QQ-specific behavior expressed via metadata fields. Modifying breaks all existing channels. |
-| Modifying frozen platform-contract enums/schemas | `Channel.QQBOT`, `FeedbackSource.CARD_BUTTON`, `FeedbackAction.*` already exist; no new enum values needed. |
-| Importing from `wecom_service` into QQBot adapter | Enforced by `test_no_wecom_import.py`; channels must be independent. WeCom is a reference pattern, not a shared codebase. |
-| Adding `qq-botpy` (botpy) SDK | Stale (last release March 2024), WebSocket-framework mismatch with webhook model, breaks `dependencies = []` pattern. Direct protocol implementation preferred. |
-| Adding new database, queue, or service | Reuse existing `RunRuntime`, `InMemoryInterruptStore`, `MemoryOrchestrator`, feedback-service, conversation-read-view. No new infrastructure. |
-| Rebuilding Hermes core / channel-core / router / skill registry | V2 calls Hermes as agent backend; channel-core already extracted in v1.6. Not in scope. |
-| Live QQ Bot platform connection as autonomous milestone deliverable | Live run is a human gate (symmetric with WeCom Phase 5). Toolkit + dry-run ship in milestone; live evidence is operator-driven. |
-| Storing QQ attachment URLs or raw user payloads in contract logs | AGENTS.md safety rule: contract logs prefer references (`raw_payload_ref`); no sensitive full text by default. |
-| Auto-synthesizing or auto-modifying legal skill candidates | V2 records `skill_candidate` for human review only; high-risk legal feedback remains human-reviewed. |
+_(none — awaiting next milestone)_
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| INGRESS-01 | 59 | Complete |
-| INGRESS-02 | 59 | Complete |
-| INGRESS-03 | 60 | Complete |
-| INGRESS-04 | 60 | Complete |
-| INGRESS-05 | 60 | Complete |
-| INGRESS-06 | 65 | Complete |
-| EGRESS-01 | 61 | Complete |
-| EGRESS-02 | 62 | Complete |
-| EGRESS-03 | 62 | Complete |
-| EGRESS-04 | 62 | Complete |
-| EGRESS-05 | 63 | Complete |
-| EGRESS-06 | 63 | Complete |
-| EGRESS-07 | 62 | Complete |
-| SESS-01 | 64 | Complete |
-| SESS-02 | 64 | Complete |
-| SESS-03 | 64 | Complete |
-| FEEDBACK-01 | 66 | Complete |
-| FEEDBACK-02 | 66 | Complete |
-| FEEDBACK-03 | 66 | Complete |
-| RECALL-01 | 66 | Complete |
-| ADAPTER-01 | 65 | Complete |
-| ADAPTER-02 | 65 | Complete |
-| ADAPTER-03 | 65 | Complete |
-| ADAPTER-04 | 58 | Complete |
-| SMOKE-01 | 67 | Complete |
-| SMOKE-02 | 67 | Complete |
-| SMOKE-03 | 67 | Complete |
-| SMOKE-04 | 67 | Complete |
-
-**Coverage:**
-
-- v1.8 requirements: 28 total
-- Mapped to phases: 28
-- Unmapped: 0
-
----
-*Requirements defined: 2026-07-07*
-*Last updated: 2026-07-07 after v1.8 roadmap creation (28/28 requirements mapped to Phases 58-67)*
+_(none — awaiting next milestone)_

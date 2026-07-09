@@ -15,10 +15,14 @@
   - Archive: [v1.6-ROADMAP.md](milestones/v1.6-ROADMAP.md) | [v1.6-REQUIREMENTS.md](milestones/v1.6-REQUIREMENTS.md) | [v1.6-MILESTONE-AUDIT.md](milestones/v1.6-MILESTONE-AUDIT.md)
 - Complete **v1.7 M3 Platform Extensions** - Phases 45-57 + 57.1 gap closure shipped 2026-07-06. Promoted adapter prototypes to production-grade, extended platform surface (MCP, model gateway, multi-agent, skill write + hybrid routing), added operator and lawyer-facing Web UI, and introduced RBAC + multi-tenant isolation. Audit passed (38/38 requirements, 24/24 gates green, 1,547+ tests).
   - Archive: [v1.7-ROADMAP.md](milestones/v1.7-ROADMAP.md) | [v1.7-REQUIREMENTS.md](milestones/v1.7-REQUIREMENTS.md) | [v1.7-MILESTONE-AUDIT.md](milestones/v1.7-MILESTONE-AUDIT.md)
-- Active **v1.8 QQBot Channel Production** - Phases 58-67 (planning). Promote the QQBot channel from v1.6 fixture-only proof to a complete V2 production-grade channel loop aligned with WeCom behavior (including QQ-platform-required differences), and deliver a one-click live-platform smoke-test toolkit. 28 requirements, 10 phases.
-  - Requirements: `.planning/REQUIREMENTS.md`
+- Complete **v1.8 QQBot Channel Production** - Phases 58-67 shipped 2026-07-09. Promoted QQBot from fixture-only proof to production-grade channel loop (signature, normalize, token, egress, rich media, session/ingress, adapter real IO, feedback+wakeup, smoke toolkit). Audit: gaps_found (host composition deferred; package-level 28/28 + 321 tests green). Live QQ smoke remains a human gate.
+  - Archive: [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
 
-## Current Milestone: v1.8 QQBot Channel Production
+## Current Milestone: (awaiting next)
+
+> v1.8 QQBot Channel Production shipped 2026-07-09. See archive links above. Phase details below retained until `$gsd-cleanup` archives phase dirs.
+
+## Archived Milestone Detail: v1.8 QQBot Channel Production
 
 **Goal:** Promote the QQBot channel from v1.6 fixture-only proof to a complete V2 production-grade channel loop aligned with WeCom behavior (including QQ-platform-required differences), and deliver a one-click live-platform smoke-test toolkit.
 

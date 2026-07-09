@@ -1,5 +1,43 @@
 # Project Milestones: 墨律 InkStatute
 
+## v1.8 QQBot Channel Production (Shipped: 2026-07-09)
+
+**Delivered:** Promoted the QQBot channel from v1.6 fixture-only proof to a complete V2 production-grade channel loop (Ed25519 signature + validation challenge, event normalization, access-token manager, text/markdown/keyboard egress, rich-media inbound/egress, session+ingress runtime, adapter real IO behind default-OFF flag, feedback loop parity + is_wakeup recall, and one-click dry-run smoke toolkit). Package-level 28/28 requirements satisfied; 321 qqbot unit tests green. Audit status `gaps_found` — production host webhook composition deferred; live QQ smoke remains a human gate.
+
+**Phases completed:** 58–67 (10 phases, 25 plans, 53 tasks)
+
+**Archive:** [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
+
+**Key accomplishments:**
+
+- Safety baseline + Protocol/deps freeze (ADAPTER-04) before feature work
+- Ed25519 signature verification + op=13 validation challenge (INGRESS-01/02)
+- Gateway envelope normalization → AgentTurn / FeedbackEvent (INGRESS-03..05)
+- TokenManager with TTL cache, 60s pre-expiry refresh, asyncio.Lock single-flight (EGRESS-01)
+- Text / markdown / keyboard egress + passive-reply windows + output boundary (EGRESS-02/03/04/07)
+- Rich-media AttachmentRef inbound + two-step upload msg_type=7 (EGRESS-05/06)
+- QQBotSessionRuntime + QQBotRuntimeIngress composing platform_runtime (SESS-01..03)
+- Adapter real IO across 6 Protocol methods + two-tier ACK (ADAPTER-01..03, INGRESS-06)
+- Feedback-service composition + ACK no-op-if-sent + C2C is_wakeup period gate (FEEDBACK-01..03, RECALL-01)
+- `scripts/smoke_test.py --dry-run` + runbook + sanitized evidence (SMOKE-01..04)
+
+**Stats:**
+
+- 10 phases, 25 plans, 53 tasks
+- 321 qqbot unit tests OK; smoke `--dry-run` exit 0
+- Audit: gaps_found (host composition deferred; accepted at close)
+
+**Known Gaps / Deferred at close:**
+
+- Production host webhook composing `verify_and_ack` → ingress/session / feedback → `deliver` (next-milestone candidate)
+- Smoke dry-run skips full adapter Protocol + session path (optional hardening)
+- Live QQ smoke (`--live`) — HUMAN GATE
+- Carried: Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial
+
+**Follow-up:** Start next milestone with `$gsd-new-milestone`.
+
+---
+
 ## v1.7 M3 Platform Extensions (Shipped: 2026-07-06)
 
 **Delivered:** Promoted adapter prototypes to production-grade (streaming, artifacts, multi-provider, session memory), extended platform surface (MCP registry, model gateway, multi-agent, skill write + hybrid routing), added operator and lawyer-facing Web UI, and introduced RBAC + multi-tenant isolation. Gap closure phase 57.1 wired TenantGuard into Web UI data access paths. All 9 feature flags default False, no frozen Protocol surfaces modified, 24 V2 gates green (1,547+ tests).
