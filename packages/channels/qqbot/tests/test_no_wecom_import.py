@@ -82,6 +82,15 @@ class NoWecomImportTests(unittest.TestCase):
                 f"normalization.py imports from wecom_service: {module}",
             )
 
+    def test_token_manager_does_not_import_wecom_service(self) -> None:
+        source = (PACKAGE_SRC / "token_manager.py").read_text(encoding="utf-8")
+        modules = _imported_modules(source)
+        for module in modules:
+            self.assertFalse(
+                module.startswith("wecom_service"),
+                f"token_manager.py imports from wecom_service: {module}",
+            )
+
     def test_adapter_imports_channel_core(self) -> None:
         source = (PACKAGE_SRC / "adapter.py").read_text(encoding="utf-8")
         modules = _imported_modules(source)
