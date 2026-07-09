@@ -27,10 +27,10 @@ created: 2026-07-09
 
 ## Sampling Rate
 
-- **After every task commit:** Run quick run command (feedback pipeline + idempotency + wakeup)
+- **After every task commit:** Run the task's narrowed `<automated>` verify (ACK-only / sender-only where specified); do not require full-module green until the owning task
 - **After every plan wave:** Run full suite command (qqbot + feedback-service)
 - **Before `/gsd-verify-work`:** Full suite must be green
-- **Max feedback latency:** 35 seconds
+- **Max feedback latency:** 35 seconds (matches estimated quick-run runtime; optional budget, not a hard CI timeout)
 
 ---
 
@@ -45,12 +45,12 @@ created: 2026-07-09
 | 66-01-01 | 01 | 1 | FEEDBACK-03 | T-66-02 | `normalize_interaction_event` stamps `metadata.idempotency_key` = msg_id:button | unit | `PYTHONPATH="packages/channels/qqbot/src:packages/channel-core/src:packages/platform-contract/src:packages/platform-runtime/src" python3 -m unittest packages.channels.qqbot.tests.test_feedback_idempotency -v` | ❌ W0 | ⬜ pending |
 | 66-01-02 | 01 | 1 | FEEDBACK-03 | T-66-02 | Duplicate INTERACTION payloads collapse to one canonical FeedbackEvent in feedback-service | unit | `PYTHONPATH="…:services/feedback-service/src" python3 -m unittest services.feedback-service.tests.test_qqbot_feedback_parity -v` | ❌ W0 | ⬜ pending |
 | 66-01-03 | 01 | 1 | FEEDBACK-01 | T-66-01 | Feedback ingress helper returns FeedbackEvent dict consumable by `contract_feedback_events` | unit | same PYTHONPATH + `test_feedback_pipeline` | ❌ W0 | ⬜ pending |
-| 66-02-01 | 02 | 2 | FEEDBACK-01 | T-66-01 | E2E: keyboard fixture → INTERACTION fixture → normalize → classify → pending queue | unit | quick run command | ❌ W0 | ⬜ pending |
-| 66-02-02 | 02 | 2 | FEEDBACK-02 | T-66-04 | After normalize, interaction ACK is complete; no-op when `interaction_ack_status=="sent"`; pending_host can PUT | unit | `… test_feedback_pipeline` + `test_adapter_two_tier_ack` | ✅ extend | ⬜ pending |
+| 66-02-01 | 02 | 2 | FEEDBACK-02 | T-66-04 | After normalize, interaction ACK is complete; no-op when `interaction_ack_status=="sent"`; pending_host can PUT | unit | `… test_feedback_pipeline.TestEnsureInteractionAck` + `test_adapter_two_tier_ack` | ✅ extend | ⬜ pending |
+| 66-02-02 | 02 | 2 | FEEDBACK-01 | T-66-01 | E2E: keyboard↔button_data mapping (Phase 62 reuse) → INTERACTION → normalize → classify → pending queue | unit | `… test_feedback_pipeline` + `test_qqbot_feedback_parity` | ❌ W0 | ⬜ pending |
 | 66-02-03 | 02 | 2 | FEEDBACK-01 | T-66-05 | `route_wrong` remains human-review / `no_auto_modify`; no wecom_service import | unit | `… test_feedback_pipeline` + `test_no_wecom_import` | ✅ | ⬜ pending |
-| 66-03-01 | 03 | 3 | RECALL-01 | T-66-03 | C2C wakeup envelope has `is_wakeup=true` and omits `msg_id`/`event_id` | unit | `… test_wakeup_recall` | ❌ W0 | ⬜ pending |
-| 66-03-02 | 03 | 3 | RECALL-01 | T-66-03 | Four 30-day periods enforce 1 send/period; second send in same period fails closed | unit | same as 66-03-01 | ❌ W0 | ⬜ pending |
-| 66-03-03 | 03 | 3 | RECALL-01 | T-66-06 | Group / missing openid wakeup unsupported; passive expiry without wakeup still returns interim notice | unit | same as 66-03-01 + existing window tests | ✅ extend | ⬜ pending |
+| 66-03-01 | 03 | 3 | RECALL-01 | T-66-03 | C2C wakeup envelope has `is_wakeup=true` and omits `msg_id`/`event_id` (sender-only) | unit | `… test_wakeup_recall.TestWakeupEnvelope` | ❌ W0 | ⬜ pending |
+| 66-03-02 | 03 | 3 | RECALL-01 | T-66-03 | Four 30-day periods enforce 1 send/period; second send in same period fails closed (sender-only) | unit | `… test_wakeup_recall.TestWakeupPeriodGate` | ❌ W0 | ⬜ pending |
+| 66-03-03 | 03 | 3 | RECALL-01 | T-66-06 | Adapter deliver: group unsupported; passive expiry without wakeup still returns interim notice | unit | `… test_wakeup_recall` (full module) + existing window tests | ✅ extend | ⬜ pending |
 | 66-03-04 | 03 | 3 | ADAPTER-03/04 | T-66-07 | no wecom imports; Protocol/platform-contract/channel-core untouched; deps=[] | unit | `… test_no_wecom_import test_contract_freeze_not_violated test_v1_8_safety_baseline` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
