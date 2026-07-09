@@ -203,7 +203,10 @@ class QQBotChannelAdapterTests(unittest.TestCase):
     def test_text_delivery_applies_output_policy(self) -> None:
         result = run(self.adapter.deliver(text_delivery()))
 
-        self.assertTrue(result.accepted)
+        # enabled=True without transport/token must not claim delivery success.
+        self.assertFalse(result.accepted)
+        self.assertIsNone(result.delivered_at)
+        self.assertEqual(result.metadata["issue_code"], "live_io_not_ready")
         self.assertEqual(result.metadata["delivery_type"], "text")
         self.assertEqual(result.metadata["message_type"], "text")
         self.assertEqual(result.metadata["policy_action"], "allow")
@@ -215,7 +218,9 @@ class QQBotChannelAdapterTests(unittest.TestCase):
     def test_card_delivery_builds_card_envelope(self) -> None:
         result = run(self.adapter.deliver(card_delivery()))
 
-        self.assertTrue(result.accepted)
+        self.assertFalse(result.accepted)
+        self.assertIsNone(result.delivered_at)
+        self.assertEqual(result.metadata["issue_code"], "live_io_not_ready")
         self.assertEqual(result.metadata["delivery_type"], "card")
         self.assertEqual(result.metadata["message_type"], "card")
         envelope = result.metadata["envelope"]
@@ -236,7 +241,9 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         )
         result = run(self.adapter.deliver(delivery))
 
-        self.assertTrue(result.accepted)
+        self.assertFalse(result.accepted)
+        self.assertIsNone(result.delivered_at)
+        self.assertEqual(result.metadata["issue_code"], "live_io_not_ready")
         self.assertEqual(result.metadata["delivery_type"], "markdown")
         self.assertEqual(result.metadata["message_type"], "markdown")
         envelope = result.metadata["envelope"]

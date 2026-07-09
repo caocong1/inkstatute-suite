@@ -132,12 +132,14 @@ class QQBotChannelLoopTests(unittest.TestCase):
     # -- Step 3: normalize -> text delivery ------------------------------------
 
     def test_normalize_to_text_delivery(self) -> None:
-        """Text delivery is accepted and passes output policy (allow)."""
+        """Text delivery builds envelope + policy; enabled without live IO refuses."""
         delivery = channel_delivery_from_fixture(self.fixture, "text_delivery")
         result = run(self.adapter.deliver(delivery))
 
         self.assertIsInstance(result, DeliveryResult)
-        self.assertTrue(result.accepted)
+        self.assertFalse(result.accepted)
+        self.assertIsNone(result.delivered_at)
+        self.assertEqual(result.metadata.get("issue_code"), "live_io_not_ready")
         self.assertEqual(result.metadata.get("message_type"), "text")
         self.assertEqual(result.metadata.get("policy_action"), "allow")
         self.assertEqual(result.metadata.get("envelope", {}).get("msg_type"), 0)
@@ -146,11 +148,13 @@ class QQBotChannelLoopTests(unittest.TestCase):
     # -- Step 4: text delivery -> card delivery --------------------------------
 
     def test_text_delivery_to_card_delivery(self) -> None:
-        """Card delivery is accepted and routed as card message type."""
+        """Card delivery builds keyboard envelope; enabled without live IO refuses."""
         delivery = channel_delivery_from_fixture(self.fixture, "card_delivery")
         result = run(self.adapter.deliver(delivery))
 
-        self.assertTrue(result.accepted)
+        self.assertFalse(result.accepted)
+        self.assertIsNone(result.delivered_at)
+        self.assertEqual(result.metadata.get("issue_code"), "live_io_not_ready")
         self.assertEqual(result.metadata.get("message_type"), "card")
         self.assertEqual(result.metadata.get("policy_action"), "allow")
         envelope = result.metadata.get("envelope") or {}
@@ -194,15 +198,17 @@ class QQBotChannelLoopTests(unittest.TestCase):
         turn = normalized.message
         self.assertEqual(turn.channel, "qqbot")
 
-        # Step 3: AgentTurn -> text deliver
+        # Step 3: AgentTurn -> text deliver (fixture path refuses without live IO)
         text_delivery = channel_delivery_from_fixture(self.fixture, "text_delivery")
         text_result = run(self.adapter.deliver(text_delivery))
-        self.assertTrue(text_result.accepted)
+        self.assertFalse(text_result.accepted)
+        self.assertEqual(text_result.metadata.get("issue_code"), "live_io_not_ready")
 
-        # Step 4: text deliver -> card deliver
+        # Step 4: text deliver -> card deliver (same live-IO gate)
         card_delivery = channel_delivery_from_fixture(self.fixture, "card_delivery")
         card_result = run(self.adapter.deliver(card_delivery))
-        self.assertTrue(card_result.accepted)
+        self.assertFalse(card_result.accepted)
+        self.assertEqual(card_result.metadata.get("issue_code"), "live_io_not_ready")
 
         # Step 5: card deliver -> feedback normalize (FeedbackEvent)
         feedback_raw = raw_inbound_from_fixture(self.fixture, "qqbot_feedback_callback")

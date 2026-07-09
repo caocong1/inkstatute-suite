@@ -388,10 +388,13 @@ class QQBotChannelAdapter:
         policy_reason = envelope_policy.get("reason", policy.reason)
         # Empty visible payload (no msg_type) is not a successful delivery.
         has_payload = "msg_type" in envelope
+        # When enabled, require live IO (transport + token) — never report
+        # accepted=True / delivered_at for a send that never POSTed.
         accepted = (
             policy_action != "block"
             and has_payload
             and self._config.enabled
+            and live
         )
 
         result_meta: JsonObject = {
@@ -402,11 +405,16 @@ class QQBotChannelAdapter:
         }
 
         if (
-            accepted
-            and self._transport is not None
-            and self._token_manager is not None
+            policy_action != "block"
+            and has_payload
             and self._config.enabled
+            and not live
         ):
+            accepted = False
+            result_meta["issue_code"] = "live_io_not_ready"
+            result_meta["send_error"] = "QQ Bot live IO requires token_manager and transport"
+
+        if accepted:
             if scene not in {"c2c", "group"}:
                 accepted = False
                 result_meta["issue_code"] = "qqbot_send_failed"

@@ -232,6 +232,17 @@ class AdapterRealIoTests(unittest.TestCase):
         self.assertEqual(transport.call_count, 0)
         _assert_no_secrets(self, result.metadata)
 
+    def test_deliver_refuses_when_enabled_without_live_io(self) -> None:
+        """enabled=True without transport/token must not report accepted delivery."""
+        adapter = QQBotChannelAdapter(QQBotChannelConfig(enabled=True))
+        result = run(adapter.deliver(_text_delivery()))
+        self.assertFalse(result.accepted)
+        self.assertIsNone(result.delivered_at)
+        self.assertEqual(result.metadata.get("issue_code"), "live_io_not_ready")
+        self.assertFalse(result.metadata.get("network_io", False))
+        self.assertTrue(result.metadata.get("fixture_only"))
+        _assert_no_secrets(self, result.metadata)
+
     # -- verify_and_ack (privacy on Ack metadata) ------------------------------
 
     def test_verify_and_ack_disabled_metadata_privacy(self) -> None:

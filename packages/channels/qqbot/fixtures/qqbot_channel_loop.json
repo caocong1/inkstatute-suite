@@ -83,15 +83,16 @@
   },
   "text_delivery_result": {
     "delivery_id": "delivery-phase43-qqbot-001",
-    "accepted": true,
-    "delivered_at": "2026-07-04T00:00:01Z",
+    "accepted": false,
+    "delivered_at": null,
     "idempotency_key": "qqbot-delivery-idem-001",
     "metadata": {
       "channel_id": "qqbot",
       "message_type": "text",
       "output_policy_action": "allow",
       "fixture_only": true,
-      "network_io": false
+      "network_io": false,
+      "issue_code": "live_io_not_ready"
     }
   },
   "card_delivery": {
@@ -129,15 +130,16 @@
   },
   "card_delivery_result": {
     "delivery_id": "delivery-phase43-qqbot-002",
-    "accepted": true,
-    "delivered_at": "2026-07-04T00:00:02Z",
+    "accepted": false,
+    "delivered_at": null,
     "idempotency_key": "qqbot-delivery-idem-002",
     "metadata": {
       "channel_id": "qqbot",
       "message_type": "card",
       "output_policy_action": "allow",
       "fixture_only": true,
-      "network_io": false
+      "network_io": false,
+      "issue_code": "live_io_not_ready"
     }
   },
   "qqbot_feedback_callback": {
