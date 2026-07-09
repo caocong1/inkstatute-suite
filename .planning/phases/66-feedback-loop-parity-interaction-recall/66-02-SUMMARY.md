@@ -74,7 +74,7 @@ Each task was committed atomically:
 1. **Task 1: ensure_interaction_ack no-op-if-sent (FEEDBACK-02)** - `f769120` (feat)
 2. **Task 2: E2E feedback-service composition parity (FEEDBACK-01)** - `83d3dff` (feat)
 
-**Plan metadata:** (docs SUMMARY only — STATE.md / ROADMAP.md not updated per executor instructions)
+**Plan metadata:** `3faf61d` (docs: SUMMARY only — STATE.md / ROADMAP.md not updated per executor instructions)
 
 ## Files Created/Modified
 - `packages/channels/qqbot/src/inkstatute_channels_qqbot/feedback_ingress.py` - Added `ensure_interaction_ack` + `_StaticTokenManager`
