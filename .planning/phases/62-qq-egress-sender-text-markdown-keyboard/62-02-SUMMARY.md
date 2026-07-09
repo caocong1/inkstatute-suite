@@ -73,7 +73,7 @@ Each task was committed atomically:
 1. **Task 1: Add PassiveReplyWindowTests and SendRetryTests to test_sender.py** - `cd4c87f` (test)
 2. **Task 2: Implement passive-reply window, MessageTransport twin, and send_message retry** - `23f7bd4` (feat)
 
-**Plan metadata:** (docs commit after this SUMMARY)
+**Plan metadata:** `a3109e0` (docs: complete plan)
 
 ## Files Created/Modified
 
