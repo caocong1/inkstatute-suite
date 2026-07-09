@@ -9,6 +9,7 @@ from typing import Any, Mapping
 
 from channel_core.idempotency import channel_idempotency_key
 from channel_core.output_policy import apply_output_policy
+from channel_core.owned_notices import build_owned_notice
 from platform_contract.events import AgentTurn, FeedbackEvent, SkillCandidate
 from platform_runtime.protocols import (
     AckResponse,
@@ -22,15 +23,21 @@ from platform_runtime.protocols import (
 
 from .config import QQBotChannelConfig
 from .sender import (
+    InMemoryWakeupPeriodStore,
     SendError,
+    WakeupPeriodId,
     ack_interaction,
     build_feedback_keyboard_envelope,
     build_markdown_envelope,
     build_media_envelope,
     build_text_envelope,
+    build_wakeup_markdown_envelope,
+    build_wakeup_text_envelope,
     check_passive_reply_window,
+    check_wakeup_quota,
     send_message,
     send_rich_media,
+    wakeup_scene_supported,
 )
 from .token_manager import TokenError
 from .signature import (
@@ -40,6 +47,8 @@ from .signature import (
 )
 
 JsonObject = dict[str, Any]
+
+_ISSUE_WAKEUP_UNSUPPORTED_SCENE = "qqbot_wakeup_unsupported_scene"
 
 
 class QQBotChannelAdapter:
@@ -55,10 +64,15 @@ class QQBotChannelAdapter:
         *,
         token_manager: Any = None,
         transport: Any = None,
+        wakeup_store: Any = None,
     ) -> None:
         self._config = config or QQBotChannelConfig()
         self._token_manager = token_manager
         self._transport = transport
+        # Host may inject a durable WakeupPeriodStore; default is process-local.
+        self._wakeup_store = (
+            wakeup_store if wakeup_store is not None else InMemoryWakeupPeriodStore()
+        )
         self.deliveries: list[ChannelDelivery] = []
 
     def channel_id(self) -> str:
@@ -337,6 +351,19 @@ class QQBotChannelAdapter:
                 msg_id=msg_id,
             )
             if not window.ok:
+                want_wakeup = bool(
+                    metadata.get("is_wakeup") or metadata.get("allow_wakeup")
+                )
+                if want_wakeup:
+                    return await self._deliver_wakeup(
+                        delivery=delivery,
+                        metadata=metadata,
+                        scene=scene,
+                        content=content,
+                        idempotency_key=idempotency_key,
+                        base_meta=base_meta,
+                        policy=policy,
+                    )
                 return DeliveryResult(
                     delivery_id=delivery.delivery_id,
                     accepted=False,
@@ -444,6 +471,192 @@ class QQBotChannelAdapter:
                         result_meta["send_status_code"] = status_code
                     if qq_code is not None:
                         result_meta["send_qq_code"] = qq_code
+
+        return DeliveryResult(
+            delivery_id=delivery.delivery_id,
+            accepted=accepted,
+            delivered_at=_now() if accepted else None,
+            idempotency_key=idempotency_key,
+            metadata=result_meta,
+        )
+
+    async def _deliver_wakeup(
+        self,
+        *,
+        delivery: ChannelDelivery,
+        metadata: Mapping[str, Any],
+        scene: str | None,
+        content: str,
+        idempotency_key: str,
+        base_meta: JsonObject,
+        policy: Any,
+    ) -> DeliveryResult:
+        """RECALL-01: C2C is_wakeup path when passive-reply window has expired."""
+
+        result_meta: JsonObject = {
+            **base_meta,
+            "policy_action": policy.action,
+            "policy_reason": policy.reason,
+            "is_wakeup": True,
+        }
+
+        if not wakeup_scene_supported(scene):
+            seed = delivery.delivery_id
+            result_meta["issue_code"] = _ISSUE_WAKEUP_UNSUPPORTED_SCENE
+            result_meta["interim_notice"] = build_owned_notice(
+                "long_processing", seed=seed
+            )
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=False,
+                delivered_at=None,
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        user_openid = _optional_string(metadata.get("user_openid"))
+        if not user_openid:
+            seed = delivery.delivery_id
+            result_meta["issue_code"] = _ISSUE_WAKEUP_UNSUPPORTED_SCENE
+            result_meta["interim_notice"] = build_owned_notice(
+                "long_processing", seed=seed
+            )
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=False,
+                delivered_at=None,
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        store = metadata.get("wakeup_store")
+        if store is None:
+            store = self._wakeup_store
+
+        last_user_message_at = metadata.get("last_user_message_at")
+        if isinstance(last_user_message_at, str):
+            # Accept ISO timestamps from host metadata.
+            text = last_user_message_at.strip()
+            if text.endswith("Z"):
+                text = text[:-1] + "+00:00"
+            try:
+                last_user_message_at = datetime.fromisoformat(text)
+            except ValueError:
+                last_user_message_at = None
+        if last_user_message_at is not None and not isinstance(
+            last_user_message_at, datetime
+        ):
+            last_user_message_at = None
+
+        # Ensure store has a basis when host provided last_user_message_at.
+        if last_user_message_at is not None and hasattr(store, "note_user_message"):
+            if store.last_user_message_at(user_openid) is None:
+                store.note_user_message(user_openid, last_user_message_at)
+
+        # Default basis for hosts that only set allow_wakeup without prior note:
+        # use "now" so P0 same-day quota applies (over-window long-task completion).
+        if (
+            last_user_message_at is None
+            and store.last_user_message_at(user_openid) is None
+            and hasattr(store, "note_user_message")
+        ):
+            store.note_user_message(user_openid, datetime.now(UTC))
+
+        clock = metadata.get("wakeup_clock")
+        now_arg: Any = clock if callable(clock) else None
+
+        quota = check_wakeup_quota(
+            user_openid,
+            last_user_message_at,
+            now=now_arg,
+            store=store,
+        )
+        if not quota.ok:
+            result_meta["issue_code"] = quota.issue_code
+            result_meta["interim_notice"] = quota.interim_notice
+            if quota.period_id is not None:
+                result_meta["wakeup_period_id"] = (
+                    quota.period_id.value
+                    if isinstance(quota.period_id, WakeupPeriodId)
+                    else str(quota.period_id)
+                )
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=False,
+                delivered_at=None,
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        delivery_type = _delivery_type(delivery)
+        if delivery_type == "markdown":
+            envelope = build_wakeup_markdown_envelope(content=content)
+        else:
+            envelope = build_wakeup_text_envelope(content=content)
+
+        envelope_policy = (
+            envelope.get("policy") if isinstance(envelope.get("policy"), Mapping) else {}
+        )
+        policy_action = str(envelope_policy.get("action") or policy.action)
+        policy_reason = envelope_policy.get("reason", policy.reason)
+        has_payload = "msg_type" in envelope
+        live = self._live_io_ready()
+
+        result_meta["policy_action"] = policy_action
+        result_meta["policy_reason"] = policy_reason
+        result_meta["envelope"] = envelope
+        if quota.period_id is not None:
+            result_meta["wakeup_period_id"] = (
+                quota.period_id.value
+                if isinstance(quota.period_id, WakeupPeriodId)
+                else str(quota.period_id)
+            )
+
+        accepted = (
+            policy_action != "block"
+            and has_payload
+            and self._config.enabled
+            and live
+        )
+
+        if (
+            policy_action != "block"
+            and has_payload
+            and self._config.enabled
+            and not live
+        ):
+            accepted = False
+            result_meta["issue_code"] = "live_io_not_ready"
+            result_meta["send_error"] = (
+                "QQ Bot live IO requires token_manager and transport"
+            )
+
+        if accepted:
+            try:
+                await send_message(
+                    envelope=envelope,
+                    scene="c2c",
+                    token_manager=self._token_manager,
+                    transport=self._transport,
+                    user_openid=user_openid,
+                )
+                result_meta["network_io"] = True
+                result_meta["fixture_only"] = False
+                if quota.period_id is not None and hasattr(store, "record_send"):
+                    store.record_send(user_openid, quota.period_id)
+            except (SendError, TokenError) as exc:
+                accepted = False
+                result_meta["issue_code"] = "qqbot_send_failed"
+                if isinstance(exc, TokenError):
+                    result_meta["send_error"] = "QQ Bot token unavailable"
+                else:
+                    result_meta["send_error"] = str(exc)
+                status_code = getattr(exc, "status_code", None)
+                qq_code = getattr(exc, "qq_code", None)
+                if status_code is not None:
+                    result_meta["send_status_code"] = status_code
+                if qq_code is not None:
+                    result_meta["send_qq_code"] = qq_code
 
         return DeliveryResult(
             delivery_id=delivery.delivery_id,

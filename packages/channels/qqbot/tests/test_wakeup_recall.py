@@ -164,6 +164,87 @@ class TestWakeupAdapterDeliver(unittest.TestCase):
         self.assertNotIn("event_id", body)
         _assert_no_privacy_leak(self, result.metadata or {})
 
+    def test_recall01_group_wakeup_unsupported_scene(self) -> None:
+        from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenManager
+        from platform_runtime.protocols import ChannelDelivery
+
+        transport = FakeMessageTransport(response={"id": "should-not-send"})
+        token_manager = TokenManager(
+            app_id="fixture-app",
+            client_secret="fixture-secret",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-access-token", "expires_in": 7200}
+            ),
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=token_manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-wakeup-group-001",
+            channel_id="qqbot",
+            run_id="run-wakeup-group-001",
+            content="long task complete",
+            metadata={
+                "scene": "group",
+                "group_openid": "FIXTURE_GROUP_001",
+                "msg_id": "FIXTURE_EXPIRED_MSG_ID",
+                "received_at": "2026-01-01T00:00:00Z",
+                "reply_count": 0,
+                "allow_wakeup": True,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata.get("issue_code"), "qqbot_wakeup_unsupported_scene"
+        )
+        self.assertTrue(result.metadata.get("interim_notice"))
+        self.assertEqual(transport.call_count, 0)
+
+    def test_recall01_passive_expiry_without_wakeup_unchanged(self) -> None:
+        from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenManager
+        from platform_runtime.protocols import ChannelDelivery
+
+        transport = FakeMessageTransport(response={"id": "should-not-send"})
+        token_manager = TokenManager(
+            app_id="fixture-app",
+            client_secret="fixture-secret",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-access-token", "expires_in": 7200}
+            ),
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=token_manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-expired-001",
+            channel_id="qqbot",
+            run_id="run-expired-001",
+            content="late reply",
+            metadata={
+                "scene": "c2c",
+                "user_openid": "FIXTURE_USER_001",
+                "msg_id": "FIXTURE_EXPIRED_MSG_ID",
+                "received_at": "2026-01-01T00:00:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata.get("issue_code"), "qqbot_passive_reply_window_expired"
+        )
+        self.assertTrue(result.metadata.get("interim_notice"))
+        self.assertEqual(transport.call_count, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
