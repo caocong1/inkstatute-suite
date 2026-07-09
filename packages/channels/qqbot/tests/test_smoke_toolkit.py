@@ -135,9 +135,14 @@ class TestEvidenceSanitized(unittest.TestCase):
             "Authorization": "QQBot fixture-token",
             "access_token": "fixture-token",
             "bot_secret": DEMO_BOT_SECRET,
+            "client_secret": "fixture-secret",
             "content": "raw user legal payload should not leak",
             "attachment_url": "https://example.com/file.pdf",
-            "nested": {"url": "http://cdn.example/a.bin", "access_token": "nested-tok"},
+            "nested": {
+                "url": "http://cdn.example/a.bin",
+                "access_token": "nested-tok",
+                "note": "leaked fixture-secret under allowlisted key",
+            },
         }
         clean = smoke.sanitize_evidence(dirty)
         serialized = json.dumps(clean, ensure_ascii=False)
@@ -146,6 +151,7 @@ class TestEvidenceSanitized(unittest.TestCase):
             "access_token",
             DEMO_BOT_SECRET,
             "fixture-token",
+            "fixture-secret",
             "raw user legal payload",
             "https://",
             "http://",

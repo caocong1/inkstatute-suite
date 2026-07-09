@@ -137,6 +137,7 @@ _BANNED_SUBSTRINGS = (
     "access_token",
     DEMO_BOT_SECRET,
     "fixture-token",
+    "fixture-secret",
     "http://",
     "https://",
 )
