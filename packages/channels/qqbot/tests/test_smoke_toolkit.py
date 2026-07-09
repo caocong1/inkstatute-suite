@@ -219,6 +219,8 @@ class TestLiveEnvFailClosed(unittest.TestCase):
         self.assertIn("UrllibMessageTransport", source)
         self.assertIn("ack_interaction", source)
         self.assertNotIn("wecom_service", source)
+        # ADAPTER-03/04: smoke orchestrator stays QQ-only (Task 2 regression cue).
+        self.assertEqual(source.count("wecom_service"), 0)
         # Cleared env must fail closed via the named loader (no network).
         saved = {k: os.environ.pop(k) for k in list(os.environ) if k.startswith("INKSTATUTE_QQBOT_")}
         try:

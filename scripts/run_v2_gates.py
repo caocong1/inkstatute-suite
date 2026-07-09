@@ -160,7 +160,8 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "qqbot-channel",
             (py, "-m", "unittest", "discover", "-s", "packages/channels/qqbot/tests"),
-            (qqbot_src, channel_core_src, platform_src, contract_src, platform_runtime_src),
+            # feedback_src: Phase 66 e2e tests import feedback_service.queue (not a new gate).
+            (qqbot_src, channel_core_src, platform_src, contract_src, platform_runtime_src, feedback_src),
         ),
         Gate(
             "web-sse-channel",
