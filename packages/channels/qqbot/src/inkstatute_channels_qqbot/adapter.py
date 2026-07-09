@@ -25,9 +25,11 @@ from .sender import (
     SendError,
     build_feedback_keyboard_envelope,
     build_markdown_envelope,
+    build_media_envelope,
     build_text_envelope,
     check_passive_reply_window,
     send_message,
+    send_rich_media,
 )
 from .token_manager import TokenError
 from .signature import (
@@ -60,9 +62,9 @@ class QQBotChannelAdapter:
     def capabilities(self) -> ChannelCapabilitySet:
         return ChannelCapabilitySet(
             supports_text=True,
-            supports_files=False,
+            supports_files=True,
             supports_cards=True,
-            supports_images=False,
+            supports_images=True,
             supports_voice=False,
             supports_streaming=False,
             ack_deadline_ms=3000,
@@ -276,6 +278,19 @@ class QQBotChannelAdapter:
                 )
 
         envelope_msg_id = msg_id or delivery.delivery_id
+        if delivery_type in {"file", "image"}:
+            return await self._deliver_rich_media(
+                delivery=delivery,
+                delivery_type=delivery_type,
+                metadata=metadata,
+                scene=scene,
+                envelope_msg_id=envelope_msg_id,
+                msg_seq=msg_seq,
+                idempotency_key=idempotency_key,
+                base_meta=base_meta,
+                policy=policy,
+            )
+
         if delivery_type == "card":
             envelope = build_feedback_keyboard_envelope(
                 title=content or "请评价本次回复",
@@ -354,6 +369,209 @@ class QQBotChannelAdapter:
             delivery_id=delivery.delivery_id,
             accepted=accepted,
             delivered_at=_now() if accepted else None,
+            idempotency_key=idempotency_key,
+            metadata=result_meta,
+        )
+
+    async def _deliver_rich_media(
+        self,
+        *,
+        delivery: ChannelDelivery,
+        delivery_type: str,
+        metadata: Mapping[str, Any],
+        scene: str | None,
+        envelope_msg_id: str,
+        msg_seq: int,
+        idempotency_key: str,
+        base_meta: JsonObject,
+        policy: Any,
+    ) -> DeliveryResult:
+        """EGRESS-06: file/image deliver via upload → msg_type=7 (metadata-only)."""
+
+        default_file_type = 4 if delivery_type == "file" else 1
+        file_type = _int_or_default(metadata.get("file_type"), default_file_type)
+        file_url = _optional_string(metadata.get("file_url")) or _optional_string(
+            metadata.get("media_url")
+        )
+        precomputed_file_info = _optional_string(metadata.get("file_info"))
+
+        result_meta: JsonObject = {
+            **base_meta,
+            "policy_action": policy.action,
+            "policy_reason": policy.reason,
+        }
+
+        # Fail closed when neither https URL nor fixture precomputed file_info.
+        if file_url is None and precomputed_file_info is None:
+            result_meta["issue_code"] = "qqbot_rich_media_upload_failed"
+            result_meta["send_error"] = "QQ Bot rich media requires https file_url"
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=False,
+                delivered_at=None,
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        if file_url is not None and not file_url.lower().startswith("https://"):
+            result_meta["issue_code"] = "qqbot_rich_media_upload_failed"
+            result_meta["send_error"] = "QQ Bot rich media file_url must be https"
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=False,
+                delivered_at=None,
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        if not self._config.enabled:
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=False,
+                delivered_at=None,
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        live = (
+            self._transport is not None
+            and self._token_manager is not None
+            and file_url is not None
+        )
+
+        if live:
+            if scene not in {"c2c", "group"}:
+                result_meta["issue_code"] = "qqbot_send_failed"
+                result_meta["send_error"] = "unsupported or missing QQ Bot scene"
+                return DeliveryResult(
+                    delivery_id=delivery.delivery_id,
+                    accepted=False,
+                    delivered_at=None,
+                    idempotency_key=idempotency_key,
+                    metadata=result_meta,
+                )
+            try:
+                send_result = await send_rich_media(
+                    scene=scene,
+                    token_manager=self._token_manager,
+                    transport=self._transport,
+                    file_url=file_url,
+                    file_type=file_type,
+                    user_openid=_optional_string(metadata.get("user_openid")),
+                    group_openid=_optional_string(metadata.get("group_openid")),
+                    msg_id=envelope_msg_id,
+                    msg_seq=msg_seq,
+                )
+            except (SendError, TokenError) as exc:
+                evidence = getattr(exc, "evidence", None)
+                if isinstance(evidence, Mapping):
+                    result_meta.update(
+                        {
+                            key: value
+                            for key, value in evidence.items()
+                            if key
+                            in {
+                                "rich_media_stage",
+                                "attempts",
+                                "send_status_code",
+                                "send_qq_code",
+                                "file_uuid_hash",
+                                "ttl",
+                                "issue_code",
+                            }
+                        }
+                    )
+                if isinstance(exc, TokenError):
+                    result_meta["issue_code"] = result_meta.get(
+                        "issue_code", "qqbot_send_failed"
+                    )
+                    result_meta["send_error"] = "QQ Bot token unavailable"
+                else:
+                    stage = (
+                        evidence.get("rich_media_stage")
+                        if isinstance(evidence, Mapping)
+                        else None
+                    )
+                    result_meta.setdefault(
+                        "issue_code",
+                        "qqbot_rich_media_upload_failed"
+                        if stage == "upload"
+                        else "qqbot_send_failed",
+                    )
+                    result_meta["send_error"] = str(exc)
+                status_code = getattr(exc, "status_code", None)
+                qq_code = getattr(exc, "qq_code", None)
+                if status_code is not None:
+                    result_meta["send_status_code"] = status_code
+                if qq_code is not None:
+                    result_meta["send_qq_code"] = qq_code
+                return DeliveryResult(
+                    delivery_id=delivery.delivery_id,
+                    accepted=False,
+                    delivered_at=None,
+                    idempotency_key=idempotency_key,
+                    metadata=result_meta,
+                )
+
+            evidence = send_result.get("evidence")
+            if isinstance(evidence, Mapping):
+                result_meta.update(
+                    {
+                        key: value
+                        for key, value in evidence.items()
+                        if key
+                        in {
+                            "rich_media_stage",
+                            "attempts",
+                            "send_status_code",
+                            "send_qq_code",
+                            "file_uuid_hash",
+                            "ttl",
+                            "issue_code",
+                        }
+                    }
+                )
+            # msg_type=7 marker only — omit live file_info from DeliveryResult.metadata.
+            result_meta["envelope"] = {
+                "msg_id": envelope_msg_id,
+                "msg_seq": msg_seq,
+                "msg_type": 7,
+                "content": "",
+            }
+            result_meta["network_io"] = True
+            result_meta["fixture_only"] = False
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=True,
+                delivered_at=_now(),
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        # Fixture-only path: require precomputed file_info; never invent it.
+        if precomputed_file_info is None:
+            result_meta["issue_code"] = "qqbot_rich_media_upload_failed"
+            result_meta["send_error"] = (
+                "QQ Bot rich media requires transport or precomputed file_info"
+            )
+            return DeliveryResult(
+                delivery_id=delivery.delivery_id,
+                accepted=False,
+                delivered_at=None,
+                idempotency_key=idempotency_key,
+                metadata=result_meta,
+            )
+
+        envelope = build_media_envelope(
+            file_info=precomputed_file_info,
+            msg_id=envelope_msg_id,
+            msg_seq=msg_seq,
+        )
+        result_meta["envelope"] = envelope
+        return DeliveryResult(
+            delivery_id=delivery.delivery_id,
+            accepted=True,
+            delivered_at=_now(),
             idempotency_key=idempotency_key,
             metadata=result_meta,
         )
