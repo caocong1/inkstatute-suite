@@ -27,6 +27,23 @@ from platform_contract.enums import Channel, FeedbackSource
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 from platform_runtime.protocols import BackendAdapter, ChannelAdapter
 
+# ADAPTER-03 / Phase 65: channel-core must be reused as-is — no new modules.
+# Allowlist is the known top-level .py set under packages/channel-core/src/channel_core/.
+# parents[3] == packages/ (tests → qqbot → channels → packages)
+CHANNEL_CORE_SRC = (
+    Path(__file__).resolve().parents[3] / "channel-core" / "src" / "channel_core"
+)
+CHANNEL_CORE_ALLOWED_MODULES = frozenset(
+    {
+        "__init__.py",
+        "active_task_router.py",
+        "delivery_guard.py",
+        "idempotency.py",
+        "output_policy.py",
+        "owned_notices.py",
+    }
+)
+
 
 class V18SafetyBaselineTests(unittest.TestCase):
     """All 5 Phase 58 success criteria in one verification artifact (ADAPTER-04)."""
@@ -59,6 +76,26 @@ class V18SafetyBaselineTests(unittest.TestCase):
         pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
         content = pyproject.read_text(encoding="utf-8")
         self.assertIn("dependencies = []", content)
+
+    # ADAPTER-03: no new channel-core modules (Phase 65 reuse-only)
+    def test_channel_core_has_no_new_modules(self) -> None:
+        self.assertTrue(
+            CHANNEL_CORE_SRC.is_dir(),
+            f"channel-core package missing at {CHANNEL_CORE_SRC}",
+        )
+        present = {p.name for p in CHANNEL_CORE_SRC.glob("*.py")}
+        unexpected = present - CHANNEL_CORE_ALLOWED_MODULES
+        missing = CHANNEL_CORE_ALLOWED_MODULES - present
+        self.assertEqual(
+            unexpected,
+            set(),
+            f"new channel-core modules not on allowlist: {sorted(unexpected)}",
+        )
+        self.assertEqual(
+            missing,
+            set(),
+            f"expected channel-core modules missing: {sorted(missing)}",
+        )
 
 
 if __name__ == "__main__":

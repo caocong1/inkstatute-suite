@@ -158,6 +158,22 @@ class NoWecomImportTests(unittest.TestCase):
             "ingress_runtime.py source contains the string 'wecom_service'",
         )
 
+    def test_all_production_modules_have_no_wecom_service_substring(self) -> None:
+        """ADAPTER-03: every qqbot production .py must be free of wecom_service."""
+        offenders: list[str] = []
+        for path in sorted(PACKAGE_SRC.glob("*.py")):
+            source = path.read_text(encoding="utf-8")
+            if "wecom_service" in source:
+                offenders.append(path.name)
+            for module in _imported_modules(source):
+                if module.startswith("wecom_service"):
+                    offenders.append(f"{path.name}:{module}")
+        self.assertEqual(
+            offenders,
+            [],
+            f"wecom_service found in qqbot production modules: {offenders}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
