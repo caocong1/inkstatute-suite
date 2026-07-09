@@ -408,24 +408,22 @@ Header: `Authorization: QQBot {access_token}`, `Content-Type: application/json`.
 | A1 | Stripping `policy`/`inkstatute` keys before POST is required and safe | Code Examples | If host expects those keys on the wire, API may reject — keep dual envelope (audit vs wire) |
 | A2 | `permission.type=2` (everyone) is acceptable for feedback buttons in C2C/group | Code Examples | May need specify_user_ids for C2C-only clickers — adjust if product requires |
 | A3 | In-memory / metadata `reply_count` from caller is sufficient for Phase 62 (durable tracker in Phase 64) | Pattern 3 | Under-count could allow over-limit sends until platform rejects |
-| A4 | Group markdown sends do not require a separate top-level `content` string when `markdown.content` is set | Open Questions | Group API table marks `content` required — may need empty/`""` companion field |
+| A4 | Group markdown sends include top-level `content=""` companion alongside `markdown.content` (Q1 resolved) | Open Questions (RESOLVED) | Empty companion satisfies group API required-`content` row without duplicating visible text |
 | A5 | Interim notice on window expiry is returned in `DeliveryResult.metadata` for the host to surface; Phase 62 does not require a successful active/wakeup send | EGRESS-04 | If product expects an immediate user-visible QQ message on expiry, need active/wakeup path (out of scope / limited) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Group `content` required vs markdown-only**
+1. **Group `content` required vs markdown-only** — **RESOLVED: `content=""`**
    - What we know: Group request table lists `content` as required; markdown uses `markdown.content`. `[CITED: send.html]`
-   - What's unclear: Whether `msg_type=2` with only `markdown` satisfies the group API.
-   - Recommendation: Implement markdown body; if Fake/live tests show rejection, also set `content` to a plain-text fallback (policy-checked) or `""`. Gate with a unit test asserting wire body shape.
+   - Resolution (Plan 01): `build_markdown_envelope` sets top-level `content=""` (empty string) alongside `markdown.content` so the group required-`content` field is present without a second visible body. Wire-shape unit tests lock this companion field.
 
-2. **Where durable `msg_seq` / `reply_count` live**
+2. **Where durable `msg_seq` / `reply_count` live** — **RESOLVED: metadata / process-local only (no durable store)**
    - What we know: Platform dedupes on pair; CONTEXT requires tracking.
-   - What's unclear: Phase 62 vs Phase 64 ownership of durable store.
-   - Recommendation: Phase 62 accepts counts via metadata + optional process-local `PassiveReplyTracker` keyed by `msg_id`; document Phase 64 session runtime as durable owner.
+   - Resolution (Plan 02 / A3): Phase 62 accepts `reply_count` (and related window inputs) via caller metadata and optional process-local A3 tracker keyed by `msg_id`. No durable store in this phase; Phase 64 session runtime owns durable tracking.
 
-3. **Exact error body for duplicate `msg_id`+`msg_seq`**
+3. **Exact error body for duplicate `msg_id`+`msg_seq`** — **RESOLVED: terminal `304026`**
    - What we know: Docs say duplicate send fails; `304026` is MSG_ID error.
-   - Recommendation: Treat non-2xx with MSG_ID / duplicate semantics as terminal; cover with FakeTransport.
+   - Resolution (Plan 02): Treat QQ body/code `304026` (with `304027` / `22009` / `50006` / `304003`) as terminal — no retry; cover with FakeMessageTransport.
 
 ## Environment Availability
 
