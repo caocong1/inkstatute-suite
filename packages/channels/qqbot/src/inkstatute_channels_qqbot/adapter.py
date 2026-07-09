@@ -21,6 +21,14 @@ from platform_runtime.protocols import (
 )
 
 from .config import QQBotChannelConfig
+from .sender import (
+    SendError,
+    build_feedback_keyboard_envelope,
+    build_markdown_envelope,
+    build_text_envelope,
+    check_passive_reply_window,
+    send_message,
+)
 from .signature import (
     derive_keypair,
     handle_validation_challenge,
@@ -33,8 +41,16 @@ JsonObject = dict[str, Any]
 class QQBotChannelAdapter:
     """Sanitized QQBot channel adapter with no server or network side effects."""
 
-    def __init__(self, config: QQBotChannelConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: QQBotChannelConfig | None = None,
+        *,
+        token_manager: Any = None,
+        transport: Any = None,
+    ) -> None:
         self._config = config or QQBotChannelConfig()
+        self._token_manager = token_manager
+        self._transport = transport
         self.deliveries: list[ChannelDelivery] = []
 
     def channel_id(self) -> str:
@@ -206,33 +222,126 @@ class QQBotChannelAdapter:
 
     async def deliver(self, delivery: ChannelDelivery) -> DeliveryResult:
         self.deliveries.append(delivery)
-        delivery_type = str(delivery.metadata.get("delivery_type") or "text")
-        content = delivery.content or ""
+        delivery_type = _delivery_type(delivery)
+        content = _delivery_text(delivery) or ""
         policy = apply_output_policy(content)
-        accepted = policy.action != "block"
 
-        envelope: JsonObject
+        metadata = delivery.metadata
+        msg_id = _optional_string(metadata.get("msg_id")) or _optional_string(
+            metadata.get("message_id")
+        )
+        msg_seq = _int_or_default(metadata.get("msg_seq"), 1)
+        reply_count = _int_or_default(metadata.get("reply_count"), 0)
+        scene = _optional_string(metadata.get("scene")) or "c2c"
+        received_at = metadata.get("received_at")
+        if received_at is not None and not isinstance(received_at, str):
+            received_at = str(received_at)
+
+        idempotency_key = (
+            _optional_string(metadata.get("idempotency_key"))
+            or _stable_id("qqbot-delivery", delivery.delivery_id)
+        )
+        base_meta: JsonObject = {
+            "channel_id": self._config.channel_id,
+            "delivery_type": delivery_type,
+            "message_type": delivery_type,
+            "policy_action": policy.action,
+            "policy_reason": policy.reason,
+            "fixture_only": True,
+            "network_io": False,
+        }
+
+        # Whenever msg_id is present, always gate — missing received_at fails closed.
+        if msg_id is not None:
+            window = check_passive_reply_window(
+                scene=scene,
+                received_at=received_at if isinstance(received_at, str) else None,
+                reply_count=reply_count,
+                msg_id=msg_id,
+            )
+            if not window.ok:
+                return DeliveryResult(
+                    delivery_id=delivery.delivery_id,
+                    accepted=False,
+                    delivered_at=None,
+                    idempotency_key=idempotency_key,
+                    metadata={
+                        **base_meta,
+                        "issue_code": window.issue_code,
+                        "interim_notice": window.interim_notice,
+                    },
+                )
+
+        envelope_msg_id = msg_id or delivery.delivery_id
         if delivery_type == "card":
-            envelope = _build_card_envelope(delivery, policy)
+            envelope = build_feedback_keyboard_envelope(
+                title=content or "请评价本次回复",
+                feedback_target=_feedback_target(delivery),
+                msg_id=envelope_msg_id,
+                msg_seq=msg_seq,
+            )
+        elif delivery_type == "markdown":
+            envelope = build_markdown_envelope(
+                content=content,
+                msg_id=envelope_msg_id,
+                msg_seq=msg_seq,
+            )
         else:
-            envelope = _build_text_envelope(delivery, policy)
+            envelope = build_text_envelope(
+                content=content,
+                msg_id=envelope_msg_id,
+                msg_seq=msg_seq,
+            )
+
+        envelope_policy = envelope.get("policy") if isinstance(envelope.get("policy"), Mapping) else {}
+        policy_action = str(envelope_policy.get("action") or policy.action)
+        policy_reason = envelope_policy.get("reason", policy.reason)
+        window_ok = True
+        accepted = (
+            policy_action != "block"
+            and self._config.enabled
+            and window_ok
+        )
+
+        result_meta: JsonObject = {
+            **base_meta,
+            "policy_action": policy_action,
+            "policy_reason": policy_reason,
+            "envelope": envelope,
+        }
+
+        if (
+            accepted
+            and self._transport is not None
+            and self._token_manager is not None
+            and self._config.enabled
+        ):
+            try:
+                await send_message(
+                    envelope=envelope,
+                    scene=scene,
+                    token_manager=self._token_manager,
+                    transport=self._transport,
+                    user_openid=_optional_string(metadata.get("user_openid")),
+                    group_openid=_optional_string(metadata.get("group_openid")),
+                )
+                result_meta["network_io"] = True
+                result_meta["fixture_only"] = False
+            except SendError as exc:
+                accepted = False
+                result_meta["issue_code"] = "qqbot_send_failed"
+                result_meta["send_error"] = str(exc)
+                if exc.status_code is not None:
+                    result_meta["send_status_code"] = exc.status_code
+                if exc.qq_code is not None:
+                    result_meta["send_qq_code"] = exc.qq_code
 
         return DeliveryResult(
             delivery_id=delivery.delivery_id,
-            accepted=accepted and self._config.enabled,
+            accepted=accepted,
             delivered_at=_now() if accepted else None,
-            idempotency_key=_optional_string(delivery.metadata.get("idempotency_key"))
-            or _stable_id("qqbot-delivery", delivery.delivery_id),
-            metadata={
-                "channel_id": self._config.channel_id,
-                "delivery_type": delivery_type,
-                "message_type": delivery_type,
-                "policy_action": policy.action,
-                "policy_reason": policy.reason,
-                "envelope": envelope,
-                "fixture_only": True,
-                "network_io": False,
-            },
+            idempotency_key=idempotency_key,
+            metadata=result_meta,
         )
 
     async def health(self) -> ComponentHealth:
@@ -317,30 +426,46 @@ def _feedback_from_payload(raw: RawInbound, payload: Mapping[str, Any]) -> Feedb
     return _dataclass_from_mapping(FeedbackEvent, fields_map)
 
 
-def _build_text_envelope(delivery: ChannelDelivery, policy: Any) -> JsonObject:
-    envelope: JsonObject = {
-        "msg_type": "text",
-        "policy": {
-            "action": policy.action,
-            "reason": policy.reason,
-        },
-    }
-    if policy.visible_text:
-        envelope["content"] = policy.visible_text
-    return envelope
+def _delivery_type(delivery: ChannelDelivery) -> str:
+    value = (
+        delivery.metadata.get("delivery_type")
+        or delivery.metadata.get("message_type")
+        or delivery.metadata.get("kind")
+        or "text"
+    )
+    text = str(value).strip().lower()
+    aliases = {"template_card": "card"}
+    return aliases.get(text, text)
 
 
-def _build_card_envelope(delivery: ChannelDelivery, policy: Any) -> JsonObject:
-    envelope: JsonObject = {
-        "msg_type": "card",
-        "policy": {
-            "action": policy.action,
-            "reason": policy.reason,
-        },
-    }
-    if policy.visible_text:
-        envelope["content"] = policy.visible_text
-    return envelope
+def _delivery_text(delivery: ChannelDelivery) -> str | None:
+    if delivery.content is not None:
+        return delivery.content
+    if delivery.result is not None:
+        return delivery.result.content
+    return _optional_string(delivery.metadata.get("text"))
+
+
+def _feedback_target(delivery: ChannelDelivery) -> str:
+    value = delivery.metadata.get("feedback_target")
+    if value is not None:
+        text = _optional_string(value)
+        if text is not None:
+            return text
+    if delivery.result is not None and delivery.result.feedback_target:
+        return delivery.result.feedback_target
+    return "unknown"
+
+
+def _int_or_default(value: Any, default: int) -> int:
+    if value is None or isinstance(value, bool):
+        return default
+    if isinstance(value, int):
+        return value
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _metadata(payload: Mapping[str, Any], raw: RawInbound) -> JsonObject:
