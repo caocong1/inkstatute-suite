@@ -39,6 +39,7 @@ class QQBotSessionRuntimeAction(StrEnum):
     ACTIVE_TASK_FOLLOW_UP = "active_task_follow_up"
     CONTINUE_SESSION = "continue_session"
     START_NEW_SESSION = "start_new_session"
+    SKIPPED_NON_MESSAGE = "skipped_non_message"
 
 
 @dataclass(frozen=True, slots=True)
@@ -403,7 +404,7 @@ def _run_metadata_for_decision(run_request: RunRequest, *, decision: SessionReso
     return _safe_json(
         {
             **existing,
-            "source": "qqbot_session_runtime",
+            "source": _string(existing.get("source")) or "qqbot_session_runtime",
             "qqbot_normalization": "already_normalized",
             "session_command_required": False,
             "ordinary_user_command_surface": "none",
@@ -415,7 +416,7 @@ def _run_metadata_for_decision(run_request: RunRequest, *, decision: SessionReso
             "current_turn_ref": current_turn_ref,
             "raw_payload_ref": raw_payload_ref,
             "raw_payload_refs": raw_payload_refs,
-            "privacy": "no_raw_payload_or_answer_text_stored",
+            "privacy": existing.get("privacy") or "no_raw_payload_or_answer_text_stored",
         }
     )
 
