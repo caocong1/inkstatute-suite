@@ -532,6 +532,55 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertIn("upload", str(result.metadata.get("issue_code", "")).lower())
         self.assertEqual(transport.call_count, 0)
 
+    def test_deliver_file_missing_file_info_classifies_upload_failure(self) -> None:
+        """WR-03: upload HTTP success without file_info keeps upload-stage issue_code."""
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import (
+            FakeTokenTransport,
+            TokenManager,
+        )
+
+        manager = TokenManager(
+            app_id="fixture-app-id-001",
+            client_secret="fixture-client-secret-001",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-token", "expires_in": 7200}
+            ),
+        )
+        transport = FakeMessageTransport(
+            response={"file_uuid": "uuid-missing-info", "ttl": 60}
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-file-missing-info",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="",
+            metadata={
+                "delivery_type": "file",
+                "file_url": "https://example.invalid/artifact.docx",
+                "file_type": 4,
+                "scene": "c2c",
+                "user_openid": "user-openid-1",
+                "msg_id": "inbound-file-missing-info",
+                "received_at": "2026-07-09T11:55:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata.get("issue_code"), "qqbot_rich_media_upload_failed"
+        )
+        self.assertEqual(result.metadata.get("rich_media_stage"), "upload")
+        self.assertEqual(result.metadata.get("attempts"), 1)
+        self.assertEqual(transport.call_count, 1)
+
     def test_deliver_file_window_expired_skips_upload(self) -> None:
         from inkstatute_channels_qqbot.sender import FakeMessageTransport
         from inkstatute_channels_qqbot.token_manager import (

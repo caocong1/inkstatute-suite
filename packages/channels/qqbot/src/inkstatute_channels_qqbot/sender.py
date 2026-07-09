@@ -793,7 +793,16 @@ async def upload_rich_media(
 
     file_info = result.get("file_info")
     if not isinstance(file_info, str) or not file_info:
-        raise SendError("QQ Bot rich media upload missing file_info")
+        err = SendError(
+            "QQ Bot rich media upload missing file_info",
+            attempts=attempts,
+        )
+        err.evidence = _rich_media_evidence(  # type: ignore[attr-defined]
+            stage="upload",
+            attempts=attempts,
+            issue_code=_ISSUE_RICH_MEDIA_UPLOAD_FAILED,
+        )
+        raise err
 
     file_uuid = result.get("file_uuid")
     ttl_raw = result.get("ttl")

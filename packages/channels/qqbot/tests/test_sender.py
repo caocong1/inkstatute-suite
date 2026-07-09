@@ -653,6 +653,28 @@ class RichMediaUploadTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(evidence["rich_media_stage"], "upload")
         self.assertEqual(evidence["issue_code"], "qqbot_rich_media_upload_failed")
 
+    async def test_upload_missing_file_info_attaches_upload_evidence(self) -> None:
+        """WR-03: HTTP success without file_info is still an upload-stage failure."""
+        transport = FakeMessageTransport(
+            response={"file_uuid": "uuid-no-info", "ttl": 60}
+        )
+        with self.assertRaises(SendError) as ctx:
+            await upload_rich_media(
+                scene="c2c",
+                token_manager=self._token_manager(),
+                transport=transport,
+                file_url=self.FIXTURE_FILE_URL,
+                user_openid=self.FIXTURE_USER,
+                sleep=_noop_sleep,
+            )
+        self.assertEqual(transport.call_count, 1)
+        self.assertIn("file_info", str(ctx.exception).lower())
+        evidence = getattr(ctx.exception, "evidence", None)
+        self.assertIsInstance(evidence, dict)
+        self.assertEqual(evidence["rich_media_stage"], "upload")
+        self.assertEqual(evidence["attempts"], 1)
+        self.assertEqual(evidence["issue_code"], "qqbot_rich_media_upload_failed")
+
 
 class RichMediaRetryTests(unittest.IsolatedAsyncioTestCase):
     FIXTURE_FILE_URL = "https://example.invalid/artifact.docx"
