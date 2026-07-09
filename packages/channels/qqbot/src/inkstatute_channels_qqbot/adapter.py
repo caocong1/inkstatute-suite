@@ -87,7 +87,9 @@ class QQBotChannelAdapter:
                 "enabled": self._config.enabled,
                 "fixture_only": not live,
                 "network_io": live,
-                "ack_strategy": "op12_plus_interaction_put",
+                "ack_strategy": (
+                    "op12_plus_interaction_put" if live else "webhook_op12_only"
+                ),
                 "secret_refs_configured": {
                     "app_id_ref": self._config.app_id_ref is not None,
                     "app_secret_ref": self._config.app_secret_ref is not None,

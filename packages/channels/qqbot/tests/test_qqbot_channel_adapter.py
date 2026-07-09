@@ -122,6 +122,7 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertEqual(capabilities.idempotency_strategy, "qqbot_callback_metadata")
         self.assertTrue(capabilities.metadata["fixture_only"])
         self.assertFalse(capabilities.metadata["network_io"])
+        self.assertEqual(capabilities.metadata["ack_strategy"], "webhook_op12_only")
 
     def test_capabilities_supports_files_and_images(self) -> None:
         capabilities = self.adapter.capabilities()

@@ -149,6 +149,7 @@ class AdapterRealIoTests(unittest.TestCase):
         self.assertTrue(caps.metadata.get("fixture_only"))
         self.assertFalse(caps.metadata.get("network_io"))
         self.assertFalse(caps.metadata.get("enabled"))
+        self.assertEqual(caps.metadata.get("ack_strategy"), "webhook_op12_only")
         _assert_no_secrets(self, caps.metadata)
 
     def test_capabilities_live_when_ready(self) -> None:
@@ -158,6 +159,7 @@ class AdapterRealIoTests(unittest.TestCase):
         self.assertTrue(caps.metadata.get("network_io"))
         self.assertTrue(caps.metadata.get("enabled"))
         ack_strategy = str(caps.metadata.get("ack_strategy") or "")
+        self.assertEqual(ack_strategy, "op12_plus_interaction_put")
         self.assertIn("op12", ack_strategy)
         self.assertIn("interaction_put", ack_strategy)
         _assert_no_secrets(self, caps.metadata)
