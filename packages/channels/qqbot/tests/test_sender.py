@@ -589,6 +589,31 @@ class RichMediaUploadTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("policy", send_call["body"])
         self.assertEqual(result.get("id"), "msg-media-ok")
 
+    async def test_upload_terminal_failure_records_actual_attempts(self) -> None:
+        """WR-01: terminal first-attempt failure must not report attempts=max_attempts."""
+        transport = FakeMessageTransport(
+            responses=[
+                SendError("message expired", status_code=400, qq_code=304027),
+            ]
+        )
+        with self.assertRaises(SendError) as ctx:
+            await upload_rich_media(
+                scene="c2c",
+                token_manager=self._token_manager(),
+                transport=transport,
+                file_url=self.FIXTURE_FILE_URL,
+                user_openid=self.FIXTURE_USER,
+                max_attempts=3,
+                sleep=_noop_sleep,
+            )
+        self.assertEqual(transport.call_count, 1)
+        self.assertEqual(ctx.exception.attempts, 1)
+        evidence = getattr(ctx.exception, "evidence", None)
+        self.assertIsInstance(evidence, dict)
+        self.assertEqual(evidence["attempts"], 1)
+        self.assertEqual(evidence["rich_media_stage"], "upload")
+        self.assertEqual(evidence["issue_code"], "qqbot_rich_media_upload_failed")
+
 
 class RichMediaRetryTests(unittest.IsolatedAsyncioTestCase):
     FIXTURE_FILE_URL = "https://example.invalid/artifact.docx"

@@ -270,10 +270,12 @@ class SendError(Exception):
         *,
         status_code: int | None = None,
         qq_code: int | None = None,
+        attempts: int | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.qq_code = qq_code
+        self.attempts = attempts
 
 
 class MessageTransport(Protocol):
@@ -496,18 +498,28 @@ def _sanitize_send_error(
     *,
     status_code: int | None = None,
     qq_code: int | None = None,
+    attempts: int | None = None,
 ) -> SendError:
     if isinstance(exc, SendError):
         return SendError(
             str(exc),
             status_code=exc.status_code if status_code is None else status_code,
             qq_code=exc.qq_code if qq_code is None else qq_code,
+            attempts=exc.attempts if attempts is None else attempts,
         )
     return SendError(
         "QQ Bot message request failed",
         status_code=status_code,
         qq_code=qq_code,
+        attempts=attempts,
     )
+
+
+def _raise_with_attempts(err: SendError, attempts: int) -> None:
+    """Attach attempts_used onto SendError and raise it."""
+
+    err.attempts = attempts
+    raise err
 
 
 async def _bearer(token_manager: TokenManager) -> str:
@@ -612,7 +624,8 @@ async def _post_with_retry(
 ) -> tuple[dict[str, Any], int]:
     """POST JSON via MessageTransport with Phase 62 retry/auth semantics.
 
-    Returns (result, attempts_used).
+    Returns (result, attempts_used). Raised SendError.attempts is the count
+    of transport POSTs actually consumed (not always max_attempts).
     """
 
     sleeper = sleep or asyncio.sleep
@@ -640,30 +653,30 @@ async def _post_with_retry(
                 continue
 
             if _is_terminal(status_code=status_code, qq_code=qq_code):
-                raise last_error from None
+                _raise_with_attempts(last_error, attempt + 1)
 
             if status_code == 401 and auth_retried:
-                raise last_error from None
+                _raise_with_attempts(last_error, attempt + 1)
 
             if _is_transient(status_code=status_code, qq_code=qq_code, exc=exc):
                 delay = _BACKOFF_SECONDS[min(attempt, len(_BACKOFF_SECONDS) - 1)]
                 attempt += 1
                 if attempt >= max_attempts:
-                    raise last_error from None
+                    _raise_with_attempts(last_error, attempt)
                 await sleeper(delay)
                 continue
 
-            raise last_error from None
+            _raise_with_attempts(last_error, attempt + 1)
         except Exception as exc:
             last_error = _sanitize_send_error(exc)
             if _is_transient(status_code=None, qq_code=None, exc=exc):
                 delay = _BACKOFF_SECONDS[min(attempt, len(_BACKOFF_SECONDS) - 1)]
                 attempt += 1
                 if attempt >= max_attempts:
-                    raise last_error from None
+                    _raise_with_attempts(last_error, attempt)
                 await sleeper(delay)
                 continue
-            raise last_error from None
+            _raise_with_attempts(last_error, attempt + 1)
 
         qq_code = _extract_qq_code(result)
         if qq_code is not None and qq_code != 0:
@@ -673,21 +686,24 @@ async def _post_with_retry(
                 qq_code=qq_code,
             )
             if _is_terminal(status_code=status_code, qq_code=qq_code):
-                raise last_error
+                _raise_with_attempts(last_error, attempt + 1)
             if _is_transient(status_code=status_code, qq_code=qq_code, exc=None):
                 delay = _BACKOFF_SECONDS[min(attempt, len(_BACKOFF_SECONDS) - 1)]
                 attempt += 1
                 if attempt >= max_attempts:
-                    raise last_error
+                    _raise_with_attempts(last_error, attempt)
                 await sleeper(delay)
                 continue
-            raise last_error
+            _raise_with_attempts(last_error, attempt + 1)
 
         return result, attempt + 1
 
     if last_error is not None:
-        raise last_error
-    raise SendError("QQ Bot message request failed after retries")
+        _raise_with_attempts(last_error, max(attempt, 1))
+    raise SendError(
+        "QQ Bot message request failed after retries",
+        attempts=max_attempts,
+    )
 
 
 async def upload_rich_media(
@@ -737,9 +753,10 @@ async def upload_rich_media(
             sleep=sleep,
         )
     except SendError as exc:
+        attempts_used = exc.attempts if exc.attempts is not None else max_attempts
         evidence = _rich_media_evidence(
             stage="upload",
-            attempts=max_attempts,
+            attempts=attempts_used,
             status_code=exc.status_code,
             qq_code=exc.qq_code,
             issue_code=_ISSUE_RICH_MEDIA_UPLOAD_FAILED,
@@ -821,9 +838,10 @@ async def send_rich_media(
             sleep=sleep,
         )
     except SendError as exc:
+        attempts_used = exc.attempts if exc.attempts is not None else max_attempts
         evidence = _rich_media_evidence(
             stage="send",
-            attempts=max_attempts,
+            attempts=attempts_used,
             status_code=exc.status_code,
             qq_code=exc.qq_code,
             file_uuid=upload.get("file_uuid"),
