@@ -108,9 +108,9 @@ class QQBotSessionRuntimeTests(unittest.IsolatedAsyncioTestCase):
         helper = QQBotSessionRuntime(runtime=runtime, id_factory=FakeIdFactory())
 
         outcome = await helper.handle_turn(
-            turn=self.turn("turn-start-001", "新任务：起草一个通知"),
+            turn=self.turn("turn-start-001", "请帮我看一下这份材料"),
             scope=self.scope,
-            run_request=self.run_request("turn-start-001", "新任务：起草一个通知"),
+            run_request=self.run_request("turn-start-001", "请帮我看一下这份材料"),
             recent_session=None,
             idempotency_key="idem-start-001",
         )
