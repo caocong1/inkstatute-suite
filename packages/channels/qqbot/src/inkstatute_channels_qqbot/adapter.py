@@ -23,6 +23,7 @@ from platform_runtime.protocols import (
 from .config import QQBotChannelConfig
 from .sender import (
     SendError,
+    ack_interaction,
     build_feedback_keyboard_envelope,
     build_markdown_envelope,
     build_media_envelope,
@@ -58,6 +59,14 @@ class QQBotChannelAdapter:
 
     def channel_id(self) -> str:
         return self._config.channel_id
+
+    def _live_io_ready(self) -> bool:
+        """True when enabled and both token_manager and transport are injected."""
+        return bool(
+            self._config.enabled
+            and self._token_manager is not None
+            and self._transport is not None
+        )
 
     def capabilities(self) -> ChannelCapabilitySet:
         return ChannelCapabilitySet(
@@ -184,11 +193,62 @@ class QQBotChannelAdapter:
                 metadata={**base_meta, "signature_status": "invalid_challenge"},
             )
 
+        # Verified dispatch (non-op=13): Tier-1 webhook Reply body for host HTTP 200.
+        meta: JsonObject = {
+            **base_meta,
+            "signature_status": "verified",
+            "http_callback_ack_body": {"op": 12},
+            "ack_tier": "webhook_op12",
+            # Webhook reply is host-local; interaction PUT is tracked separately.
+            "network_io": False,
+            "fixture_only": not self._live_io_ready(),
+        }
+
+        interaction_id = _interaction_id_from_payload(payload)
+        if interaction_id is not None:
+            meta["interaction_ack_required"] = True
+            meta["interaction_id"] = interaction_id
+            meta["interaction_ack_body"] = {"code": 0}
+            if self._live_io_ready():
+                try:
+                    await ack_interaction(
+                        interaction_id=interaction_id,
+                        token_manager=self._token_manager,
+                        transport=self._transport,
+                        code=0,
+                    )
+                    meta["interaction_ack_status"] = "sent"
+                    meta["ack_tier"] = "webhook_op12+interaction_put"
+                except SendError as exc:
+                    # QQ code 3 = duplicate operation — treat as non-fatal evidence.
+                    if getattr(exc, "qq_code", None) == 3:
+                        meta["interaction_ack_status"] = "sent"
+                        meta["ack_tier"] = "webhook_op12+interaction_put"
+                        meta["interaction_ack_issue_code"] = "qqbot_interaction_ack_duplicate"
+                    else:
+                        meta["interaction_ack_status"] = "failed"
+                        meta["interaction_ack_issue_code"] = "qqbot_interaction_ack_failed"
+                        meta["interaction_ack_error"] = str(exc)
+                        status_code = getattr(exc, "status_code", None)
+                        qq_code = getattr(exc, "qq_code", None)
+                        if status_code is not None:
+                            meta["interaction_ack_status_code"] = status_code
+                        if qq_code is not None:
+                            meta["interaction_ack_qq_code"] = qq_code
+                except TokenError:
+                    meta["interaction_ack_status"] = "failed"
+                    meta["interaction_ack_issue_code"] = "qqbot_interaction_ack_failed"
+                    meta["interaction_ack_error"] = "QQ Bot token unavailable"
+            else:
+                meta["interaction_ack_status"] = (
+                    "skipped_fixture" if not self._config.enabled else "pending_host"
+                )
+
         return AckResponse(
             accepted=True,
             status_code=200,
             idempotency_key=idem_key,
-            metadata={**base_meta, "signature_status": "verified"},
+            metadata=meta,
         )
 
     async def normalize_inbound(self, raw: RawInbound) -> InboundNormalized:
@@ -732,6 +792,22 @@ def _is_gateway_envelope(payload: Mapping[str, Any]) -> bool:
     gateway envelopes from the pre-normalized fixture format.
     """
     return "op" in payload and "d" in payload
+
+
+def _interaction_id_from_payload(payload: Mapping[str, Any]) -> str | None:
+    """Return interaction id for INTERACTION_CREATE, else None.
+
+    Prefer ``d.id``, fall back to top-level envelope ``id`` (same as
+    normalize_interaction_event).
+    """
+    if not _is_gateway_envelope(payload):
+        return None
+    from .normalization import QQBotEventCategory, parse_envelope
+
+    event = parse_envelope(payload)
+    if event.category != QQBotEventCategory.INTERACTION:
+        return None
+    return _optional_string(event.data.get("id")) or event.event_id
 
 
 def _normalize_gateway_envelope(
