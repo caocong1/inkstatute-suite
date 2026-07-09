@@ -106,6 +106,12 @@ Plans:
 **Goal:** QQ Bot access token is acquired via `appId + clientSecret → POST /getAppAccessToken`, cached with 7200s TTL, auto-refreshed 60s before expiry, and single-flight under concurrent refresh via `asyncio.Lock`.
 **Depends on:** Phase 60
 **Requirements:** EGRESS-01
+**Plans:** 2 plans
+
+Plans:
+- [ ] 61-01-PLAN.md — Create token_manager.py (transport injection + TokenManager cache/refresh) and lifecycle/import-safety tests
+- [ ] 61-02-PLAN.md — Concurrent single-flight + error-handling tests; wecom import isolation; safety suite green
+
 **Success Criteria** (what must be TRUE):
 
 1. `token_manager.py` acquires access token via `POST /getAppAccessToken` using appId + clientSecret.
