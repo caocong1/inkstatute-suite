@@ -498,7 +498,7 @@ def _rich_media_evidence(
 
 **If this table is empty:** N/A — assumptions listed above need planner awareness, not user blockers for discuss-skipped mode.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should inbound video set `message_type="file"` or keep `"text"` when caption exists?**
    - **RESOLVED (planner 2026-07-09):** Primary from first attachment (`video→file`); keep caption in `content`. Frozen MessageType has no `video`; AttachmentRef.kind stays `"video"`.
