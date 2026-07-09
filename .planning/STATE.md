@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.8
-milestone_name: QQBot Channel Production
-status: Awaiting next milestone
-stopped_at: Roadmap created for v1.8 QQBot Channel Production (Phases 58-67)
-last_updated: "2026-07-09T12:35:12.250Z"
-last_activity: 2026-07-09 — Milestone v1.8 completed and archived
+milestone: v1.9
+milestone_name: QQBot Host Composition
+status: planning
+last_updated: "2026-07-09T15:22:26.480Z"
+last_activity: 2026-07-09
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 25
-  completed_plans: 25
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-04)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Awaiting next milestone (v1.8 archived)
+**Current focus:** Milestone v1.9 QQBot Host Composition — defining requirements
 
 ## Current Position
 
-Phase: Milestone v1.8 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-09 — Milestone v1.8 completed and archived
+Status: Defining requirements
+Last activity: 2026-07-09 — Milestone v1.9 started
 
 ### Deferred Items
 
@@ -304,4 +303,6 @@ v1.7 archive: .planning/milestones/v1.7-ROADMAP.md
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Continue `$gsd-new-milestone` flow: research decision → requirements → roadmap
+- After roadmap: `$gsd-discuss-phase` / `$gsd-plan-phase` for the first v1.9 phase
+- Preserve `.planning/phases/08-lawyer-trial-acceptance/` (carried human gate; do not clear)
