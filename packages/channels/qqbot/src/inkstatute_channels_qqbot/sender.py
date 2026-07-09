@@ -13,8 +13,10 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from enum import Enum
 from typing import Any, Awaitable, Callable, Protocol
+from zoneinfo import ZoneInfo
 
 from channel_core.owned_notices import build_owned_notice
 from channel_core.output_policy import OutputPolicyDecision, apply_output_policy
@@ -39,6 +41,12 @@ _GROUP_MAX_AGE_SECONDS = 300
 _GROUP_MAX_REPLIES = 5
 
 _ISSUE_WINDOW_EXPIRED = "qqbot_passive_reply_window_expired"
+_ISSUE_WAKEUP_QUOTA_EXHAUSTED = "qqbot_wakeup_quota_exhausted"
+_ISSUE_WAKEUP_OUTSIDE_WINDOW = "qqbot_wakeup_outside_window"
+_ISSUE_WAKEUP_UNSUPPORTED_SCENE = "qqbot_wakeup_unsupported_scene"
+
+# RECALL-01: default calendar TZ for period day labels (injectable).
+_DEFAULT_WAKEUP_TZ = ZoneInfo("Asia/Shanghai")
 
 _API_BASE = "https://api.sgroup.qq.com"
 
@@ -177,10 +185,228 @@ def build_media_envelope(
     }
 
 
+def build_wakeup_text_envelope(*, content: str) -> dict[str, Any]:
+    """Build a C2C wakeup text envelope (msg_type=0) after output policy.
+
+    Mutual exclusion: sets ``is_wakeup=True`` and intentionally omits
+    ``msg_id`` / ``event_id`` / ``msg_seq`` (never calls ``_base_envelope``).
+    """
+
+    decision = apply_output_policy(content)
+    envelope: dict[str, Any] = {
+        "is_wakeup": True,
+        "policy": {
+            "action": decision.action,
+            "reason": decision.reason,
+            "audit_metadata": decision.audit_metadata,
+        },
+    }
+    if decision.action != "block" and decision.visible_text:
+        envelope.update({"msg_type": 0, "content": decision.visible_text})
+    return envelope
+
+
+def build_wakeup_markdown_envelope(*, content: str) -> dict[str, Any]:
+    """Build a C2C wakeup markdown envelope (msg_type=2) after output policy.
+
+    Same mutual-exclusion rules as :func:`build_wakeup_text_envelope`.
+    """
+
+    decision = apply_output_policy(content)
+    envelope: dict[str, Any] = {
+        "is_wakeup": True,
+        "policy": {
+            "action": decision.action,
+            "reason": decision.reason,
+            "audit_metadata": decision.audit_metadata,
+        },
+    }
+    if decision.action != "block" and decision.visible_text:
+        envelope.update(
+            {
+                "msg_type": 2,
+                "markdown": {"content": decision.visible_text},
+                "content": "",
+            }
+        )
+    return envelope
+
+
 def strip_for_wire(envelope: dict[str, Any]) -> dict[str, Any]:
     """Return a shallow copy without audit-only keys for QQ OpenAPI POST."""
 
     return {key: value for key, value in envelope.items() if key not in _WIRE_AUDIT_KEYS}
+
+
+class WakeupPeriodId(str, Enum):
+    """RECALL-01 30-day interaction-recall period identifiers."""
+
+    P0_SAME_DAY = "p0_same_day"
+    P1_1_3 = "p1_1_3"
+    P2_3_7 = "p2_3_7"
+    P3_7_30 = "p3_7_30"
+
+
+@dataclass(frozen=True)
+class WakeupQuotaResult:
+    """Outcome of RECALL-01 wakeup period quota check."""
+
+    ok: bool
+    period_id: WakeupPeriodId | None = None
+    issue_code: str | None = None
+    interim_notice: str | None = None
+
+
+class WakeupPeriodStore(Protocol):
+    """Injectable store for wakeup period accounting (process-local by default)."""
+
+    def note_user_message(self, user_openid: str, at: datetime) -> None:
+        """Record a user-initiated message; reset basis on a later calendar day."""
+        ...
+
+    def last_user_message_at(self, user_openid: str) -> datetime | None:
+        """Return the current period basis timestamp for ``user_openid``, if any."""
+        ...
+
+    def has_sent(self, user_openid: str, period_id: WakeupPeriodId | str) -> bool:
+        """True when a wakeup was already recorded for (openid, period)."""
+        ...
+
+    def record_send(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
+        """Record a successful wakeup send for (openid, period)."""
+        ...
+
+
+class InMemoryWakeupPeriodStore:
+    """Process-local wakeup period store (host may inject a durable impl later)."""
+
+    def __init__(self, *, tz: Any | None = None) -> None:
+        self._tz = tz if tz is not None else _DEFAULT_WAKEUP_TZ
+        self._basis: dict[str, datetime] = {}
+        self._sent: dict[str, set[str]] = {}
+
+    def _calendar_day(self, value: datetime) -> date:
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(self._tz).date()
+
+    def note_user_message(self, user_openid: str, at: datetime) -> None:
+        if at.tzinfo is None:
+            at = at.replace(tzinfo=timezone.utc)
+        prior = self._basis.get(user_openid)
+        if prior is None or self._calendar_day(at) > self._calendar_day(prior):
+            # Later calendar day → reset period basis and send ledger.
+            self._basis[user_openid] = at
+            self._sent[user_openid] = set()
+            return
+        # Same (or earlier) day: refresh basis timestamp without clearing sends.
+        self._basis[user_openid] = at
+
+    def last_user_message_at(self, user_openid: str) -> datetime | None:
+        return self._basis.get(user_openid)
+
+    def has_sent(self, user_openid: str, period_id: WakeupPeriodId | str) -> bool:
+        key = period_id.value if isinstance(period_id, WakeupPeriodId) else str(period_id)
+        return key in self._sent.get(user_openid, set())
+
+    def record_send(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
+        key = period_id.value if isinstance(period_id, WakeupPeriodId) else str(period_id)
+        self._sent.setdefault(user_openid, set()).add(key)
+
+
+def wakeup_scene_supported(scene: str | None) -> bool:
+    """RECALL-01: ``is_wakeup`` is C2C-only; group/other scenes fail closed."""
+
+    return scene == "c2c"
+
+
+def _resolve_now(
+    now: datetime | Callable[[], datetime] | None,
+) -> datetime:
+    if now is None:
+        return _default_clock()
+    if callable(now):
+        value = now()
+    else:
+        value = now
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def _period_for_day_delta(day_delta: int) -> WakeupPeriodId | None:
+    """Map calendar-day delta (Asia/Shanghai labels) to P0–P3.
+
+    Half-open boundaries (documented in SUMMARY):
+    - P0: day_delta == 0 (same calendar day as T0)
+    - P1: 1 <= day_delta <= 3
+    - P2: 3 < day_delta <= 7
+    - P3: 7 < day_delta <= 30
+    - else: outside 30-day window
+    """
+
+    if day_delta == 0:
+        return WakeupPeriodId.P0_SAME_DAY
+    if 1 <= day_delta <= 3:
+        return WakeupPeriodId.P1_1_3
+    if 3 < day_delta <= 7:
+        return WakeupPeriodId.P2_3_7
+    if 7 < day_delta <= 30:
+        return WakeupPeriodId.P3_7_30
+    return None
+
+
+def check_wakeup_quota(
+    user_openid: str,
+    last_user_message_at: datetime | None = None,
+    *,
+    now: datetime | Callable[[], datetime] | None = None,
+    store: WakeupPeriodStore | None = None,
+    tz: Any | None = None,
+) -> WakeupQuotaResult:
+    """Enforce RECALL-01: 1 wakeup send per (openid, period) within 30 days.
+
+    Period calendar-day labels use ``tz`` (default Asia/Shanghai). ``now`` may be
+    a datetime or a zero-arg callable (injectable clock). When
+    ``last_user_message_at`` is omitted, the store's recorded basis is used.
+    """
+
+    seed = user_openid or "wakeup-quota"
+    tzinfo = tz if tz is not None else _DEFAULT_WAKEUP_TZ
+    current = _resolve_now(now)
+
+    basis = last_user_message_at
+    if basis is None and store is not None:
+        basis = store.last_user_message_at(user_openid)
+    if basis is None:
+        return WakeupQuotaResult(
+            ok=False,
+            issue_code=_ISSUE_WAKEUP_OUTSIDE_WINDOW,
+            interim_notice=build_owned_notice("long_processing", seed=seed),
+        )
+    if basis.tzinfo is None:
+        basis = basis.replace(tzinfo=timezone.utc)
+
+    basis_day = basis.astimezone(tzinfo).date()
+    now_day = current.astimezone(tzinfo).date()
+    day_delta = (now_day - basis_day).days
+    period_id = _period_for_day_delta(day_delta)
+    if period_id is None:
+        return WakeupQuotaResult(
+            ok=False,
+            issue_code=_ISSUE_WAKEUP_OUTSIDE_WINDOW,
+            interim_notice=build_owned_notice("long_processing", seed=seed),
+        )
+
+    if store is not None and store.has_sent(user_openid, period_id):
+        return WakeupQuotaResult(
+            ok=False,
+            period_id=period_id,
+            issue_code=_ISSUE_WAKEUP_QUOTA_EXHAUSTED,
+            interim_notice=build_owned_notice("long_processing", seed=seed),
+        )
+
+    return WakeupQuotaResult(ok=True, period_id=period_id)
 
 
 @dataclass(frozen=True)
@@ -995,20 +1221,28 @@ async def send_rich_media(
 __all__ = [
     "FEEDBACK_ACTIONS",
     "FakeMessageTransport",
+    "InMemoryWakeupPeriodStore",
     "MessageTransport",
     "PassiveReplyWindowResult",
     "SendError",
     "UrllibMessageTransport",
+    "WakeupPeriodId",
+    "WakeupPeriodStore",
+    "WakeupQuotaResult",
     "ack_interaction",
     "build_feedback_keyboard_envelope",
     "build_markdown_envelope",
     "build_media_envelope",
     "build_text_envelope",
+    "build_wakeup_markdown_envelope",
+    "build_wakeup_text_envelope",
     "check_passive_reply_window",
+    "check_wakeup_quota",
     "send_message",
     "send_rich_media",
     "strip_for_wire",
     "upload_rich_media",
+    "wakeup_scene_supported",
     "wire_files_url_for_scene",
     "wire_url_for_scene",
 ]
