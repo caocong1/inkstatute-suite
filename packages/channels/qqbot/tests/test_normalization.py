@@ -428,5 +428,148 @@ class NormalizeInteractionEventTests(unittest.TestCase):
         self.assertEqual(feedback.status, "pending")
 
 
+class AttachmentRefTests(unittest.TestCase):
+    """EGRESS-05: attachments[] → reference-only AttachmentRef (qqbot-media://)."""
+
+    def test_attachments_map_to_qqbot_media_uri(self) -> None:
+        fixture = _load_fixture("qqbot_c2c_message_with_attachments.json")
+        event = parse_envelope(fixture["envelope"])
+        turn = normalize_message_event(event, received_at="2026-07-09T12:00:00Z")
+
+        self.assertGreaterEqual(len(turn.attachments), 4)
+        for att in turn.attachments:
+            self.assertTrue(
+                att.uri.startswith("qqbot-media://"),
+                f"uri must be opaque qqbot-media://, got {att.uri!r}",
+            )
+            self.assertNotIn("https://", att.uri)
+
+    def test_attachment_asdict_has_no_live_url_or_bytes(self) -> None:
+        fixture = _load_fixture("qqbot_c2c_message_with_attachments.json")
+        download_urls = fixture["fixture_download_urls"]
+        event = parse_envelope(fixture["envelope"])
+        turn = normalize_message_event(
+            event,
+            received_at="2026-07-09T12:00:00Z",
+            payload_ref="fixture://phase63-c2c-att",
+        )
+
+        for att in turn.attachments:
+            serialized = json.dumps(asdict(att), ensure_ascii=False)
+            for url in download_urls:
+                self.assertNotIn(
+                    url,
+                    serialized,
+                    f"live download URL must not appear in AttachmentRef asdict: {url}",
+                )
+            self.assertNotIn("https://", serialized)
+            self.assertIs(att.metadata.get("bytes_stored"), False)
+            self.assertEqual(att.metadata.get("source_status"), "media_reference_only")
+            self.assertTrue(att.metadata.get("raw_payload_ref"))
+
+    def test_message_type_from_primary_attachment(self) -> None:
+        cases = [
+            ("image/jpeg", "image.jpg", "image", "image"),
+            ("voice", "note.silk", "voice", "voice"),
+            ("file", "brief.pdf", "file", "file"),
+            ("video/mp4", "clip.mp4", "video", "file"),
+        ]
+        for content_type, filename, expected_kind, expected_message_type in cases:
+            with self.subTest(content_type=content_type):
+                event = parse_envelope({
+                    "op": 0,
+                    "t": "C2C_MESSAGE_CREATE",
+                    "d": {
+                        "author": {"user_openid": "FIXTURE_USER_MSG_TYPE"},
+                        "content": "caption",
+                        "id": f"FIXTURE_MSG_TYPE_{expected_kind}",
+                        "attachments": [
+                            {
+                                "content_type": content_type,
+                                "filename": filename,
+                                "url": f"https://fixture.qqbot.example/media/{filename}",
+                                "size": 100,
+                            }
+                        ],
+                    },
+                })
+                turn = normalize_message_event(event, received_at="2026-07-09T12:00:00Z")
+                self.assertEqual(turn.message_type, expected_message_type)
+                self.assertEqual(len(turn.attachments), 1)
+                self.assertEqual(turn.attachments[0].kind, expected_kind)
+                self.assertEqual(turn.content, "caption")
+
+    def test_voice_asr_passthrough_when_content_empty(self) -> None:
+        asr_text = "请检索合同解除的裁判观点"
+        event = parse_envelope({
+            "op": 0,
+            "t": "C2C_MESSAGE_CREATE",
+            "d": {
+                "author": {"user_openid": "FIXTURE_USER_ASR"},
+                "content": "",
+                "id": "FIXTURE_ASR_MSG",
+                "attachments": [
+                    {
+                        "content_type": "voice",
+                        "filename": "voice.silk",
+                        "url": "https://fixture.qqbot.example/media/asr-voice.silk",
+                        "size": 4096,
+                        "asr_refer_text": asr_text,
+                    }
+                ],
+            },
+        })
+        turn = normalize_message_event(event, received_at="2026-07-09T12:00:00Z")
+        self.assertEqual(turn.content, asr_text)
+        self.assertEqual(turn.message_type, "voice")
+
+    def test_agent_turn_with_attachments_schema_valid(self) -> None:
+        fixture = _load_fixture("qqbot_c2c_message_with_attachments.json")
+        event = parse_envelope(fixture["envelope"])
+        turn = normalize_message_event(event, received_at="2026-07-09T12:00:00Z")
+        validate_event(
+            "agent_turn",
+            _event_dict(turn),
+            fixture_id="phase63-c2c-attachments",
+        )
+
+        group_fixture = _load_fixture("qqbot_group_at_message_with_attachments.json")
+        group_event = parse_envelope(group_fixture["envelope"])
+        group_turn = normalize_message_event(group_event, received_at="2026-07-09T12:00:00Z")
+        self.assertEqual(group_turn.content, "请看这张截图")
+        self.assertEqual(group_turn.message_type, "image")
+        validate_event(
+            "agent_turn",
+            _event_dict(group_turn),
+            fixture_id="phase63-group-attachments",
+        )
+
+    def test_non_mapping_attachment_items_skipped(self) -> None:
+        event = parse_envelope({
+            "op": 0,
+            "t": "C2C_MESSAGE_CREATE",
+            "d": {
+                "author": {"user_openid": "FIXTURE_USER_SKIP"},
+                "content": "ok",
+                "id": "FIXTURE_SKIP_MSG",
+                "attachments": [
+                    "not-a-mapping",
+                    42,
+                    None,
+                    {
+                        "content_type": "image/png",
+                        "filename": "ok.png",
+                        "url": "https://fixture.qqbot.example/media/ok.png",
+                        "size": 10,
+                    },
+                ],
+            },
+        })
+        turn = normalize_message_event(event, received_at="2026-07-09T12:00:00Z")
+        self.assertEqual(len(turn.attachments), 1)
+        self.assertEqual(turn.attachments[0].kind, "image")
+        self.assertTrue(turn.attachments[0].uri.startswith("qqbot-media://"))
+
+
 if __name__ == "__main__":
     unittest.main()

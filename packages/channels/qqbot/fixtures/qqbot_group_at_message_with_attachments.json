@@ -1,0 +1,34 @@
+{
+  "fixture_id": "phase63-qqbot-group-at-message-with-attachments-001",
+  "description": "Sanitized Phase 63 fixture: QQ Bot GROUP_AT_MESSAGE_CREATE with @-bot prefix and one image attachment. Synthetic URLs only; no real openids or media bytes.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "envelope": {
+    "op": 0,
+    "t": "GROUP_AT_MESSAGE_CREATE",
+    "id": "evt-group-att-001",
+    "s": 2,
+    "d": {
+      "author": {
+        "member_openid": "FIXTURE_MEMBER_OPENID_ATT_001"
+      },
+      "content": "@botname 请看这张截图",
+      "group_openid": "FIXTURE_GROUP_OPENID_ATT_001",
+      "id": "ROBOT1.0_fixture_group_att_msg_001",
+      "timestamp": "2026-07-09T12:00:00+08:00",
+      "attachments": [
+        {
+          "content_type": "image/png",
+          "filename": "screenshot.png",
+          "url": "https://fixture.qqbot.example/media/group-image-001.png",
+          "size": 51200
+        }
+      ]
+    }
+  },
+  "expected_category": "group_at_message",
+  "fixture_download_urls": [
+    "https://fixture.qqbot.example/media/group-image-001.png"
+  ]
+}

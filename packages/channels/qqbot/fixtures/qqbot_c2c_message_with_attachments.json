@@ -1,0 +1,55 @@
+{
+  "fixture_id": "phase63-qqbot-c2c-message-with-attachments-001",
+  "description": "Sanitized Phase 63 fixture: QQ Bot C2C_MESSAGE_CREATE with image/voice/file/video attachments. Synthetic URLs only; no real openids or media bytes.",
+  "not_live_acceptance": true,
+  "evidence_scope": "sanitized_fixture_only",
+  "raw_payload_policy": "raw_payload_ref_and_hashes_only",
+  "envelope": {
+    "op": 0,
+    "t": "C2C_MESSAGE_CREATE",
+    "id": "evt-c2c-att-001",
+    "s": 1,
+    "d": {
+      "author": {
+        "user_openid": "FIXTURE_USER_OPENID_C2C_ATT_001"
+      },
+      "content": "请看附件中的合同扫描件",
+      "id": "ROBOT1.0_fixture_c2c_att_msg_001",
+      "timestamp": "2026-07-09T12:00:00+08:00",
+      "attachments": [
+        {
+          "content_type": "image/jpeg",
+          "filename": "contract-scan.jpg",
+          "url": "https://fixture.qqbot.example/media/c2c-image-001.jpg",
+          "size": 102400
+        },
+        {
+          "content_type": "voice",
+          "filename": "voice-note.silk",
+          "url": "https://fixture.qqbot.example/media/c2c-voice-001.silk",
+          "size": 8192,
+          "asr_refer_text": "请检索合同解除的裁判观点"
+        },
+        {
+          "content_type": "file",
+          "filename": "brief.pdf",
+          "url": "https://fixture.qqbot.example/media/c2c-file-001.pdf",
+          "size": 204800
+        },
+        {
+          "content_type": "video/mp4",
+          "filename": "hearing-clip.mp4",
+          "url": "https://fixture.qqbot.example/media/c2c-video-001.mp4",
+          "size": 1048576
+        }
+      ]
+    }
+  },
+  "expected_category": "c2c_message",
+  "fixture_download_urls": [
+    "https://fixture.qqbot.example/media/c2c-image-001.jpg",
+    "https://fixture.qqbot.example/media/c2c-voice-001.silk",
+    "https://fixture.qqbot.example/media/c2c-file-001.pdf",
+    "https://fixture.qqbot.example/media/c2c-video-001.mp4"
+  ]
+}
