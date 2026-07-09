@@ -12,6 +12,7 @@ import asyncio
 import hashlib
 import json
 import re
+import threading
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from enum import Enum
@@ -269,11 +270,23 @@ class WakeupPeriodStore(Protocol):
         ...
 
     def has_sent(self, user_openid: str, period_id: WakeupPeriodId | str) -> bool:
-        """True when a wakeup was already recorded for (openid, period)."""
+        """True when a wakeup was already recorded/reserved for (openid, period)."""
         ...
 
     def record_send(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
         """Record a successful wakeup send for (openid, period)."""
+        ...
+
+    def try_reserve(self, user_openid: str, period_id: WakeupPeriodId | str) -> bool:
+        """Atomically claim a period slot before send. False if already taken."""
+        ...
+
+    def release(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
+        """Drop a reservation after send failure so a later attempt may retry."""
+        ...
+
+    def commit(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
+        """Keep a reservation after successful send (idempotent with try_reserve)."""
         ...
 
 
@@ -284,6 +297,10 @@ class InMemoryWakeupPeriodStore:
         self._tz = tz if tz is not None else _DEFAULT_WAKEUP_TZ
         self._basis: dict[str, datetime] = {}
         self._sent: dict[str, set[str]] = {}
+        self._lock = threading.Lock()
+
+    def _period_key(self, period_id: WakeupPeriodId | str) -> str:
+        return period_id.value if isinstance(period_id, WakeupPeriodId) else str(period_id)
 
     def _calendar_day(self, value: datetime) -> date:
         if value.tzinfo is None:
@@ -293,25 +310,51 @@ class InMemoryWakeupPeriodStore:
     def note_user_message(self, user_openid: str, at: datetime) -> None:
         if at.tzinfo is None:
             at = at.replace(tzinfo=timezone.utc)
-        prior = self._basis.get(user_openid)
-        if prior is None or self._calendar_day(at) > self._calendar_day(prior):
-            # Later calendar day → reset period basis and send ledger.
+        with self._lock:
+            prior = self._basis.get(user_openid)
+            if prior is None or self._calendar_day(at) > self._calendar_day(prior):
+                # Later calendar day → reset period basis and send ledger.
+                self._basis[user_openid] = at
+                self._sent[user_openid] = set()
+                return
+            # Same (or earlier) day: refresh basis timestamp without clearing sends.
             self._basis[user_openid] = at
-            self._sent[user_openid] = set()
-            return
-        # Same (or earlier) day: refresh basis timestamp without clearing sends.
-        self._basis[user_openid] = at
 
     def last_user_message_at(self, user_openid: str) -> datetime | None:
-        return self._basis.get(user_openid)
+        with self._lock:
+            return self._basis.get(user_openid)
 
     def has_sent(self, user_openid: str, period_id: WakeupPeriodId | str) -> bool:
-        key = period_id.value if isinstance(period_id, WakeupPeriodId) else str(period_id)
-        return key in self._sent.get(user_openid, set())
+        key = self._period_key(period_id)
+        with self._lock:
+            return key in self._sent.get(user_openid, set())
 
     def record_send(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
-        key = period_id.value if isinstance(period_id, WakeupPeriodId) else str(period_id)
-        self._sent.setdefault(user_openid, set()).add(key)
+        key = self._period_key(period_id)
+        with self._lock:
+            self._sent.setdefault(user_openid, set()).add(key)
+
+    def try_reserve(self, user_openid: str, period_id: WakeupPeriodId | str) -> bool:
+        """Claim (openid, period) under lock; False when already reserved/sent."""
+
+        key = self._period_key(period_id)
+        with self._lock:
+            bucket = self._sent.setdefault(user_openid, set())
+            if key in bucket:
+                return False
+            bucket.add(key)
+            return True
+
+    def release(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
+        key = self._period_key(period_id)
+        with self._lock:
+            bucket = self._sent.get(user_openid)
+            if bucket is not None:
+                bucket.discard(key)
+
+    def commit(self, user_openid: str, period_id: WakeupPeriodId | str) -> None:
+        # Reservation already occupies the slot; keep it after successful send.
+        self.record_send(user_openid, period_id)
 
 
 def wakeup_scene_supported(scene: str | None) -> bool:

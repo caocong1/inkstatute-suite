@@ -335,5 +335,28 @@ class TestWakeupAdapterDeliver(unittest.TestCase):
 
 
 
+    def test_wr02_concurrent_reserve_prevents_double_send(self) -> None:
+        """WR-02: try_reserve under lock allows only one send per period."""
+
+        from inkstatute_channels_qqbot.sender import (
+            InMemoryWakeupPeriodStore,
+            WakeupPeriodId,
+        )
+
+        store = InMemoryWakeupPeriodStore()
+        openid = "FIXTURE_USER_WAKEUP_CONCURRENT"
+        period = WakeupPeriodId.P0_SAME_DAY
+        results = [store.try_reserve(openid, period) for _ in range(8)]
+        self.assertEqual(sum(1 for ok in results if ok), 1)
+        self.assertTrue(store.has_sent(openid, period))
+        store.release(openid, period)
+        self.assertFalse(store.has_sent(openid, period))
+        self.assertTrue(store.try_reserve(openid, period))
+        store.commit(openid, period)
+        self.assertFalse(store.try_reserve(openid, period))
+
+
+
+
 if __name__ == "__main__":
     unittest.main()

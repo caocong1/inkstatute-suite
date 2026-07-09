@@ -647,6 +647,23 @@ class QQBotChannelAdapter:
                 "QQ Bot live IO requires token_manager and transport"
             )
 
+        # WR-02: reserve period slot before send so concurrent wakeups cannot
+        # both observe ok=True and double-POST. Release on send failure.
+        reserved = False
+        if (
+            accepted
+            and quota.period_id is not None
+            and hasattr(store, "try_reserve")
+        ):
+            if not store.try_reserve(user_openid, quota.period_id):
+                accepted = False
+                result_meta["issue_code"] = "qqbot_wakeup_quota_exhausted"
+                result_meta["interim_notice"] = build_owned_notice(
+                    "long_processing", seed=delivery.delivery_id
+                )
+            else:
+                reserved = True
+
         if accepted:
             try:
                 await send_message(
@@ -658,9 +675,18 @@ class QQBotChannelAdapter:
                 )
                 result_meta["network_io"] = True
                 result_meta["fixture_only"] = False
-                if quota.period_id is not None and hasattr(store, "record_send"):
+                if reserved and hasattr(store, "commit"):
+                    store.commit(user_openid, quota.period_id)
+                elif (
+                    not reserved
+                    and quota.period_id is not None
+                    and hasattr(store, "record_send")
+                ):
+                    # Stores without try_reserve keep legacy post-send record.
                     store.record_send(user_openid, quota.period_id)
             except (SendError, TokenError) as exc:
+                if reserved and hasattr(store, "release"):
+                    store.release(user_openid, quota.period_id)
                 accepted = False
                 result_meta["issue_code"] = "qqbot_send_failed"
                 if isinstance(exc, TokenError):
