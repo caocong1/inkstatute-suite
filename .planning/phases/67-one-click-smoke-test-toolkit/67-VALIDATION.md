@@ -94,4 +94,4 @@ Human gate (not blocking phase complete):
 - [x] `nyquist_compliant: true` set in frontmatter
 - [x] Live platform run explicitly manual-only (not phase gate)
 
-**Approval:** researcher drafted 2026-07-09 — planner should map Wave 0 into 67-0x-PLAN.md
+**Approval:** researcher drafted 2026-07-09 — planner mapped Wave 0 into 67-01-PLAN.md (Task 1); Plans 02–03 green remaining classes

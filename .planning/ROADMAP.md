@@ -238,6 +238,13 @@ Plans:
 4. Evidence output is sanitized (no tokens, no raw user payloads, no attachment URLs).
 5. Live run remains a human gate (not an autonomous deliverable).
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 67-01-PLAN.md — Wave 0 smoke tests + dry-run CLI (signature, text+keyboard, callback Fake path)
+- [ ] 67-02-PLAN.md — Sanitized evidence schema + operator SMOKE_TEST_RUNBOOK
+- [ ] 67-03-PLAN.md — Live env fail-closed path + ADAPTER-04 / qqbot-channel regression
+
 ## Completed Milestones
 
 <details>

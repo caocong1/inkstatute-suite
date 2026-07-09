@@ -401,19 +401,13 @@ parser.add_argument("--callback-json", type=Path, default=None,
 ## Open Questions
 
 1. **Should `--live` attempt real interaction PUT, or only send + local callback normalize?**
-   - What we know: Phase 65/66 already implement `ack_interaction`; live PUT needs a real `interaction_id` from a user click.
-   - What's unclear: Whether operators will paste a live INTERACTION payload during smoke.
-   - Recommendation: Dry-run always simulates normalize; live send steps are mandatory; live ACK PUT only if `--callback-json` contains a real interaction id and `--live` — otherwise document as optional follow-up in runbook.
+   - **RESOLVED (planner 2026-07-09):** Dry-run always simulates normalize via fixture/`--callback-json` (no PUT). Live send steps (text + markdown+keyboard) are mandatory when `--live`. Live ACK PUT runs only when `--live` and `--callback-json` supplies a real `interaction_id`; otherwise runbook documents optional follow-up. No webhook listener in this phase.
 
 2. **Should dry-run smoke be wired into `run_v2_gates.py`?**
-   - What we know: REQUIREMENTS say CI-able dry-run; gates already run qqbot unittest discover.
-   - What's unclear: Whether a separate gate name is desired vs unittest coverage alone.
-   - Recommendation: Cover via `test_smoke_toolkit.py` under qqbot tests (picked up by existing `qqbot-channel` gate); optionally document `python3 scripts/smoke_test.py --dry-run` in runbook/CI docs without mandating a new gate entry.
+   - **RESOLVED (planner 2026-07-09):** No new gate entry. Cover via `packages/channels/qqbot/tests/test_smoke_toolkit.py` under the existing `qqbot-channel` discover gate; runbook documents `python3 scripts/smoke_test.py --dry-run` as the operator/CI one-click command.
 
 3. **Where should human-archived live evidence land?**
-   - What we know: SMOKE-04 says structured for archival in `.planning/` after live run.
-   - What's unclear: Exact path convention.
-   - Recommendation: Runbook says copy sanitized JSON to `.planning/phases/67-one-click-smoke-test-toolkit/evidence/YYYYMMDD-smoke-live.json` (gitignored or sanitized-only); do not auto-commit from the script.
+   - **RESOLVED (planner 2026-07-09):** Runbook instructs operators to copy sanitized JSON to `.planning/phases/67-one-click-smoke-test-toolkit/evidence/YYYYMMDD-smoke-live.json` (sanitized-only; never auto-commit secrets). Script does not write under `.planning/` by default — use `--evidence-out` then optional human copy.
 
 ## Environment Availability
 
