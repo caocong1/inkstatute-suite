@@ -231,6 +231,8 @@ class QQBotChannelAdapter:
                     meta["ack_tier"] = "webhook_op12+interaction_put"
                 except SendError as exc:
                     # QQ code 3 = duplicate operation — treat as non-fatal evidence.
+                    # Token failures arrive as SendError("QQ Bot token unavailable")
+                    # because ack_interaction → _bearer maps TokenError before raise.
                     if getattr(exc, "qq_code", None) == 3:
                         meta["interaction_ack_status"] = "sent"
                         meta["ack_tier"] = "webhook_op12+interaction_put"
@@ -245,10 +247,6 @@ class QQBotChannelAdapter:
                             meta["interaction_ack_status_code"] = status_code
                         if qq_code is not None:
                             meta["interaction_ack_qq_code"] = qq_code
-                except TokenError:
-                    meta["interaction_ack_status"] = "failed"
-                    meta["interaction_ack_issue_code"] = "qqbot_interaction_ack_failed"
-                    meta["interaction_ack_error"] = "QQ Bot token unavailable"
             else:
                 meta["interaction_ack_status"] = (
                     "skipped_fixture" if not self._config.enabled else "pending_host"
