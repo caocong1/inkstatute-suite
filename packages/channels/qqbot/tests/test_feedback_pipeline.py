@@ -151,9 +151,7 @@ class TestFeedbackPipelineE2E(unittest.TestCase):
         queue = build_pending_feedback_queue(events)
         self.assertEqual(len(queue), 1)
         self.assertEqual(queue[0]["action"], "up")
-        self.assertEqual(
-            queue[0]["metadata"]["idempotency_key"], "FIXTURE_CARD_MSG_ID_001:21"
-        )
+        self.assertEqual(queue[0]["idempotency_key"], "FIXTURE_CARD_MSG_ID_001:21")
         _assert_no_privacy_leak(self, queue[0])
 
     def test_feedback01_route_wrong_keeps_no_auto_modify(self) -> None:
