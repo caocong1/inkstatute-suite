@@ -357,6 +357,21 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertFalse(result.accepted)
         self.assertEqual(result.metadata["policy_action"], "block")
 
+    def test_empty_content_delivery_not_accepted(self) -> None:
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-empty-1",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="",
+            metadata={"delivery_type": "text", "to_user": "lawyer-1"},
+        )
+        result = run(self.adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertNotIn("msg_type", result.metadata["envelope"])
+        self.assertEqual(result.metadata["policy_action"], "allow")
+        self.assertIsNone(result.delivered_at)
+
     def test_deliver_maps_token_error_to_delivery_failure(self) -> None:
         from inkstatute_channels_qqbot.sender import FakeMessageTransport
         from inkstatute_channels_qqbot.token_manager import (
