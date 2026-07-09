@@ -80,7 +80,7 @@ Each task was committed atomically:
 2. **Task 1 GREEN: live fail-closed + Urllib human gate** - `e264cc9` (feat)
 3. **Task 2: Safety freeze + qqbot-channel regression** - `87a50f1` (chore)
 
-**Plan metadata:** (docs commit after SUMMARY; STATE/ROADMAP intentionally not updated per executor prompt)
+**Plan metadata:** `20ea7d7` (docs: complete plan; STATE/ROADMAP intentionally not updated per executor prompt)
 
 ## Files Created/Modified
 
