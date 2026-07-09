@@ -13,7 +13,7 @@ from dataclasses import dataclass, fields as dc_fields, is_dataclass
 from enum import StrEnum
 from typing import Any, Mapping
 
-from platform_contract.events import AgentTurn, FeedbackEvent, SkillCandidate
+from platform_contract.events import AgentTurn, AttachmentRef, FeedbackEvent, SkillCandidate
 
 JsonObject = dict[str, Any]
 
@@ -151,6 +151,120 @@ def _feedback_event_type(action: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# AttachmentRef mapping (EGRESS-05 reference-only)
+# ---------------------------------------------------------------------------
+
+_CONTENT_TYPE_KIND = {
+    "image/jpeg": "image",
+    "image/png": "image",
+    "image/gif": "image",
+    "voice": "voice",
+    "video/mp4": "video",
+    "file": "file",
+}
+
+_KIND_TO_MESSAGE_TYPE = {
+    "image": "image",
+    "voice": "voice",
+    "file": "file",
+    "video": "file",  # MessageType has no video; kind stays video on AttachmentRef
+}
+
+
+def _kind_from_content_type(content_type: str | None) -> str:
+    if not content_type:
+        return "file"
+    lowered = content_type.strip().lower()
+    if lowered in _CONTENT_TYPE_KIND:
+        return _CONTENT_TYPE_KIND[lowered]
+    if lowered.startswith("image/"):
+        return "image"
+    if lowered.startswith("video/"):
+        return "video"
+    if lowered.startswith("audio/") or lowered == "voice":
+        return "voice"
+    return "file"
+
+
+def _attachment_ref_from_qq(
+    item: Mapping[str, Any],
+    *,
+    index: int,
+    payload_ref: str | None,
+) -> AttachmentRef | None:
+    """Build a reference-only AttachmentRef; never store live url or bytes."""
+    if not isinstance(item, Mapping):
+        return None
+    content_type = _optional_string(item.get("content_type"))
+    filename = _optional_string(item.get("filename"))
+    url = _optional_string(item.get("url"))
+    # Hash inputs for stable id — do NOT put url into AttachmentRef.uri
+    attachment_id = _stable_id(
+        "qqbot-att",
+        url or filename or content_type or "",
+        index,
+    )
+    kind = _kind_from_content_type(content_type)
+    metadata: dict[str, Any] = {
+        "raw_payload_ref": payload_ref,
+        "source_status": "media_reference_only",
+        "bytes_stored": False,
+        "content_type": content_type,
+    }
+    asr = _optional_string(item.get("asr_refer_text"))
+    if asr:
+        metadata["asr_refer_text"] = asr
+    size = item.get("size")
+    if isinstance(size, int) and not isinstance(size, bool):
+        metadata["size"] = size
+    return AttachmentRef(
+        attachment_id=attachment_id,
+        kind=kind,
+        uri=f"qqbot-media://{attachment_id}",
+        name=filename,
+        mime_type=content_type if content_type and "/" in content_type else None,
+        metadata={k: v for k, v in metadata.items() if v is not None},
+    )
+
+
+def _attachments_from_event(
+    data: Mapping[str, Any],
+    *,
+    payload_ref: str | None,
+) -> list[AttachmentRef]:
+    """Parse d.attachments into AttachmentRef list; skip non-Mapping items."""
+    raw = data.get("attachments")
+    if not isinstance(raw, list):
+        return []
+    attachments: list[AttachmentRef] = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, Mapping):
+            continue
+        ref = _attachment_ref_from_qq(item, index=index, payload_ref=payload_ref)
+        if ref is not None:
+            attachments.append(ref)
+    return attachments
+
+
+def _message_type_from_attachments(attachments: list[AttachmentRef]) -> str:
+    """Derive AgentTurn.message_type from first attachment; empty → text."""
+    if not attachments:
+        return "text"
+    return _KIND_TO_MESSAGE_TYPE.get(attachments[0].kind, "file")
+
+
+def _asr_content_from_attachments(attachments: list[AttachmentRef]) -> str | None:
+    """Return first voice attachment's asr_refer_text when present."""
+    for att in attachments:
+        if att.kind != "voice":
+            continue
+        asr = _optional_string(att.metadata.get("asr_refer_text"))
+        if asr:
+            return asr
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Event normalization: message events -> AgentTurn
 # ---------------------------------------------------------------------------
 
@@ -181,22 +295,30 @@ def normalize_message_event(
     message_id = _optional_string(d.get("id")) or ""
     conversation_id = f"qqbot:{scene}:{scene_id}:{user_openid}"
     turn_id = _stable_id("qqbot-turn", message_id or conversation_id)
+    resolved_payload_ref = payload_ref or event.raw_payload_ref
+    attachments = _attachments_from_event(d, payload_ref=resolved_payload_ref)
+    message_type = _message_type_from_attachments(attachments)
+    if not content:
+        asr = _asr_content_from_attachments(attachments)
+        if asr:
+            content = asr
 
     return AgentTurn(
         turn_id=turn_id,
         conversation_id=conversation_id,
         channel="qqbot",
         user_id=user_openid,
-        message_type="text",
+        message_type=message_type,
         received_at=received_at,
         content=content if content else None,
+        attachments=attachments,
         metadata={
             "source_event": event.event_type or "qqbot_message",
             "source_status": "sanitized_callback",
             "scene": scene,
             "scene_id": scene_id,
             "message_id": message_id,
-            "raw_payload_ref": payload_ref or event.raw_payload_ref,
+            "raw_payload_ref": resolved_payload_ref,
             "content_source_status": "stripped" if event.category == QQBotEventCategory.GROUP_AT_MESSAGE else "direct",
         },
     )
