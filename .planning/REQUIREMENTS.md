@@ -37,9 +37,9 @@ Requirements for QQBot Channel Production milestone. Each maps to roadmap phases
 
 ### Session Continuity
 
-- [ ] **SESS-01**: QQBotSessionRuntime orchestrates continuous conversation for QQ users via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator`, composing `platform_runtime` primitives directly (no `wecom_service` import).
-- [ ] **SESS-02**: QQ Bot interrupt resume preserves skill clarification questions across user replies, with scene-aware conversation identity partitioning sessions by channel + scene (no C2C/group cross-scene collision).
-- [ ] **SESS-03**: QQ Bot memory recall (pre-turn recall + post-turn retention) is wired via `MemoryOrchestrator` with fail-open graceful degradation, matching WeCom session runtime behavior.
+- [x] **SESS-01**: QQBotSessionRuntime orchestrates continuous conversation for QQ users via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator`, composing `platform_runtime` primitives directly (no `wecom_service` import).
+- [x] **SESS-02**: QQ Bot interrupt resume preserves skill clarification questions across user replies, with scene-aware conversation identity partitioning sessions by channel + scene (no C2C/group cross-scene collision).
+- [x] **SESS-03**: QQ Bot memory recall (pre-turn recall + post-turn retention) is wired via `MemoryOrchestrator` with fail-open graceful degradation, matching WeCom session runtime behavior.
 
 ### Feedback Loop Parity
 
@@ -115,9 +115,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EGRESS-05 | 63 | Complete |
 | EGRESS-06 | 63 | Complete |
 | EGRESS-07 | 62 | Complete |
-| SESS-01 | 64 | Pending |
-| SESS-02 | 64 | Pending |
-| SESS-03 | 64 | Pending |
+| SESS-01 | 64 | Complete |
+| SESS-02 | 64 | Complete |
+| SESS-03 | 64 | Complete |
 | FEEDBACK-01 | 66 | Pending |
 | FEEDBACK-02 | 66 | Pending |
 | FEEDBACK-03 | 66 | Pending |

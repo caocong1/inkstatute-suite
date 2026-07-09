@@ -41,7 +41,7 @@
 - [x] **Phase 61: Access Token Manager** - `token_manager.py` (appId + clientSecret → `POST /getAppAccessToken`, 7200s TTL cache, auto-refresh 60s before expiry, single-flight via `asyncio.Lock`); tests for lifecycle, concurrent refresh, error handling. *(EGRESS-01)* (completed 2026-07-09)
 - [x] **Phase 62: QQ Egress Sender — Text + Markdown + Keyboard** - `sender.py` (text `msg_type=0` with `msg_id`+`msg_seq` dedupe + retry; markdown+keyboard `msg_type=2` with callback buttons up/down/needs_fix/route_wrong; markdown `msg_type=2` for structured legal answers; passive-reply window tracking C2C 60min/4 + group 5min/5 with window-expiry delivery failure + interim service notice; output boundary enforcement); `adapter.py` `deliver()` modification. *(EGRESS-02, EGRESS-03, EGRESS-04, EGRESS-07)* (completed 2026-07-09)
 - [x] **Phase 63: QQ Rich Media Inbound + Egress (P2)** - Parse `attachments[]` (image/voice/video/file) → `AttachmentRef` with reference-only policy (`raw_payload_ref`, no raw payload storage); two-step upload (`POST /v2/.../files` → `file_info` → `msg_type=7`) for DOCX/PDF legal document delivery with retry + evidence collection. *(EGRESS-05, EGRESS-06)* (completed 2026-07-09)
-- [ ] **Phase 64: QQBotSessionRuntime + QQBotIngressRuntime** - `session_runtime.py` (orchestrate continuous conversation via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator`, composing `platform_runtime` primitives directly, no `wecom_service` import); `ingress_runtime.py` (callback → turn → session runtime); scene-aware conversation identity `qqbot:{scene}:{scene_id}:{user_openid}`; interrupt resume across user replies; memory recall (pre-turn recall + post-turn retention) with fail-open degradation. *(SESS-01, SESS-02, SESS-03)*
+- [x] **Phase 64: QQBotSessionRuntime + QQBotIngressRuntime** - `session_runtime.py` (orchestrate continuous conversation via `RunRuntime` + `SessionResolutionPolicy` + `InterruptStore` + `MemoryOrchestrator`, composing `platform_runtime` primitives directly, no `wecom_service` import); `ingress_runtime.py` (callback → turn → session runtime); scene-aware conversation identity `qqbot:{scene}:{scene_id}:{user_openid}`; interrupt resume across user replies; memory recall (pre-turn recall + post-turn retention) with fail-open degradation. *(SESS-01, SESS-02, SESS-03)* (completed 2026-07-09)
 - [ ] **Phase 65: Adapter Integration — Promote to Real IO** - `adapter.py` full modification (all 6 frozen Protocol methods gain real IO behind `qqbot_channel_enabled` flag; QQ-specific behavior via `ChannelDelivery.metadata`, `AckResponse.metadata`, `ChannelCapabilitySet.metadata`; two-tier ACK: op=12 HTTP 200 for messages + `PUT /interactions/{id}` for button clicks); fixture path preserved for CI when flag off; `test_no_wecom_import.py` enforced; no new channel-core modules. *(ADAPTER-01, ADAPTER-02, ADAPTER-03, INGRESS-06)*
 - [ ] **Phase 66: Feedback Loop Parity + Interaction Recall** - End-to-end feedback wiring (keyboard card dispatch → user button click → INTERACTION_CREATE → FeedbackEvent normalization → feedback-service dedupe/classify/queue); interaction ACK after feedback normalization; feedback dedupe via `msg_id` + button identity; `is_wakeup` interaction recall for over-window long-task completion (windowed 30-day periods, 1 per period); parity with WeCom feedback pipeline. *(FEEDBACK-01, FEEDBACK-02, FEEDBACK-03, RECALL-01)*
 - [ ] **Phase 67: One-Click Smoke-Test Toolkit** - `scripts/smoke_test.py` (CLI: validate signature, send text + markdown+keyboard, simulate callback, collect sanitized evidence via env-var credential injection); `--dry-run` mode for CI (fixture credentials, no live platform); `runbook/SMOKE_TEST_RUNBOOK.md` (credential setup, env-var injection, command sequence, expected outputs, evidence format); sanitized evidence output (no tokens, no raw payloads, no attachment URLs). Live run remains a human gate. *(SMOKE-01, SMOKE-02, SMOKE-03, SMOKE-04)*
@@ -174,12 +174,13 @@ Plans:
 4. Interrupt resume preserves skill clarification questions across user replies.
 5. Memory recall (pre-turn recall + post-turn retention) is wired via `MemoryOrchestrator` with fail-open graceful degradation.
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 64-01-PLAN.md — QQBotSessionRuntime core: create_run/resume_interrupt, scene isolation, no wecom import
-- [ ] 64-02-PLAN.md — QQBotRuntimeIngress callback→turn→session + public exports + skip non-message
-- [ ] 64-03-PLAN.md — MemoryOrchestrator fail-open recall + finalize_memory retention (SESS-03)
+
+- [x] 64-01-PLAN.md — QQBotSessionRuntime core: create_run/resume_interrupt, scene isolation, no wecom import
+- [x] 64-02-PLAN.md — QQBotRuntimeIngress callback→turn→session + public exports + skip non-message
+- [x] 64-03-PLAN.md — MemoryOrchestrator fail-open recall + finalize_memory retention (SESS-03)
 
 ### Phase 65: Adapter Integration — Promote to Real IO
 
