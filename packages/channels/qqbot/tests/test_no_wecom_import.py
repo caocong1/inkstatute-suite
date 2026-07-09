@@ -137,6 +137,27 @@ class NoWecomImportTests(unittest.TestCase):
             "session_runtime.py source contains the string 'wecom_service'",
         )
 
+    def test_ingress_runtime_does_not_import_wecom_service(self) -> None:
+        path = PACKAGE_SRC / "ingress_runtime.py"
+        self.assertTrue(path.is_file(), "ingress_runtime.py is missing")
+        source = path.read_text(encoding="utf-8")
+        modules = _imported_modules(source)
+        for module in modules:
+            self.assertFalse(
+                module.startswith("wecom_service"),
+                f"ingress_runtime.py imports from wecom_service: {module}",
+            )
+
+    def test_ingress_runtime_has_no_wecom_service_string(self) -> None:
+        path = PACKAGE_SRC / "ingress_runtime.py"
+        self.assertTrue(path.is_file(), "ingress_runtime.py is missing")
+        source = path.read_text(encoding="utf-8")
+        self.assertNotIn(
+            "wecom_service",
+            source,
+            "ingress_runtime.py source contains the string 'wecom_service'",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
