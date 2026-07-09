@@ -200,6 +200,10 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertEqual(result.metadata["delivery_type"], "text")
         self.assertEqual(result.metadata["message_type"], "text")
         self.assertEqual(result.metadata["policy_action"], "allow")
+        self.assertFalse(result.metadata["network_io"])
+        envelope = result.metadata["envelope"]
+        self.assertEqual(envelope["msg_type"], 0)
+        self.assertIn("content", envelope)
 
     def test_card_delivery_builds_card_envelope(self) -> None:
         result = run(self.adapter.deliver(card_delivery()))
@@ -207,6 +211,77 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertTrue(result.accepted)
         self.assertEqual(result.metadata["delivery_type"], "card")
         self.assertEqual(result.metadata["message_type"], "card")
+        envelope = result.metadata["envelope"]
+        self.assertEqual(envelope["msg_type"], 2)
+        self.assertIn("keyboard", envelope)
+        self.assertNotIn("template_card", envelope)
+        rows = envelope["keyboard"]["content"]["rows"]
+        self.assertTrue(rows)
+        self.assertIn("buttons", rows[0])
+
+    def test_markdown_delivery_builds_markdown_envelope(self) -> None:
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-md-1",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="## 结论\n根据《民法典》可主张解除合同。",
+            metadata={"delivery_type": "markdown", "to_user": "lawyer-1"},
+        )
+        result = run(self.adapter.deliver(delivery))
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.metadata["delivery_type"], "markdown")
+        self.assertEqual(result.metadata["message_type"], "markdown")
+        envelope = result.metadata["envelope"]
+        self.assertEqual(envelope["msg_type"], 2)
+        self.assertIn("markdown", envelope)
+        self.assertIn("content", envelope["markdown"])
+        self.assertFalse(result.metadata["network_io"])
+
+    def test_window_expired_delivery_fails_with_owned_notice(self) -> None:
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-window-1",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="迟到回复",
+            metadata={
+                "delivery_type": "text",
+                "msg_id": "msg-expired-1",
+                "scene": "group",
+                "received_at": "2020-01-01T00:00:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(self.adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata["issue_code"], "qqbot_passive_reply_window_expired"
+        )
+        self.assertTrue(result.metadata.get("interim_notice"))
+        self.assertFalse(result.metadata["network_io"])
+
+    def test_window_gate_fails_closed_when_msg_id_without_received_at(self) -> None:
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-window-missing-received-at",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="缺少 received_at",
+            metadata={
+                "delivery_type": "text",
+                "msg_id": "msg-no-received-at",
+                "scene": "c2c",
+                "reply_count": 0,
+            },
+        )
+        result = run(self.adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata["issue_code"], "qqbot_passive_reply_window_expired"
+        )
+        self.assertTrue(result.metadata.get("interim_notice"))
+        self.assertFalse(result.metadata["network_io"])
 
     def test_delivery_blocks_internal_notice(self) -> None:
         blocked = ChannelDelivery(

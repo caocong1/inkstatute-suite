@@ -140,6 +140,8 @@ class QQBotChannelLoopTests(unittest.TestCase):
         self.assertTrue(result.accepted)
         self.assertEqual(result.metadata.get("message_type"), "text")
         self.assertEqual(result.metadata.get("policy_action"), "allow")
+        self.assertEqual(result.metadata.get("envelope", {}).get("msg_type"), 0)
+        self.assertFalse(result.metadata.get("network_io", True))
 
     # -- Step 4: text delivery -> card delivery --------------------------------
 
@@ -151,6 +153,10 @@ class QQBotChannelLoopTests(unittest.TestCase):
         self.assertTrue(result.accepted)
         self.assertEqual(result.metadata.get("message_type"), "card")
         self.assertEqual(result.metadata.get("policy_action"), "allow")
+        envelope = result.metadata.get("envelope") or {}
+        self.assertEqual(envelope.get("msg_type"), 2)
+        self.assertIn("keyboard", envelope)
+        self.assertFalse(result.metadata.get("network_io", True))
 
     # -- Step 5: card -> feedback normalize (FeedbackEvent) --------------------
 
