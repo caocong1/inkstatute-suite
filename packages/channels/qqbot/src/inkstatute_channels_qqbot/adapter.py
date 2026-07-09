@@ -553,14 +553,30 @@ class QQBotChannelAdapter:
             if store.last_user_message_at(user_openid) is None:
                 store.note_user_message(user_openid, last_user_message_at)
 
-        # Default basis for hosts that only set allow_wakeup without prior note:
-        # use "now" so P0 same-day quota applies (over-window long-task completion).
+        # WR-01: missing basis fails closed so hosts cannot soft-reset the 30-day
+        # window by omitting last_user_message_at. Opt in with
+        # wakeup_basis_unknown_ok=True only when the host intentionally seeds now.
         if (
             last_user_message_at is None
             and store.last_user_message_at(user_openid) is None
-            and hasattr(store, "note_user_message")
         ):
-            store.note_user_message(user_openid, datetime.now(UTC))
+            if bool(metadata.get("wakeup_basis_unknown_ok")) and hasattr(
+                store, "note_user_message"
+            ):
+                store.note_user_message(user_openid, datetime.now(UTC))
+            else:
+                seed = delivery.delivery_id
+                result_meta["issue_code"] = "qqbot_wakeup_outside_window"
+                result_meta["interim_notice"] = build_owned_notice(
+                    "long_processing", seed=seed
+                )
+                return DeliveryResult(
+                    delivery_id=delivery.delivery_id,
+                    accepted=False,
+                    delivered_at=None,
+                    idempotency_key=idempotency_key,
+                    metadata=result_meta,
+                )
 
         clock = metadata.get("wakeup_clock")
         now_arg: Any = clock if callable(clock) else None

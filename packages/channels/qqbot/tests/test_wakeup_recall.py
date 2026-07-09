@@ -128,7 +128,7 @@ class TestWakeupAdapterDeliver(unittest.TestCase):
         )
 
         # Over-window: msg_id present but passive window expired; allow_wakeup set.
-        # Plan 03 wires the wakeup deliver branch — until then this stays RED.
+        # Explicit last_user_message_at keeps the 30-day basis (WR-01 fail-closed).
         delivery = ChannelDelivery(
             delivery_id="delivery-wakeup-001",
             channel_id="qqbot",
@@ -142,6 +142,7 @@ class TestWakeupAdapterDeliver(unittest.TestCase):
                 "reply_count": 0,
                 "allow_wakeup": True,
                 "is_wakeup": True,
+                "last_user_message_at": "2026-07-09T08:00:00Z",
             },
         )
 
@@ -244,6 +245,94 @@ class TestWakeupAdapterDeliver(unittest.TestCase):
         )
         self.assertTrue(result.metadata.get("interim_notice"))
         self.assertEqual(transport.call_count, 0)
+
+
+    def test_wr01_missing_basis_fails_closed(self) -> None:
+        """WR-01: allow_wakeup without basis must not seed now / soft-open P0."""
+
+        from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenManager
+        from platform_runtime.protocols import ChannelDelivery
+
+        transport = FakeMessageTransport(response={"id": "should-not-send"})
+        token_manager = TokenManager(
+            app_id="fixture-app",
+            client_secret="fixture-secret",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-access-token", "expires_in": 7200}
+            ),
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=token_manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-wakeup-missing-basis",
+            channel_id="qqbot",
+            run_id="run-wakeup-missing-basis",
+            content="long task complete",
+            metadata={
+                "scene": "c2c",
+                "user_openid": "FIXTURE_USER_WAKEUP_NO_BASIS",
+                "msg_id": "FIXTURE_EXPIRED_MSG_ID",
+                "received_at": "2026-01-01T00:00:00Z",
+                "reply_count": 0,
+                "allow_wakeup": True,
+                "is_wakeup": True,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata.get("issue_code"), "qqbot_wakeup_outside_window"
+        )
+        self.assertTrue(result.metadata.get("interim_notice"))
+        self.assertEqual(transport.call_count, 0)
+
+    def test_wr01_explicit_unknown_ok_seeds_basis(self) -> None:
+        """WR-01 opt-in: wakeup_basis_unknown_ok=True may seed now for P0."""
+
+        from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import FakeTokenTransport, TokenManager
+        from platform_runtime.protocols import ChannelDelivery
+
+        transport = FakeMessageTransport(response={"id": "wakeup-msg-unknown-ok"})
+        token_manager = TokenManager(
+            app_id="fixture-app",
+            client_secret="fixture-secret",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-access-token", "expires_in": 7200}
+            ),
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=token_manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-wakeup-unknown-ok",
+            channel_id="qqbot",
+            run_id="run-wakeup-unknown-ok",
+            content="long task complete",
+            metadata={
+                "scene": "c2c",
+                "user_openid": "FIXTURE_USER_WAKEUP_UNKNOWN_OK",
+                "msg_id": "FIXTURE_EXPIRED_MSG_ID",
+                "received_at": "2026-01-01T00:00:00Z",
+                "reply_count": 0,
+                "allow_wakeup": True,
+                "is_wakeup": True,
+                "wakeup_basis_unknown_ok": True,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+        self.assertTrue(result.accepted)
+        self.assertEqual(transport.call_count, 1)
+
+
 
 
 if __name__ == "__main__":
