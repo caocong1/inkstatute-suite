@@ -588,6 +588,45 @@ class RichMediaUploadTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(send_call["body"]["msg_id"], "inbound-media-1")
         self.assertNotIn("policy", send_call["body"])
         self.assertEqual(result.get("id"), "msg-media-ok")
+        evidence = result.get("evidence") or {}
+        self.assertEqual(evidence.get("rich_media_stage"), "send")
+        self.assertEqual(evidence.get("upload_attempts"), 1)
+        self.assertEqual(evidence.get("send_attempts"), 1)
+        self.assertEqual(evidence.get("attempts"), 1)
+        self.assertIn("file_uuid_hash", evidence)
+        self.assertEqual(evidence.get("ttl"), 7200)
+
+    async def test_send_rich_media_preserves_distinct_attempt_counts(self) -> None:
+        """WR-02: success evidence keeps upload retries separate from send attempts."""
+        transport = FakeMessageTransport(
+            responses=[
+                SendError("media convert fail", status_code=400, qq_code=304082),
+                {
+                    "file_uuid": "uuid-retry-upload",
+                    "file_info": "file-info-retry-upload",
+                    "ttl": 3600,
+                },
+                SendError("transient server error", status_code=500),
+                {"id": "msg-media-after-retry", "status": 200},
+            ]
+        )
+        result = await send_rich_media(
+            scene="c2c",
+            token_manager=self._token_manager(),
+            transport=transport,
+            file_url=self.FIXTURE_FILE_URL,
+            user_openid=self.FIXTURE_USER,
+            msg_id="inbound-media-retry",
+            msg_seq=1,
+            sleep=_noop_sleep,
+        )
+        self.assertEqual(transport.call_count, 4)
+        evidence = result.get("evidence") or {}
+        self.assertEqual(evidence.get("rich_media_stage"), "send")
+        self.assertEqual(evidence.get("upload_attempts"), 2)
+        self.assertEqual(evidence.get("send_attempts"), 2)
+        self.assertEqual(evidence.get("attempts"), 2)
+        self.assertEqual(result.get("id"), "msg-media-after-retry")
 
     async def test_upload_terminal_failure_records_actual_attempts(self) -> None:
         """WR-01: terminal first-attempt failure must not report attempts=max_attempts."""

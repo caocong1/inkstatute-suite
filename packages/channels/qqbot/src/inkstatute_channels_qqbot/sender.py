@@ -565,6 +565,32 @@ async def send_message(
     )
     return result
 
+async def _send_message_with_attempts(
+    *,
+    envelope: dict[str, Any],
+    scene: str,
+    token_manager: TokenManager,
+    transport: MessageTransport,
+    user_openid: str | None = None,
+    group_openid: str | None = None,
+    max_attempts: int = 3,
+    sleep: Callable[[float], Awaitable[None]] | None = None,
+) -> tuple[dict[str, Any], int]:
+    """Like send_message, but also returns attempts_used from _post_with_retry."""
+
+    body = strip_for_wire(envelope)
+    url = wire_url_for_scene(
+        scene, user_openid=user_openid, group_openid=group_openid
+    )
+    return await _post_with_retry(
+        url=url,
+        body=body,
+        token_manager=token_manager,
+        transport=transport,
+        max_attempts=max_attempts,
+        sleep=sleep,
+    )
+
 
 def _rich_media_evidence(
     *,
@@ -826,8 +852,9 @@ async def send_rich_media(
         msg_id=msg_id,
         msg_seq=msg_seq,
     )
+    upload_attempts = upload.get("evidence", {}).get("attempts")
     try:
-        result = await send_message(
+        result, send_attempts = await _send_message_with_attempts(
             envelope=envelope,
             scene=scene,
             token_manager=token_manager,
@@ -848,22 +875,32 @@ async def send_rich_media(
             ttl=upload.get("ttl"),
             issue_code=_ISSUE_RICH_MEDIA_SEND_FAILED,
         )
+        if upload_attempts is not None:
+            evidence["upload_attempts"] = upload_attempts
+        evidence["send_attempts"] = attempts_used
         exc.evidence = evidence  # type: ignore[attr-defined]
         raise
 
     send_evidence = _rich_media_evidence(
         stage="send",
-        attempts=1,
+        attempts=send_attempts,
         file_uuid=upload.get("file_uuid"),
         ttl=upload.get("ttl"),
     )
-    # Aggregate upload+send sanitized evidence for DeliveryResult.metadata.
+    # Keep upload/send attempt counts distinct — do not overwrite upload attempts.
     result = dict(result)
-    result["evidence"] = {
-        **upload.get("evidence", {}),
-        **send_evidence,
+    evidence: dict[str, Any] = {
         "rich_media_stage": "send",
+        "send_attempts": send_attempts,
+        "attempts": send_attempts,
     }
+    if upload_attempts is not None:
+        evidence["upload_attempts"] = upload_attempts
+    if "file_uuid_hash" in send_evidence:
+        evidence["file_uuid_hash"] = send_evidence["file_uuid_hash"]
+    if "ttl" in send_evidence:
+        evidence["ttl"] = send_evidence["ttl"]
+    result["evidence"] = evidence
     return result
 
 

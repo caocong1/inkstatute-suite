@@ -473,6 +473,8 @@ class QQBotChannelAdapter:
                             in {
                                 "rich_media_stage",
                                 "attempts",
+                                "upload_attempts",
+                                "send_attempts",
                                 "send_status_code",
                                 "send_qq_code",
                                 "file_uuid_hash",
@@ -523,6 +525,8 @@ class QQBotChannelAdapter:
                         in {
                             "rich_media_stage",
                             "attempts",
+                            "upload_attempts",
+                            "send_attempts",
                             "send_status_code",
                             "send_qq_code",
                             "file_uuid_hash",
