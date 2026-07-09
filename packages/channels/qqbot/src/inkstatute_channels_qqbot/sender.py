@@ -1,13 +1,15 @@
-"""QQ Bot egress sender — text/markdown/keyboard envelopes + send path.
+"""QQ Bot egress sender — text/markdown/keyboard/media envelopes + send path.
 
 Pure envelope builders with output-boundary enforcement, passive-reply
-window gate (EGRESS-04), and injectable MessageTransport with retry/auth
-(EGRESS-02). Stdlib + channel_core only; dependencies = [] invariant preserved.
+window gate (EGRESS-04), injectable MessageTransport with retry/auth
+(EGRESS-02), and two-step rich-media upload → msg_type=7 (EGRESS-06).
+Stdlib + channel_core only; dependencies = [] invariant preserved.
 """
 
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -47,8 +49,12 @@ _OPENID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 _BACKOFF_SECONDS = (0.05, 0.1, 0.2)
 
 _TERMINAL_QQ_CODES = frozenset({304027, 304026, 22009, 50006, 304003})
-_TRANSIENT_QQ_CODES = frozenset({11242, 11252, 11263})
+# 304082/304083: official rich-media upload/convert transient failures.
+_TRANSIENT_QQ_CODES = frozenset({11242, 11252, 11263, 304082, 304083})
 _TRANSIENT_HTTP_STATUSES = frozenset({429, 500, 504})
+
+_ISSUE_RICH_MEDIA_UPLOAD_FAILED = "qqbot_rich_media_upload_failed"
+_ISSUE_RICH_MEDIA_SEND_FAILED = "qqbot_send_failed"
 
 
 def _base_envelope(
@@ -149,6 +155,26 @@ def build_feedback_keyboard_envelope(
         }
     )
     return envelope
+
+
+def build_media_envelope(
+    *,
+    file_info: str,
+    msg_id: str,
+    msg_seq: int = 1,
+) -> dict[str, Any]:
+    """Build a QQ rich-media send envelope (msg_type=7) from upload file_info.
+
+    No user-visible text → no output_policy pass. Group companion content is "".
+    """
+
+    return {
+        "msg_id": msg_id,
+        "msg_seq": msg_seq,
+        "msg_type": 7,
+        "media": {"file_info": file_info},
+        "content": "",
+    }
 
 
 def strip_for_wire(envelope: dict[str, Any]) -> dict[str, Any]:
@@ -399,6 +425,27 @@ def wire_url_for_scene(
     raise SendError("unsupported QQ Bot scene")
 
 
+def wire_files_url_for_scene(
+    scene: str,
+    *,
+    user_openid: str | None = None,
+    group_openid: str | None = None,
+) -> str:
+    """Build hardcoded api.sgroup.qq.com rich-media upload URL for C2C or group."""
+
+    if scene == "c2c":
+        if not user_openid:
+            raise SendError("C2C upload requires user_openid")
+        safe = _require_openid(user_openid, label="user_openid")
+        return f"{_API_BASE}/v2/users/{safe}/files"
+    if scene == "group":
+        if not group_openid:
+            raise SendError("group upload requires group_openid")
+        safe = _require_openid(group_openid, label="group_openid")
+        return f"{_API_BASE}/v2/groups/{safe}/files"
+    raise SendError("unsupported QQ Bot scene")
+
+
 def _extract_qq_code(payload: dict[str, Any] | None) -> int | None:
     if not payload:
         return None
@@ -492,12 +539,83 @@ async def send_message(
     the token and refreshes once. Terminal QQ codes do not retry.
     """
 
-    sleeper = sleep or asyncio.sleep
     body = strip_for_wire(envelope)
     url = wire_url_for_scene(
         scene, user_openid=user_openid, group_openid=group_openid
     )
+    result, _attempts = await _post_with_retry(
+        url=url,
+        body=body,
+        token_manager=token_manager,
+        transport=transport,
+        max_attempts=max_attempts,
+        sleep=sleep,
+    )
+    return result
 
+
+def _rich_media_evidence(
+    *,
+    stage: str,
+    attempts: int,
+    status_code: int | None = None,
+    qq_code: int | None = None,
+    file_uuid: str | None = None,
+    ttl: int | None = None,
+    issue_code: str | None = None,
+) -> dict[str, Any]:
+    """Build sanitized rich-media evidence (never tokens, URLs, or file_data)."""
+
+    out: dict[str, Any] = {
+        "rich_media_stage": stage,
+        "attempts": attempts,
+    }
+    if status_code is not None:
+        out["send_status_code"] = status_code
+    if qq_code is not None:
+        out["send_qq_code"] = qq_code
+    if file_uuid:
+        out["file_uuid_hash"] = hashlib.sha256(
+            file_uuid.encode("utf-8")
+        ).hexdigest()[:16]
+    if ttl is not None:
+        out["ttl"] = ttl
+    if issue_code:
+        out["issue_code"] = issue_code
+    return out
+
+
+def _https_file_url_or_raise(file_url: str | None) -> str | None:
+    """Return validated https URL, or None when caller will use file_data only."""
+
+    if file_url is None:
+        return None
+    if not isinstance(file_url, str) or not file_url.strip():
+        raise SendError(
+            "QQ Bot rich media file_url invalid",
+            qq_code=None,
+        )
+    text = file_url.strip()
+    if not text.lower().startswith("https://"):
+        raise SendError("QQ Bot rich media file_url must be https")
+    return text
+
+
+async def _post_with_retry(
+    *,
+    url: str,
+    body: dict[str, Any],
+    token_manager: TokenManager,
+    transport: MessageTransport,
+    max_attempts: int = 3,
+    sleep: Callable[[float], Awaitable[None]] | None = None,
+) -> tuple[dict[str, Any], int]:
+    """POST JSON via MessageTransport with Phase 62 retry/auth semantics.
+
+    Returns (result, attempts_used).
+    """
+
+    sleeper = sleep or asyncio.sleep
     token = await _bearer(token_manager)
     auth_retried = False
     attempt = 0
@@ -547,7 +665,6 @@ async def send_message(
                 continue
             raise last_error from None
 
-        # Successful HTTP path may still carry QQ error codes in JSON body.
         qq_code = _extract_qq_code(result)
         if qq_code is not None and qq_code != 0:
             status_code = None
@@ -566,11 +683,170 @@ async def send_message(
                 continue
             raise last_error
 
-        return result
+        return result, attempt + 1
 
     if last_error is not None:
         raise last_error
     raise SendError("QQ Bot message request failed after retries")
+
+
+async def upload_rich_media(
+    *,
+    scene: str,
+    token_manager: TokenManager,
+    transport: MessageTransport,
+    file_type: int = 4,
+    file_url: str | None = None,
+    file_data: str | None = None,
+    user_openid: str | None = None,
+    group_openid: str | None = None,
+    max_attempts: int = 3,
+    sleep: Callable[[float], Awaitable[None]] | None = None,
+) -> dict[str, Any]:
+    """POST scene-scoped /files upload; return file_info + sanitized evidence.
+
+    Prefers https ``file_url``. Accepts ``file_data`` only when explicitly passed
+    (fixtures/offline). Never returns tokens, URLs, or file_data in evidence.
+    """
+
+    url = wire_files_url_for_scene(
+        scene, user_openid=user_openid, group_openid=group_openid
+    )
+
+    body: dict[str, Any] = {"file_type": file_type}
+    try:
+        validated_url = _https_file_url_or_raise(file_url)
+    except SendError as exc:
+        # Attach sanitized evidence for callers that inspect result metadata.
+        raise SendError(str(exc)) from None
+
+    if validated_url is not None:
+        body["url"] = validated_url
+    elif file_data is not None:
+        body["file_data"] = file_data
+    else:
+        raise SendError("QQ Bot rich media requires https file_url or file_data")
+
+    try:
+        result, attempts = await _post_with_retry(
+            url=url,
+            body=body,
+            token_manager=token_manager,
+            transport=transport,
+            max_attempts=max_attempts,
+            sleep=sleep,
+        )
+    except SendError as exc:
+        evidence = _rich_media_evidence(
+            stage="upload",
+            attempts=max_attempts,
+            status_code=exc.status_code,
+            qq_code=exc.qq_code,
+            issue_code=_ISSUE_RICH_MEDIA_UPLOAD_FAILED,
+        )
+        # Preserve sanitized SendError; evidence available via attribute for adapters.
+        exc.evidence = evidence  # type: ignore[attr-defined]
+        raise
+
+    file_info = result.get("file_info")
+    if not isinstance(file_info, str) or not file_info:
+        raise SendError("QQ Bot rich media upload missing file_info")
+
+    file_uuid = result.get("file_uuid")
+    ttl_raw = result.get("ttl")
+    ttl: int | None
+    if isinstance(ttl_raw, bool) or not isinstance(ttl_raw, (int, float)):
+        ttl = None
+    else:
+        ttl = int(ttl_raw)
+
+    uuid_str = file_uuid if isinstance(file_uuid, str) else None
+    evidence = _rich_media_evidence(
+        stage="upload",
+        attempts=attempts,
+        file_uuid=uuid_str,
+        ttl=ttl,
+    )
+    return {
+        "file_info": file_info,
+        "file_uuid": uuid_str,
+        "ttl": ttl,
+        "evidence": evidence,
+    }
+
+
+async def send_rich_media(
+    *,
+    scene: str,
+    token_manager: TokenManager,
+    transport: MessageTransport,
+    file_url: str | None = None,
+    file_data: str | None = None,
+    file_type: int = 4,
+    user_openid: str | None = None,
+    group_openid: str | None = None,
+    msg_id: str,
+    msg_seq: int = 1,
+    max_attempts: int = 3,
+    sleep: Callable[[float], Awaitable[None]] | None = None,
+) -> dict[str, Any]:
+    """Two-step rich media: upload → msg_type=7 media envelope → send_message."""
+
+    upload = await upload_rich_media(
+        scene=scene,
+        token_manager=token_manager,
+        transport=transport,
+        file_type=file_type,
+        file_url=file_url,
+        file_data=file_data,
+        user_openid=user_openid,
+        group_openid=group_openid,
+        max_attempts=max_attempts,
+        sleep=sleep,
+    )
+    envelope = build_media_envelope(
+        file_info=upload["file_info"],
+        msg_id=msg_id,
+        msg_seq=msg_seq,
+    )
+    try:
+        result = await send_message(
+            envelope=envelope,
+            scene=scene,
+            token_manager=token_manager,
+            transport=transport,
+            user_openid=user_openid,
+            group_openid=group_openid,
+            max_attempts=max_attempts,
+            sleep=sleep,
+        )
+    except SendError as exc:
+        evidence = _rich_media_evidence(
+            stage="send",
+            attempts=max_attempts,
+            status_code=exc.status_code,
+            qq_code=exc.qq_code,
+            file_uuid=upload.get("file_uuid"),
+            ttl=upload.get("ttl"),
+            issue_code=_ISSUE_RICH_MEDIA_SEND_FAILED,
+        )
+        exc.evidence = evidence  # type: ignore[attr-defined]
+        raise
+
+    send_evidence = _rich_media_evidence(
+        stage="send",
+        attempts=1,
+        file_uuid=upload.get("file_uuid"),
+        ttl=upload.get("ttl"),
+    )
+    # Aggregate upload+send sanitized evidence for DeliveryResult.metadata.
+    result = dict(result)
+    result["evidence"] = {
+        **upload.get("evidence", {}),
+        **send_evidence,
+        "rich_media_stage": "send",
+    }
+    return result
 
 
 __all__ = [
@@ -582,9 +858,13 @@ __all__ = [
     "UrllibMessageTransport",
     "build_feedback_keyboard_envelope",
     "build_markdown_envelope",
+    "build_media_envelope",
     "build_text_envelope",
     "check_passive_reply_window",
     "send_message",
+    "send_rich_media",
     "strip_for_wire",
+    "upload_rich_media",
+    "wire_files_url_for_scene",
     "wire_url_for_scene",
 ]
