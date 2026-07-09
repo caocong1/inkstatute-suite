@@ -81,7 +81,7 @@ Each task was committed atomically:
 2. **Task 2: sender put_json + ack_interaction helper** - `eecedc6` (feat)
 3. **Task 3: verify_and_ack two-tier ACK wiring** - `cbeabc4` (feat)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `6cd8d89` (docs: complete plan)
 
 ## Files Created/Modified
 
