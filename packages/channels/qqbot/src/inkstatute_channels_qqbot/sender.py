@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Protocol
@@ -38,6 +39,9 @@ _GROUP_MAX_REPLIES = 5
 _ISSUE_WINDOW_EXPIRED = "qqbot_passive_reply_window_expired"
 
 _API_BASE = "https://api.sgroup.qq.com"
+
+# Openids are path-interpolated into wire URLs — reject injection characters.
+_OPENID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 # Bounded backoff for transient OpenAPI failures (injectable sleep; no wall-clock in tests).
 _BACKOFF_SECONDS = (0.05, 0.1, 0.2)
@@ -368,6 +372,12 @@ def _qq_code_from_http_error(exc: Any) -> int | None:
     return int(code)
 
 
+def _require_openid(value: str, *, label: str) -> str:
+    if not _OPENID_RE.fullmatch(value):
+        raise SendError(f"invalid {label}")
+    return value
+
+
 def wire_url_for_scene(
     scene: str,
     *,
@@ -379,11 +389,13 @@ def wire_url_for_scene(
     if scene == "c2c":
         if not user_openid:
             raise SendError("C2C send requires user_openid")
-        return f"{_API_BASE}/v2/users/{user_openid}/messages"
+        safe = _require_openid(user_openid, label="user_openid")
+        return f"{_API_BASE}/v2/users/{safe}/messages"
     if scene == "group":
         if not group_openid:
             raise SendError("group send requires group_openid")
-        return f"{_API_BASE}/v2/groups/{group_openid}/messages"
+        safe = _require_openid(group_openid, label="group_openid")
+        return f"{_API_BASE}/v2/groups/{safe}/messages"
     raise SendError("unsupported QQ Bot scene")
 
 

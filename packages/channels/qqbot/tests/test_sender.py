@@ -382,6 +382,16 @@ class SendRetryTests(unittest.IsolatedAsyncioTestCase):
             "https://api.sgroup.qq.com/v2/groups/g-openid/messages",
         )
 
+    async def test_wire_url_rejects_openid_path_injection(self) -> None:
+        for bad in ("../evil", "u?q=1", "u#frag", "u/extra", "a" * 129):
+            with self.subTest(openid=bad):
+                with self.assertRaises(SendError) as ctx:
+                    wire_url_for_scene("c2c", user_openid=bad)
+                self.assertIn("invalid user_openid", str(ctx.exception))
+        with self.assertRaises(SendError) as ctx:
+            wire_url_for_scene("group", group_openid="../evil")
+        self.assertIn("invalid group_openid", str(ctx.exception))
+
     async def test_token_error_on_initial_fetch_maps_to_send_error(self) -> None:
         manager = TokenManager(
             app_id=FIXTURE_APP_ID,
