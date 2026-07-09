@@ -76,18 +76,159 @@ LIVE_ENV_KEYS = (
 
 EVIDENCE_SCHEMA = "inkstatute.qqbot.smoke_evidence.v1"
 
+# Keys dropped case-insensitively (tokens, bodies, attachment URLs).
+_FORBIDDEN_EVIDENCE_KEYS = frozenset(
+    {
+        "authorization",
+        "access_token",
+        "bot_secret",
+        "client_secret",
+        "content",
+        "url",
+        "file_url",
+        "attachment_url",
+        "file_data",
+        "token",
+        "raw_payload",
+        "payload",
+        "body",
+        "calls",  # never dump FakeMessageTransport.calls
+        "envelope",
+        "headers",
+    }
+)
+
+_STEP_KEY_ALLOW: dict[str, frozenset[str]] = {
+    "signature": frozenset({"ok", "vector", "challenge_ok"}),
+    "send_text": frozenset(
+        {"ok", "msg_type", "openid_hash", "status_code", "qq_code", "send_status_code"}
+    ),
+    "send_keyboard": frozenset(
+        {
+            "ok",
+            "msg_type",
+            "actions",
+            "openid_hash",
+            "status_code",
+            "qq_code",
+            "send_status_code",
+        }
+    ),
+    "callback": frozenset(
+        {
+            "ok",
+            "status",
+            "category",
+            "idempotency_key_present",
+            "idempotency_key_hash",
+        }
+    ),
+}
+
+# Substrings that must never appear in serialized evidence (SMOKE-04).
+_BANNED_SUBSTRINGS = (
+    "Authorization",
+    "access_token",
+    DEMO_BOT_SECRET,
+    "fixture-token",
+    "http://",
+    "https://",
+)
+
 
 def _hash16(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
 
 
-def sanitize_evidence(evidence: Mapping[str, Any]) -> dict[str, Any]:
-    """Return evidence for stdout/file.
+def _contains_banned(text: str) -> bool:
+    lower = text.lower()
+    for banned in _BANNED_SUBSTRINGS:
+        if banned.lower() in lower:
+            return True
+    return False
 
-    Plan 01 emits already-clean step evidence. Plan 02 hardens recursive
-    ban-list redaction for arbitrary dirty payloads.
+
+def _redact_string(value: str) -> str:
+    if _contains_banned(value):
+        return "[redacted]"
+    return value
+
+
+def _strip_forbidden(node: Any) -> Any:
+    """Recursively drop forbidden keys and redact banned substrings."""
+    if isinstance(node, Mapping):
+        out: dict[str, Any] = {}
+        for key, value in node.items():
+            if str(key).lower() in _FORBIDDEN_EVIDENCE_KEYS:
+                continue
+            if _contains_banned(str(key)):
+                continue
+            out[str(key)] = _strip_forbidden(value)
+        return out
+    if isinstance(node, list):
+        return [_strip_forbidden(item) for item in node]
+    if isinstance(node, str):
+        return _redact_string(node)
+    if isinstance(node, (bool, int, float)) or node is None:
+        return node
+    # Unknown types → string then redact (never leak repr of secrets).
+    return _redact_string(str(node))
+
+
+def _allowlist_steps(steps: Any) -> dict[str, Any]:
+    if not isinstance(steps, Mapping):
+        return {}
+    cleaned: dict[str, Any] = {}
+    for step_name, allowed in _STEP_KEY_ALLOW.items():
+        raw = steps.get(step_name)
+        if not isinstance(raw, Mapping):
+            continue
+        step_out: dict[str, Any] = {}
+        for key, value in raw.items():
+            if key not in allowed:
+                continue
+            step_out[key] = _strip_forbidden(value)
+        cleaned[step_name] = step_out
+    return cleaned
+
+
+def sanitize_evidence(evidence: Mapping[str, Any]) -> dict[str, Any]:
+    """Return allowlisted, ban-list-clean evidence for stdout/file (SMOKE-04).
+
+    Drops tokens, Authorization, BotSecret values, raw content bodies, and
+    attachment/URL keys. Dry-run always stamps ``not_live_acceptance=true``.
     """
-    return json.loads(json.dumps(evidence, default=str))
+    stripped = _strip_forbidden(evidence)
+    if not isinstance(stripped, dict):
+        stripped = {}
+
+    # Prefer structured rebuild when this looks like a smoke evidence record.
+    has_structure = any(k in stripped for k in ("schema", "mode", "steps", "not_live_acceptance"))
+    if has_structure:
+        mode = stripped.get("mode", "dry-run")
+        if mode not in ("dry-run", "live"):
+            mode = "dry-run"
+        out: dict[str, Any] = {
+            "schema": EVIDENCE_SCHEMA,
+            "mode": mode,
+            "not_live_acceptance": True if mode == "dry-run" else bool(
+                stripped.get("not_live_acceptance", True)
+            ),
+            "steps": _allowlist_steps(stripped.get("steps")),
+        }
+        # Pitfall 5: dry-run must never claim live acceptance.
+        if out["mode"] == "dry-run":
+            out["not_live_acceptance"] = True
+        return json.loads(json.dumps(out, default=str))
+
+    # Arbitrary dirty payloads: return stripped remnant only (no secret keys).
+    # Keep only non-forbidden top-level keys that survived stripping.
+    remnant = {
+        k: v
+        for k, v in stripped.items()
+        if k.lower() not in _FORBIDDEN_EVIDENCE_KEYS and not _contains_banned(k)
+    }
+    return json.loads(json.dumps(remnant, default=str))
 
 
 def load_credentials(mode: str) -> dict[str, str]:
