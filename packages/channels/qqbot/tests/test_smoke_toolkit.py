@@ -200,6 +200,36 @@ class TestLiveEnvFailClosed(unittest.TestCase):
         combined = (result.stdout or "") + (result.stderr or "")
         self.assertNotIn(planted, combined)
         self.assertNotIn(DEMO_BOT_SECRET, combined)
+        # Missing-key message names keys only (never values).
+        self.assertIn("INKSTATUTE_QQBOT_CLIENT_SECRET", combined)
+        self.assertIn("INKSTATUTE_QQBOT_BOT_SECRET", combined)
+        self.assertIn("INKSTATUTE_QQBOT_USER_OPENID", combined)
+        self.assertIn("INKSTATUTE_QQBOT_REPLY_MSG_ID", combined)
+        self.assertNotIn("Authorization", combined)
+
+    def test_load_live_credentials_helper_and_urllib_wiring(self) -> None:
+        """Plan 03: named loader + Urllib transports only behind validated --live."""
+        smoke = _load_smoke_module()
+        self.assertTrue(
+            hasattr(smoke, "load_live_credentials"),
+            "load_live_credentials required for live fail-closed env injection",
+        )
+        source = SMOKE_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("UrllibTokenTransport", source)
+        self.assertIn("UrllibMessageTransport", source)
+        self.assertIn("ack_interaction", source)
+        self.assertNotIn("wecom_service", source)
+        # Cleared env must fail closed via the named loader (no network).
+        saved = {k: os.environ.pop(k) for k in list(os.environ) if k.startswith("INKSTATUTE_QQBOT_")}
+        try:
+            with self.assertRaises(SystemExit) as ctx:
+                smoke.load_live_credentials()
+            msg = str(ctx.exception)
+            self.assertIn("INKSTATUTE_QQBOT_APP_ID", msg)
+            for value in saved.values():
+                self.assertNotIn(value, msg)
+        finally:
+            os.environ.update(saved)
 
 
 if __name__ == "__main__":
