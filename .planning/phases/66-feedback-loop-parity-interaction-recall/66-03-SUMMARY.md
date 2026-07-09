@@ -75,7 +75,7 @@ Each task was committed atomically:
 2. **Task 2: adapter.deliver wakeup branch + scene fail-closed** - `0322a16` (feat)
 3. **Task 3: ADAPTER-04 safety gates + phase quick suite** - verification only (no code changes)
 
-**Plan metadata:** (docs commit after this file)
+**Plan metadata:** `4e38869` (docs: SUMMARY only — STATE.md / ROADMAP.md not updated per executor instructions)
 
 ## Files Created/Modified
 - `packages/channels/qqbot/src/inkstatute_channels_qqbot/sender.py` - Wakeup builders, period enum/store/quota, `wakeup_scene_supported`
