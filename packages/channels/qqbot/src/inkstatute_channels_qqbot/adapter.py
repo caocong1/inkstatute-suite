@@ -301,12 +301,10 @@ class QQBotChannelAdapter:
         policy_reason = envelope_policy.get("reason", policy.reason)
         # Empty visible payload (no msg_type) is not a successful delivery.
         has_payload = "msg_type" in envelope
-        window_ok = True
         accepted = (
             policy_action != "block"
             and has_payload
             and self._config.enabled
-            and window_ok
         )
 
         result_meta: JsonObject = {
