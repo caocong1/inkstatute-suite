@@ -143,8 +143,12 @@ class TokenManager:
             response = await self._transport.fetch_token(
                 self._app_id, self._client_secret
             )
-            self._token = self._extract_token(response)
-            self._expires_at = self._clock() + self._extract_expiry(response)
+            # Extract both values before mutating cache so a failed expiry
+            # parse cannot leave _token updated without a matching _expires_at.
+            token = self._extract_token(response)
+            ttl = self._extract_expiry(response)
+            self._token = token
+            self._expires_at = self._clock() + ttl
             return self._token
 
     def _is_near_expiry(self) -> bool:

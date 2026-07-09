@@ -262,6 +262,35 @@ class TokenManagerErrorTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn(FIXTURE_CLIENT_SECRET, message)
         self.assertNotIn(FIXTURE_APP_ID, message)
 
+    async def test_failed_expiry_extract_does_not_corrupt_cache(self) -> None:
+        transport = FakeTokenTransport(
+            response={"access_token": "token-001", "expires_in": 7200}
+        )
+        now = 1000.0
+
+        def clock() -> float:
+            return now
+
+        manager = TokenManager(
+            app_id=FIXTURE_APP_ID,
+            client_secret=FIXTURE_CLIENT_SECRET,
+            transport=transport,
+            clock=clock,
+        )
+
+        first = await manager.get_token()
+        self.assertEqual(first, "token-001")
+        previous_expires_at = manager._expires_at
+
+        transport.response = {"access_token": "new-token", "expires_in": "bad"}
+        now = 1000.0 + 7141.0
+        with self.assertRaises(TokenError):
+            await manager.get_token()
+
+        # Cache must remain the previous successful token+expiry pair.
+        self.assertEqual(manager._token, "token-001")
+        self.assertEqual(manager._expires_at, previous_expires_at)
+
 
 class TokenManagerImportSafetyTests(unittest.TestCase):
     def test_no_top_level_urllib_import(self) -> None:
