@@ -118,9 +118,16 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         capabilities = self.adapter.capabilities()
         self.assertTrue(capabilities.supports_text)
         self.assertTrue(capabilities.supports_cards)
-        self.assertFalse(capabilities.supports_files)
         self.assertFalse(capabilities.supports_streaming)
         self.assertEqual(capabilities.idempotency_strategy, "qqbot_callback_metadata")
+        self.assertTrue(capabilities.metadata["fixture_only"])
+        self.assertFalse(capabilities.metadata["network_io"])
+
+    def test_capabilities_supports_files_and_images(self) -> None:
+        capabilities = self.adapter.capabilities()
+        self.assertTrue(capabilities.supports_files)
+        self.assertTrue(capabilities.supports_images)
+        self.assertFalse(capabilities.supports_voice)
         self.assertTrue(capabilities.metadata["fixture_only"])
         self.assertFalse(capabilities.metadata["network_io"])
 
@@ -412,6 +419,219 @@ class QQBotChannelAdapterTests(unittest.TestCase):
         self.assertNotIn("secret-token-leak-xyz", result.metadata["send_error"])
         self.assertEqual(result.metadata.get("send_status_code"), 503)
         self.assertEqual(transport.call_count, 0)
+
+    def test_deliver_file_two_step_with_injected_transport(self) -> None:
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import (
+            FakeTokenTransport,
+            TokenManager,
+        )
+
+        file_url = "https://example.invalid/artifact.docx"
+        manager = TokenManager(
+            app_id="fixture-app-id-001",
+            client_secret="fixture-client-secret-001",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-token", "expires_in": 7200}
+            ),
+        )
+        transport = FakeMessageTransport(
+            responses=[
+                {
+                    "file_uuid": "uuid-adapter-file-1",
+                    "file_info": "file-info-adapter-1",
+                    "ttl": 3600,
+                },
+                {"id": "msg-media-adapter-ok", "status": 200},
+            ]
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-file-1",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="",
+            metadata={
+                "delivery_type": "file",
+                "file_url": file_url,
+                "file_type": 4,
+                "scene": "c2c",
+                "user_openid": "user-openid-1",
+                "msg_id": "inbound-file-1",
+                "received_at": "2026-07-09T11:55:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(transport.call_count, 2)
+        self.assertTrue(
+            result.metadata.get("network_io") is True
+            or (
+                isinstance(result.metadata.get("envelope"), dict)
+                and result.metadata["envelope"].get("msg_type") == 7
+            )
+        )
+        self.assertTrue(
+            result.metadata.get("rich_media_stage") is not None
+            or "file_uuid_hash" in result.metadata
+            or "attempts" in result.metadata
+        )
+        meta_str = str(result.metadata)
+        self.assertNotIn("file_data", meta_str)
+        self.assertNotIn("access_token", meta_str)
+        self.assertNotIn("Authorization", meta_str)
+        self.assertNotIn(file_url, meta_str)
+        upload_call, send_call = transport.calls
+        self.assertTrue(upload_call["url"].endswith("/files"))
+        self.assertEqual(upload_call["body"]["file_type"], 4)
+        self.assertEqual(send_call["body"]["msg_type"], 7)
+
+    def test_deliver_file_missing_file_url_fails_closed(self) -> None:
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import (
+            FakeTokenTransport,
+            TokenManager,
+        )
+
+        manager = TokenManager(
+            app_id="fixture-app-id-001",
+            client_secret="fixture-client-secret-001",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-token", "expires_in": 7200}
+            ),
+        )
+        transport = FakeMessageTransport(response={"file_info": "should-not-upload"})
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-file-missing-url",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="",
+            metadata={
+                "delivery_type": "file",
+                "scene": "c2c",
+                "user_openid": "user-openid-1",
+                "msg_id": "inbound-file-missing-url",
+                "received_at": "2026-07-09T11:55:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertIn("upload", str(result.metadata.get("issue_code", "")).lower())
+        self.assertEqual(transport.call_count, 0)
+
+    def test_deliver_file_window_expired_skips_upload(self) -> None:
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import (
+            FakeTokenTransport,
+            TokenManager,
+        )
+
+        manager = TokenManager(
+            app_id="fixture-app-id-001",
+            client_secret="fixture-client-secret-001",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-token", "expires_in": 7200}
+            ),
+        )
+        transport = FakeMessageTransport(
+            response={
+                "file_uuid": "should-not-upload",
+                "file_info": "should-not-upload",
+                "ttl": 3600,
+            }
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-file-window-expired",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="",
+            metadata={
+                "delivery_type": "file",
+                "file_url": "https://example.invalid/late.docx",
+                "file_type": 4,
+                "scene": "group",
+                "group_openid": "group-openid-1",
+                "msg_id": "msg-file-expired-1",
+                "received_at": "2020-01-01T00:00:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+
+        self.assertFalse(result.accepted)
+        self.assertEqual(
+            result.metadata["issue_code"], "qqbot_passive_reply_window_expired"
+        )
+        self.assertTrue(result.metadata.get("interim_notice"))
+        self.assertEqual(transport.call_count, 0)
+
+    def test_deliver_image_uses_file_type_1_default(self) -> None:
+        from inkstatute_channels_qqbot.sender import FakeMessageTransport
+        from inkstatute_channels_qqbot.token_manager import (
+            FakeTokenTransport,
+            TokenManager,
+        )
+
+        manager = TokenManager(
+            app_id="fixture-app-id-001",
+            client_secret="fixture-client-secret-001",
+            transport=FakeTokenTransport(
+                response={"access_token": "fixture-token", "expires_in": 7200}
+            ),
+        )
+        transport = FakeMessageTransport(
+            responses=[
+                {
+                    "file_uuid": "uuid-adapter-image-1",
+                    "file_info": "file-info-adapter-image-1",
+                    "ttl": 3600,
+                },
+                {"id": "msg-image-adapter-ok", "status": 200},
+            ]
+        )
+        adapter = QQBotChannelAdapter(
+            QQBotChannelConfig(enabled=True),
+            token_manager=manager,
+            transport=transport,
+        )
+        delivery = ChannelDelivery(
+            delivery_id="delivery-qqbot-image-1",
+            channel_id="qqbot",
+            run_id="run-1",
+            content="",
+            metadata={
+                "delivery_type": "image",
+                "file_url": "https://example.invalid/photo.png",
+                "scene": "c2c",
+                "user_openid": "user-openid-1",
+                "msg_id": "inbound-image-1",
+                "received_at": "2026-07-09T11:55:00Z",
+                "reply_count": 0,
+            },
+        )
+        result = run(adapter.deliver(delivery))
+
+        self.assertTrue(result.accepted)
+        self.assertGreaterEqual(transport.call_count, 1)
+        self.assertEqual(transport.calls[0]["body"]["file_type"], 1)
 
     def test_health_reports_enabled_status(self) -> None:
         health = run(self.adapter.health())
