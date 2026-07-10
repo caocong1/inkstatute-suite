@@ -69,6 +69,8 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ### Validated
 
+- ✓ ADM-01: Admin/operator GET/PUT `/config/*`; lawyer/viewer denied mutate — Phase 74
+- ✓ ADM-03: Operational admin views stay read-only; config writes only on explicit `/config/*` — Phase 74
 - ✓ v1.9 HOST-*: Thin QQBot production webhook host composing verify_and_ack → ingress/session/feedback → deliver (default-OFF) — v1.9 (Phases 68-70)
 - ✓ v1.9 REG-*: Runtime registration of QQBotChannelAdapter into DefaultRunRuntime.channels / flag→config dual-knob mapping — v1.9 (Phase 69)
 - ✓ v1.9 SMOKE-*: Smoke dry-run exercises full adapter/session Protocol path via host helpers — v1.9 (Phase 71)
@@ -261,4 +263,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-10 — milestone v1.10 Operator Config Console started*
+*Last updated: 2026-07-10 after Phase 74*

@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-current_plan: 3
-status: verifying
-stopped_at: Completed 74-03-PLAN.md
-last_updated: "2026-07-10T08:03:42.368Z"
-last_activity: 2026-07-10 — Completed 74-02 (config HTTP handlers)
+current_plan: Not started
+status: ready_to_plan
+stopped_at: Phase 74 verified passed — ready for Phase 75
+last_updated: "2026-07-10T08:06:24.340Z"
+last_activity: 2026-07-10 — Phase 74 verification passed
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 2
   total_plans: 8
   completed_plans: 6
-  percent: 0
+  percent: 33
 ---
 
 # Project State
@@ -22,18 +22,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.10 Operator Config Console — Phase 74 Plan 03 next (config tests + read-only evolve)
+**Current focus:** v1.10 Operator Config Console — Phase 75 Channel Config Apply (ready to plan)
 
 ## Current Position
 
-Phase: 74 of 78 (Admin Config API + RBAC) — 2 of 6 v1.10 phases
-Current Plan: 3
-Total Plans in Phase: 3
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-07-10 — Completed 74-02 (config HTTP handlers)
+Phase: 75 of 78 (Channel Config Apply)
+Current Plan: Not started
+Total Plans in Phase: 0
+Plan: —
+Status: Ready to plan
+Last activity: 2026-07-10 — Phase 74 verification passed (ADM-01, ADM-03)
 
-Progress: [█░░░░░░░░░] 17% (1/6 v1.10 phases)
+Progress: [██░░░░░░░░] 33% (2/6 v1.10 phases)
 
 ### Deferred Items
 
@@ -55,7 +55,7 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 
 **Velocity:**
 
-- Total plans completed: 90
+- Total plans completed: 93
 - Average duration: N/A
 - Total execution time: ~0.03 hours
 

@@ -36,7 +36,7 @@
 ## Phases
 
 - [x] **Phase 73: Operator Config Foundation** - Refs-only store, schemas, validators, and default-OFF feature flag (completed 2026-07-10)
-- [ ] **Phase 74: Admin Config API + RBAC** - Flag-gated `/config/*` mutate surface with role checks; read views stay read-only
+- [x] **Phase 74: Admin Config API + RBAC** - Flag-gated `/config/*` mutate surface with role checks; read views stay read-only (completed 2026-07-10)
 - [ ] **Phase 75: Channel Config Apply** - QQ/WeCom channel config apply with dual-knob visibility and secret-ref credentials
 - [ ] **Phase 76: Provider Registry + Model Catalog** - Built-in vendors, custom OpenAI-compatible providers, catalog selection, connection probe
 - [ ] **Phase 77: Vision Routing Runtime** - Vision policy + image-turn routing with fail-closed notices and output-boundary safety
@@ -75,7 +75,7 @@ Plans:
   3. Existing sessions/tasks/feedback/health/gates views remain read-only; config writes only succeed on the explicit `/config/*` surface
   4. When the operator-config flag is OFF, PUT `/config/*` refuses writes even for admin/operator
 
-**Plans**: 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 
@@ -147,7 +147,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 73. Operator Config Foundation | v1.10 | 3/3 | Complete    | 2026-07-10 |
-| 74. Admin Config API + RBAC | v1.10 | 3/3 | Complete   | 2026-07-10 |
+| 74. Admin Config API + RBAC | v1.10 | 3/3 | Complete    | 2026-07-10 |
 | 75. Channel Config Apply | v1.10 | 0/TBD | Not started | - |
 | 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
 | 77. Vision Routing Runtime | v1.10 | 0/TBD | Not started | - |
