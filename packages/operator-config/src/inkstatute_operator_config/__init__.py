@@ -10,10 +10,12 @@ from .schemas import (
     VisionPolicyDoc,
     WeComChannelDoc,
 )
+from .secrets import InvalidSecretRefError, normalize_config_secret_ref
 
 __all__ = [
     "CatalogSelectionDoc",
     "ChannelsDoc",
+    "InvalidSecretRefError",
     "OperatorConfigDocument",
     "OperatorConfigError",
     "OperatorConfigValidationError",
@@ -21,4 +23,5 @@ __all__ = [
     "QQBotChannelDoc",
     "VisionPolicyDoc",
     "WeComChannelDoc",
+    "normalize_config_secret_ref",
 ]

@@ -37,12 +37,15 @@ from inkstatute_operator_config import (
     ProviderDoc,
     CatalogSelectionDoc,
     VisionPolicyDoc,
+    InvalidSecretRefError,
+    normalize_config_secret_ref,
     OperatorConfigError,
     OperatorConfigValidationError,
 )
 ```
 
-Secret-ref normalize lands in the next Plan 01 task; store/validate/flag gate land in
+`normalize_config_secret_ref` validates shapes only (`env:NAME`, bare `ENV_NAME`,
+`secret://seg/…`); it does not resolve values. Store/validate/flag gate land in
 Plans 02–03.
 
 ## Tests
