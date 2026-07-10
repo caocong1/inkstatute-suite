@@ -143,7 +143,7 @@ Plans:
 
 Plans:
 
-- [ ] 72-01-PLAN.md — LIVE-01 fail-closed + CI honesty (no live network)
+- [x] 72-01-PLAN.md — LIVE-01 fail-closed + CI honesty (no live network)
 - [ ] 72-02-PLAN.md — LIVE-02 runbook enablement + dual-knob + regression
 
 ## Progress
@@ -154,7 +154,7 @@ Plans:
 | 69. Runtime Registration / Wiring | 3/3 | Complete   | 2026-07-10 |
 | 70. Webhook Composition Path | 3/3 | Complete   | 2026-07-10 |
 | 71. Smoke Protocol-Path Hardening | 3/3 | Complete   | 2026-07-10 |
-| 72. Controlled Live Integration | 0/2 | Planned | - |
+| 72. Controlled Live Integration | 1/2 | In Progress|  |
 
 ## Completed Milestones
 
