@@ -112,6 +112,74 @@ class WiringFlagConfigTests(unittest.TestCase):
         self.assertIsNone(wired.adapter._transport)
         self.assertFalse(wired.adapter._live_io_ready())
 
+    def test_env_autobuild_without_token_transport_fails_closed(self) -> None:
+        # WR-01: Fake message transport + env secrets must not open Urllib token IO
+        message_transport = FakeMessageTransport(
+            response={"id": "msg-env-fail-closed", "status": 200}
+        )
+        flags = RuntimeFeatureFlags(qqbot_channel_enabled=True)
+        host = QQBotHostConfig(
+            enabled=True,
+            app_id_ref="secret://qqbot/app-id",
+            app_secret_ref="secret://qqbot/app-secret",
+            bot_secret_ref="secret://qqbot/bot-secret",
+        )
+        env = {
+            "INKSTATUTE_QQBOT_APP_ID": "fixture-app-id",
+            "INKSTATUTE_QQBOT_CLIENT_SECRET": "fixture-client-secret",
+        }
+        wired = build_qqbot_wired_runtime(
+            backend=FakeBackendAdapter(),
+            flags=flags,
+            host_config=host,
+            env=env,
+            transport=message_transport,
+            # token_transport omitted → fail closed
+        )
+        self.assertIs(wired.live_io_ready, False)
+        self.assertIsNone(wired.adapter._token_manager)
+        self.assertIsNone(wired.adapter._transport)
+
+    def test_env_autobuild_with_fake_token_transport_never_urllib(self) -> None:
+        # WR-01: explicit Fake token transport is used; never Urllib default
+        token_transport = FakeTokenTransport(
+            response={"access_token": "fixture-token", "expires_in": 7200}
+        )
+        message_transport = FakeMessageTransport(
+            response={"id": "msg-env-ok", "status": 200}
+        )
+        flags = RuntimeFeatureFlags(qqbot_channel_enabled=True)
+        host = QQBotHostConfig(
+            enabled=True,
+            app_id_ref="secret://qqbot/app-id",
+            app_secret_ref="secret://qqbot/app-secret",
+            bot_secret_ref="secret://qqbot/bot-secret",
+        )
+        env = {
+            "INKSTATUTE_QQBOT_APP_ID": "fixture-app-id",
+            "INKSTATUTE_QQBOT_CLIENT_SECRET": "fixture-client-secret",
+        }
+        wired = build_qqbot_wired_runtime(
+            backend=FakeBackendAdapter(),
+            flags=flags,
+            host_config=host,
+            env=env,
+            transport=message_transport,
+            token_transport=token_transport,
+        )
+        self.assertIs(wired.live_io_ready, True)
+        self.assertIsNotNone(wired.adapter._token_manager)
+        assert wired.adapter._token_manager is not None
+        self.assertIs(wired.adapter._token_manager._transport, token_transport)
+        self.assertEqual(
+            type(wired.adapter._token_manager._transport).__name__,
+            "FakeTokenTransport",
+        )
+        self.assertNotIn(
+            "Urllib",
+            type(wired.adapter._token_manager._transport).__name__,
+        )
+
     def test_flag_off_never_injects_transports(self) -> None:
         # W-04/W-05: flag False strips caller-supplied transports
         token_manager, message_transport, _ = _live_fakes()

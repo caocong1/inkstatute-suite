@@ -66,6 +66,7 @@ def build_qqbot_wired_runtime(
     env: Mapping[str, str] | None = None,
     token_manager: TokenManager | None = None,
     transport: object | None = None,
+    token_transport: object | None = None,
 ) -> QQBotWiredRuntime:
     """Compose channel config, adapter, and ``DefaultRunRuntime`` with explicit DI.
 
@@ -73,7 +74,11 @@ def build_qqbot_wired_runtime(
     - Flag OFF → strip ``token_manager`` and ``transport`` even if caller passed them.
     - Flag ON → inject only when both deps are available (caller-injected, or
       ``TokenManager`` built from resolved ``app_id_ref`` / ``app_secret_ref`` when
-      ``env`` and ``transport`` are provided).
+      ``env``, ``transport``, and ``token_transport`` are provided).
+    - Env auto-build never omits ``transport=`` on ``TokenManager``: without an
+      explicit ``token_transport``, the factory fails closed (no TokenManager).
+      Production callers must pass ``UrllibTokenTransport()`` (or equivalent)
+      deliberately; Fake paths must inject ``FakeTokenTransport``.
     """
     feature_flags = flags if flags is not None else RuntimeFeatureFlags()
     host = host_config if host_config is not None else QQBotHostConfig()
@@ -92,12 +97,16 @@ def build_qqbot_wired_runtime(
             app_id = resolve_secret_ref(host.app_id_ref, env)
             client_secret = resolve_secret_ref(host.app_secret_ref, env)
             if app_id and client_secret:
-                # TokenManager defaults to UrllibTokenTransport only when live
-                # secrets resolve at the host edge — unit tests inject Fakes.
-                resolved_token_manager = TokenManager(
-                    app_id=app_id,
-                    client_secret=client_secret,
-                )
+                # Construct TokenManager only after secrets resolve; require an
+                # explicit token_transport so Fake message transport + env
+                # secrets cannot silently open UrllibTokenTransport HTTP.
+                if token_transport is not None:
+                    resolved_token_manager = TokenManager(
+                        app_id=app_id,
+                        client_secret=client_secret,
+                        transport=token_transport,
+                    )
+                # else: fail closed — leave unresolved (not live-ready)
         if resolved_token_manager is not None and transport is not None:
             injected_token_manager = resolved_token_manager
             injected_transport = transport
