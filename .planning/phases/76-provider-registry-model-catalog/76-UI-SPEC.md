@@ -1,10 +1,11 @@
 ---
 phase: 76
 slug: provider-registry-model-catalog
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-07-10
+reviewed_at: 2026-07-10
 ---
 
 # Phase 76 — UI Design Contract
