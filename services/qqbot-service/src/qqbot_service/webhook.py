@@ -7,12 +7,19 @@ post-ACK composition via an injectable scheduler.
 
 from __future__ import annotations
 
+import asyncio
 import json
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, MutableSequence
 from datetime import datetime, timezone
 from typing import Any
 
-from platform_runtime.protocols import AckResponse, RawInbound
+from inkstatute_channels_qqbot.feedback_ingress import (
+    ensure_interaction_ack,
+    handle_feedback_callback,
+)
+from inkstatute_channels_qqbot.ingress_runtime import QQBotRuntimeIngress
+from platform_runtime.output_boundary import BoundaryAction
+from platform_runtime.protocols import AckResponse, ChannelDelivery, RawInbound, SolutionBinding
 
 from qqbot_service.secrets import resolve_secret_ref
 from qqbot_service.wiring import QQBotWiredRuntime
@@ -110,8 +117,36 @@ def _is_validation_challenge(ack: AckResponse) -> bool:
     return isinstance(ack.metadata.get("validation_challenge_response"), Mapping)
 
 
-def _post_ack_placeholder() -> None:
-    """Plan 01 placeholder — Plan 02 replaces with real composition."""
+def _payload_from_raw(raw: RawInbound) -> dict[str, Any]:
+    payload = raw.metadata.get("payload")
+    if isinstance(payload, dict):
+        return payload
+    return {}
+
+
+def _resolve_reply_text(
+    *,
+    reply_text: str | None,
+    wired: QQBotWiredRuntime,
+    run_id: str | None,
+) -> str | None:
+    if reply_text is not None:
+        return reply_text
+    if run_id is None:
+        return None
+    backend = getattr(wired.runtime, "backend", None)
+    get_run = getattr(backend, "get_run", None)
+    if get_run is None:
+        return None
+    # FakeBackend get_run is async — callers must await; sync peek via runs dict.
+    runs = getattr(backend, "runs", None)
+    if isinstance(runs, dict) and run_id in runs:
+        run = runs[run_id]
+        result = getattr(run, "result", None)
+        if result is not None:
+            content = getattr(result, "content", None)
+            if isinstance(content, str) and content:
+                return content
     return None
 
 
@@ -119,11 +154,124 @@ async def run_post_ack_composition(
     wired: QQBotWiredRuntime,
     raw: RawInbound,
     ack: AckResponse,
-    **_kwargs: Any,
-) -> None:
-    """Post-ACK composition entrypoint (stub in Plan 01; filled in Plan 02)."""
-    del wired, raw, ack, _kwargs
-    _post_ack_placeholder()
+    *,
+    solution: SolutionBinding | None = None,
+    tenant_id: str = "default-tenant",
+    workspace_id: str = "default-workspace",
+    bot_instance_id: str = "default-bot",
+    received_at: str | None = None,
+    feedback_sink: MutableSequence[dict[str, Any]] | None = None,
+    reply_text: str | None = None,
+) -> dict[str, Any]:
+    """Post-ACK composition: normalize → ingress/feedback → boundary → deliver.
+
+    Composes package Protocol helpers only — no host crypto/normalize/send.
+    """
+    evidence: dict[str, Any] = {"status": "started"}
+    when = received_at or raw.received_at or _utc_now()
+    payload = _payload_from_raw(raw)
+
+    # Prefer package normalize_inbound for branch typing.
+    normalized = await wired.adapter.normalize_inbound(raw)
+    if normalized.feedback is not None or (
+        isinstance(normalized.metadata.get("normalized_type"), str)
+        and normalized.metadata.get("normalized_type") == "feedback_event"
+    ):
+        fb = handle_feedback_callback(
+            payload,
+            received_at=when,
+            payload_ref=raw.payload_ref,
+        )
+        if feedback_sink is not None:
+            # Store sanitized evidence only (feedback_dict already package-shaped).
+            feedback_sink.append(
+                {
+                    "status": fb.get("status"),
+                    "feedback_dict": fb.get("feedback_dict"),
+                    "idempotency_key": fb.get("idempotency_key"),
+                    "category": fb.get("category"),
+                }
+            )
+        evidence["branch"] = "feedback"
+        evidence["feedback_status"] = fb.get("status")
+
+        if (
+            ack.metadata.get("interaction_ack_status") == "pending_host"
+            and wired.live_io_ready
+        ):
+            ensure_interaction_ack(
+                prior_ack_metadata=ack.metadata,
+                message_transport=getattr(wired.adapter, "_transport", None),
+                token_manager=getattr(wired.adapter, "_token_manager", None),
+            )
+        evidence["status"] = "completed"
+        return evidence
+
+    # Message path: package ingress → optional deliver behind output boundary.
+    binding = solution or SolutionBinding(
+        solution_id="qqbot-host-fixture",
+        version="0",
+        backend_id=getattr(getattr(wired.runtime, "backend", None), "backend_id", lambda: None)()
+        if callable(getattr(getattr(wired.runtime, "backend", None), "backend_id", None))
+        else "fake-backend",
+    )
+    ingress = QQBotRuntimeIngress(
+        runtime=wired.runtime,
+        solution=binding,
+        tenant_id=tenant_id,
+        workspace_id=workspace_id,
+        bot_instance_id=bot_instance_id,
+    )
+    outcome = await ingress.handle_callback(payload, received_at=when)
+    evidence["branch"] = "message"
+    evidence["ingress_action"] = getattr(outcome.action, "value", str(outcome.action))
+    evidence["run_id"] = outcome.run_id
+
+    candidate = _resolve_reply_text(
+        reply_text=reply_text, wired=wired, run_id=outcome.run_id
+    )
+    if not candidate:
+        evidence["status"] = "completed_no_reply"
+        return evidence
+
+    decision = wired.runtime.output_boundary.apply("ordinary_user", candidate)
+    evidence["boundary_action"] = decision.action.value
+    evidence["boundary_reason"] = decision.reason
+
+    if decision.action is BoundaryAction.BLOCK or not decision.visible_text:
+        evidence["status"] = "completed_boundary_blocked"
+        return evidence
+
+    turn_meta: dict[str, Any] = {}
+    if normalized.message is not None:
+        turn_meta = dict(getattr(normalized.message, "metadata", {}) or {})
+
+    delivery = ChannelDelivery(
+        delivery_id=f"qqbot-deliv-{outcome.run_id or 'noreply'}",
+        channel_id="qqbot",
+        run_id=outcome.run_id,
+        content=decision.visible_text,
+        metadata={
+            "delivery_type": "text",
+            "scene": turn_meta.get("scene") or "c2c",
+            "user_openid": turn_meta.get("user_openid")
+            or turn_meta.get("scene_id")
+            or getattr(normalized.message, "user_id", None),
+            "msg_id": turn_meta.get("message_id") or turn_meta.get("msg_id"),
+            "message_id": turn_meta.get("message_id"),
+            "received_at": when,
+            "reply_count": 0,
+            "output_boundary": {
+                "action": decision.action.value,
+                "reason": decision.reason,
+                "privacy": "no_original_text_stored",
+            },
+        },
+    )
+    result = await wired.adapter.deliver(delivery)
+    evidence["deliver_accepted"] = result.accepted
+    evidence["status"] = "completed"
+    return evidence
 
 
 async def handle_qqbot_webhook_request(
@@ -139,6 +287,12 @@ async def handle_qqbot_webhook_request(
     received_at: str | None = None,
     payload_ref: str | None = None,
     idempotency_key: str | None = None,
+    solution: SolutionBinding | None = None,
+    tenant_id: str = "default-tenant",
+    workspace_id: str = "default-workspace",
+    bot_instance_id: str = "default-bot",
+    feedback_sink: MutableSequence[dict[str, Any]] | None = None,
+    reply_text: str | None = None,
 ) -> tuple[int, bytes, dict[str, str]]:
     """Pure ACK-first webhook handler — no port bind, no WeCom imports.
 
@@ -160,12 +314,13 @@ async def handle_qqbot_webhook_request(
     if resolved_secret is None:
         resolved_secret = resolve_secret_ref(wired.host_config.bot_secret_ref, env_map)
 
+    when = received_at or _utc_now()
     raw = build_raw_inbound_from_http(
         hdrs,
         body_bytes,
         bot_secret=resolved_secret,
         payload_ref=payload_ref or "http://qqbot/callback",
-        received_at=received_at or _utc_now(),
+        received_at=when,
         idempotency_key=idempotency_key,
     )
 
@@ -178,13 +333,28 @@ async def handle_qqbot_webhook_request(
         and not _is_validation_challenge(ack)
         and post_ack_scheduler is not None
     ):
-        # Capture closed-over values for the scheduled thunk.
         wired_ref = wired
         raw_ref = raw
         ack_ref = ack
+        composition_kwargs = {
+            "solution": solution,
+            "tenant_id": tenant_id,
+            "workspace_id": workspace_id,
+            "bot_instance_id": bot_instance_id,
+            "received_at": when,
+            "feedback_sink": feedback_sink,
+            "reply_text": reply_text,
+        }
 
         def _thunk() -> Any:
-            return run_post_ack_composition(wired_ref, raw_ref, ack_ref)
+            return asyncio.run(
+                run_post_ack_composition(
+                    wired_ref,
+                    raw_ref,
+                    ack_ref,
+                    **composition_kwargs,
+                )
+            )
 
         post_ack_scheduler(_thunk)
 
