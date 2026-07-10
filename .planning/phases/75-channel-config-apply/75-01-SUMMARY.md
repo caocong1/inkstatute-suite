@@ -77,7 +77,7 @@ Each task was committed atomically:
    - `cf2430b` (feat) — GREEN: flag field + qqbot/wecom gate PYTHONPATH
 2. **Task 2: Wave 0 test scaffolds** — `5d0067b` (test)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `970f973` (docs: complete plan)
 
 ## Files Created/Modified
 
