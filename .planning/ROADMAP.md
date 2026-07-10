@@ -59,7 +59,12 @@
 4. Host config stores secrets as refs only; tests prove values are not committed and resolve only at process edge.
 5. `.planning/phases/08-lawyer-trial-acceptance/` remains present (carried human-gate artifacts preserved).
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 68-01-PLAN.md — Create `services/qqbot-service/` skeleton with empty deps and V2 gate/compileall coverage
+- [ ] 68-02-PLAN.md — Host refs-only config + process-edge `resolve_secret_ref` (SAFE-02)
+- [ ] 68-03-PLAN.md — ADAPTER-04 host isolation: Protocol freeze, no-wecom, flag OFF, Phase 08 preserved
 
 ### Phase 69: Runtime Registration / Wiring
 
@@ -121,7 +126,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 68. Host Skeleton + Safety Baseline | 0/TBD | Not started | - |
+| 68. Host Skeleton + Safety Baseline | 0/3 | Not started | - |
 | 69. Runtime Registration / Wiring | 0/TBD | Not started | - |
 | 70. Webhook Composition Path | 0/TBD | Not started | - |
 | 71. Smoke Protocol-Path Hardening | 0/TBD | Not started | - |
