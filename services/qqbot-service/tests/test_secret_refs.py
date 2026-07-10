@@ -6,6 +6,7 @@ import unittest
 from dataclasses import asdict
 
 from qqbot_service import QQBotHostConfig, resolve_secret_ref
+from qqbot_service.secrets import InvalidSecretRefError
 
 
 PLANTED = "planted-raw-secret-value-NEVER-ON-CONFIG"
@@ -62,6 +63,25 @@ class TestQQBotHostConfigRefsOnly(unittest.TestCase):
         )
         rendered = str(asdict(cfg))
         self.assertNotIn(PLANTED, rendered)
+
+    def test_from_env_rejects_raw_secret_planted_in_ref_key(self) -> None:
+        with self.assertRaises(InvalidSecretRefError) as ctx:
+            QQBotHostConfig.from_env(
+                {
+                    "INKSTATUTE_QQBOT_BOT_SECRET_REF": PLANTED,
+                }
+            )
+        message = str(ctx.exception)
+        self.assertNotIn(PLANTED, message)
+        self.assertIn("INKSTATUTE_QQBOT_BOT_SECRET_REF", message)
+
+    def test_from_env_rejects_unknown_secret_scheme(self) -> None:
+        with self.assertRaises(InvalidSecretRefError):
+            QQBotHostConfig.from_env(
+                {
+                    "INKSTATUTE_QQBOT_APP_ID_REF": "vault://nope",
+                }
+            )
 
 
 class TestResolveSecretRef(unittest.TestCase):
