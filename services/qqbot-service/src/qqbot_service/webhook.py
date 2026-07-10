@@ -232,6 +232,7 @@ async def run_post_ack_composition(
     )
     if not candidate:
         evidence["status"] = "completed_no_reply"
+        evidence["issue_code"] = "qqbot_no_reply_source"
         return evidence
 
     decision = wired.runtime.output_boundary.apply("ordinary_user", candidate)

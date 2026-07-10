@@ -241,6 +241,69 @@ class WebhookHttpRawBodyTests(unittest.TestCase):
             time.sleep(0.01)
         self.assertEqual(seen, ["RuntimeError"])
 
+    def test_handler_passes_server_reply_text(self) -> None:
+        """WR-01: stdlib server can supply reply_text for smoke/Fake deliver."""
+        envelope = {
+            "op": 0,
+            "t": "C2C_MESSAGE_CREATE",
+            "id": "evt-http-reply-001",
+            "d": {
+                "author": {"user_openid": "FIXTURE_USER_OPENID_C2C_001"},
+                "content": "ping",
+                "id": "ROBOT1.0_fixture_http_reply_001",
+                "timestamp": "2026-07-10T12:00:00+08:00",
+                "attachments": [],
+            },
+        }
+        body = json.dumps(envelope, ensure_ascii=False, separators=(",", ":")).encode(
+            "utf-8"
+        )
+        sig = _sign_body(body)
+        scheduled: list[Any] = []
+
+        def recording_scheduler(thunk: Any) -> None:
+            scheduled.append(thunk)
+
+        wired = _enabled_wired()
+        rfile = CountingRfile(body)
+        wfile = io.BytesIO()
+        handler = QQBotWebhookServer.__new__(QQBotWebhookServer)
+        handler.rfile = rfile  # type: ignore[assignment]
+        handler.wfile = wfile  # type: ignore[assignment]
+        handler.headers = {  # type: ignore[assignment]
+            "Content-Length": str(len(body)),
+            "Content-Type": "application/json",
+            "X-Signature-Ed25519": sig,
+            "X-Signature-Timestamp": DEMO_SIG_TIMESTAMP,
+        }
+        handler.path = "/qqbot/callback"
+        handler.command = "POST"
+        handler.request_version = "HTTP/1.1"
+        handler.client_address = ("127.0.0.1", 0)
+        handler.server = MagicMock()  # type: ignore[assignment]
+        handler.server.wired = wired
+        handler.server.env = SECRET_ENV
+        handler.server.post_ack_scheduler = recording_scheduler
+        handler.server.max_body_bytes = 1_048_576
+        handler.server.reply_text = "fixture-server-reply"
+
+        sent: dict[str, Any] = {"status": None}
+
+        def send_response(code: int, message: str | None = None) -> None:
+            sent["status"] = code
+
+        handler.send_response = send_response  # type: ignore[method-assign]
+        handler.send_header = lambda *a, **k: None  # type: ignore[method-assign]
+        handler.end_headers = lambda: None  # type: ignore[method-assign]
+
+        handler.do_POST()
+        self.assertEqual(sent["status"], 200)
+        self.assertEqual(len(scheduled), 1)
+        # Thunk closes over reply_text from do_POST.
+        scheduled[0]()
+        self.assertGreaterEqual(len(wired.adapter.deliveries), 1)
+        self.assertEqual(wired.adapter.deliveries[-1].content, "fixture-server-reply")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -106,6 +106,9 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
     - ``self.server.post_ack_scheduler`` — optional; defaults to daemon thread
     - ``self.server.on_post_ack_error`` — optional sanitized failure callback
     - ``self.server.max_body_bytes`` — optional body ceiling
+    - ``self.server.reply_text`` — optional fixed reply for smoke / Fake paths
+    - ``self.server.reply_resolver`` — optional ``Callable[[], str | None]``
+      for Phase 71 smoke before a full get_run/stream resolver lands
     """
 
     def do_POST(self) -> None:
@@ -142,6 +145,16 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
             else:
                 scheduler = default_post_ack_scheduler
 
+        reply_text = getattr(self.server, "reply_text", None)
+        reply_resolver = getattr(self.server, "reply_resolver", None)
+        if reply_text is None and callable(reply_resolver):
+            try:
+                reply_text = reply_resolver()
+            except Exception:
+                # Resolver failures must not block ACK; composition records
+                # completed_no_reply when no reply source is available.
+                reply_text = None
+
         status, resp_body, resp_headers = asyncio.run(
             handle_qqbot_webhook_request(
                 "POST",
@@ -151,6 +164,7 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
                 wired=wired,
                 env=env,
                 post_ack_scheduler=scheduler,
+                reply_text=reply_text,
             )
         )
         self._write_response(status, resp_body, resp_headers)
