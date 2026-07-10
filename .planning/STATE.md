@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: planning
-stopped_at: Roadmap created for v1.9 QQBot Host Composition (Phases 68-72)
-last_updated: "2026-07-10T04:23:12.444Z"
-last_activity: 2026-07-09 — v1.9 roadmap created (Phases 68-72)
+status: verifying
+stopped_at: Completed 68-02 and 68-03 PLAN.md
+last_updated: "2026-07-10T04:24:55.116Z"
+last_activity: 2026-07-10 — Completed 68-01; executing 68-02/68-03
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 1
-  percent: 0
+  completed_plans: 3
+  percent: 20
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-07-09)
 ## Current Position
 
 Phase: 68 of 72 (Host Skeleton + Safety Baseline)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-07-09 — v1.9 roadmap created (Phases 68-72)
+Plan: 3 of 3 in current phase
+Status: Phase complete — ready for verification
+Last activity: 2026-07-10 — Completed 68-01; executing 68-02/68-03
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ### Deferred Items
 
@@ -151,6 +151,10 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 15 P15-01 | 5m21s | 2 tasks | 3 files |
 | Phase 15 P15-02 | 8m02s | 2 tasks | 6 files |
 | Phase 15 P03 | 5h20m | 2 tasks | 6 files |
+| Phase 68 P02 | 10min | 2 tasks | 5 files |
+| Phase 68 P01 | 8min | 2 tasks | 6 files |
+| Phase 68 P02 | 10min | 2 tasks | 5 files |
+| Phase 68 P03 | 6min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -256,6 +260,10 @@ Recent decisions affecting current work:
 - [Phase 15]: [Phase 15 Plan 15-02] Represent interrupt resume as a normal backend submit_run handoff with explicit sanitized resume metadata instead of adding a mandatory BackendAdapter method.
 - [Phase 15]: [Phase 15 Plan 15-02] Keep interrupt scope isolation on the Phase 15 SessionScope key, including tenant, workspace, channel, user, bot, conversation, and thread.
 - [Phase 15]: [Phase 15 Plan 15-02] Persist prompt/resume/schema refs plus answer hash and length only; the answer text is transient input to the backend handoff and is not written to lifecycle or contract-log evidence.
+- [Phase ?]: Host gate PYTHONPATH omits wecom_src
+- [Phase 68]: Gate count is now 27 with qqbot-service after qqbot-channel
+- [Phase 68]: secret://qqbot/app-secret maps to INKSTATUTE_QQBOT_CLIENT_SECRET (smoke live naming)
+- [Phase 68]: resolve_secret_ref never reads os.environ; callers inject env Mapping
 
 ### Pending Todos
 
@@ -291,8 +299,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T04:23:12.438Z
-Stopped at: Roadmap created for v1.9 QQBot Host Composition (Phases 68-72)
+Last session: 2026-07-10T04:24:55.112Z
+Stopped at: Completed 68-02 and 68-03 PLAN.md
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
