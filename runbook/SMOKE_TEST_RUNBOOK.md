@@ -39,7 +39,7 @@ Either knob OFF → channel fails closed / live injection is stripped (`token_ma
 | Concern | Smoke CLI `--live` | Host process config |
 |---------|--------------------|---------------------|
 | Enablement | N/A (CLI mode flag) | `INKSTATUTE_QQBOT_CHANNEL_ENABLED` + platform `qqbot_channel_enabled` (dual-knob) |
-| Credentials | Value env: `INKSTATUTE_QQBOT_APP_ID`, `CLIENT_SECRET`, `BOT_SECRET`, `USER_OPENID`, `REPLY_MSG_ID` | `INKSTATUTE_QQBOT_*_REF` only (resolved at process edge) |
+| Credentials | Value env: `INKSTATUTE_QQBOT_APP_ID`, `INKSTATUTE_QQBOT_CLIENT_SECRET`, `INKSTATUTE_QQBOT_BOT_SECRET`, `INKSTATUTE_QQBOT_USER_OPENID`, `INKSTATUTE_QQBOT_REPLY_MSG_ID` | `INKSTATUTE_QQBOT_*_REF` only (resolved at process edge) |
 | Network | Leaf OpenAPI via Urllib after fail-closed env check | Protocol path via webhook composition when dual-knob ON |
 
 Smoke `--live` does **not** flip host dual-knob flags. Enabling the host for production traffic and running controlled smoke are related but distinct operator steps.
