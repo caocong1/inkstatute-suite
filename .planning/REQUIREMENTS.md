@@ -38,9 +38,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Admin Surface & AuthZ
 
-- [ ] **ADM-01**: Admin/operator roles can GET/PUT config resources; lawyer/viewer roles are denied mutate
+- [x] **ADM-01**: Admin/operator roles can GET/PUT config resources; lawyer/viewer roles are denied mutate
 - [ ] **ADM-02**: Admin Web UI exposes config pages (channels, providers/catalog, vision) as SSR forms with CSRF protection, extending the existing stdlib admin-web-ui (not a new SPA stack)
-- [ ] **ADM-03**: Existing read-only admin views (sessions/tasks/feedback/health/gates) remain read-only; config writes use an explicit `/config/*` surface
+- [x] **ADM-03**: Existing read-only admin views (sessions/tasks/feedback/health/gates) remain read-only; config writes use an explicit `/config/*` surface
 
 ### Docs & Honesty
 
@@ -112,9 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-02 | Phase 77 | Pending |
 | VIS-03 | Phase 77 | Pending |
 | VIS-04 | Phase 77 | Pending |
-| ADM-01 | Phase 74 | Pending |
+| ADM-01 | Phase 74 | Complete |
 | ADM-02 | Phase 78 | Pending |
-| ADM-03 | Phase 74 | Pending |
+| ADM-03 | Phase 74 | Complete |
 | DOC-01 | Phase 78 | Pending |
 | DOC-02 | Phase 78 | Pending |
 

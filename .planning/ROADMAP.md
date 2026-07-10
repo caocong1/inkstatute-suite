@@ -78,7 +78,8 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 74-01-PLAN.md — Wave 0 freeze/PYTHONPATH + `/config` RBAC matrix/ROUTE_PREFIXES
+
+- [x] 74-01-PLAN.md — Wave 0 freeze/PYTHONPATH + `/config` RBAC matrix/ROUTE_PREFIXES
 - [ ] 74-02-PLAN.md — Section GET/PUT `config_api` + `handle_admin_put` (405 operational)
 - [ ] 74-03-PLAN.md — Evolve read-only/RBAC tests + `test_config_api` + README
 
@@ -146,7 +147,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 73. Operator Config Foundation | v1.10 | 3/3 | Complete    | 2026-07-10 |
-| 74. Admin Config API + RBAC | v1.10 | 0/TBD | Not started | - |
+| 74. Admin Config API + RBAC | v1.10 | 1/3 | In Progress|  |
 | 75. Channel Config Apply | v1.10 | 0/TBD | Not started | - |
 | 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
 | 77. Vision Routing Runtime | v1.10 | 0/TBD | Not started | - |

@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-current_plan: 01
-status: ready_to_execute
-stopped_at: Phase 74 planned — ready to execute
-last_updated: "2026-07-10T07:47:24Z"
+current_plan: 2
+status: executing
+stopped_at: Completed 74-01-PLAN.md
+last_updated: "2026-07-10T07:54:15.778Z"
 last_activity: 2026-07-10 — Phase 74 plans created (3 plans / 3 waves)
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 3
-  percent: 17
+  completed_phases: 0
+  total_plans: 8
+  completed_plans: 4
+  percent: 0
 ---
 
 # Project State
@@ -22,16 +22,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.10 Operator Config Console — Phase 74 planned (Admin Config API + RBAC); ready to execute
+**Current focus:** v1.10 Operator Config Console — Phase 74 Plan 02 next (config HTTP handlers)
 
 ## Current Position
 
 Phase: 74 of 78 (Admin Config API + RBAC) — 2 of 6 v1.10 phases
-Current Plan: 01 (of 03)
+Current Plan: 02 (of 03)
 Total Plans in Phase: 3
-Plan: 74-01 — Wave 0 freeze/PYTHONPATH + `/config` RBAC matrix
+Plan: 74-02 — Section GET/PUT config_api + handle_admin_put
 Status: Ready to execute
-Last activity: 2026-07-10 — Phase 74 plans created (3 plans / 3 waves)
+Last activity: 2026-07-10 — Completed 74-01 (Wave 0 freeze + /config RBAC)
 
 Progress: [█░░░░░░░░░] 17% (1/6 v1.10 phases)
 
@@ -68,10 +68,12 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 |-------|------|----------|-------|-------|
 | 73 | 01 | 2min | 3 | 8 |
 | 73 | 02 | 3min | 2 | 4 |
-
 | 73 | 03 | 3min | 3 | 11 |
+| 74 | 01 | 2min | 2 | 6 |
 
 *Updated after each plan completion*
+| Phase 74 P01 | 2min | 2 tasks | 6 files |
+| Phase 74 P01 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -104,6 +106,9 @@ Recent decisions affecting current work:
 - [Phase 73]: save order is mandatory: flag gate then validate_document then atomic write
 - [Phase 74 planning]: `/config` sections-only (no full GET `/config`); operational PUT → 405; lawyer/viewer denied GET+PUT; import `document_*` from store submodule
 - [Phase 74 planning]: Map `OperatorConfigDisabledError` → 403 `operator_config_disabled`; evolve (do not delete) `test_read_only.py`
+- [Phase 74]: /config matrix roles are exactly {ADMIN, OPERATOR}; LAWYER/VIEWER denied at path level
+- [Phase 74]: operator_config_src added to all gates that already compose admin_api_src (not lawyer-web-chat)
+- [Phase 74]: Freeze allowlist keeps exact-set equality; operator_config_enabled added as v1.10 flag
 
 ### Pending Todos
 
@@ -126,8 +131,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T07:47:24Z
-Stopped at: Phase 74 planned — ready to execute
+Last session: 2026-07-10T07:54:15.773Z
+Stopped at: Completed 74-01-PLAN.md
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
@@ -142,5 +147,5 @@ v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Execute Phase 74: `/gsd-execute-phase 74`
+- Continue Phase 74: execute 74-02 (config HTTP handlers)
 - Carried human gates (Phase 5 / 8 / QQ `--live`) remain open — do not auto-close
