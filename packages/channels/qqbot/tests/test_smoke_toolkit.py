@@ -545,5 +545,71 @@ class TestLiveHumanGateHonesty(unittest.TestCase):
             os.environ.update(saved)
 
 
+class TestRunbookLiveEnablement(unittest.TestCase):
+    """LIVE-02: operator runbook documents host enablement + carried human gates."""
+
+    def test_runbook_exists(self) -> None:
+        self.assertTrue(RUNBOOK_PATH.is_file(), f"missing runbook: {RUNBOOK_PATH}")
+
+    def test_host_enablement_and_dual_knob(self) -> None:
+        text = RUNBOOK_PATH.read_text(encoding="utf-8")
+        self.assertIn("INKSTATUTE_QQBOT_CHANNEL_ENABLED", text)
+        self.assertIn("_REF", text)
+        lower = text.lower()
+        self.assertIn("dual-knob", lower)
+        self.assertIn("qqbot_channel_enabled", lower)
+        # Value env vs host *_REF distinction.
+        self.assertRegex(text, r"\*_REF|INKSTATUTE_QQBOT_\w+_REF")
+        self.assertIn("host", lower)
+
+    def test_dry_run_vs_live(self) -> None:
+        text = RUNBOOK_PATH.read_text(encoding="utf-8")
+        self.assertIn("--dry-run", text)
+        self.assertIn("--live", text)
+        self.assertIn("HUMAN GATE", text)
+        self.assertIn("not_live_acceptance", text)
+        lower = text.lower()
+        self.assertTrue(
+            "auto-claim" in lower or "auto claim" in lower or "must not auto" in lower,
+            "runbook must say CI must not auto-claim live acceptance",
+        )
+
+    def test_ack_and_passive_reply_windows(self) -> None:
+        text = RUNBOOK_PATH.read_text(encoding="utf-8")
+        lower = text.lower()
+        self.assertIn("passive-reply", lower)
+        self.assertIn("ack", lower)
+        self.assertIn("--callback-json", text)
+        self.assertTrue(
+            "interaction" in lower and ("put" in lower or "ack put" in lower),
+            "runbook must document live ACK PUT with real interaction id",
+        )
+
+    def test_phase5_phase8_remain_human_gates(self) -> None:
+        text = RUNBOOK_PATH.read_text(encoding="utf-8")
+        self.assertIn("Phase 5", text)
+        self.assertIn("Phase 8", text)
+        lower = text.lower()
+        self.assertIn("wecom", lower)
+        self.assertTrue(
+            "lawyer trial" in lower or "lawyer-trial" in lower,
+            "runbook must mention Phase 8 lawyer trial gate",
+        )
+        self.assertTrue(
+            "carried" in lower or "remain" in lower or "not" in lower and "v1.9 done" in lower,
+            "runbook must state Phase 5/8 remain carried human gates",
+        )
+
+    def test_phase72_archival_path(self) -> None:
+        text = RUNBOOK_PATH.read_text(encoding="utf-8")
+        self.assertIn("72-controlled-live-integration", text)
+        self.assertIn("evidence/", text)
+        self.assertRegex(
+            text,
+            r"72-controlled-live-integration/evidence/YYYYMMDD-smoke-live\.json|"
+            r"72-controlled-live-integration/evidence/",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
