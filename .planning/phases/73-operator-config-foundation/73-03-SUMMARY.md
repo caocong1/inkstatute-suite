@@ -82,7 +82,7 @@ Each task was committed atomically:
 2. **Task 2: Atomic OperatorConfigStore with flag-gated save** - `3c0e065` (test) → `0624fcf` (feat)
 3. **Task 3: Register V2 gate, gitignore runtime config** - `cca6f93` (chore)
 
-**Plan metadata:** _(pending final docs commit)_
+**Plan metadata:** `273a436` (docs: complete plan)
 
 ## Files Created/Modified
 
