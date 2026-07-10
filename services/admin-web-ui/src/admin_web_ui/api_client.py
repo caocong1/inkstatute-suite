@@ -1,6 +1,7 @@
-"""Admin API client — proxies read-only requests to admin-console-api.
+"""Admin API client — proxies requests to admin-console-api.
 
-Reuses ``admin_console_api.handle_admin_get`` for all data retrieval.
+Reuses ``admin_console_api.handle_admin_get`` for reads and
+``handle_admin_put`` for ``/config/*`` mutations (Channel Config SSR POST).
 The Admin Web UI never makes direct database or read-model calls.
 """
 
@@ -10,17 +11,17 @@ from typing import Any, Callable, Mapping
 
 from rbac import Identity
 
-# Type alias for the handle_admin_get callable signature.
+# Type aliases for admin-console-api callables.
 HandleAdminGet = Callable[..., tuple[int, dict[str, Any]]]
+HandleAdminPut = Callable[..., tuple[int, dict[str, Any]]]
 
 
 class AdminApiClient:
-    """Proxy client that delegates to ``handle_admin_get``.
+    """Proxy client that delegates to ``handle_admin_get`` / ``handle_admin_put``.
 
     The caller provides the same ``read_model``, ``feedback_queue``,
-    ``feature_flags``, ``env``, and ``rbac_secret`` that the admin-console-api
-    uses. The client constructs the auth header from the resolved identity's
-    token and passes it through.
+    ``feature_flags``, ``env``, ``rbac_secret``, and ``config_store`` that the
+    admin-console-api uses. Auth headers are injected like the GET proxy.
     """
 
     def proxy(
@@ -35,24 +36,60 @@ class AdminApiClient:
         env: Mapping[str, str] | None = None,
         rbac_secret: str | None = None,
         auth_header: str | None = None,
+        config_store: Any = None,
     ) -> tuple[int, dict[str, Any]]:
         """Proxy a GET request to ``handle_admin_get``.
 
         Returns ``(status_code, response_dict)``.
         """
+        del identity  # auth is carried via Authorization header
         headers: dict[str, str] = {}
         if auth_header is not None:
             headers["Authorization"] = auth_header
-        return handle_admin_get(
-            path=path,
-            query=None,
-            headers=headers,
-            read_model=read_model,
-            feedback_queue=feedback_queue,
-            feature_flags=feature_flags,
-            env=env,
+        kwargs: dict[str, Any] = {
+            "path": path,
+            "query": None,
+            "headers": headers,
+            "read_model": read_model,
+            "feedback_queue": feedback_queue,
+            "feature_flags": feature_flags,
+            "env": env,
+            "rbac_secret": rbac_secret,
+        }
+        if config_store is not None:
+            kwargs["config_store"] = config_store
+        return handle_admin_get(**kwargs)
+
+    def proxy_put(
+        self,
+        handle_admin_put: HandleAdminPut,
+        path: str,
+        body: Mapping[str, Any],
+        identity: Identity,
+        *,
+        feature_flags: Any,
+        config_store: Any = None,
+        env: Mapping[str, str] | None = None,
+        rbac_secret: str | None = None,
+        auth_header: str | None = None,
+    ) -> tuple[int, dict[str, Any]]:
+        """Proxy a PUT request to ``handle_admin_put`` (config mutate only).
+
+        Returns ``(status_code, response_dict)``.
+        """
+        del identity  # auth is carried via Authorization header
+        headers: dict[str, str] = {}
+        if auth_header is not None:
+            headers["Authorization"] = auth_header
+        return handle_admin_put(
+            path,
+            body,
+            headers,
+            feature_flags,
+            env,
+            config_store=config_store,
             rbac_secret=rbac_secret,
         )
 
 
-__all__ = ["AdminApiClient", "HandleAdminGet"]
+__all__ = ["AdminApiClient", "HandleAdminGet", "HandleAdminPut"]

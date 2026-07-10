@@ -75,6 +75,7 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/feedback", "Feedback Review"),
         ("/health", "Health"),
         ("/gates", "Gates"),
+        ("/config/channels", "Channel Config"),
     ]
     nav_links = "\n".join(
         f'      <a href="{_esc(href)}" class="nav-link">{_esc(label)}</a>'
@@ -112,6 +113,26 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
     .error {{ color: #c0392b; font-weight: 600; }}
     .status-ok {{ color: #27ae60; font-weight: 600; }}
     .status-err {{ color: #c0392b; font-weight: 600; }}
+    .field {{ margin: 0.5rem 0; font-size: 1rem; }}
+    .field .key {{ font-weight: 600; font-size: 0.875rem; color: #555; }}
+    .field label {{ display: block; font-weight: 600; font-size: 0.875rem; color: #555; margin-bottom: 0.25rem; }}
+    .field-check {{ display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding: 0.25rem; }}
+    .dual-knob-row {{ display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin: 0.5rem 0; }}
+    .channel-panel {{ margin-bottom: 3rem; }}
+    .ref-input {{
+      display: block; width: 100%; box-sizing: border-box; padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      border: 1px solid #e0e0e0; border-radius: 6px; background: #fff;
+    }}
+    .ref-input:focus-visible, .field-check input:focus-visible, .btn-primary:focus-visible {{
+      outline: 2px solid #aaccff; outline-offset: 2px;
+    }}
+    .btn-primary {{
+      background: #1a1a2e; color: #fff; border: none; border-radius: 6px;
+      padding: 8px 16px; min-height: 44px; font-size: 1rem; cursor: pointer;
+    }}
+    .btn-primary:disabled {{ opacity: 0.5; cursor: not-allowed; }}
+    .restart-notice {{ margin-bottom: 1.5rem; }}
   </style>
 </head>
 <body>
@@ -195,6 +216,11 @@ def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
         ("Feedback Review", "/feedback", "Review pending feedback items"),
         ("Health", "/health", "Monitor system health status"),
         ("Gates", "/gates", "View V2 gate status"),
+        (
+            "Channel Config",
+            "/config/channels",
+            "Configure QQ and WeCom enablement and credential refs",
+        ),
     ]
     cards = []
     for label, href, desc in sections:
