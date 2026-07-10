@@ -1,7 +1,7 @@
 ---
 phase: 71
 slug: smoke-protocol-path-hardening
-status: draft
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-10
@@ -38,12 +38,12 @@ created: 2026-07-10
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 71-01-01 | 01 | 1 | SMOKE-01 | T-71-01 / T-71-02 | RED Protocol-path dry-run tests | unit | `unittest …TestProtocolPathDryRun` (expect fail) | ✅ W0 existing file | ⬜ pending |
-| 71-01-02 | 01 | 1 | SMOKE-01 | T-71-01 / T-71-02 | GREEN host Protocol dry-run stage | unit+CLI | `TestProtocolPathDryRun` + `smoke_test.py --dry-run` | ✅ | ⬜ pending |
-| 71-02-01 | 02 | 2 | SMOKE-02 | T-71-04 / T-71-05 | RED Protocol evidence sanitize tests | unit | `unittest …TestProtocolEvidenceSanitized` (expect fail) | ✅ W0 existing file | ⬜ pending |
-| 71-02-02 | 02 | 2 | SMOKE-02 | T-71-04 / T-71-06 | GREEN allowlist Protocol steps | unit+CLI | evidence tests + ban-list on evidence JSON | ✅ | ⬜ pending |
-| 71-03-01 | 03 | 3 | SMOKE-01 / SMOKE-02 | T-71-07 / T-71-08 | CI honesty + runbook Protocol note | unit | `unittest …TestProtocolPathCiHonesty` | ✅ | ⬜ pending |
-| 71-03-02 | 03 | 3 | SMOKE-01 / SMOKE-02 | T-71-07 / T-71-09 | Full toolkit + leaf+Protocol regression | unit+CLI | `unittest test_smoke_toolkit` + dry-run all steps ok | ✅ | ⬜ pending |
+| 71-01-01 | 01 | 1 | SMOKE-01 | T-71-01 / T-71-02 | RED Protocol-path dry-run tests | unit | `unittest …TestProtocolPathDryRun` (expect fail) | ✅ W0 existing file | ✅ green |
+| 71-01-02 | 01 | 1 | SMOKE-01 | T-71-01 / T-71-02 | GREEN host Protocol dry-run stage | unit+CLI | `TestProtocolPathDryRun` + `smoke_test.py --dry-run` | ✅ | ✅ green |
+| 71-02-01 | 02 | 2 | SMOKE-02 | T-71-04 / T-71-05 | RED Protocol evidence sanitize tests | unit | `unittest …TestProtocolEvidenceSanitized` (expect fail) | ✅ W0 existing file | ✅ green |
+| 71-02-02 | 02 | 2 | SMOKE-02 | T-71-04 / T-71-06 | GREEN allowlist Protocol steps | unit+CLI | evidence tests + ban-list on evidence JSON | ✅ | ✅ green |
+| 71-03-01 | 03 | 3 | SMOKE-01 / SMOKE-02 | T-71-07 / T-71-08 | CI honesty + runbook Protocol note | unit | `unittest …TestProtocolPathCiHonesty` | ✅ | ✅ green |
+| 71-03-02 | 03 | 3 | SMOKE-01 / SMOKE-02 | T-71-07 / T-71-09 | Full toolkit + leaf+Protocol regression | unit+CLI | `unittest test_smoke_toolkit` + dry-run all steps ok | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -79,4 +79,4 @@ created: 2026-07-10
 - [x] Feedback latency &lt; 60s for quick command
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending execution
+**Approval:** verified 2026-07-10 (execute-phase --no-transition)
