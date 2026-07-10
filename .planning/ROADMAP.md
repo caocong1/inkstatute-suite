@@ -37,7 +37,7 @@
 
 - [x] **Phase 73: Operator Config Foundation** - Refs-only store, schemas, validators, and default-OFF feature flag (completed 2026-07-10)
 - [x] **Phase 74: Admin Config API + RBAC** - Flag-gated `/config/*` mutate surface with role checks; read views stay read-only (completed 2026-07-10)
-- [ ] **Phase 75: Channel Config Apply** - QQ/WeCom channel config apply with dual-knob visibility and secret-ref credentials
+- [x] **Phase 75: Channel Config Apply** - QQ/WeCom channel config apply with dual-knob visibility and secret-ref credentials (completed 2026-07-10)
 - [ ] **Phase 76: Provider Registry + Model Catalog** - Built-in vendors, custom OpenAI-compatible providers, catalog selection, connection probe
 - [ ] **Phase 77: Vision Routing Runtime** - Vision policy + image-turn routing with fail-closed notices and output-boundary safety
 - [ ] **Phase 78: Console SSR, Docs & Gate Honesty** - Complete SSR config pages, operator docs, and `not_live_acceptance` honesty
@@ -119,7 +119,14 @@ Plans:
   3. Operator can pick a main model from a built-in selectable catalog that includes `supports_vision` metadata
   4. Operator can run a non-destructive connection probe for main (and vision when configured) that fail-closes on missing refs and does not log response bodies/secrets
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 76-01-PLAN.md — operator-config catalog + model_allowlist schema evolution + validators + Wave 0 scaffolds
+- [ ] 76-02-PLAN.md — admin-console-api connection probe (stdlib urllib) + providers/catalog metadata + API tests
+- [ ] 76-03-PLAN.md — admin-web-ui SSR provider registry + model catalog forms + probe button + tests
+
 **UI hint**: yes
 
 ### Phase 77: Vision Routing Runtime
@@ -157,8 +164,8 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 73. Operator Config Foundation | v1.10 | 3/3 | Complete    | 2026-07-10 |
 | 74. Admin Config API + RBAC | v1.10 | 3/3 | Complete    | 2026-07-10 |
-| 75. Channel Config Apply | v1.10 | 5/5 | Complete   | 2026-07-10 |
-| 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
+| 75. Channel Config Apply | v1.10 | 5/5 | Complete    | 2026-07-10 |
+| 76. Provider Registry + Model Catalog | v1.10 | 0/3 | Not started | - |
 | 77. Vision Routing Runtime | v1.10 | 0/TBD | Not started | - |
 | 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/TBD | Not started | - |
 | 68. Host Skeleton + Safety Baseline | v1.9 | 3/3 | Complete | 2026-07-10 |
