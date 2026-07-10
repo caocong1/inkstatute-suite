@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: planning
-last_updated: "2026-07-09T15:22:26.480Z"
+status: roadmap_ready
+last_updated: "2026-07-09T16:05:00.000Z"
 last_activity: 2026-07-09
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,17 +17,19 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-04)
+See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.9 QQBot Host Composition — defining requirements
+**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 68 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 68 of 72 (Host Skeleton + Safety Baseline)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-09 — Milestone v1.9 started
+Status: Ready to plan
+Last activity: 2026-07-09 — v1.9 roadmap created (Phases 68-72)
+
+Progress: [░░░░░░░░░░] 0%
 
 ### Deferred Items
 
@@ -51,9 +53,9 @@ Items acknowledged and deferred at milestone close on 2026-07-02:
 | tech_debt | Phase 20 SQLite file-backed db_path production injection | deployment configuration step |
 | tech_debt | Phase 24 MemoryEvalRunner in-memory vs SQLite baseline | both modes tested and documented |
 | tech_debt | Phase 25 external adapter spikes | sanitized simulations only; no live provider integration |
-| tech_debt | v1.8 host webhook composition (adapter↔ingress/session/feedback) | deferred at close — accepted audit gap; next milestone candidate |
-| tech_debt | v1.8 smoke dry-run skips adapter/session Protocol path | deferred at close — optional hardening |
-| uat_gap | v1.8 live QQ smoke (`scripts/smoke_test.py --live`) | HUMAN GATE — not autonomous |
+| tech_debt | v1.8 host webhook composition (adapter↔ingress/session/feedback) | in scope for v1.9 Phases 68-70 |
+| tech_debt | v1.8 smoke dry-run skips adapter/session Protocol path | in scope for v1.9 Phase 71 |
+| uat_gap | v1.8 live QQ smoke (`scripts/smoke_test.py --live`) | in scope for v1.9 Phase 72 — HUMAN GATE |
 
 ### Parallel Human Gate (v1.0)
 
@@ -160,6 +162,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 - v1.6 roadmap created: Phases 36-44 (M2 Pre-Implementation Safety → Skill Registry → Router Service → Codex Adapter → Provider Model Adapter → Read-View Completion → Admin Console API → QQBot Channel Loop → Gate Integration)
 - Phase 57.1 inserted after Phase 57: Close gap: TENANT-01/02/03/04 — wire TenantGuard into Web UIs and admin-console-api views (URGENT)
 - v1.8 roadmap created: Phases 58-67 (Pre-Implementation Safety → Ed25519 Signature → Event Normalization → Token Manager → Egress Sender → Rich Media → Session Runtime → Adapter Integration → Feedback Loop Parity + Recall → Smoke-Test Toolkit)
+- v1.9 roadmap created: Phases 68-72 (Host Skeleton + Safety → Runtime Registration → Webhook Composition → Smoke Protocol-Path → Controlled Live HUMAN GATE)
 
 ### Decisions
 
@@ -287,22 +290,18 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-07T12:50:00.000Z
-Stopped at: Roadmap created for v1.8 QQBot Channel Production (Phases 58-67)
+Last session: 2026-07-09T16:05:00.000Z
+Stopped at: Roadmap created for v1.9 QQBot Host Composition (Phases 68-72)
 Resume file: None
-Architecture basis: .planning/drafts/agent-platform-north-star.md
+Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
 Requirements: .planning/REQUIREMENTS.md
 Research summary: .planning/research/SUMMARY.md
-Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/08-UAT.md
-v1.1 archive: .planning/milestones/v1.1-ROADMAP.md
-v1.2 archive: .planning/milestones/v1.2-ROADMAP.md
-v1.3 archive: .planning/milestones/v1.3-ROADMAP.md
-v1.4 archive: .planning/milestones/v1.4-ROADMAP.md
-v1.7 archive: .planning/milestones/v1.7-ROADMAP.md
+Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
+v1.8 archive: .planning/milestones/v1.8-ROADMAP.md
 
 ## Operator Next Steps
 
-- Continue `$gsd-new-milestone` flow: research decision → requirements → roadmap
-- After roadmap: `$gsd-discuss-phase` / `$gsd-plan-phase` for the first v1.9 phase
+- Approve v1.9 roadmap (Phases 68-72), then `$gsd-plan-phase 68`
 - Preserve `.planning/phases/08-lawyer-trial-acceptance/` (carried human gate; do not clear)
+- Phase 72 live QQ remains HUMAN GATE — do not auto-claim from CI

@@ -74,23 +74,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HOST-01 | TBD | Pending |
-| HOST-02 | TBD | Pending |
-| HOST-03 | TBD | Pending |
-| REG-01 | TBD | Pending |
-| REG-02 | TBD | Pending |
-| SMOKE-01 | TBD | Pending |
-| SMOKE-02 | TBD | Pending |
-| LIVE-01 | TBD | Pending |
-| LIVE-02 | TBD | Pending |
-| SAFE-01 | TBD | Pending |
-| SAFE-02 | TBD | Pending |
+| HOST-01 | Phase 70 | Pending |
+| HOST-02 | Phase 70 | Pending |
+| HOST-03 | Phase 69 | Pending |
+| REG-01 | Phase 69 | Pending |
+| REG-02 | Phase 69 | Pending |
+| SMOKE-01 | Phase 71 | Pending |
+| SMOKE-02 | Phase 71 | Pending |
+| LIVE-01 | Phase 72 | Pending |
+| LIVE-02 | Phase 72 | Pending |
+| SAFE-01 | Phase 68 | Pending |
+| SAFE-02 | Phase 68 | Pending |
 
 **Coverage:**
 - v1.9 requirements: 11 total
-- Mapped to phases: 0
-- Unmapped: 11 (filled by roadmapper)
+- Mapped to phases: 11
+- Unmapped: 0
+
+| Phase | Requirements |
+|-------|--------------|
+| 68 Host Skeleton + Safety Baseline | SAFE-01, SAFE-02 |
+| 69 Runtime Registration / Wiring | REG-01, REG-02, HOST-03 |
+| 70 Webhook Composition Path | HOST-01, HOST-02 |
+| 71 Smoke Protocol-Path Hardening | SMOKE-01, SMOKE-02 |
+| 72 Controlled Live Integration | LIVE-01, LIVE-02 |
 
 ---
 *Requirements defined: 2026-07-09*
-*Last updated: 2026-07-09 after v1.9 scoping (all categories selected)*
+*Last updated: 2026-07-09 after v1.9 roadmap creation (Phases 68-72)*
