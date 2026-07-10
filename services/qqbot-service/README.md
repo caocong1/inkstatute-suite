@@ -14,3 +14,32 @@ Ownership boundary:
 
 Phase 68 delivers the empty-deps skeleton and safety baseline only — no webhook
 composition yet.
+
+## Secret references (SAFE-02)
+
+`QQBotHostConfig` stores only `*_ref` fields. Raw secret values must never be
+assigned onto the config object. Resolve values at process edge with
+`resolve_secret_ref(ref, env)` using an injected env mapping (callers may pass
+`os.environ` in later phases; the resolver itself never reads `os.environ`).
+
+### Ref schemes
+
+| Ref form | Resolution |
+|----------|------------|
+| `None` / empty | `None` (fail closed) |
+| `env:VAR_NAME` | `env["VAR_NAME"]` |
+| bare env key name (e.g. `MY_VAR`) | `env["MY_VAR"]` if present |
+| `secret://qqbot/…` | mapped value env key (table below) |
+| unknown scheme/path | `None` (fail closed) |
+
+### `secret://` → value env map
+
+| Ref | Value env var |
+|-----|---------------|
+| `secret://qqbot/app-id` | `INKSTATUTE_QQBOT_APP_ID` |
+| `secret://qqbot/app-secret` | `INKSTATUTE_QQBOT_CLIENT_SECRET` |
+| `secret://qqbot/token` | `INKSTATUTE_QQBOT_TOKEN` |
+| `secret://qqbot/bot-secret` | `INKSTATUTE_QQBOT_BOT_SECRET` |
+
+Config `from_env` reads only `INKSTATUTE_QQBOT_CHANNEL_ENABLED` and
+`INKSTATUTE_QQBOT_*_REF` keys. Planted raw value keys are ignored.
