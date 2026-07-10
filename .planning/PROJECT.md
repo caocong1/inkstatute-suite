@@ -10,9 +10,16 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone
+## Current Milestone: v1.10 Operator Config Console
 
-Awaiting next milestone via `$gsd-new-milestone`.
+**Goal:** Deliver an InkStatute-owned operator configuration console so operators can configure QQ/WeCom channels, providers (built-in vendors + custom OpenAI-compatible), built-in model catalogs, and vision/image-routing (dedicated vision model when the main model lacks vision) — without editing Hermes.
+
+**Target features:**
+- Channel config UI/API for QQBot and WeCom (enable flags, secret refs, dual-knob defaults OFF)
+- Provider config: built-in vendors + custom endpoints; built-in selectable model catalog
+- Vision routing: multimodal main vs dedicated vision model; inbound image turns decide vision→main mix
+- Config persistence with process-edge secret resolution (no secrets in git or contract log bodies)
+- README / operator docs aligned with the config surface
 
 **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
 
@@ -92,10 +99,11 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ### Active
 
+- [ ] v1.10: Operator Config Console — channel (QQ/WeCom), provider (vendor+custom), model catalog, vision routing
 - [ ] Complete the five-workday lawyer trial acceptance criteria. (human gate — carried)
 - [ ] Phase 5 live WeCom UAT operator confirmation. (human gate — carried)
 - [ ] Operator `--live` QQ OpenAPI acceptance evidence. (human gate — carried; not auto-claimed)
-- [ ] Future host/ops candidates from v1.9 archive: HOST-F01 durable wakeup stores; HOST-F02 async ACK queue; HOST-F03 health endpoints (promote via next milestone if selected)
+- [ ] Future host/ops candidates from v1.9 archive: HOST-F01 durable wakeup stores; HOST-F02 async ACK queue; HOST-F03 health endpoints (deferred unless promoted)
 - [x] Define the V2 platform contract package with five event schemas, async task states, error categories, JSON Schema, Python bindings, and fixtures.
 - [x] Model AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision as platform events with traceable relationships.
 - [x] Build a contract test suite before production Hermes hook work.
@@ -178,6 +186,9 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 | Dual default-OFF knobs + explicit `channels=(QQBotChannelAdapter,)` injection | Accidental live IO prevention; no platform-runtime auto-discovery | ✓ Good — v1.9 |
 | Smoke dry-run must exercise host Protocol path (not leaf helpers only) | CI honesty: leaf-only evidence cannot claim host-complete | ✓ Good — v1.9 |
 | `--live` remains HUMAN GATE; CI never auto-claims live acceptance | Live needs secrets, fresh msg_id, human judgment | ✓ Good — v1.9 |
+| Start milestone v1.10 Operator Config Console | Operators need InkStatute-owned UI to configure QQ/WeCom channels, providers (vendor+custom), models, and vision routing without editing Hermes | Decided 2026-07-10 |
+| Config secrets stay as refs; values resolve at process edge only | Matches QQ host SAFE-02 and AGENTS.md — never commit tokens or plant raw secrets in config objects | Decided 2026-07-10 |
+| Vision routing: dedicated vision model when main model lacks image understanding | GLM-class text models need separate vision path; multimodal mains can consume images directly | Decided 2026-07-10 |
 
 ## Shipped Milestones
 
@@ -224,9 +235,10 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 ## Current State
 
 - **Last shipped:** v1.9 QQBot Host Composition (Phases 68–72) — thin QQBot webhook host + Protocol-path smoke + controlled live HUMAN GATE.
-- **Active milestone:** none — awaiting `$gsd-new-milestone`.
+- **Active milestone:** v1.10 Operator Config Console — defining requirements.
 - **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
 - **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
+- **Doc updates:** Root README + `.env.example` describe usage and planned config console (2026-07-10).
 
 
 ## Evolution
@@ -249,4 +261,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-10 after v1.9 milestone*
+*Last updated: 2026-07-10 — milestone v1.10 Operator Config Console started*
