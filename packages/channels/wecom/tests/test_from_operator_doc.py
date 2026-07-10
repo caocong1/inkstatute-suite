@@ -54,6 +54,25 @@ class WeComFromOperatorDocScaffoldTests(unittest.TestCase):
         # Host knob only — dual-knob AND lives in wecom-service wiring.
         self.assertEqual(cfg.channel_id, "wecom")
 
+    def test_from_operator_doc_non_string_refs_become_none(self) -> None:
+        """WR-03: non-string ref fields must not land on WeComChannelConfig."""
+        if not hasattr(WeComChannelConfig, "from_operator_doc"):
+            self.fail(
+                "CHAN-02: WeComChannelConfig.from_operator_doc not implemented (Plan 04)"
+            )
+        cfg = WeComChannelConfig.from_operator_doc(
+            {
+                "enabled": True,
+                "token_secret_ref": 12345,
+                "encoding_aes_key_secret_ref": {"nested": True},
+                "corp_id_ref": ["env:WECOM_CORP_ID"],
+            }
+        )
+        self.assertIs(cfg.enabled, True)
+        self.assertIsNone(cfg.token_secret_ref)
+        self.assertIsNone(cfg.encoding_aes_key_secret_ref)
+        self.assertIsNone(cfg.corp_id_ref)
+
     def test_channel_package_does_not_import_runtime_feature_flags(self) -> None:
         tree = ast.parse(_CONFIG_SRC.read_text(encoding="utf-8"))
         for node in ast.walk(tree):

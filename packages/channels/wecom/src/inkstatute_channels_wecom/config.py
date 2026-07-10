@@ -42,11 +42,9 @@ class WeComChannelConfig:
         wiring — this package stays flag-free.
         """
         enabled = bool(_doc_field(doc, "enabled", False))
-        token_secret_ref = _doc_field(doc, "token_secret_ref", None) or None
-        encoding_aes_key_secret_ref = (
-            _doc_field(doc, "encoding_aes_key_secret_ref", None) or None
-        )
-        corp_id_ref = _doc_field(doc, "corp_id_ref", None) or None
+        token_secret_ref = _optional_ref(doc, "token_secret_ref")
+        encoding_aes_key_secret_ref = _optional_ref(doc, "encoding_aes_key_secret_ref")
+        corp_id_ref = _optional_ref(doc, "corp_id_ref")
         raw_metadata = _doc_field(doc, "metadata", None)
         if raw_metadata is None:
             metadata: JsonObject = {}
@@ -67,6 +65,15 @@ def _doc_field(doc: Mapping[str, Any] | object, key: str, default: Any) -> Any:
     if isinstance(doc, Mapping):
         return doc.get(key, default)
     return getattr(doc, key, default)
+
+
+def _optional_ref(doc: Mapping[str, Any] | object, key: str) -> str | None:
+    """Accept string refs only; coerce non-strings / blanks to None (WR-03)."""
+    value = _doc_field(doc, key, None)
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None
 
 
 __all__ = ["WeComChannelConfig"]
