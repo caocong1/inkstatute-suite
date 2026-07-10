@@ -478,5 +478,72 @@ class TestLiveEnvFailClosed(unittest.TestCase):
             os.environ.update(saved)
 
 
+class TestLiveHumanGateHonesty(unittest.TestCase):
+    """LIVE-01: --live remains HUMAN GATE; script never auto-claims acceptance."""
+
+    def test_live_evidence_stamp_never_claims_acceptance(self) -> None:
+        """Live-mode evidence from the script path always stamps not_live_acceptance=True."""
+        smoke = _load_smoke_module()
+        source = SMOKE_SCRIPT.read_text(encoding="utf-8")
+        live_def = "def _run_smoke_live("
+        live_start = source.find(live_def)
+        self.assertGreater(live_start, -1, "_run_smoke_live required")
+        # Bound the live function body until the next top-level def.
+        next_def = source.find("\ndef ", live_start + 1)
+        live_body = source[live_start : next_def if next_def > 0 else len(source)]
+        self.assertIn('"not_live_acceptance": True', live_body)
+        self.assertNotIn('"not_live_acceptance": False', live_body)
+        # sanitize_evidence must not force live acceptance False.
+        live_evidence = {
+            "schema": "inkstatute.qqbot.smoke_evidence.v1",
+            "mode": "live",
+            "not_live_acceptance": True,
+            "steps": {"signature": {"ok": True}},
+        }
+        clean = smoke.sanitize_evidence(live_evidence)
+        self.assertEqual(clean.get("mode"), "live")
+        self.assertIs(clean.get("not_live_acceptance"), True)
+        # Even if a dirty payload tries to claim acceptance, sanitize must not
+        # emit not_live_acceptance=False for mode=live (script honesty).
+        tainted = dict(live_evidence)
+        tainted["not_live_acceptance"] = False
+        clean_tainted = smoke.sanitize_evidence(tainted)
+        self.assertIs(clean_tainted.get("not_live_acceptance"), True)
+
+    def test_ci_gates_do_not_invoke_live(self) -> None:
+        gates = REPO_ROOT / "scripts" / "run_v2_gates.py"
+        self.assertTrue(gates.is_file(), f"missing gates script: {gates}")
+        text = gates.read_text(encoding="utf-8")
+        self.assertNotRegex(text, r"smoke_test\.py.*--live")
+        self.assertNotRegex(text, r"--live.*smoke")
+        # qqbot-channel gate is unittest discover only — no --live argparse.
+        self.assertIn("qqbot-channel", text)
+        self.assertIn("packages/channels/qqbot/tests", text)
+        self.assertNotIn("smoke_test.py --live", text)
+
+    def test_live_help_marks_human_gate(self) -> None:
+        result = _run_cli("--help")
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        combined = ((result.stdout or "") + (result.stderr or "")).upper()
+        self.assertIn("HUMAN GATE", combined)
+        self.assertIn("--LIVE", combined)
+
+    def test_live_requires_all_env_keys(self) -> None:
+        smoke = _load_smoke_module()
+        saved = {
+            k: os.environ.pop(k) for k in list(os.environ) if k.startswith("INKSTATUTE_QQBOT_")
+        }
+        try:
+            with self.assertRaises(SystemExit) as ctx:
+                smoke.load_live_credentials()
+            msg = str(ctx.exception)
+            for key in smoke.LIVE_ENV_KEYS:
+                self.assertIn(key, msg, msg=f"missing key name not listed: {key}")
+            for value in saved.values():
+                self.assertNotIn(value, msg)
+        finally:
+            os.environ.update(saved)
+
+
 if __name__ == "__main__":
     unittest.main()
