@@ -106,6 +106,8 @@ Plans:
 
 **UI hint**: yes
 
+### Phase 76: Provider Registry + Model Catalog
+
 **Goal**: Operators can select built-in vendor providers or define custom OpenAI-compatible endpoints, pick a catalog main model with vision capability metadata, and probe connectivity without leaking secrets
 **Depends on**: Phase 74 (can run in parallel with Phase 75 after 74)
 **Requirements**: PROV-01, PROV-02, PROV-03, PROV-04
