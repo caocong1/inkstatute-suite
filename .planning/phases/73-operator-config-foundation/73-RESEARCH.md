@@ -378,25 +378,29 @@ FORBIDDEN_FIELD_NAMES = frozenset({
 | Store path committed to git | Medium | Document gitignored path; add ignore pattern if default under repo |
 | Flag name drift (`config_enabled` vs `operator_config_enabled`) | Low | Lock name to REQUIREMENTS: `operator_config_enabled` |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 73 include a minimal stub catalog JSON file?**
    - What we know: Full built-in vendor catalog is Phase 76 (PROV-*).
    - What's unclear: Whether `CatalogSelectionDoc` needs a read-only empty catalog helper now.
    - Recommendation: Schema + empty/default selection only; defer catalog data file to Phase 76.
+   - **RESOLVED:** Catalog schema-only stub (`CatalogSelectionDoc` with provider_id/model_id); no vendor catalog JSON file in Phase 73 (Plans 73-01 / 73-02). Full catalog content deferred to Phase 76.
 
 2. **Generalize `resolve_secret_ref` into platform-runtime / channel-core now?**
    - What we know: QQ host owns a QQ-specific `REF_TO_VALUE_ENV` map.
    - What's unclear: Shared resolver vs shape-only validator in operator-config.
    - Recommendation: Phase 73 = **shape validation only** in operator-config. Lift/shared resolve is optional later when hosts apply docs (Phase 75+). Avoid qqbot-service import from operator-config.
+   - **RESOLVED:** Shape-only secret refs in `inkstatute_operator_config.secrets` (normalize/validate; no resolve, no qqbot-service hard dep). Host resolve deferred to Phase 75+ (Plans 73-01 / 73-02).
 
 3. **Add `vision_routing_enabled` flag in Phase 73?**
    - What we know: SUMMARY lists it as optional; CFG-02 only names `operator_config_enabled`.
    - Recommendation: **Defer** `vision_routing_enabled` to Phase 77 unless planner wants both flags front-loaded. Prefer one flag for CFG-02 clarity.
+   - **RESOLVED:** Defer `vision_routing_enabled` to Phase 77. Phase 73 adds only `operator_config_enabled: bool = False` (Plan 73-03). Vision policy remains a schema stub (`VisionPolicyDoc`) without a runtime flag.
 
 4. **ETag / optimistic concurrency on store?**
    - What we know: ARCHITECTURE mentions version/etag; CFG-F02 audit is deferred.
    - Recommendation: Optional `schema_version` integer; skip etag/audit until CFG-F02.
+   - **RESOLVED:** Skip etag/optimistic concurrency. Store uses `schema_version: int = 1` only; etag/audit deferred to CFG-F02 (Plans 73-01 schemas / 73-03 store).
 
 ## Environment Availability
 
@@ -493,7 +497,7 @@ No `.cursor/rules/` directory present in this workspace. Enforce instead from `A
 |---|-------|---------|---------------|
 | A1 | Exact module/API names (`OperatorConfigStore`, `require_operator_config_writable`, document class names) are planner-flexible | Code Examples / Structure | Low — rename without behavior change |
 | A2 | Hermes ban-list substring/field set is illustrative; final list refined in plan tests | Code Examples | Medium — incomplete ban-list could miss a path variant |
-| A3 | Phase 73 should not add `vision_routing_enabled` yet | Open Questions | Low — can add in Phase 77 without breaking CFG-02 |
+| A3 | Phase 73 should not add `vision_routing_enabled` yet | Open Questions (RESOLVED) | Low — can add in Phase 77 without breaking CFG-02 |
 | A4 | Atomic `os.replace` of `.tmp` sibling is sufficient (same filesystem) | Code Examples | Low — document if operators place store on exotic mounts |
 
 **If this table is empty:** N/A — assumptions listed above need planner awareness, not user product decisions (discuss was skipped; locks already cover product constraints).

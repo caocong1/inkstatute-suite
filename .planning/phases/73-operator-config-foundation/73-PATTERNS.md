@@ -1,8 +1,8 @@
 # Phase 73: Operator Config Foundation - Pattern Map
 
 **Mapped:** 2026-07-10
-**Files analyzed:** 11
-**Analogs found:** 11 / 11
+**Files analyzed:** 14
+**Analogs found:** 14 / 14
 
 ## File Classification
 
@@ -15,9 +15,12 @@
 | `packages/operator-config/src/inkstatute_operator_config/secrets.py` | utility | transform | `services/qqbot-service/src/qqbot_service/secrets.py` | exact |
 | `packages/operator-config/src/inkstatute_operator_config/store.py` | service | file-I/O | `services/hermes-contract-layer/src/hermes_contract_layer/writer.py` | role-match |
 | `packages/platform-runtime/src/platform_runtime/feature_flags.py` | model | request-response | (self — extend in place) | exact |
-| `packages/operator-config/tests/test_schemas_refs.py` | test | transform | `services/qqbot-service/tests/test_secret_refs.py` | exact |
-| `packages/operator-config/tests/test_validate_hermes_ban.py` | test | transform | `packages/contract-test-suite/tests/test_boundary_allowlist.py` | exact |
-| `packages/operator-config/tests/test_store_flag_gate.py` | test | file-I/O | `packages/skill-registry/tests/test_write_api.py` | exact |
+| `packages/operator-config/tests/test_schemas.py` | test | transform | `packages/channels/qqbot/.../config.py` field defaults | exact |
+| `packages/operator-config/tests/test_secret_refs.py` | test | transform | `services/qqbot-service/tests/test_secret_refs.py` | exact |
+| `packages/operator-config/tests/test_hermes_banlist.py` | test | transform | `packages/contract-test-suite/tests/test_boundary_allowlist.py` | exact |
+| `packages/operator-config/tests/test_validate_document.py` | test | transform | `packages/solution-loader/.../manifest_validator.py` | exact |
+| `packages/operator-config/tests/test_store.py` | test | file-I/O | hermes writer + atomic `os.replace` | role-match |
+| `packages/operator-config/tests/test_flag_gate.py` | test | file-I/O | `packages/skill-registry/tests/test_write_api.py` | exact |
 | `packages/platform-runtime/tests/test_feature_flags.py` | test | request-response | (self — extend M3-style block) | exact |
 
 **Package home:** `packages/operator-config/` (top-level under `packages/`, sibling of `solution-loader`, `skill-registry`, `mcp-registry`). Import package name: `inkstatute_operator_config`. Do **not** put schemas/store inside `services/admin-console-api` or a new HTTP service.
@@ -68,20 +71,32 @@ default_off_flag = "operator_config_enabled"
 ```python
 """inkstatute-operator-config: refs-only operator config authority."""
 
-from .schemas import ChannelDoc, ProviderDoc, ModelCatalogDoc, VisionRoutingDoc, OperatorConfigDocument
+from .schemas import (
+    ChannelDoc,
+    ProviderDoc,
+    CatalogSelectionDoc,
+    VisionPolicyDoc,
+    OperatorConfigDocument,
+)
 from .store import OperatorConfigStore, OperatorConfigStoreError
-from .validate import OperatorConfigValidator, ValidationIssue
+from .validate import OperatorConfigValidator, ValidationIssue, validate_document
+from .secrets import InvalidSecretRefError, normalize_config_secret_ref
+from .flags import require_operator_config_writable
 
 __all__ = [
     "ChannelDoc",
     "ProviderDoc",
-    "ModelCatalogDoc",
-    "VisionRoutingDoc",
+    "CatalogSelectionDoc",
+    "VisionPolicyDoc",
     "OperatorConfigDocument",
     "OperatorConfigStore",
     "OperatorConfigStoreError",
     "OperatorConfigValidator",
     "ValidationIssue",
+    "validate_document",
+    "InvalidSecretRefError",
+    "normalize_config_secret_ref",
+    "require_operator_config_writable",
 ]
 ```
 
@@ -289,9 +304,11 @@ except RuntimeFeatureDisabledError:
 
 ---
 
-### `packages/operator-config/tests/test_schemas_refs.py` (test)
+### `packages/operator-config/tests/test_schemas.py` + `test_secret_refs.py` (test)
 
-**Analog:** `services/qqbot-service/tests/test_secret_refs.py` (lines 12–76)
+**Analog:** channel/provider config defaults + `services/qqbot-service/tests/test_secret_refs.py` (lines 12–76)
+
+**Plan alignment:** Plan 73-01 uses `test_schemas.py` (document shapes) and `test_secret_refs.py` (planted-secret / no-echo). Do not create `test_schemas_refs.py`.
 
 **Planted-secret ban pattern:**
 ```python
@@ -314,9 +331,11 @@ class TestQQBotHostConfigRefsOnly(unittest.TestCase):
 
 ---
 
-### `packages/operator-config/tests/test_validate_hermes_ban.py` (test)
+### `packages/operator-config/tests/test_hermes_banlist.py` (+ `test_validate_document.py`) (test)
 
 **Analog:** `packages/contract-test-suite/tests/test_boundary_allowlist.py` (lines 91–98, 121–128)
+
+**Plan alignment:** Plan 73-02 uses `test_hermes_banlist.py` (CFG-03) and `test_validate_document.py` (full-doc planted-secret / happy path). Do not create `test_validate_hermes_ban.py`.
 
 ```python
 def test_rejects_private_hermes_paths_in_neutral_packages(self) -> None:
@@ -335,9 +354,11 @@ def test_rejects_plaintext_secret_patterns(self) -> None:
 
 ---
 
-### `packages/operator-config/tests/test_store_flag_gate.py` (test)
+### `packages/operator-config/tests/test_store.py` + `test_flag_gate.py` (test)
 
-**Analog:** `packages/skill-registry/tests/test_write_api.py` (lines 61–76)
+**Analog:** `packages/skill-registry/tests/test_write_api.py` (lines 61–76) + atomic JSON round-trip
+
+**Plan alignment:** Plan 73-03 uses `test_store.py` (atomic persist) and `test_flag_gate.py` (CFG-02 refuse). Do not create `test_store_flag_gate.py`.
 
 ```python
 class WriteApiFeatureFlagTests(unittest.TestCase):
