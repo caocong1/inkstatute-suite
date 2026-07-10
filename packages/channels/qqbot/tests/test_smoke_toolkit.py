@@ -14,6 +14,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 SMOKE_SCRIPT = REPO_ROOT / "scripts" / "smoke_test.py"
@@ -340,19 +341,34 @@ class TestProtocolPathDryRun(unittest.TestCase):
         self.assertIn(dry_marker, dry_section)
 
     def test_protocol_path_required_for_success(self) -> None:
-        """Leaf-only evidence is insufficient — Protocol steps must be ok for success."""
+        """Leaf-only evidence is insufficient — Protocol failure must fail-closed."""
         smoke = _load_smoke_module()
-        outcome = smoke.run_smoke(mode="dry-run")
-        steps = outcome["evidence"]["steps"]
-        protocol_ok = all(
-            isinstance(steps.get(name), dict) and steps[name].get("ok") is True
-            for name in self._PROTOCOL_STEPS
-        )
-        self.assertTrue(
-            protocol_ok,
-            "dry-run success requires adapter_ack/session_ingress/adapter_deliver ok "
-            "(leaf steps alone are insufficient)",
-        )
+
+        def failing_protocol():
+            return {
+                "adapter_ack": {
+                    "ok": True,
+                    "http_status": 200,
+                    "op": 12,
+                    "accepted": True,
+                },
+                "session_ingress": {
+                    "ok": False,
+                    "ingress_action": None,
+                    "run_id_present": False,
+                    "branch": "message",
+                },
+                "adapter_deliver": {
+                    "ok": False,
+                    "deliver_accepted": False,
+                    "boundary_action": None,
+                },
+            }
+
+        with mock.patch.object(smoke, "_step_protocol_path_dry_run", failing_protocol):
+            with self.assertRaises(SystemExit) as ctx:
+                smoke.run_smoke(mode="dry-run")
+        self.assertIn("session_ingress", str(ctx.exception))
 
 
 class TestProtocolPathCiHonesty(unittest.TestCase):
