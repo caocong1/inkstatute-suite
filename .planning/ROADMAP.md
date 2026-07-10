@@ -104,7 +104,7 @@ Plans:
 Plans:
 
 - [x] 70-01-PLAN.md — Pure ACK-first webhook handler (op=13/op=12/refuse) (HOST-02)
-- [ ] 70-02-PLAN.md — Post-ACK ingress/feedback/deliver Fake composition (HOST-01)
+- [x] 70-02-PLAN.md — Post-ACK ingress/feedback/deliver Fake composition (HOST-01)
 - [ ] 70-03-PLAN.md — stdlib http.server wrapper + raw-body proofs + README
 
 ### Phase 71: Smoke Protocol-Path Hardening
@@ -141,7 +141,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 68. Host Skeleton + Safety Baseline | 3/3 | Complete   | 2026-07-10 |
 | 69. Runtime Registration / Wiring | 3/3 | Complete   | 2026-07-10 |
-| 70. Webhook Composition Path | 1/3 | In Progress|  |
+| 70. Webhook Composition Path | 2/3 | In Progress|  |
 | 71. Smoke Protocol-Path Hardening | 0/TBD | Not started | - |
 | 72. Controlled Live Integration | 0/TBD | Not started | - |
 

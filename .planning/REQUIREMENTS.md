@@ -11,7 +11,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Host Webhook
 
-- [ ] **HOST-01**: Operator can deploy a thin InkStatute-owned QQBot webhook host that composes `verify_and_ack` → ingress/session/feedback → `deliver` without reimplementing package crypto/normalize/send logic
+- [x] **HOST-01**: Operator can deploy a thin InkStatute-owned QQBot webhook host that composes `verify_and_ack` → ingress/session/feedback → `deliver` without reimplementing package crypto/normalize/send logic
 - [x] **HOST-02**: Webhook host returns verify-and-ACK promptly (op=13 validation challenge and op=12 body ACK) before heavy agent work
 - [x] **HOST-03**: When QQBot is disabled (flags/config OFF), webhook refuses live IO with explicit non-success behavior (e.g. 503/refuse) and does not call OpenAPI transports
 
@@ -74,7 +74,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HOST-01 | Phase 70 | Pending |
+| HOST-01 | Phase 70 | Complete |
 | HOST-02 | Phase 70 | Complete |
 | HOST-03 | Phase 69 | Complete |
 | REG-01 | Phase 69 | Complete |
