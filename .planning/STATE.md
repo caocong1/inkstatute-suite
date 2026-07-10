@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
 status: executing
-stopped_at: Completed 71-01-PLAN.md; executing 71-02
-last_updated: "2026-07-10T05:12:44.728Z"
+stopped_at: Completed 71-02-PLAN.md; executing 71-03
+last_updated: "2026-07-10T05:13:33.077Z"
 last_activity: 2026-07-10 -- Phase 71 execution started
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 12
-  completed_plans: 10
+  completed_plans: 11
   percent: 60
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-07-09)
 ## Current Position
 
 Phase: 71 (smoke-protocol-path-hardening) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-10 -- Phase 71 execution started
 
@@ -162,6 +162,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 70 P02 | 2min | 2 tasks | 2 files |
 | Phase 70 P03 | 1min | 2 tasks | 4 files |
 | Phase 71 P01 | 2min | 2 tasks | 2 files |
+| Phase 71 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -281,6 +282,7 @@ Recent decisions affecting current work:
 - [Phase ?]: HTTP wrapper 1MiB max_body; daemon-thread default scheduler; tests inject recording scheduler
 - [Phase 71]: Protocol path uses handle_qqbot_webhook_request + build_qqbot_wired_runtime (not leaf-only)
 - [Phase 71]: Plan 01 allowlists only ok for Protocol steps; Plan 02 expands RESEARCH keys
+- [Phase 71]: Keep schema inkstatute.qqbot.smoke_evidence.v1 (no v2 fork)
 
 ### Pending Todos
 
@@ -316,8 +318,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T05:12:44.723Z
-Stopped at: Completed 71-01-PLAN.md; executing 71-02
+Last session: 2026-07-10T05:13:33.072Z
+Stopped at: Completed 71-02-PLAN.md; executing 71-03
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
