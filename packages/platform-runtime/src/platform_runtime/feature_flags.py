@@ -39,6 +39,9 @@ class RuntimeFeatureFlags:
     admin_web_ui_enabled: bool = False
     lawyer_web_chat_enabled: bool = False
 
+    # v1.10 operator config — default OFF; mutate paths require explicit opt-in
+    operator_config_enabled: bool = False
+
     def require_enabled(self, flag_name: str) -> None:
         known_flags = {field.name for field in fields(self)}
         if flag_name not in known_flags:
