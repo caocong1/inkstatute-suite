@@ -362,17 +362,19 @@ def handle_admin_put(
 
 ## Open Questions
 
+> **Resolved at plan-phase 2026-07-10** — decisions locked into `74-0{1,2,3}-PLAN.md` / `74-VALIDATION.md`.
+
 1. **Whole-document GET `/config` in addition to section routes?**
-   - What we know: SUMMARY lists section paths; store is one document.
-   - What's unclear: Whether operators need a single GET for debugging.
-   - Recommendation: Implement four section routes as must-have; optional `GET /config` returning full `document_to_payload` is a small additive nicety — include if cheap in same plan.
+   - **RESOLVED: sections-only.** Implement `/config/{channels,providers,catalog,vision}` only; bare `GET /config` returns 404. Full-document GET deferred unless a later phase needs it.
 
 2. **Should PUT on `/sessions` return 405 or 404?**
-   - What we know: Today only GET handler exists.
-   - Recommendation: **405** with `method_not_allowed` after successful auth proves “route exists but writes forbidden,” which is a stronger ADM-03 signal than 404.
+   - **RESOLVED: 405** with `method_not_allowed` after successful auth (stronger ADM-03 signal than 404).
 
 3. **Export `document_from_payload` from package `__init__`?**
-   - Recommendation: Import from `inkstatute_operator_config.store` in Phase 74 to avoid package churn; re-export only if multiple callers need it.
+   - **RESOLVED: no re-export.** Import from `inkstatute_operator_config.store` in Phase 74.
+
+4. **Lawyer/viewer GET on `/config`? (Assumptions Log A1)**
+   - **RESOLVED: deny GET and PUT.** Path-level `ADMIN+OPERATOR` only (credential refs are sensitive; matrix is path-only).
 
 ## Environment Availability
 

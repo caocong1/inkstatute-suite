@@ -75,7 +75,12 @@ Plans:
   3. Existing sessions/tasks/feedback/health/gates views remain read-only; config writes only succeed on the explicit `/config/*` surface
   4. When the operator-config flag is OFF, PUT `/config/*` refuses writes even for admin/operator
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 74-01-PLAN.md — Wave 0 freeze/PYTHONPATH + `/config` RBAC matrix/ROUTE_PREFIXES
+- [ ] 74-02-PLAN.md — Section GET/PUT `config_api` + `handle_admin_put` (405 operational)
+- [ ] 74-03-PLAN.md — Evolve read-only/RBAC tests + `test_config_api` + README
 
 ### Phase 75: Channel Config Apply
 
