@@ -76,6 +76,8 @@ class ContractFreezeTests(unittest.TestCase):
             # M4 flags (2) — added by Phase 57
             "admin_web_ui_enabled",
             "lawyer_web_chat_enabled",
+            # v1.10 Operator Config Console — Phase 73
+            "operator_config_enabled",
         }
         self.assertEqual(flag_names, expected_flags)
 

@@ -142,12 +142,12 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "admin-console-api",
             (py, "-m", "unittest", "discover", "-s", "services/admin-console-api/tests"),
-            (admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
+            (admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
             "admin-web-ui",
             (py, "-m", "unittest", "discover", "-s", "services/admin-web-ui/tests"),
-            (admin_web_ui_src, admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
+            (admin_web_ui_src, admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
             "lawyer-web-chat",
@@ -157,12 +157,12 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "rbac",
             (py, "-m", "unittest", "discover", "-s", "packages/rbac/tests"),
-            (rbac_src, admin_api_src, platform_src, platform_runtime_src, read_view_src, feedback_src, contract_src),
+            (rbac_src, admin_api_src, platform_src, platform_runtime_src, read_view_src, feedback_src, contract_src, operator_config_src),
         ),
         Gate(
             "rbac-annotation-scan",
             (py, "scripts/scan_rbac_annotations.py"),
-            (rbac_src, admin_api_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src),
+            (rbac_src, admin_api_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
             "qqbot-channel",
