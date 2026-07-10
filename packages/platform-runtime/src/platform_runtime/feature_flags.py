@@ -21,6 +21,7 @@ class RuntimeFeatureFlags:
     skill_registry_enabled: bool = False
     admin_api_enabled: bool = False
     qqbot_channel_enabled: bool = False
+    wecom_channel_enabled: bool = False
     codex_backend_enabled: bool = False
     provider_model_backend_enabled: bool = False
 

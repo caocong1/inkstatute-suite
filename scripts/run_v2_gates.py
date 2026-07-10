@@ -87,7 +87,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "wecom-service",
             (py, "-m", "unittest", "discover", "-s", "services/wecom-service/tests"),
-            (wecom_src, channel_core_src, platform_src, contract_src, platform_runtime_src),
+            (wecom_src, channel_core_src, platform_src, contract_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
             "hermes-contract-layer",
@@ -173,7 +173,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "qqbot-service",
             (py, "-m", "unittest", "discover", "-s", "services/qqbot-service/tests"),
-            (qqbot_service_src, qqbot_src, channel_core_src, platform_src, contract_src, platform_runtime_src, feedback_src),
+            (qqbot_service_src, qqbot_src, channel_core_src, platform_src, contract_src, platform_runtime_src, feedback_src, operator_config_src),
         ),
         Gate(
             "web-sse-channel",
