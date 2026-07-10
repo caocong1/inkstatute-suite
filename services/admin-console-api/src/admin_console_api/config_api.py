@@ -45,10 +45,13 @@ def handle_config_get(
         return 500, _error("config_store_error", _safe_store_message(exc))
 
     payload = document_to_payload(document)
-    return 200, {
+    body: dict[str, Any] = {
         "data": payload[section],
-        "metadata": _config_metadata(feature_flags),
+        "metadata": _config_metadata(feature_flags, section=section),
     }
+    if section == "channels":
+        body["effective"] = _channels_effective(payload["channels"], feature_flags)
+    return 200, body
 
 
 def handle_config_put(
@@ -94,10 +97,13 @@ def handle_config_put(
         return 500, _error("config_store_error", _safe_store_message(exc))
 
     saved = document_to_payload(updated)
-    return 200, {
+    body: dict[str, Any] = {
         "data": saved[section],
-        "metadata": _config_metadata(feature_flags),
+        "metadata": _config_metadata(feature_flags, section=section),
     }
+    if section == "channels":
+        body["effective"] = _channels_effective(saved["channels"], feature_flags)
+    return 200, body
 
 
 def _parse_section(path: str) -> str | None:
@@ -160,12 +166,69 @@ def _normalize_section_body(
     return dict(body), None
 
 
-def _config_metadata(feature_flags: RuntimeFeatureFlags) -> dict[str, Any]:
-    return {
+def _config_metadata(
+    feature_flags: RuntimeFeatureFlags,
+    *,
+    section: str | None = None,
+) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
         "admin_api": True,
         "config_surface": True,
         "operator_config_enabled": bool(feature_flags.operator_config_enabled),
         "read_only": False,
+    }
+    if section == "channels":
+        # Restart-to-apply MVP (CHAN-03) — never claim live/hot-reload apply.
+        metadata["apply_semantics"] = "restart_required"
+    return metadata
+
+
+_QQBOT_REF_FIELDS = (
+    "app_id_ref",
+    "app_secret_ref",
+    "token_secret_ref",
+    "bot_secret_ref",
+)
+_WECOM_REF_FIELDS = (
+    "token_secret_ref",
+    "encoding_aes_key_secret_ref",
+    "corp_id_ref",
+)
+
+
+def _refs_configured(channel: Mapping[str, Any], fields: tuple[str, ...]) -> dict[str, bool]:
+    """Presence-only map: True when the stored ref string is non-empty."""
+    configured: dict[str, bool] = {}
+    for field in fields:
+        value = channel.get(field)
+        configured[field] = isinstance(value, str) and bool(value.strip())
+    return configured
+
+
+def _channels_effective(
+    data: Mapping[str, Any],
+    flags: RuntimeFeatureFlags,
+) -> dict[str, Any]:
+    """Dual-knob read model — does not mutate or collapse ``data.*.enabled``."""
+    qq = data.get("qqbot") if isinstance(data.get("qqbot"), Mapping) else {}
+    we = data.get("wecom") if isinstance(data.get("wecom"), Mapping) else {}
+    qq_host = bool(qq.get("enabled", False))
+    we_host = bool(we.get("enabled", False))
+    qq_platform = bool(flags.qqbot_channel_enabled)
+    we_platform = bool(flags.wecom_channel_enabled)
+    return {
+        "qqbot": {
+            "platform_flag": qq_platform,
+            "host_enabled": qq_host,
+            "effective_enabled": bool(qq_platform and qq_host),
+            "refs_configured": _refs_configured(qq, _QQBOT_REF_FIELDS),
+        },
+        "wecom": {
+            "platform_flag": we_platform,
+            "host_enabled": we_host,
+            "effective_enabled": bool(we_platform and we_host),
+            "refs_configured": _refs_configured(we, _WECOM_REF_FIELDS),
+        },
     }
 
 
