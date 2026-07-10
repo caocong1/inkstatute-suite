@@ -17,7 +17,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Runtime Registration
 
-- [ ] **REG-01**: Host factory maps `RuntimeFeatureFlags.qqbot_channel_enabled` → `QQBotChannelConfig.enabled` and injects token_manager/transport only when live-ready (`_live_io_ready`)
+- [x] **REG-01**: Host factory maps `RuntimeFeatureFlags.qqbot_channel_enabled` → `QQBotChannelConfig.enabled` and injects token_manager/transport only when live-ready (`_live_io_ready`)
 - [ ] **REG-02**: Host constructs `DefaultRunRuntime` with explicit `channels=(QQBotChannelAdapter,)` injection — no auto-discovery inside platform-runtime
 
 ### Smoke Hardening
@@ -77,7 +77,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOST-01 | Phase 70 | Pending |
 | HOST-02 | Phase 70 | Pending |
 | HOST-03 | Phase 69 | Pending |
-| REG-01 | Phase 69 | Pending |
+| REG-01 | Phase 69 | Complete |
 | REG-02 | Phase 69 | Pending |
 | SMOKE-01 | Phase 71 | Pending |
 | SMOKE-02 | Phase 71 | Pending |
