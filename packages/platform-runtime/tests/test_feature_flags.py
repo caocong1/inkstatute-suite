@@ -96,5 +96,31 @@ class M3FeatureFlagDefaultTests(unittest.TestCase):
                 self.assertIn(flag_name, field_names)
 
 
+
+class OperatorConfigFeatureFlagTests(unittest.TestCase):
+    """CFG-02: operator_config_enabled defaults OFF and is gated by require_enabled."""
+
+    FLAG = "operator_config_enabled"
+
+    def test_operator_config_enabled_defaults_false(self) -> None:
+        flags = RuntimeFeatureFlags()
+        self.assertIs(flags.operator_config_enabled, False)
+
+    def test_operator_config_require_enabled_raises_when_false(self) -> None:
+        flags = RuntimeFeatureFlags()
+        with self.assertRaisesRegex(
+            RuntimeFeatureDisabledError,
+            "runtime feature flag disabled: operator_config_enabled",
+        ):
+            flags.require_enabled(self.FLAG)
+
+    def test_operator_config_require_enabled_passes_when_true(self) -> None:
+        flags = RuntimeFeatureFlags(operator_config_enabled=True)
+        flags.require_enabled(self.FLAG)
+
+    def test_operator_config_flag_field_exists(self) -> None:
+        field_names = {f.name for f in fields(RuntimeFeatureFlags)}
+        self.assertIn(self.FLAG, field_names)
+
 if __name__ == "__main__":
     unittest.main()
