@@ -139,7 +139,12 @@ Plans:
 3. Live evidence, when collected by an operator, stays sanitized/reference-first and is never required for autonomous phase completion.
 4. Phase 5 live WeCom UAT and Phase 8 lawyer trial remain carried human gates — not redefined as v1.9 done.
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 72-01-PLAN.md — LIVE-01 fail-closed + CI honesty (no live network)
+- [ ] 72-02-PLAN.md — LIVE-02 runbook enablement + dual-knob + regression
 
 ## Progress
 
@@ -149,7 +154,7 @@ Plans:
 | 69. Runtime Registration / Wiring | 3/3 | Complete   | 2026-07-10 |
 | 70. Webhook Composition Path | 3/3 | Complete   | 2026-07-10 |
 | 71. Smoke Protocol-Path Hardening | 3/3 | Complete   | 2026-07-10 |
-| 72. Controlled Live Integration | 0/TBD | Not started | - |
+| 72. Controlled Live Integration | 0/2 | Planned | - |
 
 ## Completed Milestones
 
