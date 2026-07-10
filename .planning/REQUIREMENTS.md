@@ -1,0 +1,128 @@
+# Requirements: 墨律 InkStatute — v1.10 Operator Config Console
+
+**Defined:** 2026-07-10
+**Core Value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
+
+**Milestone Goal:** Deliver an InkStatute-owned operator configuration console so operators can configure QQ/WeCom channels, providers (built-in vendors + custom OpenAI-compatible), built-in model catalogs, and vision/image-routing (dedicated vision model when the main model lacks vision) — without editing Hermes.
+
+## v1.10 Requirements
+
+Requirements for this milestone. Each maps to roadmap phases.
+
+### Config Foundation
+
+- [ ] **CFG-01**: Operator can persist InkStatute-owned operator config (channels, providers, catalog selection, vision policy) in a refs-only store — never raw secrets in the store or API bodies
+- [ ] **CFG-02**: Operator config surface is gated by a default-OFF feature flag (`operator_config_enabled`); when OFF, mutate endpoints refuse writes
+- [ ] **CFG-03**: Config schemas and validators reject Hermes filesystem/profile paths as config authority (InkStatute store only; no `~/.hermes` writes)
+
+### Channel Config
+
+- [ ] **CHAN-01**: Operator can configure QQBot channel settings (enable knobs, credential refs, callback-related refs) via admin config API/UI
+- [ ] **CHAN-02**: Operator can configure WeCom channel settings (enable knobs, credential refs) via admin config API/UI
+- [ ] **CHAN-03**: Operator can see dual-knob effective enablement (platform flag AND host enabled) for QQ (and equivalent WeCom flags) — UI must not collapse to a single bypass toggle
+- [ ] **CHAN-04**: Credential fields accept secret refs only (`env:…` / `secret://…` shapes); GET responses never echo resolved secret values
+
+### Provider & Model Catalog
+
+- [ ] **PROV-01**: Operator can select a built-in vendor provider profile (base URL + key ref conventions + catalog binding) without editing Hermes
+- [ ] **PROV-02**: Operator can define a custom OpenAI-compatible provider (`api_base_url` + `api_key_ref` + explicit model allowlist)
+- [ ] **PROV-03**: Operator can pick main model from a built-in selectable catalog that includes `supports_vision` metadata
+- [ ] **PROV-04**: Operator can run a non-destructive connection probe for main (and vision, when configured) that fail-closes on missing refs and does not log response bodies/secrets
+
+### Vision Routing
+
+- [ ] **VIS-01**: Operator can configure vision routing mode (`auto` | `always_preprocess` | `main_only`) plus optional dedicated vision provider/model
+- [ ] **VIS-02**: On image-bearing turns, runtime routes: multimodal main if `supports_vision`; else vision→main mix when vision model configured; else fail closed with InkStatute-owned notice (never silent image drop)
+- [ ] **VIS-03**: Text-only turns never invoke the vision model; contract/audit evidence stays reference-first (no raw image bytes in contract logs)
+- [ ] **VIS-04**: Vision/provider error paths pass through the assistant output boundary (no provider stack traces or gateway meta to ordinary users)
+
+### Admin Surface & AuthZ
+
+- [ ] **ADM-01**: Admin/operator roles can GET/PUT config resources; lawyer/viewer roles are denied mutate
+- [ ] **ADM-02**: Admin Web UI exposes config pages (channels, providers/catalog, vision) as SSR forms with CSRF protection, extending the existing stdlib admin-web-ui (not a new SPA stack)
+- [ ] **ADM-03**: Existing read-only admin views (sessions/tasks/feedback/health/gates) remain read-only; config writes use an explicit `/config/*` surface
+
+### Docs & Honesty
+
+- [ ] **DOC-01**: Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
+- [ ] **DOC-02**: Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
+
+## Future Requirements
+
+Deferred beyond v1.10. Tracked but not in current roadmap.
+
+### Config / Ops
+
+- **CFG-F01**: Hot-reload operator config without process restart
+- **CFG-F02**: Config change audit trail (who/when/field diffs; never resolved secrets)
+- **CFG-F03**: Effective-config / dual-knob audit dashboard beyond MVP visibility
+
+### Provider
+
+- **PROV-F01**: Live `/models` refresh for custom endpoints with short cache + explicit allowlist (no auto-enable all)
+- **PROV-F02**: LiteLLM-style budgets / virtual keys control plane
+- **PROV-F03**: Per-lawyer self-serve model switching
+
+### Vision
+
+- **VIS-F01**: Optional classical OCR enhancer alongside VLM (not sole vision path)
+- **VIS-F02**: User-visible “正在识别图片…” service notice polish as first-class product copy variants
+
+### Host / Ops (carried from v1.9)
+
+- **HOST-F01**: Durable wakeup/idempotency stores for multi-instance hosts
+- **HOST-F02**: Async verify→enqueue→ACK queue under load
+- **HOST-F03**: Host health/readiness endpoints aligned with admin-console views
+
+## Out of Scope
+
+Explicitly excluded for v1.10. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Edit Hermes `~/.hermes` / gateway / profile from this console | Breaks adapter boundary; Hermes is agent backend only |
+| Persist raw API keys / WeCom tokens in config store or API | Violates SAFE-02 / AGENTS.md secret rules |
+| Single enable toggle that bypasses QQ dual-knob | Undoes v1.9 accidental live-IO protections |
+| Silent drop of inbound images when main lacks vision | Legal risk — wrong answers without image context |
+| Always route every turn through vision model | Cost/latency on text-only traffic |
+| Rebuild Hermes router / skill registry / model gateway core | AGENTS.md / V2 PRD out of scope |
+| New DB, queue, or React SPA as hard requirement for MVP | Prefer atomic JSON + stdlib SSR; avoid new runtime deps |
+| Auto-claim live WeCom/QQ acceptance from config UI | Carried human gates; CI honesty |
+| Auto-synthesize/modify legal skills from feedback | Legal safety: human-reviewed `skill_candidate` only |
+| Delete `.planning/phases/08-lawyer-trial-acceptance/` | Carried human-gate artifacts must be preserved |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CFG-01 | TBD | Pending |
+| CFG-02 | TBD | Pending |
+| CFG-03 | TBD | Pending |
+| CHAN-01 | TBD | Pending |
+| CHAN-02 | TBD | Pending |
+| CHAN-03 | TBD | Pending |
+| CHAN-04 | TBD | Pending |
+| PROV-01 | TBD | Pending |
+| PROV-02 | TBD | Pending |
+| PROV-03 | TBD | Pending |
+| PROV-04 | TBD | Pending |
+| VIS-01 | TBD | Pending |
+| VIS-02 | TBD | Pending |
+| VIS-03 | TBD | Pending |
+| VIS-04 | TBD | Pending |
+| ADM-01 | TBD | Pending |
+| ADM-02 | TBD | Pending |
+| ADM-03 | TBD | Pending |
+| DOC-01 | TBD | Pending |
+| DOC-02 | TBD | Pending |
+
+**Coverage:**
+- v1.10 requirements: 20 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 20
+
+---
+*Requirements defined: 2026-07-10*
+*Last updated: 2026-07-10 after research synthesis*
