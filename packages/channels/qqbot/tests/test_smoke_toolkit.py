@@ -189,6 +189,76 @@ class TestRunbookExists(unittest.TestCase):
             self.assertIn(heading, text, msg=f"runbook missing section cue: {heading!r}")
 
 
+class TestProtocolPathDryRun(unittest.TestCase):
+    """SMOKE-01: dry-run must exercise host Protocol path (Phase 71)."""
+
+    _PROTOCOL_STEPS = ("adapter_ack", "session_ingress", "adapter_deliver")
+
+    def test_dry_run_evidence_includes_protocol_steps(self) -> None:
+        smoke = _load_smoke_module()
+        outcome = smoke.run_smoke(mode="dry-run")
+        steps = outcome["evidence"]["steps"]
+        for name in self._PROTOCOL_STEPS:
+            self.assertIn(name, steps, msg=f"missing Protocol step: {name}")
+            self.assertTrue(steps[name].get("ok"), msg=f"Protocol step {name} not ok")
+
+    def test_dry_run_uses_host_webhook_helpers(self) -> None:
+        source = SMOKE_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("handle_qqbot_webhook_request", source)
+        self.assertIn("build_qqbot_wired_runtime", source)
+        self.assertRegex(
+            source,
+            r"from qqbot_service\.webhook import|qqbot_service\.webhook",
+        )
+        self.assertRegex(
+            source,
+            r"from qqbot_service\.wiring import|qqbot_service\.wiring",
+        )
+
+    def test_dry_run_fake_only_no_urllib(self) -> None:
+        smoke = _load_smoke_module()
+        outcome = smoke.run_smoke(mode="dry-run")
+        self.assertEqual(outcome.get("transport"), "fake")
+        self.assertTrue(
+            str(outcome.get("transport_class", "")).startswith("Fake"),
+            msg=f"expected Fake* message transport, got {outcome.get('transport_class')!r}",
+        )
+        self.assertTrue(
+            str(outcome.get("token_transport_class", "")).startswith("Fake"),
+            msg=f"expected Fake* token transport, got {outcome.get('token_transport_class')!r}",
+        )
+        self.assertNotIn("Urllib", str(outcome.get("transport_class", "")))
+        self.assertNotIn("Urllib", str(outcome.get("token_transport_class", "")))
+        # Dry-run branch must not construct Urllib* (live path may still import symbols).
+        source = SMOKE_SCRIPT.read_text(encoding="utf-8")
+        # Isolate dry-run function body roughly: between run_smoke dry branch and _run_smoke_live.
+        dry_marker = 'if mode == "live":'
+        live_def = "def _run_smoke_live("
+        dry_start = source.find("def run_smoke(")
+        live_start = source.find(live_def)
+        self.assertGreater(dry_start, -1)
+        self.assertGreater(live_start, dry_start)
+        dry_section = source[dry_start:live_start]
+        self.assertNotIn("UrllibMessageTransport(", dry_section)
+        self.assertNotIn("UrllibTokenTransport(", dry_section)
+        self.assertIn(dry_marker, dry_section)
+
+    def test_protocol_path_required_for_success(self) -> None:
+        """Leaf-only evidence is insufficient — Protocol steps must be ok for success."""
+        smoke = _load_smoke_module()
+        outcome = smoke.run_smoke(mode="dry-run")
+        steps = outcome["evidence"]["steps"]
+        protocol_ok = all(
+            isinstance(steps.get(name), dict) and steps[name].get("ok") is True
+            for name in self._PROTOCOL_STEPS
+        )
+        self.assertTrue(
+            protocol_ok,
+            "dry-run success requires adapter_ack/session_ingress/adapter_deliver ok "
+            "(leaf steps alone are insufficient)",
+        )
+
+
 class TestLiveEnvFailClosed(unittest.TestCase):
     """SMOKE-01 live gate: --live without env exits non-zero; no secret echo."""
 
