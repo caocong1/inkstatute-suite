@@ -60,7 +60,7 @@ def _refs_only_doc() -> OperatorConfigDocument:
                 api_base_url="https://api.openai.com/v1",
             ),
         ),
-        catalog=CatalogSelectionDoc(provider_id="openai", model_id="gpt-4o"),
+        catalog=CatalogSelectionDoc(provider_id="openai", model_id="gpt-5"),
         vision=VisionPolicyDoc(routing_mode="off"),
     )
 
@@ -96,7 +96,7 @@ class TestOperatorConfigStore(unittest.TestCase):
             self.assertEqual(loaded.channels.wecom.corp_id_ref, "WECOM_CORP_ID")
             self.assertEqual(len(loaded.providers), 1)
             self.assertEqual(loaded.providers[0].api_key_ref, "env:OPENAI_API_KEY")
-            self.assertEqual(loaded.catalog.model_id, "gpt-4o")
+            self.assertEqual(loaded.catalog.model_id, "gpt-5")
             self.assertEqual(loaded.vision.routing_mode, "off")
 
             raw = json.loads(path.read_text(encoding="utf-8"))
