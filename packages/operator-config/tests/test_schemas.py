@@ -29,10 +29,12 @@ def _credential_field_names(cls: type) -> list[str]:
             "provider_id",
             "kind",
             "api_base_url",
+            "model_allowlist",
             "model_id",
             "routing_mode",
             "main_model_id",
             "vision_model_id",
+            "vision_provider_id",
             "schema_version",
             "channels",
             "providers",
@@ -74,11 +76,21 @@ class TestOperatorConfigDocumentDefaults(unittest.TestCase):
         self.assertIsNone(ch.corp_id_ref)
 
     def test_provider_defaults_enabled_false_and_api_key_ref(self) -> None:
-        p = ProviderDoc(provider_id="p1", kind="openai_compatible")
+        p = ProviderDoc(provider_id="p1", kind="custom")
         self.assertIs(p.enabled, False)
         self.assertIsNone(p.api_key_ref)
         self.assertIsNone(p.api_base_url)
+        self.assertEqual(p.model_allowlist, ())
         self.assertFalse(hasattr(p, "api_key"))
+
+    def test_provider_model_allowlist_is_tuple(self) -> None:
+        p = ProviderDoc(
+            provider_id="custom-1",
+            kind="custom",
+            model_allowlist=("gpt-5", "gpt-4o-mini"),
+        )
+        self.assertIsInstance(p.model_allowlist, tuple)
+        self.assertEqual(p.model_allowlist, ("gpt-5", "gpt-4o-mini"))
 
     def test_catalog_selection_stub_fields_only(self) -> None:
         c = CatalogSelectionDoc()
@@ -90,11 +102,23 @@ class TestOperatorConfigDocumentDefaults(unittest.TestCase):
     def test_vision_policy_stub_fields(self) -> None:
         v = VisionPolicyDoc()
         names = {f.name for f in fields(v)}
-        self.assertEqual(names, {"routing_mode", "main_model_id", "vision_model_id"})
+        self.assertEqual(
+            names,
+            {"routing_mode", "main_model_id", "vision_model_id", "vision_provider_id"},
+        )
         self.assertIsNone(v.routing_mode)
         self.assertIsNone(v.main_model_id)
         self.assertIsNone(v.vision_model_id)
+        self.assertIsNone(v.vision_provider_id)
         self.assertNotIn("vision_routing_enabled", names)
+
+    def test_vision_policy_supports_complete_provider_model_pair(self) -> None:
+        v = VisionPolicyDoc(
+            vision_provider_id="vision-vendor",
+            vision_model_id="gpt-5",
+        )
+        self.assertEqual(v.vision_provider_id, "vision-vendor")
+        self.assertEqual(v.vision_model_id, "gpt-5")
 
     def test_credential_attrs_end_with_ref(self) -> None:
         for cls in (QQBotChannelDoc, WeComChannelDoc, ProviderDoc):

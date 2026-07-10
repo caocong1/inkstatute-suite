@@ -64,13 +64,20 @@ class ChannelsDoc:
 
 @dataclass(frozen=True, slots=True)
 class ProviderDoc:
-    """Provider registry entry: refs-only credentials, disabled by default."""
+    """Provider registry entry: refs-only credentials, disabled by default.
+
+    ``kind`` is ``openai``/``anthropic`` (built-in vendors) or ``custom``
+    (OpenAI-compatible endpoint). Built-ins carry an empty ``model_allowlist``
+    and the canonical vendor ``api_base_url``; custom providers require a
+    non-empty explicit ``model_allowlist`` (PROV-02).
+    """
 
     provider_id: str = ""
     kind: str = ""
     enabled: bool = False
     api_base_url: str | None = None
     api_key_ref: str | None = None
+    model_allowlist: tuple[str, ...] = ()
     metadata: JsonObject = field(default_factory=dict)
 
 
@@ -84,11 +91,17 @@ class CatalogSelectionDoc:
 
 @dataclass(frozen=True, slots=True)
 class VisionPolicyDoc:
-    """Vision routing policy stub (runtime flag deferred to Phase 77)."""
+    """Vision routing policy stub (runtime flag deferred to Phase 77).
+
+    ``vision_provider_id`` links the optional dedicated vision provider instance
+    beside ``vision_model_id``. Phase 76 persists absent/partial/complete pairs;
+    Phase 77 owns routing modes and the complete vision editor (PROV-04).
+    """
 
     routing_mode: str | None = None
     main_model_id: str | None = None
     vision_model_id: str | None = None
+    vision_provider_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

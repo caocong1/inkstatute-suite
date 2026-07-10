@@ -104,6 +104,11 @@ def document_from_payload(payload: Mapping[str, Any]) -> OperatorConfigDocument:
     for index, item in enumerate(providers_raw):
         if not isinstance(item, Mapping):
             raise OperatorConfigStoreError(f"providers[{index}] must be an object")
+        allowlist_raw = item.get("model_allowlist") or ()
+        if not isinstance(allowlist_raw, (list, tuple)):
+            raise OperatorConfigStoreError(
+                f"providers[{index}].model_allowlist must be a list"
+            )
         providers.append(
             ProviderDoc(
                 provider_id=str(item.get("provider_id", "")),
@@ -115,6 +120,7 @@ def document_from_payload(payload: Mapping[str, Any]) -> OperatorConfigDocument:
                 api_key_ref=_optional_str(
                     item.get("api_key_ref"), f"providers[{index}].api_key_ref"
                 ),
+                model_allowlist=tuple(str(m) for m in allowlist_raw),
                 metadata=dict(_as_object(item.get("metadata"), f"providers[{index}].metadata")),
             )
         )
@@ -165,6 +171,9 @@ def document_from_payload(payload: Mapping[str, Any]) -> OperatorConfigDocument:
             ),
             vision_model_id=_optional_str(
                 vision_raw.get("vision_model_id"), "vision.vision_model_id"
+            ),
+            vision_provider_id=_optional_str(
+                vision_raw.get("vision_provider_id"), "vision.vision_provider_id"
             ),
         ),
     )
