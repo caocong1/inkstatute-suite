@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-operator-config"
+version = "0.1.0"
+description = "InkStatute-owned refs-only operator config schemas, validators, and atomic store."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.inkstatute]
+subsystem = "operator-config"
+default_off_flag = "operator_config_enabled"
