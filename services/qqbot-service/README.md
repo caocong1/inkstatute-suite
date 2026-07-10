@@ -1,8 +1,8 @@
 # InkStatute QQBot Service
 
-InkStatute-owned QQBot webhook host package. This host will own the HTTP edge,
-secret resolution at process edge, and wiring of channel/session/feedback
-composition in later phases (69–70).
+InkStatute-owned QQBot webhook host package. Owns the HTTP edge, secret
+resolution at process edge, dual-knob runtime wiring, and ACK-first webhook
+composition over package Protocol methods.
 
 Ownership boundary:
 
@@ -11,9 +11,6 @@ Ownership boundary:
 - ADAPTER-04: no `wecom_service` imports on the QQBot host path.
 - Live-IO feature flags default OFF.
 - Secrets are stored as references only; raw values are never committed.
-
-Phase 68 delivers the empty-deps skeleton and safety baseline only — no webhook
-composition yet.
 
 ## Secret references (SAFE-02)
 
@@ -68,4 +65,41 @@ OpenAPI transports are never invoked (even if Fake transports were mistakenly
 passed into the factory — they are stripped). Capabilities report
 `network_io=False` / `fixture_only=True`.
 
-Webhook HTTP composition remains Phase 70.
+## Webhook composition path (Phase 70)
+
+Thin host composition over package Protocol methods:
+
+1. **ACK-first:** `verify_and_ack` → HTTP op=13 challenge or `{"op":12}` body ACK
+   returns before heavy agent/ingress work (HOST-02).
+2. **Post-ACK:** scheduled thunk runs normalize →
+   `QQBotRuntimeIngress.handle_callback` (messages) or
+   `handle_feedback_callback` (INTERACTION) →
+   `runtime.output_boundary` → `adapter.deliver` (HOST-01).
+3. **HTTP edge:** `QQBotWebhookServer` (stdlib `BaseHTTPRequestHandler`) reads
+   `Content-Length` body bytes **once** from `rfile` and delegates to
+   `handle_qqbot_webhook_request` — never re-serialize JSON for signature verify.
+
+### Endpoint
+
+`POST /qqbot/callback`
+
+### Public exports
+
+- `handle_qqbot_webhook_request` — pure handler (unit-testable, no port bind)
+- `QQBotWebhookServer` — stdlib HTTP wrapper
+- `build_qqbot_wired_runtime` — dual-knob DI factory (Phase 69)
+
+### Fake unit tests (no live QQ)
+
+```bash
+PYTHONPATH="services/qqbot-service/src:packages/channels/qqbot/src:packages/channel-core/src:packages/platform-contract/src:packages/platform-runtime/src:services/feedback-service/src" \
+  python3 -m unittest discover -s services/qqbot-service/tests -v
+```
+
+Suites: `test_webhook_ack_first`, `test_webhook_composition`,
+`test_webhook_http_raw_body` (plus Phase 68–69 host tests).
+
+### Out of scope here
+
+- Phase 71: smoke `--dry-run` Protocol-path hardening (`scripts/smoke_test.py`)
+- Phase 72: live QQ `--live` HUMAN GATE — never auto-claimed from CI
