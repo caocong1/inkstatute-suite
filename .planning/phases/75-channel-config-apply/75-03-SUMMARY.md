@@ -75,7 +75,7 @@ Each task was committed atomically:
    - `9a5cefe` (feat) — GREEN: from_operator_doc + load_qqbot_host_config
 2. **Task 2: Wire build_qqbot_wired_runtime + README** — `a19e78b` (feat)
 
-**Plan metadata:** _(pending final docs commit)_
+**Plan metadata:** `bc0451c` (docs: complete plan)
 
 ## Files Created/Modified
 
