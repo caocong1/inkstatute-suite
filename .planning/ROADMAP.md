@@ -39,7 +39,7 @@
 ## Phases
 
 - [x] **Phase 68: Host Skeleton + Safety Baseline** - Create `services/qqbot-service/` layout with empty deps, V2 gate entry, and ADAPTER-04 / secret-ref safety invariants before HTTP composition.
-- [ ] **Phase 69: Runtime Registration / Wiring** - Flag→config→adapter factory injects `QQBotChannelAdapter` into `DefaultRunRuntime.channels`; disabled path refuses live IO.
+- [x] **Phase 69: Runtime Registration / Wiring** - Flag→config→adapter factory injects `QQBotChannelAdapter` into `DefaultRunRuntime.channels`; disabled path refuses live IO.
 - [ ] **Phase 70: Webhook Composition Path** - Thin stdlib webhook host composes `verify_and_ack` → ingress/session/feedback → `deliver` with ACK-first semantics.
 - [ ] **Phase 71: Smoke Protocol-Path Hardening** - Extend `--dry-run` to exercise full adapter/session Protocol path with Fake transports and sanitized evidence.
 - [ ] **Phase 72: Controlled Live Integration** - Operator-run `--live` path + runbook remain HUMAN GATE; no CI auto-claim of live acceptance.
@@ -84,8 +84,8 @@ Plans:
 Plans:
 
 - [x] 69-01-PLAN.md — Flag→config factory + live-ready transport injection (REG-01)
-- [ ] 69-02-PLAN.md — Explicit `DefaultRunRuntime(channels=(adapter,))` registration (REG-02)
-- [ ] 69-03-PLAN.md — Disabled composed path refuses live IO / zero OpenAPI calls (HOST-03)
+- [x] 69-02-PLAN.md — Explicit `DefaultRunRuntime(channels=(adapter,))` registration (REG-02)
+- [x] 69-03-PLAN.md — Disabled composed path refuses live IO / zero OpenAPI calls (HOST-03)
 
 ### Phase 70: Webhook Composition Path
 
@@ -134,7 +134,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 68. Host Skeleton + Safety Baseline | 3/3 | Complete   | 2026-07-10 |
-| 69. Runtime Registration / Wiring | 1/3 | In Progress|  |
+| 69. Runtime Registration / Wiring | 3/3 | Complete   | 2026-07-10 |
 | 70. Webhook Composition Path | 0/TBD | Not started | - |
 | 71. Smoke Protocol-Path Hardening | 0/TBD | Not started | - |
 | 72. Controlled Live Integration | 0/TBD | Not started | - |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: executing
-stopped_at: Completed 69-01-PLAN.md
-last_updated: "2026-07-10T04:39:40.820Z"
-last_activity: 2026-07-10 -- Phase 69 execution started
+status: completed
+stopped_at: Phase 69 verified (passed); --no-transition
+last_updated: "2026-07-10T04:41:40.572Z"
+last_activity: 2026-07-10 -- Phase 69 verified (passed); --no-transition
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 4
-  percent: 20
+  completed_plans: 6
+  percent: 40
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 69 — runtime-registration-wiring
+**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 69 complete; Phase 70 not started (--no-transition)
 
 ## Current Position
 
-Phase: 69 (runtime-registration-wiring) — EXECUTING
-Plan: 1 of ?
-Status: Executing Phase 69
-Last activity: 2026-07-10 -- Phase 69 execution started
+Phase: 69 (runtime-registration-wiring) — COMPLETE
+Plan: 3 of 3 in current phase
+Status: Phase 69 complete — verified; --no-transition
+Last activity: 2026-07-10 -- Phase 69 verified (passed); --no-transition
 
-Progress: [███░░░░░░░] 33%
+Progress: [████░░░░░░] 40%
 
 ### Deferred Items
 
@@ -156,6 +156,8 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 68 P02 | 10min | 2 tasks | 5 files |
 | Phase 68 P03 | 6min | 2 tasks | 2 files |
 | Phase 69 P01 | 12min | 2 tasks | 4 files |
+| Phase 69 P02 | 6min | 2 tasks | 1 files |
+| Phase 69 P03 | 6min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -267,6 +269,9 @@ Recent decisions affecting current work:
 - [Phase 68]: resolve_secret_ref never reads os.environ; callers inject env Mapping
 - [Phase ?]: Channel enabled is driven solely by flags.qqbot_channel_enabled; host_config.enabled cannot override flag False
 - [Phase ?]: When flag OFF, caller-supplied token_manager/transport are stripped before adapter construction
+- [Phase ?]: [Phase 69]: Disabled adapters still register in runtime.channels; live IO remains gated by _live_io_ready
+- [Phase ?]: [Phase 69]: Plan 01 wiring already passed channels=(adapter,); Plan 02 is proof-only
+- [Phase ?]: [Phase 69]: HOST-03 proofs always go through build_qqbot_wired_runtime (composed path)
 
 ### Pending Todos
 
@@ -302,8 +307,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T04:39:40.759Z
-Stopped at: Completed 69-01-PLAN.md
+Last session: 2026-07-10T04:40:43.740Z
+Stopped at: Completed 69-02 and 69-03; phase ready for verification (--no-transition)
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md

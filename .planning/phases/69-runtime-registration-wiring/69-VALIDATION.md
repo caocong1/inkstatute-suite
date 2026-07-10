@@ -1,7 +1,7 @@
 ---
 phase: 69
 slug: runtime-registration-wiring
-status: draft
+status: verified
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-10
@@ -38,12 +38,12 @@ created: 2026-07-10
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 69-01-01 | 01 | 1 | REG-01 | T-69-01 / T-69-03 | Flag→config mapping tests (RED) | unit | `unittest discover -p 'test_wiring_flag_config.py'` | ❌ W0→in-plan | ⬜ pending |
-| 69-01-02 | 01 | 1 | REG-01 | T-69-02 / T-69-04 | Factory injects transports only when live-ready | unit | same | ❌ W0→in-plan | ⬜ pending |
-| 69-02-01 | 02 | 2 | REG-02 | T-69-05 | Explicit `channels=(adapter,)` + no platform-runtime qqbot import | unit | `unittest discover -p 'test_runtime_registration.py'` | ❌ W0→in-plan | ⬜ pending |
-| 69-02-02 | 02 | 2 | REG-02 | T-69-06 | Full host discover regression | unit | `unittest discover -s services/qqbot-service/tests` | ✅ infra | ⬜ pending |
-| 69-03-01 | 03 | 2 | HOST-03 | T-69-07 / T-69-08 | Disabled composed path 503/refuse + call_count==0 | unit | `unittest discover -p 'test_wiring_disabled_refuse.py'` | ❌ W0→in-plan | ⬜ pending |
-| 69-03-02 | 03 | 2 | HOST-03 | T-69-07 | Full host suite green after refuse tests | unit | `unittest discover -s services/qqbot-service/tests` | ✅ infra | ⬜ pending |
+| 69-01-01 | 01 | 1 | REG-01 | T-69-01 / T-69-03 | Flag→config mapping tests (RED) | unit | `unittest discover -p 'test_wiring_flag_config.py'` | ❌ W0→in-plan | ✅ green |
+| 69-01-02 | 01 | 1 | REG-01 | T-69-02 / T-69-04 | Factory injects transports only when live-ready | unit | same | ❌ W0→in-plan | ✅ green |
+| 69-02-01 | 02 | 2 | REG-02 | T-69-05 | Explicit `channels=(adapter,)` + no platform-runtime qqbot import | unit | `unittest discover -p 'test_runtime_registration.py'` | ❌ W0→in-plan | ✅ green |
+| 69-02-02 | 02 | 2 | REG-02 | T-69-06 | Full host discover regression | unit | `unittest discover -s services/qqbot-service/tests` | ✅ infra | ✅ green |
+| 69-03-01 | 03 | 2 | HOST-03 | T-69-07 / T-69-08 | Disabled composed path 503/refuse + call_count==0 | unit | `unittest discover -p 'test_wiring_disabled_refuse.py'` | ❌ W0→in-plan | ✅ green |
+| 69-03-02 | 03 | 2 | HOST-03 | T-69-07 | Full host suite green after refuse tests | unit | `unittest discover -s services/qqbot-service/tests` | ✅ infra | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,9 +53,9 @@ created: 2026-07-10
 
 - [x] Existing unittest + `qqbot-service` V2 gate PYTHONPATH (Phase 68) — no new framework
 - [x] Test files created in-plan (69-01 / 69-02 / 69-03) — no separate Wave 0 stub plan required
-- [ ] `services/qqbot-service/tests/test_wiring_flag_config.py` — created in Plan 01
-- [ ] `services/qqbot-service/tests/test_runtime_registration.py` — created in Plan 02
-- [ ] `services/qqbot-service/tests/test_wiring_disabled_refuse.py` — created in Plan 03
+- [x] `services/qqbot-service/tests/test_wiring_flag_config.py` — created in Plan 01
+- [x] `services/qqbot-service/tests/test_runtime_registration.py` — created in Plan 02
+- [x] `services/qqbot-service/tests/test_wiring_disabled_refuse.py` — created in Plan 03
 
 *Existing infrastructure covers runners; new wiring tests are phase deliverables.*
 
@@ -78,4 +78,4 @@ created: 2026-07-10
 - [x] Feedback latency < 60s for quick command
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending execution
+**Approval:** verified 2026-07-10 (passed)

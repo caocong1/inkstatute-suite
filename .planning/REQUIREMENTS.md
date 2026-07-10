@@ -13,12 +13,12 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **HOST-01**: Operator can deploy a thin InkStatute-owned QQBot webhook host that composes `verify_and_ack` → ingress/session/feedback → `deliver` without reimplementing package crypto/normalize/send logic
 - [ ] **HOST-02**: Webhook host returns verify-and-ACK promptly (op=13 validation challenge and op=12 body ACK) before heavy agent work
-- [ ] **HOST-03**: When QQBot is disabled (flags/config OFF), webhook refuses live IO with explicit non-success behavior (e.g. 503/refuse) and does not call OpenAPI transports
+- [x] **HOST-03**: When QQBot is disabled (flags/config OFF), webhook refuses live IO with explicit non-success behavior (e.g. 503/refuse) and does not call OpenAPI transports
 
 ### Runtime Registration
 
 - [x] **REG-01**: Host factory maps `RuntimeFeatureFlags.qqbot_channel_enabled` → `QQBotChannelConfig.enabled` and injects token_manager/transport only when live-ready (`_live_io_ready`)
-- [ ] **REG-02**: Host constructs `DefaultRunRuntime` with explicit `channels=(QQBotChannelAdapter,)` injection — no auto-discovery inside platform-runtime
+- [x] **REG-02**: Host constructs `DefaultRunRuntime` with explicit `channels=(QQBotChannelAdapter,)` injection — no auto-discovery inside platform-runtime
 
 ### Smoke Hardening
 
@@ -76,9 +76,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | HOST-01 | Phase 70 | Pending |
 | HOST-02 | Phase 70 | Pending |
-| HOST-03 | Phase 69 | Pending |
+| HOST-03 | Phase 69 | Complete |
 | REG-01 | Phase 69 | Complete |
-| REG-02 | Phase 69 | Pending |
+| REG-02 | Phase 69 | Complete |
 | SMOKE-01 | Phase 71 | Pending |
 | SMOKE-02 | Phase 71 | Pending |
 | LIVE-01 | Phase 72 | Pending |
