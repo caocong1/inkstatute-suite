@@ -119,7 +119,13 @@ Plans:
 3. Dry-run exits 0 in CI without network/Urllib live transports.
 4. Smoke steps call the same host/package helpers the webhook composition uses (no parallel leaf-only path claimed as host-complete).
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 71-01-PLAN.md — Mandatory Protocol-path dry-run via host webhook helpers (SMOKE-01)
+- [ ] 71-02-PLAN.md — Protocol evidence allowlist + sanitization (SMOKE-02)
+- [ ] 71-03-PLAN.md — CI honesty, leaf-vs-Protocol regression, runbook dry-run note
 
 ### Phase 72: Controlled Live Integration
 
