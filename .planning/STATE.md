@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: verifying
-stopped_at: Phase 70 verified (passed); --no-transition
-last_updated: "2026-07-10T05:12:12.139Z"
-last_activity: 2026-07-10 -- Phase 70 verified (passed); --no-transition
+status: executing
+stopped_at: Completed 71-01-PLAN.md; executing 71-02
+last_updated: "2026-07-10T05:12:44.728Z"
+last_activity: 2026-07-10 -- Phase 71 execution started
 progress:
   total_phases: 5
   completed_phases: 3
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 70 complete; Phase 71 not started (--no-transition)
+**Current focus:** Phase 71 — smoke-protocol-path-hardening
 
 ## Current Position
 
-Phase: 70 (webhook-composition-path) — COMPLETE
-Plan: 3 of 3
-Status: Phase 70 verified (passed); --no-transition
-Last activity: 2026-07-10 -- Phase 70 verified (passed); --no-transition
+Phase: 71 (smoke-protocol-path-hardening) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-07-10 -- Phase 71 execution started
 
 Progress: [██████░░░░] 60%
 
@@ -161,6 +161,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 70 P01 | 2min | 2 tasks | 2 files |
 | Phase 70 P02 | 2min | 2 tasks | 2 files |
 | Phase 70 P03 | 1min | 2 tasks | 4 files |
+| Phase 71 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -278,6 +279,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Handler is async; returns (status, body_bytes, headers); Plan 01 stubs post-ACK composition
 - [Phase ?]: Injectable reply_text for FakeBackend when run.result empty; boundary BLOCK skips deliver
 - [Phase ?]: HTTP wrapper 1MiB max_body; daemon-thread default scheduler; tests inject recording scheduler
+- [Phase 71]: Protocol path uses handle_qqbot_webhook_request + build_qqbot_wired_runtime (not leaf-only)
+- [Phase 71]: Plan 01 allowlists only ok for Protocol steps; Plan 02 expands RESEARCH keys
 
 ### Pending Todos
 
@@ -313,8 +316,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T05:12:12.134Z
-Stopped at: Phase 70 verified (passed); --no-transition
+Last session: 2026-07-10T05:12:44.723Z
+Stopped at: Completed 71-01-PLAN.md; executing 71-02
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
