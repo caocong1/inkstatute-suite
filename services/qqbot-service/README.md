@@ -58,4 +58,12 @@ Host factory (`qqbot_service.wiring`) owns dual-knob mapping and live injection:
 3. **Explicit DI:** `DefaultRunRuntime` is constructed with
    `channels=(adapter,)` — no auto-discovery inside `platform-runtime`.
 
+### Disabled composed path (HOST-03)
+
+When `qqbot_channel_enabled` is OFF, the composed adapter refuses live IO:
+`verify_and_ack` returns HTTP 503 / `accepted=False`, `deliver` is refused, and
+OpenAPI transports are never invoked (even if Fake transports were mistakenly
+passed into the factory — they are stripped). Capabilities report
+`network_io=False` / `fixture_only=True`.
+
 Webhook HTTP composition remains Phase 70.
