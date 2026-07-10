@@ -97,32 +97,42 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | TBD | Pending |
-| CFG-02 | TBD | Pending |
-| CFG-03 | TBD | Pending |
-| CHAN-01 | TBD | Pending |
-| CHAN-02 | TBD | Pending |
-| CHAN-03 | TBD | Pending |
-| CHAN-04 | TBD | Pending |
-| PROV-01 | TBD | Pending |
-| PROV-02 | TBD | Pending |
-| PROV-03 | TBD | Pending |
-| PROV-04 | TBD | Pending |
-| VIS-01 | TBD | Pending |
-| VIS-02 | TBD | Pending |
-| VIS-03 | TBD | Pending |
-| VIS-04 | TBD | Pending |
-| ADM-01 | TBD | Pending |
-| ADM-02 | TBD | Pending |
-| ADM-03 | TBD | Pending |
-| DOC-01 | TBD | Pending |
-| DOC-02 | TBD | Pending |
+| CFG-01 | Phase 73 | Pending |
+| CFG-02 | Phase 73 | Pending |
+| CFG-03 | Phase 73 | Pending |
+| CHAN-01 | Phase 75 | Pending |
+| CHAN-02 | Phase 75 | Pending |
+| CHAN-03 | Phase 75 | Pending |
+| CHAN-04 | Phase 75 | Pending |
+| PROV-01 | Phase 76 | Pending |
+| PROV-02 | Phase 76 | Pending |
+| PROV-03 | Phase 76 | Pending |
+| PROV-04 | Phase 76 | Pending |
+| VIS-01 | Phase 77 | Pending |
+| VIS-02 | Phase 77 | Pending |
+| VIS-03 | Phase 77 | Pending |
+| VIS-04 | Phase 77 | Pending |
+| ADM-01 | Phase 74 | Pending |
+| ADM-02 | Phase 78 | Pending |
+| ADM-03 | Phase 74 | Pending |
+| DOC-01 | Phase 78 | Pending |
+| DOC-02 | Phase 78 | Pending |
 
 **Coverage:**
 - v1.10 requirements: 20 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 20
+- Mapped to phases: 20/20 ✓
+- Unmapped: 0
+
+**Phase mapping summary:**
+| Phase | Requirements |
+|-------|--------------|
+| 73 Operator Config Foundation | CFG-01, CFG-02, CFG-03 |
+| 74 Admin Config API + RBAC | ADM-01, ADM-03 |
+| 75 Channel Config Apply | CHAN-01, CHAN-02, CHAN-03, CHAN-04 |
+| 76 Provider Registry + Model Catalog | PROV-01, PROV-02, PROV-03, PROV-04 |
+| 77 Vision Routing Runtime | VIS-01, VIS-02, VIS-03, VIS-04 |
+| 78 Console SSR, Docs & Gate Honesty | ADM-02, DOC-01, DOC-02 |
 
 ---
 *Requirements defined: 2026-07-10*
-*Last updated: 2026-07-10 after research synthesis*
+*Last updated: 2026-07-10 after roadmap creation (Phases 73–78)*

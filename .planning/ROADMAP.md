@@ -19,12 +19,15 @@
   - Archive: [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
 - ✅ **v1.9 QQBot Host Composition** - Phases 68-72 shipped 2026-07-10. Thin production webhook host, runtime registration, Protocol-path smoke hardening, controlled live HUMAN GATE. Audit passed (11/11 requirements).
   - Archive: [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
+- 🚧 **v1.10 Operator Config Console** - Phases 73-78 (in progress). InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
 
 ## Current Milestone
 
-Awaiting next milestone definition via `$gsd-new-milestone`.
+**v1.10 Operator Config Console** — Phases 73–78
 
-**Carried human gates (not closed by v1.9):**
+**Goal:** Deliver an InkStatute-owned operator configuration console so operators can configure QQ/WeCom channels, providers (built-in vendors + custom OpenAI-compatible), built-in model catalogs, and vision/image-routing (dedicated vision model when the main model lacks vision) — without editing Hermes.
+
+**Carried human gates (not closed by this milestone):**
 
 - Phase 5 live WeCom UAT
 - Phase 8 five-workday lawyer trial (artifacts preserved at `.planning/phases/08-lawyer-trial-acceptance/`)
@@ -32,12 +35,93 @@ Awaiting next milestone definition via `$gsd-new-milestone`.
 
 ## Phases
 
-No active phases. Next phase number continues from 73 after `$gsd-new-milestone`.
+- [ ] **Phase 73: Operator Config Foundation** - Refs-only store, schemas, validators, and default-OFF feature flag
+- [ ] **Phase 74: Admin Config API + RBAC** - Flag-gated `/config/*` mutate surface with role checks; read views stay read-only
+- [ ] **Phase 75: Channel Config Apply** - QQ/WeCom channel config apply with dual-knob visibility and secret-ref credentials
+- [ ] **Phase 76: Provider Registry + Model Catalog** - Built-in vendors, custom OpenAI-compatible providers, catalog selection, connection probe
+- [ ] **Phase 77: Vision Routing Runtime** - Vision policy + image-turn routing with fail-closed notices and output-boundary safety
+- [ ] **Phase 78: Console SSR, Docs & Gate Honesty** - Complete SSR config pages, operator docs, and `not_live_acceptance` honesty
+
+## Phase Details
+
+### Phase 73: Operator Config Foundation
+**Goal**: Operators have an InkStatute-owned, refs-only config authority that is off by default and never treats Hermes filesystem paths as config source of truth
+**Depends on**: Nothing (first v1.10 phase; builds on shipped admin/channel/provider surfaces)
+**Requirements**: CFG-01, CFG-02, CFG-03
+**Success Criteria** (what must be TRUE):
+  1. Operator can persist channel/provider/catalog/vision config documents in an InkStatute store that accepts secret refs only and never stores raw secret values
+  2. When `operator_config_enabled` is OFF (default), config mutate paths refuse writes
+  3. Config schemas/validators reject Hermes `~/.hermes` / profile filesystem paths as config authority
+**Plans**: TBD
+
+### Phase 74: Admin Config API + RBAC
+**Goal**: Admin/operator roles can read and write config through an explicit `/config/*` API while lawyer/viewer roles cannot mutate and existing operational views stay read-only
+**Depends on**: Phase 73
+**Requirements**: ADM-01, ADM-03
+**Success Criteria** (what must be TRUE):
+  1. Admin/operator roles can GET and PUT config resources under `/config/*`
+  2. Lawyer/viewer roles are denied config mutate (and cannot bypass via other admin routes)
+  3. Existing sessions/tasks/feedback/health/gates views remain read-only; config writes only succeed on the explicit `/config/*` surface
+  4. When the operator-config flag is OFF, PUT `/config/*` refuses writes even for admin/operator
+**Plans**: TBD
+
+### Phase 75: Channel Config Apply
+**Goal**: Operators can configure QQ and WeCom channel enablement and credential refs with dual-knob effective state visible, without collapsing safety knobs or echoing resolved secrets
+**Depends on**: Phase 74
+**Requirements**: CHAN-01, CHAN-02, CHAN-03, CHAN-04
+**Success Criteria** (what must be TRUE):
+  1. Operator can configure QQBot channel settings (enable knobs, credential refs, callback-related refs) via admin config API (and channel SSR form when present)
+  2. Operator can configure WeCom channel settings (enable knobs, credential refs) via admin config API (and channel SSR form when present)
+  3. Operator can see dual-knob effective enablement (platform flag AND host enabled) for QQ and equivalent WeCom flags — UI/API does not collapse to a single bypass toggle
+  4. Credential fields accept secret refs only (`env:…` / `secret://…`); GET responses never echo resolved secret values
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 76: Provider Registry + Model Catalog
+**Goal**: Operators can select built-in vendor providers or define custom OpenAI-compatible endpoints, pick a catalog main model with vision capability metadata, and probe connectivity without leaking secrets
+**Depends on**: Phase 74 (can run in parallel with Phase 75 after 74)
+**Requirements**: PROV-01, PROV-02, PROV-03, PROV-04
+**Success Criteria** (what must be TRUE):
+  1. Operator can select a built-in vendor provider profile (base URL + key ref conventions + catalog binding) without editing Hermes
+  2. Operator can define a custom OpenAI-compatible provider (`api_base_url` + `api_key_ref` + explicit model allowlist)
+  3. Operator can pick a main model from a built-in selectable catalog that includes `supports_vision` metadata
+  4. Operator can run a non-destructive connection probe for main (and vision when configured) that fail-closes on missing refs and does not log response bodies/secrets
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 77: Vision Routing Runtime
+**Goal**: On image-bearing turns, runtime routes multimodal main vs vision→main mix (or fail-closed InkStatute notice) according to operator policy, without vision on text-only turns or meta leaks to lawyers
+**Depends on**: Phase 76 (needs catalog `supports_vision`); Phase 75 optional for channel image ingress paths already shipped
+**Requirements**: VIS-01, VIS-02, VIS-03, VIS-04
+**Success Criteria** (what must be TRUE):
+  1. Operator can configure vision routing mode (`auto` | `always_preprocess` | `main_only`) plus optional dedicated vision provider/model
+  2. On image-bearing turns, runtime uses multimodal main when `supports_vision`; otherwise vision→main mix when vision is configured; otherwise fail-closed with an InkStatute-owned notice (never silent image drop)
+  3. Text-only turns never invoke the vision model; contract/audit evidence stays reference-first (no raw image bytes in contract logs)
+  4. Vision/provider error paths pass through the assistant output boundary (no provider stack traces or gateway meta to ordinary users)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 78: Console SSR, Docs & Gate Honesty
+**Goal**: Operators have complete CSRF-protected SSR config pages and honest docs/smoke evidence that never auto-claims carried live acceptance gates
+**Depends on**: Phases 75, 76, 77
+**Requirements**: ADM-02, DOC-01, DOC-02
+**Success Criteria** (what must be TRUE):
+  1. Admin Web UI exposes config pages for channels, providers/catalog, and vision as SSR forms with CSRF protection, extending the existing stdlib admin-web-ui (not a new SPA stack)
+  2. Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
+  3. Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
+**Plans**: TBD
+**UI hint**: yes
 
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
+| 73. Operator Config Foundation | v1.10 | 0/TBD | Not started | - |
+| 74. Admin Config API + RBAC | v1.10 | 0/TBD | Not started | - |
+| 75. Channel Config Apply | v1.10 | 0/TBD | Not started | - |
+| 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
+| 77. Vision Routing Runtime | v1.10 | 0/TBD | Not started | - |
+| 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/TBD | Not started | - |
 | 68. Host Skeleton + Safety Baseline | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 69. Runtime Registration / Wiring | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 70. Webhook Composition Path | v1.9 | 3/3 | Complete | 2026-07-10 |
@@ -129,7 +213,7 @@ No active phases. Next phase number continues from 73 after `$gsd-new-milestone`
 
 ## Backlog
 
-No active backlog beyond v1.9 Future Requirements archived in [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) (HOST-F01..F03, PLAT-F01..F03). Promote candidates into the next milestone via `$gsd-new-milestone`.
+v1.10 Future Requirements (deferred): CFG-F01..F03, PROV-F01..F03, VIS-F01..F02, HOST-F01..F03 — see [REQUIREMENTS.md](REQUIREMENTS.md). Promote via `$gsd-new-milestone` or `$gsd-review-backlog`.
 
 ---
-*Last updated: 2026-07-10 after v1.9 QQBot Host Composition milestone complete*
+*Last updated: 2026-07-10 — v1.10 Operator Config Console roadmap created (Phases 73–78)*
