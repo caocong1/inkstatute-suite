@@ -17,10 +17,14 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import fields
+from pathlib import Path
 
 import platform_contract
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 from platform_runtime.protocols import BackendAdapter, ChannelAdapter
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_V2_GATES = _REPO_ROOT / "scripts" / "run_v2_gates.py"
 
 
 class ContractFreezeTests(unittest.TestCase):
@@ -74,6 +78,13 @@ class ContractFreezeTests(unittest.TestCase):
             "lawyer_web_chat_enabled",
         }
         self.assertEqual(flag_names, expected_flags)
+
+    def test_admin_importing_gates_include_operator_config_src(self) -> None:
+        # Phase 74 Wave 0: admin-console-api and related gates that compose
+        # admin_api_src must also list operator_config_src (definition +
+        # operator-config gate + four admin-importing gates => >= 5).
+        text = _V2_GATES.read_text(encoding="utf-8")
+        self.assertGreaterEqual(text.count("operator_config_src"), 5)
 
     def test_protocols_py_not_modified_by_phase42(self) -> None:
         # protocols.py is importable and the Protocol classes are present.
