@@ -75,7 +75,7 @@ Each task was committed atomically:
 2. **Task 2: Define frozen refs-only OperatorConfigDocument schemas** - `341668c` (test) → `b6a2cac` (feat)
 3. **Task 3: Shape-only secret-ref normalize without qqbot-service dependency** - `8fc7ce5` (test) → `fa40484` (feat)
 
-**Plan metadata:** (docs commit pending)
+**Plan metadata:** `826db8e` (docs: complete plan)
 
 ## Files Created/Modified
 
