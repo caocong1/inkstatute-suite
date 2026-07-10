@@ -43,3 +43,19 @@ assigned onto the config object. Resolve values at process edge with
 
 Config `from_env` reads only `INKSTATUTE_QQBOT_CHANNEL_ENABLED` and
 `INKSTATUTE_QQBOT_*_REF` keys. Planted raw value keys are ignored.
+
+## Runtime wiring (Phase 69)
+
+Host factory (`qqbot_service.wiring`) owns dual-knob mapping and live injection:
+
+1. **Flag → config:** `RuntimeFeatureFlags.qqbot_channel_enabled` maps onto
+   `QQBotChannelConfig.enabled`. `QQBotHostConfig.enabled` alone cannot enable
+   the channel.
+2. **Live injection:** `token_manager` and `transport` are injected into
+   `QQBotChannelAdapter` only when the platform flag is ON **and** both deps are
+   available. When the flag is OFF, caller-supplied transports are stripped so
+   `_live_io_ready()` stays False.
+3. **Explicit DI:** `DefaultRunRuntime` is constructed with
+   `channels=(adapter,)` — no auto-discovery inside `platform-runtime`.
+
+Webhook HTTP composition remains Phase 70.
