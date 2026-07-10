@@ -1,7 +1,7 @@
 ---
 phase: 70
 slug: webhook-composition-path
-status: draft
+status: complete
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-10
@@ -38,12 +38,12 @@ created: 2026-07-10
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 70-01-01 | 01 | 1 | HOST-02 | T-70-01 / T-70-04 | RED ACK-first tests (op=13/12/refuse/scheduler) | unit | `unittest discover -p 'test_webhook_ack_first.py'` (expect fail) | ❌ W0→in-plan | ⬜ pending |
-| 70-01-02 | 01 | 1 | HOST-02 | T-70-02 / T-70-03 | GREEN pure handler + raw-body identity | unit | `unittest discover -p 'test_webhook_ack_first.py'` | ❌ W0→in-plan | ⬜ pending |
-| 70-02-01 | 02 | 2 | HOST-01 | T-70-05 / T-70-07 | RED Fake composition tests | unit | `unittest discover -p 'test_webhook_composition.py'` (expect fail) | ❌ W0→in-plan | ⬜ pending |
-| 70-02-02 | 02 | 2 | HOST-01 | T-70-05 / T-70-06 / T-70-08 | GREEN post-ACK ingress/feedback/deliver + boundary | unit | `unittest discover -p 'test_webhook_*.py'` | ❌ W0→in-plan | ⬜ pending |
-| 70-03-01 | 03 | 3 | HOST-01 / HOST-02 | T-70-09 / T-70-11 | HTTP wrapper raw-body-once proofs | unit | `unittest discover -p 'test_webhook_http_raw_body.py'` | ❌ W0→in-plan | ⬜ pending |
-| 70-03-02 | 03 | 3 | HOST-01 / HOST-02 | T-70-10 | Exports + README + full host suite / no-wecom | unit | `unittest discover -s services/qqbot-service/tests` | ✅ infra | ⬜ pending |
+| 70-01-01 | 01 | 1 | HOST-02 | T-70-01 / T-70-04 | RED ACK-first tests (op=13/12/refuse/scheduler) | unit | `unittest discover -p 'test_webhook_ack_first.py'` (expect fail) | ✅ | ✅ green |
+| 70-01-02 | 01 | 1 | HOST-02 | T-70-02 / T-70-03 | GREEN pure handler + raw-body identity | unit | `unittest discover -p 'test_webhook_ack_first.py'` | ✅ | ✅ green |
+| 70-02-01 | 02 | 2 | HOST-01 | T-70-05 / T-70-07 | RED Fake composition tests | unit | `unittest discover -p 'test_webhook_composition.py'` (expect fail) | ✅ | ✅ green |
+| 70-02-02 | 02 | 2 | HOST-01 | T-70-05 / T-70-06 / T-70-08 | GREEN post-ACK ingress/feedback/deliver + boundary | unit | `unittest discover -p 'test_webhook_*.py'` | ✅ | ✅ green |
+| 70-03-01 | 03 | 3 | HOST-01 / HOST-02 | T-70-09 / T-70-11 | HTTP wrapper raw-body-once proofs | unit | `unittest discover -p 'test_webhook_http_raw_body.py'` | ✅ | ✅ green |
+| 70-03-02 | 03 | 3 | HOST-01 / HOST-02 | T-70-10 | Exports + README + full host suite / no-wecom | unit | `unittest discover -s services/qqbot-service/tests` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,9 +53,9 @@ created: 2026-07-10
 
 - [x] Existing unittest + `qqbot-service` V2 gate PYTHONPATH (Phases 68–69) — no new framework
 - [x] Test files created in-plan (70-01 / 70-02 / 70-03) — no separate Wave 0 stub plan required
-- [ ] `services/qqbot-service/tests/test_webhook_ack_first.py` — created in Plan 01
-- [ ] `services/qqbot-service/tests/test_webhook_composition.py` — created in Plan 02
-- [ ] `services/qqbot-service/tests/test_webhook_http_raw_body.py` — created in Plan 03
+- [x] `services/qqbot-service/tests/test_webhook_ack_first.py` — created in Plan 01
+- [x] `services/qqbot-service/tests/test_webhook_composition.py` — created in Plan 02
+- [x] `services/qqbot-service/tests/test_webhook_http_raw_body.py` — created in Plan 03
 
 *Existing infrastructure covers runners; new webhook tests are phase deliverables.*
 

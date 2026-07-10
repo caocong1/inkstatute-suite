@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: executing
-stopped_at: Completed 70-02-PLAN.md; starting 70-03
-last_updated: "2026-07-10T04:56:46.166Z"
-last_activity: 2026-07-10 -- Phase 70 execution started
+status: completed
+stopped_at: Phase 70 verified (passed); --no-transition
+last_updated: "2026-07-10T04:58:23.971Z"
+last_activity: 2026-07-10 -- Phase 70 marked complete
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 40
+  completed_plans: 9
+  percent: 60
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 70 — webhook-composition-path
+**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 70 complete; Phase 71 not started (--no-transition)
 
 ## Current Position
 
-Phase: 70 (webhook-composition-path) — EXECUTING
+Phase: 70 (webhook-composition-path) — COMPLETE
 Plan: 3 of 3
-Status: Ready to execute
-Last activity: 2026-07-10 -- Phase 70 execution started
+Status: Phase 70 verified (passed); --no-transition
+Last activity: 2026-07-10 -- Phase 70 verified (passed); --no-transition
 
-Progress: [████░░░░░░] 40%
+Progress: [██████░░░░] 60%
 
 ### Deferred Items
 
@@ -160,6 +160,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 69 P03 | 6min | 2 tasks | 2 files |
 | Phase 70 P01 | 2min | 2 tasks | 2 files |
 | Phase 70 P02 | 2min | 2 tasks | 2 files |
+| Phase 70 P03 | 1min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -276,6 +277,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 69]: HOST-03 proofs always go through build_qqbot_wired_runtime (composed path)
 - [Phase ?]: Handler is async; returns (status, body_bytes, headers); Plan 01 stubs post-ACK composition
 - [Phase ?]: Injectable reply_text for FakeBackend when run.result empty; boundary BLOCK skips deliver
+- [Phase ?]: HTTP wrapper 1MiB max_body; daemon-thread default scheduler; tests inject recording scheduler
 
 ### Pending Todos
 
@@ -311,8 +313,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T04:56:46.161Z
-Stopped at: Completed 70-02-PLAN.md; starting 70-03
+Last session: 2026-07-10T04:58:23.966Z
+Stopped at: Phase 70 verified (passed); --no-transition
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
