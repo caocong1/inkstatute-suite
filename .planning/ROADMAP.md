@@ -103,7 +103,7 @@ Plans:
 - [x] 75-02-PLAN.md — /config/channels effective dual-knob + apply_semantics restart_required
 - [x] 75-03-PLAN.md — QQ store→host load (store wins if file exists) + dual-knob preserved
 - [x] 75-04-PLAN.md — WeCom from_operator_doc + wecom-service channel_wiring dual-knob
-- [ ] 75-05-PLAN.md — Incremental SSR /config/channels form per UI-SPEC
+- [x] 75-05-PLAN.md — Incremental SSR /config/channels form per UI-SPEC
 
 **UI hint**: yes
 
@@ -157,7 +157,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 73. Operator Config Foundation | v1.10 | 3/3 | Complete    | 2026-07-10 |
 | 74. Admin Config API + RBAC | v1.10 | 3/3 | Complete    | 2026-07-10 |
-| 75. Channel Config Apply | v1.10 | 4/5 | In Progress|  |
+| 75. Channel Config Apply | v1.10 | 5/5 | Complete   | 2026-07-10 |
 | 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
 | 77. Vision Routing Runtime | v1.10 | 0/TBD | Not started | - |
 | 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/TBD | Not started | - |
