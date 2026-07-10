@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-status: ready_to_execute
-last_updated: "2026-07-10T07:15:00.000Z"
-last_activity: 2026-07-10
+status: executing
+stopped_at: Completed 73-01-PLAN.md
+last_updated: "2026-07-10T07:22:30.000Z"
+last_activity: 2026-07-10 — Completed 73-01 (operator-config package foundation)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -20,16 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.10 Operator Config Console — Phase 73 planned (3 plans), ready to execute
+**Current focus:** v1.10 Operator Config Console — Phase 73 executing (73-01 complete)
 
 ## Current Position
 
 Phase: 73 of 78 (Operator Config Foundation) — first of 6 v1.10 phases
-Plan: 73-01 (next)
+Current Plan: 2
+Total Plans in Phase: 3
+Plan: 73-02 (next)
 Status: Ready to execute
-Last activity: 2026-07-10 — Phase 73 plans created (73-01..73-03)
+Last activity: 2026-07-10 — Completed 73-01 (operator-config package foundation)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ### Deferred Items
 
@@ -51,14 +54,18 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 
 **Velocity:**
 
-- Total plans completed: 88
+- Total plans completed: 89
 - Average duration: N/A
-- Total execution time: 0.0 hours
+- Total execution time: ~0.03 hours
 
 **Recent Trend:**
 
-- Last 5 plans: Phase 72 P01/P02 (2–3 min)
+- Last 5 plans: Phase 73 P01 (2 min); Phase 72 P01/P02 (2–3 min)
 - Trend: N/A (new milestone)
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 73 | 01 | 2min | 3 | 8 |
 
 *Updated after each plan completion*
 
@@ -81,6 +88,10 @@ Recent decisions affecting current work:
 - Vision routing: dedicated vision model when main model lacks image understanding
 - Extend existing admin-console-api + admin-web-ui (stdlib SSR); no new SPA/DB/queue for MVP
 - `operator_config_enabled` default OFF; dual-knob channel enablement preserved
+- [Phase 73]: Channels nested as ChannelsDoc.qqbot/wecom (not a keyed map)
+- [Phase 73]: Providers stored as tuple[ProviderDoc, ...] on the root document
+- [Phase 73]: secret:// requires two+ slash-separated safe segments (generalized beyond QQ REF_TO_VALUE_ENV)
+- [Phase 73]: No resolve_secret_ref and no process-environment reads in operator-config package
 
 ### Pending Todos
 
@@ -103,8 +114,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T07:15:00.000Z
-Stopped at: Phase 73 plans written (73-01..73-03); ready for `/gsd-execute-phase 73`
+Last session: 2026-07-10T07:21:51.579Z
+Stopped at: Completed 73-01-PLAN.md
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
@@ -116,4 +127,4 @@ v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Execute Phase 73 with `/gsd-execute-phase 73`
+- Continue Phase 73 with plan 73-02 (validate + Hermes ban-list)

@@ -45,75 +45,94 @@
 ## Phase Details
 
 ### Phase 73: Operator Config Foundation
+
 **Goal**: Operators have an InkStatute-owned, refs-only config authority that is off by default and never treats Hermes filesystem paths as config source of truth
 **Depends on**: Nothing (first v1.10 phase; builds on shipped admin/channel/provider surfaces)
 **Requirements**: CFG-01, CFG-02, CFG-03
 **Success Criteria** (what must be TRUE):
+
   1. Operator can persist channel/provider/catalog/vision config documents in an InkStatute store that accepts secret refs only and never stores raw secret values
   2. When `operator_config_enabled` is OFF (default), config mutate paths refuse writes
   3. Config schemas/validators reject Hermes `~/.hermes` / profile filesystem paths as config authority
+
 **Plans:** 3 plans
 
 Plans:
-- [ ] 73-01-PLAN.md — Empty-deps package scaffold, refs-only schemas, shape-only secret-ref normalize
+
+- [x] 73-01-PLAN.md — Empty-deps package scaffold, refs-only schemas, shape-only secret-ref normalize
 - [ ] 73-02-PLAN.md — Document validators + Hermes filesystem/profile ban-list (CFG-03)
 - [ ] 73-03-PLAN.md — Atomic JSON store, operator_config_enabled gate, V2 gate registration
 
 ### Phase 74: Admin Config API + RBAC
+
 **Goal**: Admin/operator roles can read and write config through an explicit `/config/*` API while lawyer/viewer roles cannot mutate and existing operational views stay read-only
 **Depends on**: Phase 73
 **Requirements**: ADM-01, ADM-03
 **Success Criteria** (what must be TRUE):
+
   1. Admin/operator roles can GET and PUT config resources under `/config/*`
   2. Lawyer/viewer roles are denied config mutate (and cannot bypass via other admin routes)
   3. Existing sessions/tasks/feedback/health/gates views remain read-only; config writes only succeed on the explicit `/config/*` surface
   4. When the operator-config flag is OFF, PUT `/config/*` refuses writes even for admin/operator
+
 **Plans**: TBD
 
 ### Phase 75: Channel Config Apply
+
 **Goal**: Operators can configure QQ and WeCom channel enablement and credential refs with dual-knob effective state visible, without collapsing safety knobs or echoing resolved secrets
 **Depends on**: Phase 74
 **Requirements**: CHAN-01, CHAN-02, CHAN-03, CHAN-04
 **Success Criteria** (what must be TRUE):
+
   1. Operator can configure QQBot channel settings (enable knobs, credential refs, callback-related refs) via admin config API (and channel SSR form when present)
   2. Operator can configure WeCom channel settings (enable knobs, credential refs) via admin config API (and channel SSR form when present)
   3. Operator can see dual-knob effective enablement (platform flag AND host enabled) for QQ and equivalent WeCom flags — UI/API does not collapse to a single bypass toggle
   4. Credential fields accept secret refs only (`env:…` / `secret://…`); GET responses never echo resolved secret values
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 76: Provider Registry + Model Catalog
+
 **Goal**: Operators can select built-in vendor providers or define custom OpenAI-compatible endpoints, pick a catalog main model with vision capability metadata, and probe connectivity without leaking secrets
 **Depends on**: Phase 74 (can run in parallel with Phase 75 after 74)
 **Requirements**: PROV-01, PROV-02, PROV-03, PROV-04
 **Success Criteria** (what must be TRUE):
+
   1. Operator can select a built-in vendor provider profile (base URL + key ref conventions + catalog binding) without editing Hermes
   2. Operator can define a custom OpenAI-compatible provider (`api_base_url` + `api_key_ref` + explicit model allowlist)
   3. Operator can pick a main model from a built-in selectable catalog that includes `supports_vision` metadata
   4. Operator can run a non-destructive connection probe for main (and vision when configured) that fail-closes on missing refs and does not log response bodies/secrets
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 77: Vision Routing Runtime
+
 **Goal**: On image-bearing turns, runtime routes multimodal main vs vision→main mix (or fail-closed InkStatute notice) according to operator policy, without vision on text-only turns or meta leaks to lawyers
 **Depends on**: Phase 76 (needs catalog `supports_vision`); Phase 75 optional for channel image ingress paths already shipped
 **Requirements**: VIS-01, VIS-02, VIS-03, VIS-04
 **Success Criteria** (what must be TRUE):
+
   1. Operator can configure vision routing mode (`auto` | `always_preprocess` | `main_only`) plus optional dedicated vision provider/model
   2. On image-bearing turns, runtime uses multimodal main when `supports_vision`; otherwise vision→main mix when vision is configured; otherwise fail-closed with an InkStatute-owned notice (never silent image drop)
   3. Text-only turns never invoke the vision model; contract/audit evidence stays reference-first (no raw image bytes in contract logs)
   4. Vision/provider error paths pass through the assistant output boundary (no provider stack traces or gateway meta to ordinary users)
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 78: Console SSR, Docs & Gate Honesty
+
 **Goal**: Operators have complete CSRF-protected SSR config pages and honest docs/smoke evidence that never auto-claims carried live acceptance gates
 **Depends on**: Phases 75, 76, 77
 **Requirements**: ADM-02, DOC-01, DOC-02
 **Success Criteria** (what must be TRUE):
+
   1. Admin Web UI exposes config pages for channels, providers/catalog, and vision as SSR forms with CSRF protection, extending the existing stdlib admin-web-ui (not a new SPA stack)
   2. Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
   3. Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -121,7 +140,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 73. Operator Config Foundation | v1.10 | 0/TBD | Not started | - |
+| 73. Operator Config Foundation | v1.10 | 1/3 | In Progress|  |
 | 74. Admin Config API + RBAC | v1.10 | 0/TBD | Not started | - |
 | 75. Channel Config Apply | v1.10 | 0/TBD | Not started | - |
 | 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
