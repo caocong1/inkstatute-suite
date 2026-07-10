@@ -34,10 +34,13 @@ def normalize_config_secret_ref(raw: str | None, *, field: str) -> str | None:
     ``^[A-Za-z_][A-Za-z0-9_]*$``, or ``secret://`` paths with non-empty
     slash-separated safe segments. Rejects other strings fail-closed without
     echoing the rejected value (so raw secrets planted in ``*_ref`` never
-    appear in errors).
+    appear in errors). Non-string values (numbers, bools, objects) are rejected
+    as invalid reference shapes rather than raising ``AttributeError``.
     """
     if raw is None:
         return None
+    if not isinstance(raw, str):
+        raise InvalidSecretRefError(f"invalid secret reference shape for {field}")
     ref = raw.strip()
     if not ref:
         return None

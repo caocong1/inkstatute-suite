@@ -105,6 +105,38 @@ class TestNormalizeConfigSecretRef(unittest.TestCase):
             normalize_config_secret_ref("env:bad-name!", field="api_key_ref")
         self.assertNotIn("bad-name!", str(ctx.exception))
 
+    def test_rejects_non_string_ref_without_attribute_error(self) -> None:
+        """WR-02: numbers/bools/objects must raise InvalidSecretRefError, not AttributeError."""
+        for bad in (123, True, {"nested": "x"}, ["env:X"]):
+            with self.subTest(bad=bad):
+                with self.assertRaises(InvalidSecretRefError) as ctx:
+                    normalize_config_secret_ref(bad, field="app_id_ref")  # type: ignore[arg-type]
+                message = str(ctx.exception)
+                self.assertIn("app_id_ref", message)
+                self.assertNotIn("strip", message)
+
+    def test_validate_document_rejects_non_string_ref_as_validation_error(self) -> None:
+        from inkstatute_operator_config.errors import OperatorConfigValidationError
+        from inkstatute_operator_config.schemas import (
+            ChannelsDoc,
+            OperatorConfigDocument,
+            QQBotChannelDoc,
+        )
+        from inkstatute_operator_config.validate import (
+            OperatorConfigValidator,
+            validate_document,
+        )
+
+        doc = OperatorConfigDocument(
+            channels=ChannelsDoc(
+                qqbot=QQBotChannelDoc(app_id_ref=12345),  # type: ignore[arg-type]
+            )
+        )
+        with self.assertRaises(OperatorConfigValidationError):
+            validate_document(doc)
+        issues = OperatorConfigValidator().validate(doc)
+        self.assertIn("invalid_secret_ref", {i.code for i in issues})
+
     def test_secrets_module_does_not_import_qqbot_or_os_environ(self) -> None:
         source = _SECRETS_SRC.read_text(encoding="utf-8")
         tree = ast.parse(source)
