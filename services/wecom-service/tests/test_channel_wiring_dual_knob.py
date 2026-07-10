@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 
@@ -79,6 +80,73 @@ class WeComChannelWiringDualKnobScaffoldTests(unittest.TestCase):
             src,
             r"enabled\s*=\s*bool\(\s*flags\.channel_delivery_enabled",
         )
+
+    def test_load_wecom_channel_config_store_wins_when_path_exists(self) -> None:
+        try:
+            from wecom_service.channel_wiring import load_wecom_channel_config
+        except ImportError:
+            self.fail(
+                "CHAN-03: load_wecom_channel_config not implemented (Plan 04)"
+            )
+
+        from inkstatute_operator_config.schemas import (
+            ChannelsDoc,
+            OperatorConfigDocument,
+            WeComChannelDoc,
+        )
+        from inkstatute_operator_config.store import OperatorConfigStore
+
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "operator-config.json"
+            store = OperatorConfigStore(path)
+            store.save(
+                OperatorConfigDocument(
+                    channels=ChannelsDoc(
+                        wecom=WeComChannelDoc(
+                            enabled=True,
+                            token_secret_ref="secret://wecom/token",
+                            encoding_aes_key_secret_ref="secret://wecom/aes",
+                            corp_id_ref="env:WECOM_CORP_ID",
+                        )
+                    )
+                ),
+                feature_flags=RuntimeFeatureFlags(operator_config_enabled=True),
+            )
+            flags = RuntimeFeatureFlags(wecom_channel_enabled=True)
+            # Env would disable — store must win when path exists.
+            channel = load_wecom_channel_config(
+                flags=flags,
+                store=store,
+                env={"INKSTATUTE_CHANNEL_WRAPPER_WECOM_ENABLED": "false"},
+            )
+            self.assertIs(channel.enabled, True)
+            self.assertEqual(channel.token_secret_ref, "secret://wecom/token")
+
+    def test_load_wecom_channel_config_env_fallback_when_store_missing(self) -> None:
+        try:
+            from wecom_service.channel_wiring import load_wecom_channel_config
+        except ImportError:
+            self.fail(
+                "CHAN-03: load_wecom_channel_config not implemented (Plan 04)"
+            )
+
+        from inkstatute_operator_config.store import OperatorConfigStore
+
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "missing-operator-config.json"
+            store = OperatorConfigStore(path)
+            self.assertFalse(store.path.exists())
+            flags = RuntimeFeatureFlags(wecom_channel_enabled=True)
+            channel = load_wecom_channel_config(
+                flags=flags,
+                store=store,
+                env={
+                    "INKSTATUTE_CHANNEL_WRAPPER_WECOM_ENABLED": "true",
+                    "INKSTATUTE_WECOM_TOKEN_SECRET_REF": "secret://env/token",
+                },
+            )
+            self.assertIs(channel.enabled, True)
+            self.assertEqual(channel.token_secret_ref, "secret://env/token")
 
 
 if __name__ == "__main__":

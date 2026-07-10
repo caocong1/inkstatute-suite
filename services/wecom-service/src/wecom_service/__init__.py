@@ -51,6 +51,7 @@ from .task_flow import (
     task_snapshot,
     task_stage_idempotency_key,
 )
+from .channel_wiring import build_wecom_channel_config, load_wecom_channel_config
 
 __all__ = [
     "ActiveTaskRoute",
@@ -82,8 +83,10 @@ __all__ = [
     "build_clarification_delivery",
     "build_template_card_envelope",
     "build_text_send_envelope",
+    "build_wecom_channel_config",
     "create_task_flow",
     "deadline_exceeded",
+    "load_wecom_channel_config",
     "normalize_wecom_feedback_callback",
     "normalize_wecom_turn",
     "parse_callback_envelope",
