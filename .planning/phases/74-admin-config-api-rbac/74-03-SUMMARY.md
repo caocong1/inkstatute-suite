@@ -75,7 +75,7 @@ Each task was committed atomically:
 2. **Task 2: Evolve test_read_only.py + extend test_rbac_integration.py** — `49ebfac` (test)
 3. **Task 3: Document config surface in admin README + gate smoke** — `63775ab` (docs)
 
-**Plan metadata:** _(pending final docs commit)_
+**Plan metadata:** `ce7d06a` (docs: complete plan)
 
 ## Files Created/Modified
 
