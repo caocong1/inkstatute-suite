@@ -42,7 +42,7 @@
 - [x] **Phase 69: Runtime Registration / Wiring** - Flag→config→adapter factory injects `QQBotChannelAdapter` into `DefaultRunRuntime.channels`; disabled path refuses live IO.
 - [x] **Phase 70: Webhook Composition Path** - Thin stdlib webhook host composes `verify_and_ack` → ingress/session/feedback → `deliver` with ACK-first semantics.
 - [x] **Phase 71: Smoke Protocol-Path Hardening** - Extend `--dry-run` to exercise full adapter/session Protocol path with Fake transports and sanitized evidence.
-- [ ] **Phase 72: Controlled Live Integration** - Operator-run `--live` path + runbook remain HUMAN GATE; no CI auto-claim of live acceptance.
+- [x] **Phase 72: Controlled Live Integration** - Operator-run `--live` path + runbook remain HUMAN GATE; no CI auto-claim of live acceptance.
 
 ## Phase Details
 
