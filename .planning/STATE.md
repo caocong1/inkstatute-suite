@@ -2,16 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
+current_plan: 3
 status: executing
-stopped_at: Completed 73-01-PLAN.md
-last_updated: "2026-07-10T07:22:40.000Z"
-last_activity: 2026-07-10 — Completed 73-01 (operator-config package foundation)
+stopped_at: Completed 73-02-PLAN.md
+last_updated: "2026-07-10T07:26:52.021Z"
+last_activity: 2026-07-10 — Completed 73-02 (validate_document + Hermes ban-list)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -21,18 +22,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.10 Operator Config Console — Phase 73 executing (73-01 complete)
+**Current focus:** v1.10 Operator Config Console — Phase 73 executing (73-02 complete; 73-03 next)
 
 ## Current Position
 
 Phase: 73 of 78 (Operator Config Foundation) — first of 6 v1.10 phases
-Current Plan: 2
+Current Plan: 3
 Total Plans in Phase: 3
-Plan: 73-02 (next)
+Plan: 3 of 3
 Status: Ready to execute
-Last activity: 2026-07-10 — Completed 73-01 (operator-config package foundation)
+Last activity: 2026-07-10 — Completed 73-02 (validate_document + Hermes ban-list)
 
-Progress: [███░░░░░░░] 33%
+Progress: [██████░░░░] 67%
 
 ### Deferred Items
 
@@ -60,12 +61,13 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 
 **Recent Trend:**
 
-- Last 5 plans: Phase 73 P01 (2 min); Phase 72 P01/P02 (2–3 min)
+- Last 5 plans: Phase 73 P02 (3 min); Phase 73 P01 (2 min); Phase 72 P01/P02 (2–3 min)
 - Trend: N/A (new milestone)
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 73 | 01 | 2min | 3 | 8 |
+| 73 | 02 | 3min | 2 | 4 |
 
 *Updated after each plan completion*
 
@@ -92,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 73]: Providers stored as tuple[ProviderDoc, ...] on the root document
 - [Phase 73]: secret:// requires two+ slash-separated safe segments (generalized beyond QQ REF_TO_VALUE_ENV)
 - [Phase 73]: No resolve_secret_ref and no process-environment reads in operator-config package
+- [Phase 73]: validate_document raises on errors; OperatorConfigValidator collects issues
+- [Phase 73]: Hermes authority banned via path substrings + hermes_* field names in nested walks
+- [Phase 73]: Validation errors expose codes@paths only — never planted secrets
 
 ### Pending Todos
 
@@ -114,8 +119,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T07:21:51.579Z
-Stopped at: Completed 73-01-PLAN.md
+Last session: 2026-07-10T07:26:51.964Z
+Stopped at: Completed 73-02-PLAN.md
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
@@ -127,4 +132,4 @@ v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Continue Phase 73 with plan 73-02 (validate + Hermes ban-list)
+- Continue Phase 73 with plan 73-03 (atomic store + operator_config_enabled gate)

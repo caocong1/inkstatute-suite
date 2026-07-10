@@ -13,7 +13,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **CFG-01**: Operator can persist InkStatute-owned operator config (channels, providers, catalog selection, vision policy) in a refs-only store — never raw secrets in the store or API bodies
 - [ ] **CFG-02**: Operator config surface is gated by a default-OFF feature flag (`operator_config_enabled`); when OFF, mutate endpoints refuse writes
-- [ ] **CFG-03**: Config schemas and validators reject Hermes filesystem/profile paths as config authority (InkStatute store only; no `~/.hermes` writes)
+- [x] **CFG-03**: Config schemas and validators reject Hermes filesystem/profile paths as config authority (InkStatute store only; no `~/.hermes` writes)
 
 ### Channel Config
 
@@ -99,7 +99,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | CFG-01 | Phase 73 | Complete |
 | CFG-02 | Phase 73 | Pending |
-| CFG-03 | Phase 73 | Pending |
+| CFG-03 | Phase 73 | Complete |
 | CHAN-01 | Phase 75 | Pending |
 | CHAN-02 | Phase 75 | Pending |
 | CHAN-03 | Phase 75 | Pending |
