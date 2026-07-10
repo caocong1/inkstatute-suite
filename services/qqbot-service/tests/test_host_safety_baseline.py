@@ -65,10 +65,8 @@ class HostSafetyBaselineTests(unittest.TestCase):
         )
 
     def test_host_config_enabled_defaults_false_when_available(self) -> None:
-        try:
-            from qqbot_service import QQBotHostConfig
-        except ImportError:
-            self.skipTest("QQBotHostConfig not yet available (Plan 02)")
+        from qqbot_service import QQBotHostConfig
+
         self.assertIs(QQBotHostConfig().enabled, False)
 
 
