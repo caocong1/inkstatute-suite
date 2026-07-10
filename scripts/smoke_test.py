@@ -4,10 +4,15 @@
 Default ``--dry-run`` exercises leaf helpers (signature, egress, callback) plus
 the host Protocol path (verify_and_ack → ingress/session → deliver) via the same
 Phase 70 webhook helpers, using Fake transports and public DEMO / fixture
-credentials. ``--live`` is a human gate (Phase 72).
+credentials.
+
+``--live`` is an explicit **HUMAN GATE** owned by Phase 72 (Controlled Live
+Integration). The script always stamps ``not_live_acceptance=true`` and never
+auto-claims live acceptance. CI / V2 gates must not invoke ``--live``.
 
 QQ-only path (no WeCom channel imports). Never commits or prints secrets.
-Dry-run never claims live acceptance.
+Dry-run never claims live acceptance. Phase 5 WeCom UAT and Phase 8 lawyer
+trial remain separate carried human gates — not closed by this script.
 """
 
 from __future__ import annotations
@@ -241,7 +246,8 @@ def sanitize_evidence(evidence: Mapping[str, Any]) -> dict[str, Any]:
     """Return allowlisted, ban-list-clean evidence for stdout/file (SMOKE-04).
 
     Drops tokens, Authorization, BotSecret values, raw content bodies, and
-    attachment/URL keys. Dry-run always stamps ``not_live_acceptance=true``.
+    attachment/URL keys. Dry-run and live script paths always stamp
+    ``not_live_acceptance=true`` (HUMAN GATE — never auto-claim acceptance).
     """
     stripped = _strip_forbidden(evidence)
     if not isinstance(stripped, dict):
@@ -256,14 +262,10 @@ def sanitize_evidence(evidence: Mapping[str, Any]) -> dict[str, Any]:
         out: dict[str, Any] = {
             "schema": EVIDENCE_SCHEMA,
             "mode": mode,
-            "not_live_acceptance": True if mode == "dry-run" else bool(
-                stripped.get("not_live_acceptance", True)
-            ),
+            # LIVE-01 / T-72-02: script path never emits not_live_acceptance=False.
+            "not_live_acceptance": True,
             "steps": _allowlist_steps(stripped.get("steps")),
         }
-        # Pitfall 5: dry-run must never claim live acceptance.
-        if out["mode"] == "dry-run":
-            out["not_live_acceptance"] = True
         return json.loads(json.dumps(out, default=str))
 
     # Arbitrary dirty payloads: return stripped remnant only (no secret keys).
@@ -782,9 +784,11 @@ def _run_smoke_live(
     callback_json: Path | None,
     evidence_out: Path | None,
 ) -> dict[str, Any]:
-    """HUMAN GATE live path: fail-closed env, then Urllib OpenAPI Steps A–C.
+    """HUMAN GATE (Phase 72) live path: fail-closed env, then Urllib OpenAPI Steps A–C.
 
     Never call this from CI. Credentials come from value env vars only.
+    Evidence always stamps ``not_live_acceptance=true`` — operators may
+    relabel a sanitized archive; the script never auto-claims acceptance.
     """
     # Validate env BEFORE constructing any Urllib transport (T-67-01 / Pattern 2).
     creds = load_live_credentials()
@@ -871,7 +875,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_const",
         const="live",
         dest="mode",
-        help="HUMAN GATE: real OpenAPI; requires env credentials",
+        help=(
+            "HUMAN GATE (Phase 72): real OpenAPI; requires env credentials; "
+            "never auto-claims live acceptance"
+        ),
     )
     parser.set_defaults(mode="dry-run")
     parser.add_argument(
