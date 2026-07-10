@@ -33,5 +33,40 @@ class WeComChannelConfig:
             corp_id_ref=mapping.get("INKSTATUTE_WECOM_CORP_ID_REF") or None,
         )
 
+    @classmethod
+    def from_operator_doc(cls, doc: Mapping[str, Any] | object) -> "WeComChannelConfig":
+        """Materialize host/doc fields only (no platform feature-flag AND).
+
+        Accepts a Mapping or WeComChannelDoc-shaped object. Dual-knob composition
+        with ``RuntimeFeatureFlags.wecom_channel_enabled`` lives in wecom-service
+        wiring — this package stays flag-free.
+        """
+        enabled = bool(_doc_field(doc, "enabled", False))
+        token_secret_ref = _doc_field(doc, "token_secret_ref", None) or None
+        encoding_aes_key_secret_ref = (
+            _doc_field(doc, "encoding_aes_key_secret_ref", None) or None
+        )
+        corp_id_ref = _doc_field(doc, "corp_id_ref", None) or None
+        raw_metadata = _doc_field(doc, "metadata", None)
+        if raw_metadata is None:
+            metadata: JsonObject = {}
+        elif isinstance(raw_metadata, Mapping):
+            metadata = dict(raw_metadata)
+        else:
+            metadata = {}
+        return cls(
+            enabled=enabled,
+            token_secret_ref=token_secret_ref,
+            encoding_aes_key_secret_ref=encoding_aes_key_secret_ref,
+            corp_id_ref=corp_id_ref,
+            metadata=metadata,
+        )
+
+
+def _doc_field(doc: Mapping[str, Any] | object, key: str, default: Any) -> Any:
+    if isinstance(doc, Mapping):
+        return doc.get(key, default)
+    return getattr(doc, key, default)
+
 
 __all__ = ["WeComChannelConfig"]
