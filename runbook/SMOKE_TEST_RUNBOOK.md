@@ -2,9 +2,9 @@
 
 Operator guide for the InkStatute one-click QQBot smoke toolkit (`scripts/smoke_test.py`).
 
-**Scope:** signature verify → text send → markdown+keyboard send → INTERACTION callback simulation → sanitized evidence.
+**Scope:** leaf helpers (signature → text/keyboard send → INTERACTION normalize) **plus** host Protocol path (verify_and_ack → ingress/session → deliver) via the same helpers as `services/qqbot-service` webhook composition.
 
-**CI / phase gate:** dry-run only. Live OpenAPI is a **HUMAN GATE** and is **not** required for CI or phase verification. Do not commit secrets, tokens, raw payloads, or attachment URLs.
+**CI / phase gate:** dry-run only. Live OpenAPI is a **HUMAN GATE** (Phase 72) and is **not** required for CI or phase verification. Do not commit secrets, tokens, raw payloads, or attachment URLs. Dry-run evidence always stamps `not_live_acceptance=true` — never claim live acceptance from CI.
 
 ---
 
@@ -50,7 +50,13 @@ Optional callback fixture override (defaults to `packages/channels/qqbot/fixture
 python3 scripts/smoke_test.py --dry-run --callback-json packages/channels/qqbot/fixtures/qqbot_interaction_create.json
 ```
 
-Dry-run always uses Fake transports (no live QQ hosts). Callback step **normalizes only** — it does **not** PUT an interaction ACK.
+Dry-run always uses Fake transports (no live QQ hosts / no Urllib). In addition to leaf helper steps, dry-run **must** exercise the host Protocol path:
+
+1. `verify_and_ack` (signed C2C fixture → HTTP ACK)
+2. post-ACK **ingress/session** via the same composition as `services/qqbot-service` webhook
+3. **deliver** through Fake message transport behind the output boundary
+
+Evidence steps therefore include `adapter_ack`, `session_ingress`, and `adapter_deliver` (all `ok`) alongside leaf steps. Leaf-only coverage is **not** host-complete. Callback leaf step **normalizes only** — it does **not** PUT an interaction ACK. Evidence remains `not_live_acceptance=true`.
 
 Unittest coverage lives under the existing `qqbot-channel` discover gate (`packages/channels/qqbot/tests/test_smoke_toolkit.py`). There is **no** new `run_v2_gates.py` entry for this toolkit.
 
@@ -90,7 +96,7 @@ python3 scripts/smoke_test.py --live --callback-json /tmp/interaction-envelope.j
 | `--dry-run` | `0` when all steps ok | `schema=inkstatute.qqbot.smoke_evidence.v1`, `mode=dry-run`, `not_live_acceptance=true` | Fake only |
 | `--live` | `0` when all steps ok | `mode=live`; acceptance archival is a human decision | Real OpenAPI (Plan 03) |
 
-Per-step `ok` flags under `steps`: `signature`, `send_text` (`msg_type=0`), `send_keyboard` (`msg_type=2` + feedback actions), `callback` (`status=normalized`, `idempotency_key_present`).
+Per-step `ok` flags under `steps`: `signature`, `send_text` (`msg_type=0`), `send_keyboard` (`msg_type=2` + feedback actions), `callback` (`status=normalized`, `idempotency_key_present`), plus Protocol-path `adapter_ack`, `session_ingress`, `adapter_deliver`.
 
 Stdout and `--evidence-out` emit **sanitized JSON only**.
 
@@ -109,7 +115,10 @@ Stdout and `--evidence-out` emit **sanitized JSON only**.
     "signature": { "ok": true, "vector": "qq_official_demo" },
     "send_text": { "ok": true, "msg_type": 0, "openid_hash": "…" },
     "send_keyboard": { "ok": true, "msg_type": 2, "actions": ["up", "down", "…"] },
-    "callback": { "ok": true, "category": "interaction", "idempotency_key_present": true }
+    "callback": { "ok": true, "category": "interaction", "idempotency_key_present": true },
+    "adapter_ack": { "ok": true, "http_status": 200, "op": 12, "accepted": true },
+    "session_ingress": { "ok": true, "ingress_action": "accepted", "run_id_present": true, "branch": "message" },
+    "adapter_deliver": { "ok": true, "deliver_accepted": true, "boundary_action": "allow" }
   }
 }
 ```

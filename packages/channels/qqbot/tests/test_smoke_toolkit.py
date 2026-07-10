@@ -355,6 +355,62 @@ class TestProtocolPathDryRun(unittest.TestCase):
         )
 
 
+class TestProtocolPathCiHonesty(unittest.TestCase):
+    """SMOKE-01/02 closure: CI dry-run honesty + runbook Protocol documentation."""
+
+    def test_cli_dry_run_exits_zero(self) -> None:
+        result = _run_cli("--dry-run")
+        self.assertEqual(
+            result.returncode,
+            0,
+            msg=f"stdout={result.stdout!r} stderr={result.stderr!r}",
+        )
+        evidence = json.loads(result.stdout)
+        self.assertEqual(evidence.get("mode"), "dry-run")
+        self.assertIs(evidence.get("not_live_acceptance"), True)
+        for name in ("adapter_ack", "session_ingress", "adapter_deliver"):
+            self.assertTrue(evidence["steps"][name].get("ok"), msg=name)
+
+    def test_source_imports_host_helpers(self) -> None:
+        source = SMOKE_SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("qqbot_service.webhook", source)
+        self.assertIn("qqbot_service.wiring", source)
+        self.assertIn("handle_qqbot_webhook_request", source)
+        self.assertIn("build_qqbot_wired_runtime", source)
+        self.assertIn("adapter_ack", source)
+        self.assertIn("session_ingress", source)
+        self.assertIn("adapter_deliver", source)
+        # Dry-run must not construct Urllib* (live path may still reference symbols).
+        dry_start = source.find("def run_smoke(")
+        live_start = source.find("def _run_smoke_live(")
+        self.assertGreater(dry_start, -1)
+        self.assertGreater(live_start, dry_start)
+        dry_section = source[dry_start:live_start]
+        self.assertNotIn("UrllibMessageTransport(", dry_section)
+        self.assertNotIn("UrllibTokenTransport(", dry_section)
+
+    def test_runbook_documents_protocol_path(self) -> None:
+        self.assertTrue(RUNBOOK_PATH.is_file(), f"missing runbook: {RUNBOOK_PATH}")
+        text = RUNBOOK_PATH.read_text(encoding="utf-8")
+        lower = text.lower()
+        self.assertIn("verify_and_ack", lower)
+        self.assertIn("ingress", lower)
+        self.assertIn("deliver", lower)
+        self.assertIn("protocol", lower)
+        self.assertIn("not_live_acceptance", lower)
+        self.assertIn("adapter_ack", lower)
+        self.assertIn("session_ingress", lower)
+        self.assertIn("adapter_deliver", lower)
+
+    def test_callback_json_fixture_still_dry_run_safe(self) -> None:
+        result = _run_cli("--dry-run", "--callback-json", str(FIXTURE_INTERACTION))
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        evidence = json.loads(result.stdout)
+        self.assertIs(evidence.get("not_live_acceptance"), True)
+        self.assertTrue(evidence["steps"]["callback"].get("ok"))
+        self.assertTrue(evidence["steps"]["callback"].get("ack_skipped", True))
+
+
 class TestLiveEnvFailClosed(unittest.TestCase):
     """SMOKE-01 live gate: --live without env exits non-zero; no secret echo."""
 
