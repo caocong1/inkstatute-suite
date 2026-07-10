@@ -123,7 +123,7 @@ Plans:
 
 Plans:
 
-- [ ] 71-01-PLAN.md — Mandatory Protocol-path dry-run via host webhook helpers (SMOKE-01)
+- [x] 71-01-PLAN.md — Mandatory Protocol-path dry-run via host webhook helpers (SMOKE-01)
 - [ ] 71-02-PLAN.md — Protocol evidence allowlist + sanitization (SMOKE-02)
 - [ ] 71-03-PLAN.md — CI honesty, leaf-vs-Protocol regression, runbook dry-run note
 
@@ -148,7 +148,7 @@ Plans:
 | 68. Host Skeleton + Safety Baseline | 3/3 | Complete   | 2026-07-10 |
 | 69. Runtime Registration / Wiring | 3/3 | Complete   | 2026-07-10 |
 | 70. Webhook Composition Path | 3/3 | Complete   | 2026-07-10 |
-| 71. Smoke Protocol-Path Hardening | 0/TBD | Not started | - |
+| 71. Smoke Protocol-Path Hardening | 1/3 | In Progress|  |
 | 72. Controlled Live Integration | 0/TBD | Not started | - |
 
 ## Completed Milestones

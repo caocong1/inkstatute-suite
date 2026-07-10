@@ -22,7 +22,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Smoke Hardening
 
-- [ ] **SMOKE-01**: `scripts/smoke_test.py --dry-run` exercises the full adapter/session Protocol path (verify_and_ack → ingress/session → deliver) using Fake transports — not leaf helpers only
+- [x] **SMOKE-01**: `scripts/smoke_test.py --dry-run` exercises the full adapter/session Protocol path (verify_and_ack → ingress/session → deliver) using Fake transports — not leaf helpers only
 - [ ] **SMOKE-02**: Protocol-path dry-run emits sanitized evidence under the existing allowlist schema (`not_live_acceptance=true`; no secrets/raw bodies)
 
 ### Live Integration
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HOST-03 | Phase 69 | Complete |
 | REG-01 | Phase 69 | Complete |
 | REG-02 | Phase 69 | Complete |
-| SMOKE-01 | Phase 71 | Pending |
+| SMOKE-01 | Phase 71 | Complete |
 | SMOKE-02 | Phase 71 | Pending |
 | LIVE-01 | Phase 72 | Pending |
 | LIVE-02 | Phase 72 | Pending |
