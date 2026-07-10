@@ -99,7 +99,13 @@ Plans:
 3. Pure request handler + stdlib `http.server` wrapper capture raw body once, preserve signature verification, and apply output boundary on egress.
 4. Unit tests with Fake transports prove the composition path without live QQ network.
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 70-01-PLAN.md — Pure ACK-first webhook handler (op=13/op=12/refuse) (HOST-02)
+- [ ] 70-02-PLAN.md — Post-ACK ingress/feedback/deliver Fake composition (HOST-01)
+- [ ] 70-03-PLAN.md — stdlib http.server wrapper + raw-body proofs + README
 
 ### Phase 71: Smoke Protocol-Path Hardening
 
