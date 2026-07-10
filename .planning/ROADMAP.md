@@ -35,7 +35,7 @@
 
 ## Phases
 
-- [ ] **Phase 73: Operator Config Foundation** - Refs-only store, schemas, validators, and default-OFF feature flag
+- [x] **Phase 73: Operator Config Foundation** - Refs-only store, schemas, validators, and default-OFF feature flag (completed 2026-07-10)
 - [ ] **Phase 74: Admin Config API + RBAC** - Flag-gated `/config/*` mutate surface with role checks; read views stay read-only
 - [ ] **Phase 75: Channel Config Apply** - QQ/WeCom channel config apply with dual-knob visibility and secret-ref credentials
 - [ ] **Phase 76: Provider Registry + Model Catalog** - Built-in vendors, custom OpenAI-compatible providers, catalog selection, connection probe
@@ -55,7 +55,7 @@
   2. When `operator_config_enabled` is OFF (default), config mutate paths refuse writes
   3. Config schemas/validators reject Hermes `~/.hermes` / profile filesystem paths as config authority
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 
@@ -140,7 +140,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 73. Operator Config Foundation | v1.10 | 3/3 | Complete   | 2026-07-10 |
+| 73. Operator Config Foundation | v1.10 | 3/3 | Complete    | 2026-07-10 |
 | 74. Admin Config API + RBAC | v1.10 | 0/TBD | Not started | - |
 | 75. Channel Config Apply | v1.10 | 0/TBD | Not started | - |
 | 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
@@ -240,4 +240,4 @@ Plans:
 v1.10 Future Requirements (deferred): CFG-F01..F03, PROV-F01..F03, VIS-F01..F02, HOST-F01..F03 — see [REQUIREMENTS.md](REQUIREMENTS.md). Promote via `$gsd-new-milestone` or `$gsd-review-backlog`.
 
 ---
-*Last updated: 2026-07-10 — v1.10 Operator Config Console roadmap created (Phases 73–78)*
+*Last updated: 2026-07-10 — Phase 73 Operator Config Foundation verified passed*
