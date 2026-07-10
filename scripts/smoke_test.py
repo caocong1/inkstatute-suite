@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """InkStatute QQBot one-click smoke test (stdlib orchestrator).
 
-Default ``--dry-run`` exercises signature verification, text + markdown+keyboard
-egress, and INTERACTION callback simulation with Fake transports and public
-DEMO / fixture credentials. ``--live`` is a human gate (Plan 03).
+Default ``--dry-run`` exercises leaf helpers (signature, egress, callback) plus
+the host Protocol path (verify_and_ack → ingress/session → deliver) via the same
+Phase 70 webhook helpers, using Fake transports and public DEMO / fixture
+credentials. ``--live`` is a human gate (Phase 72).
 
 QQ-only path (no WeCom channel imports). Never commits or prints secrets.
+Dry-run never claims live acceptance.
 """
 
 from __future__ import annotations
@@ -16,8 +18,9 @@ import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,6 +29,7 @@ for _rel in (
     "packages/channel-core/src",
     "packages/platform-contract/src",
     "packages/platform-runtime/src",
+    "services/qqbot-service/src",
 ):
     _p = REPO_ROOT / _rel
     if str(_p) not in sys.path:
@@ -53,6 +57,11 @@ from inkstatute_channels_qqbot.token_manager import (  # noqa: E402
     TokenManager,
     UrllibTokenTransport,
 )
+from platform_runtime.fakes import FakeBackendAdapter  # noqa: E402
+from platform_runtime.feature_flags import RuntimeFeatureFlags  # noqa: E402
+from qqbot_service.config import QQBotHostConfig  # noqa: E402
+from qqbot_service.webhook import handle_qqbot_webhook_request  # noqa: E402
+from qqbot_service.wiring import build_qqbot_wired_runtime  # noqa: E402
 
 # Official QQ demo vectors (public documentation — NOT production secrets).
 DEMO_BOT_SECRET = "naOC0ocQE3shWLAfffVLB1rhYPG7"
@@ -69,6 +78,27 @@ DEFAULT_CALLBACK_FIXTURE = (
     / "fixtures"
     / "qqbot_interaction_create.json"
 )
+C2C_MESSAGE_FIXTURE = (
+    REPO_ROOT
+    / "packages"
+    / "channels"
+    / "qqbot"
+    / "fixtures"
+    / "qqbot_c2c_message.json"
+)
+CALLBACK_PATH = "/qqbot/callback"
+# Keep inside C2C/group passive-reply windows (mirror Phase 70 composition harness).
+PROTOCOL_FIXED_NOW = (datetime.now(timezone.utc) - timedelta(seconds=30)).strftime(
+    "%Y-%m-%dT%H:%M:%SZ"
+)
+PROTOCOL_FIXTURE_REPLY = (
+    "根据相关裁判观点，合同解除需审查约定解除与法定解除要件。"
+)
+PROTOCOL_SECRET_ENV = {
+    "INKSTATUTE_QQBOT_APP_ID": "fixture-app-id",
+    "INKSTATUTE_QQBOT_CLIENT_SECRET": "fixture-client-secret",
+    "INKSTATUTE_QQBOT_BOT_SECRET": DEMO_BOT_SECRET,
+}
 
 LIVE_ENV_KEYS = (
     "INKSTATUTE_QQBOT_APP_ID",
@@ -129,6 +159,10 @@ _STEP_KEY_ALLOW: dict[str, frozenset[str]] = {
             "ack_status",
         }
     ),
+    # Plan 01: minimal Protocol keys (ok only). Plan 02 expands allowlist (SMOKE-02).
+    "adapter_ack": frozenset({"ok"}),
+    "session_ingress": frozenset({"ok"}),
+    "adapter_deliver": frozenset({"ok"}),
 }
 
 # Substrings that must never appear in serialized evidence (SMOKE-04).
@@ -421,6 +455,156 @@ def _step_callback_dry_run(
     return step, put_delta
 
 
+class _RecordingScheduler:
+    """Collect post-ACK thunks and run them synchronously (avoid nested asyncio.run)."""
+
+    def __init__(self) -> None:
+        self.thunks: list[Callable[[], Any]] = []
+
+    def __call__(self, thunk: Callable[[], Any]) -> None:
+        self.thunks.append(thunk)
+
+    def run_all(self) -> None:
+        for thunk in list(self.thunks):
+            result = thunk()
+            if asyncio.iscoroutine(result):
+                asyncio.run(result)
+
+
+def _load_c2c_envelope() -> dict[str, Any]:
+    payload = json.loads(C2C_MESSAGE_FIXTURE.read_text(encoding="utf-8"))
+    envelope = payload.get("envelope", payload)
+    if not isinstance(envelope, dict):
+        raise SystemExit("C2C fixture must contain an envelope object")
+    return envelope
+
+
+def _sign_protocol_body(body: bytes, *, bot_secret: str = DEMO_BOT_SECRET) -> str:
+    _public_key, seed = derive_keypair(bot_secret)
+    return sign(seed, DEMO_SIG_TIMESTAMP.encode("utf-8") + body).hex()
+
+
+def _step_protocol_path_dry_run() -> dict[str, dict[str, Any]]:
+    """Mandatory host Protocol path: verify_and_ack → ingress/session → deliver.
+
+    Uses Phase 70 ``handle_qqbot_webhook_request`` + ``build_qqbot_wired_runtime``
+    with Fake transports only. Returns allowlist-safe step dicts.
+    """
+    token_transport = FakeTokenTransport(
+        response={"access_token": "fixture-token", "expires_in": 7200}
+    )
+    token_manager = TokenManager(
+        app_id="fixture-app-id",
+        client_secret="fixture-client-secret",
+        transport=token_transport,
+    )
+    message_transport = FakeMessageTransport(
+        response={"id": "fixture-protocol-msg", "status": 200}
+    )
+    backend = FakeBackendAdapter()
+    wired = build_qqbot_wired_runtime(
+        backend=backend,
+        flags=RuntimeFeatureFlags(
+            qqbot_channel_enabled=True,
+            run_runtime_enabled=True,
+        ),
+        host_config=QQBotHostConfig(
+            enabled=True,
+            app_id_ref="secret://qqbot/app-id",
+            app_secret_ref="secret://qqbot/app-secret",
+            bot_secret_ref="secret://qqbot/bot-secret",
+        ),
+        env=PROTOCOL_SECRET_ENV,
+        token_manager=token_manager,
+        transport=message_transport,
+        token_transport=token_transport,
+    )
+
+    envelope = _load_c2c_envelope()
+    body = json.dumps(envelope, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    headers = {
+        "Content-Type": "application/json",
+        "X-Signature-Ed25519": _sign_protocol_body(body),
+        "X-Signature-Timestamp": DEMO_SIG_TIMESTAMP,
+    }
+    scheduler = _RecordingScheduler()
+
+    status, resp_body, _ = asyncio.run(
+        handle_qqbot_webhook_request(
+            "POST",
+            CALLBACK_PATH,
+            headers,
+            body,
+            wired=wired,
+            env=PROTOCOL_SECRET_ENV,
+            post_ack_scheduler=scheduler,
+            received_at=PROTOCOL_FIXED_NOW,
+            reply_text=PROTOCOL_FIXTURE_REPLY,
+            tenant_id="tenant-smoke",
+            workspace_id="ws-smoke",
+            bot_instance_id="bot-smoke",
+        )
+    )
+
+    op: int | None = None
+    try:
+        parsed = json.loads(resp_body.decode("utf-8") if isinstance(resp_body, bytes) else resp_body)
+        if isinstance(parsed, Mapping) and "op" in parsed:
+            op = int(parsed["op"])
+    except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
+        op = None
+
+    ack_ok = status == 200 and op == 12 and len(scheduler.thunks) >= 1
+    adapter_ack = {
+        "ok": ack_ok,
+        "http_status": status,
+        "op": op,
+        "accepted": ack_ok,
+    }
+
+    if not ack_ok:
+        return {
+            "adapter_ack": adapter_ack,
+            "session_ingress": {
+                "ok": False,
+                "ingress_action": None,
+                "run_id_present": False,
+                "branch": "message",
+            },
+            "adapter_deliver": {
+                "ok": False,
+                "deliver_accepted": False,
+                "boundary_action": None,
+            },
+        }
+
+    # Post-ACK composition runs on the sync side (thunk owns its asyncio.run).
+    scheduler.run_all()
+
+    submitted = getattr(backend, "submitted_requests", None) or []
+    deliveries = getattr(wired.adapter, "deliveries", None) or []
+    deliver_count = getattr(message_transport, "call_count", 0) or 0
+    ingress_ok = len(submitted) >= 1
+    deliver_ok = deliver_count >= 1 and len(deliveries) >= 1
+
+    session_ingress = {
+        "ok": ingress_ok,
+        "ingress_action": "accepted" if ingress_ok else None,
+        "run_id_present": ingress_ok,
+        "branch": "message",
+    }
+    adapter_deliver = {
+        "ok": deliver_ok,
+        "deliver_accepted": deliver_ok,
+        "boundary_action": "allow" if deliver_ok else None,
+    }
+    return {
+        "adapter_ack": adapter_ack,
+        "session_ingress": session_ingress,
+        "adapter_deliver": adapter_deliver,
+    }
+
+
 async def _step_callback_live(
     *,
     callback_json: Path | None,
@@ -542,6 +726,13 @@ def run_smoke(
     if put_delta != 0:
         raise SystemExit("dry-run must not PUT interaction ACK")
 
+    # Mandatory host Protocol path (SMOKE-01) — leaf steps alone are insufficient.
+    protocol_steps = _step_protocol_path_dry_run()
+    for name in ("adapter_ack", "session_ingress", "adapter_deliver"):
+        step = protocol_steps.get(name) or {}
+        if not step.get("ok"):
+            raise SystemExit(f"protocol path step failed: {name}")
+
     evidence = {
         "schema": EVIDENCE_SCHEMA,
         "mode": "dry-run",
@@ -551,6 +742,9 @@ def run_smoke(
             "send_text": text_step,
             "send_keyboard": keyboard_step,
             "callback": callback_step,
+            "adapter_ack": protocol_steps["adapter_ack"],
+            "session_ingress": protocol_steps["session_ingress"],
+            "adapter_deliver": protocol_steps["adapter_deliver"],
         },
     }
     evidence = _write_evidence(evidence, evidence_out)
