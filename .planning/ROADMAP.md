@@ -79,7 +79,13 @@ Plans:
 3. When QQBot is disabled (flags/config OFF), the composed path refuses live IO with explicit non-success behavior (e.g. 503/refuse) and does not call OpenAPI transports.
 4. FakeBackend unit tests cover enabled vs disabled wiring without network.
 
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 69-01-PLAN.md — Flag→config factory + live-ready transport injection (REG-01)
+- [ ] 69-02-PLAN.md — Explicit `DefaultRunRuntime(channels=(adapter,))` registration (REG-02)
+- [ ] 69-03-PLAN.md — Disabled composed path refuses live IO / zero OpenAPI calls (HOST-03)
 
 ### Phase 70: Webhook Composition Path
 
