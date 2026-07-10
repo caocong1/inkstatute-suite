@@ -80,6 +80,10 @@ def resolve_secret_ref(ref: str | None, env: Mapping[str, str]) -> str | None:
     if not ref:
         return None
 
+    ref = ref.strip()
+    if not ref:
+        return None
+
     if ref.startswith("env:"):
         key = ref[4:]
         if not key:

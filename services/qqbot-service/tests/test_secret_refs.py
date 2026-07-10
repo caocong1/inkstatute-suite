@@ -83,11 +83,44 @@ class TestQQBotHostConfigRefsOnly(unittest.TestCase):
                 }
             )
 
+    def test_from_env_strips_whitespace_around_refs(self) -> None:
+        cfg = QQBotHostConfig.from_env(
+            {
+                "INKSTATUTE_QQBOT_APP_ID_REF": "  secret://qqbot/app-id  ",
+                "INKSTATUTE_QQBOT_BOT_SECRET_REF": "\tenv:MY_BOT_SECRET\n",
+            }
+        )
+        self.assertEqual(cfg.app_id_ref, "secret://qqbot/app-id")
+        self.assertEqual(cfg.bot_secret_ref, "env:MY_BOT_SECRET")
+
+    def test_from_env_whitespace_only_ref_becomes_none(self) -> None:
+        cfg = QQBotHostConfig.from_env(
+            {
+                "INKSTATUTE_QQBOT_APP_ID_REF": "   ",
+            }
+        )
+        self.assertIsNone(cfg.app_id_ref)
+
+
 
 class TestResolveSecretRef(unittest.TestCase):
     def test_none_and_empty_return_none(self) -> None:
         self.assertIsNone(resolve_secret_ref(None, {"A": "x"}))
         self.assertIsNone(resolve_secret_ref("", {"A": "x"}))
+        self.assertIsNone(resolve_secret_ref("   ", {"A": "x"}))
+
+    def test_resolve_strips_whitespace_around_refs(self) -> None:
+        self.assertEqual(
+            resolve_secret_ref(
+                "  secret://qqbot/app-id  ",
+                {"INKSTATUTE_QQBOT_APP_ID": "app-id-value"},
+            ),
+            "app-id-value",
+        )
+        self.assertEqual(
+            resolve_secret_ref("  env:MY_VAR  ", {"MY_VAR": "s3cret"}),
+            "s3cret",
+        )
 
     def test_env_prefix(self) -> None:
         self.assertEqual(
