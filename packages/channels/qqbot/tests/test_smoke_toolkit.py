@@ -171,9 +171,105 @@ class TestEvidenceSchema(unittest.TestCase):
         self.assertEqual(evidence.get("mode"), "dry-run")
         self.assertIs(evidence.get("not_live_acceptance"), True)
         steps = evidence["steps"]
-        for name in ("signature", "send_text", "send_keyboard", "callback"):
+        for name in (
+            "signature",
+            "send_text",
+            "send_keyboard",
+            "callback",
+            "adapter_ack",
+            "session_ingress",
+            "adapter_deliver",
+        ):
             self.assertIn(name, steps)
             self.assertTrue(steps[name].get("ok"), msg=f"step {name} not ok")
+
+
+class TestProtocolEvidenceSanitized(unittest.TestCase):
+    """SMOKE-02: Protocol-path evidence allowlist + sanitization."""
+
+    _PROTOCOL_STEPS = ("adapter_ack", "session_ingress", "adapter_deliver")
+    _ACK_KEYS = frozenset({"ok", "http_status", "op", "accepted"})
+    _INGRESS_KEYS = frozenset({"ok", "ingress_action", "run_id_present", "branch"})
+    _DELIVER_KEYS = frozenset({"ok", "deliver_accepted", "boundary_action"})
+
+    def test_schema_stamps_protocol_steps(self) -> None:
+        smoke = _load_smoke_module()
+        outcome = smoke.run_smoke(mode="dry-run")
+        evidence = smoke.sanitize_evidence(outcome["evidence"])
+        self.assertEqual(evidence.get("schema"), "inkstatute.qqbot.smoke_evidence.v1")
+        self.assertEqual(evidence.get("mode"), "dry-run")
+        self.assertIs(evidence.get("not_live_acceptance"), True)
+        steps = evidence["steps"]
+        for name in self._PROTOCOL_STEPS:
+            self.assertIn(name, steps)
+            self.assertTrue(steps[name].get("ok"))
+        # Full RESEARCH allowlist keys must survive sanitize (not ok-only).
+        ack = steps["adapter_ack"]
+        self.assertEqual(set(ack.keys()), self._ACK_KEYS)
+        self.assertIn("http_status", ack)
+        self.assertIn("op", ack)
+        self.assertIn("accepted", ack)
+        ingress = steps["session_ingress"]
+        self.assertEqual(set(ingress.keys()), self._INGRESS_KEYS)
+        deliver = steps["adapter_deliver"]
+        self.assertEqual(set(deliver.keys()), self._DELIVER_KEYS)
+
+    def test_protocol_dirty_payload_stripped(self) -> None:
+        smoke = _load_smoke_module()
+        dirty = {
+            "schema": "inkstatute.qqbot.smoke_evidence.v1",
+            "mode": "dry-run",
+            "not_live_acceptance": True,
+            "steps": {
+                "adapter_ack": {
+                    "ok": True,
+                    "http_status": 200,
+                    "op": 12,
+                    "accepted": True,
+                    "Authorization": "QQBot fixture-token",
+                    "access_token": "fixture-token",
+                    "bot_secret": DEMO_BOT_SECRET,
+                    "content": "raw legal payload must not leak",
+                    "body": '{"secret":true}',
+                    "calls": [{"url": "https://api.example/v2/users"}],
+                },
+                "session_ingress": {
+                    "ok": True,
+                    "ingress_action": "accepted",
+                    "run_id_present": True,
+                    "branch": "message",
+                    "url": "http://cdn.example/a.bin",
+                    "payload": {"openid": "should-drop"},
+                },
+                "adapter_deliver": {
+                    "ok": True,
+                    "deliver_accepted": True,
+                    "boundary_action": "allow",
+                    "envelope": {"content": "nope"},
+                    "client_secret": "fixture-secret",
+                },
+            },
+        }
+        clean = smoke.sanitize_evidence(dirty)
+        serialized = json.dumps(clean, ensure_ascii=False)
+        banned = (
+            "Authorization",
+            "access_token",
+            DEMO_BOT_SECRET,
+            "fixture-token",
+            "fixture-secret",
+            "raw legal payload",
+            "https://",
+            "http://",
+            "should-drop",
+        )
+        for token in banned:
+            self.assertNotIn(token, serialized, msg=f"banned token still present: {token!r}")
+        steps = clean["steps"]
+        self.assertEqual(set(steps["adapter_ack"].keys()), self._ACK_KEYS)
+        self.assertEqual(set(steps["session_ingress"].keys()), self._INGRESS_KEYS)
+        self.assertEqual(set(steps["adapter_deliver"].keys()), self._DELIVER_KEYS)
+        self.assertIs(clean.get("not_live_acceptance"), True)
 
 
 class TestRunbookExists(unittest.TestCase):
