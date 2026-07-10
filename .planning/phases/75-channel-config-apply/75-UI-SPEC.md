@@ -102,7 +102,7 @@ Accent is **not** for primary submit fill. Primary submit uses header navy `#1a1
 | Dual-knob legend | Effective enablement requires both knobs ON |
 | Platform knob label (QQ) | Platform flag (`qqbot_channel_enabled`) |
 | Host knob label (QQ) | Host enabled (`channels.qqbot.enabled`) |
-| Platform knob label (WeCom) | Platform flag (`channel_delivery_enabled`) |
+| Platform knob label (WeCom) | Platform flag (`wecom_channel_enabled`) |
 | Host knob label (WeCom) | Host enabled (`channels.wecom.enabled`) |
 | Effective ON | Effective: enabled (platform AND host) |
 | Effective OFF | Effective: disabled — both knobs must be ON for live IO |
@@ -182,7 +182,7 @@ Rules:
 | Channel | Knob A (platform, read-only in form) | Knob B (host, editable) | Effective |
 |---------|--------------------------------------|-------------------------|-----------|
 | QQBot | `RuntimeFeatureFlags.qqbot_channel_enabled` | `channels.qqbot.enabled` | `A AND B` |
-| WeCom | `RuntimeFeatureFlags.channel_delivery_enabled` (WeCom platform gate equivalent for MVP) | `channels.wecom.enabled` | `A AND B` |
+| WeCom | `RuntimeFeatureFlags.wecom_channel_enabled` (dedicated WeCom platform knob; not `channel_delivery_enabled`) | `channels.wecom.enabled` | `A AND B` |
 
 Display requirements:
 1. Each knob shown as its own row: label + boolean state (`ON` / `OFF` with `status-ok` / `status-err` or muted OFF).
@@ -228,7 +228,7 @@ Display requirements:
 
 | Field | Control | Editable |
 |-------|---------|----------|
-| Platform `channel_delivery_enabled` | Read-only status | No |
+| Platform `wecom_channel_enabled` | Read-only status | No |
 | `enabled` | Checkbox “Host enabled” | Yes |
 | `token_secret_ref` | Text ref input | Yes |
 | `encoding_aes_key_secret_ref` | Text ref input | Yes |

@@ -95,10 +95,16 @@ Plans:
   3. Operator can see dual-knob effective enablement (platform flag AND host enabled) for QQ and equivalent WeCom flags — UI/API does not collapse to a single bypass toggle
   4. Credential fields accept secret refs only (`env:…` / `secret://…`); GET responses never echo resolved secret values
 
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 5 plans
 
-### Phase 76: Provider Registry + Model Catalog
+Plans:
+- [ ] 75-01-PLAN.md — wecom_channel_enabled + freeze + Wave 0 scaffolds + host gate PYTHONPATH
+- [ ] 75-02-PLAN.md — /config/channels effective dual-knob + apply_semantics restart_required
+- [ ] 75-03-PLAN.md — QQ store→host load (store wins if file exists) + dual-knob preserved
+- [ ] 75-04-PLAN.md — WeCom from_operator_doc + wecom-service channel_wiring dual-knob
+- [ ] 75-05-PLAN.md — Incremental SSR /config/channels form per UI-SPEC
+
+**UI hint**: yes
 
 **Goal**: Operators can select built-in vendor providers or define custom OpenAI-compatible endpoints, pick a catalog main model with vision capability metadata, and probe connectivity without leaking secrets
 **Depends on**: Phase 74 (can run in parallel with Phase 75 after 74)

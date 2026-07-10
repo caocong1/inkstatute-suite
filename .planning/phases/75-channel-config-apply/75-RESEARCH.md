@@ -464,16 +464,19 @@ No `.cursor/rules/` directory present in this workspace. Follow `AGENTS.md` + GS
    - What we know: Today hosts use env only; store is new SoT for console.
    - What's unclear: Should store always win when file exists, or only when `operator_config_enabled`?
    - Recommendation: Store wins when the configured store path exists; else env. Document clearly. Optional `metadata.config_source` later.
+   - **Resolved (planner 2026-07-10):** Store wins when the configured `OperatorConfigStore.path` **exists** (file present). Env is bootstrap fallback only when the store file is absent. Do **not** gate host-load precedence on `operator_config_enabled` (that flag gates admin writes, not host read precedence). Optional `metadata.config_source` deferred.
 
 2. **Where does WeCom apply helper live?**
    - What we know: No `wecom-service` dual-knob wiring factory; adapter is in `packages/channels/wecom`.
    - What's unclear: Host process entrypoint for WeCom production composition.
    - Recommendation: Put `build_wecom_channel_config` next to WeCom channel package (or thin wecom-service module); keep flag import out of adapter class.
+   - **Resolved (planner 2026-07-10):** Mirror QQ — `WeComChannelConfig.from_operator_doc` on the channel package (Mapping/doc → refs + host `enabled`; **no** `RuntimeFeatureFlags` import). Dual-knob AND lives in `services/wecom-service/src/wecom_service/channel_wiring.py` as `build_wecom_channel_config(*, flags, doc)` plus optional `load_wecom_channel_config(store|env)` with store-wins-if-file-exists. Adapter class stays flag-free.
 
 3. **Should platform flags be env-loadable for operators?**
    - What we know: `RuntimeFeatureFlags` is constructed in code; QQ platform flag is not the same env key as host enable.
    - What's unclear: Deploy story for flipping `qqbot_channel_enabled` / `wecom_channel_enabled` without code.
    - Recommendation: Out of Phase 75 mutate scope — show as read-only; deploy/docs can document process construction. Do not write platform flags from `/config/channels` PUT.
+   - **Resolved (planner 2026-07-10):** Out of Phase 75 mutate scope. Platform knobs (`qqbot_channel_enabled`, `wecom_channel_enabled`) are **read-only** on GET/PUT `/config/channels` effective block and SSR. PUT must never accept or persist platform flags. Deploy/process construction remains the only way to flip them.
 
 ## Environment Availability
 

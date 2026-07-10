@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-current_plan: Not started
-status: ready_to_plan
-stopped_at: Phase 74 verified passed — ready for Phase 75
-last_updated: "2026-07-10T08:06:24.340Z"
-last_activity: 2026-07-10 — Phase 74 verification passed
+current_plan: 01
+status: ready_to_execute
+stopped_at: Phase 75 planned — ready to execute 75-01
+last_updated: "2026-07-10T08:20:00.000Z"
+last_activity: 2026-07-10 — Phase 75 plans created (5 plans, 3 waves)
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 8
+  total_plans: 13
   completed_plans: 6
   percent: 33
 ---
@@ -22,16 +22,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.10 Operator Config Console — Phase 75 Channel Config Apply (ready to plan)
+**Current focus:** v1.10 Operator Config Console — Phase 75 Channel Config Apply (ready to execute)
 
 ## Current Position
 
 Phase: 75 of 78 (Channel Config Apply)
-Current Plan: Not started
-Total Plans in Phase: 0
-Plan: —
-Status: Ready to plan
-Last activity: 2026-07-10 — Phase 74 verification passed (ADM-01, ADM-03)
+Current Plan: 01 of 05
+Total Plans in Phase: 5
+Plan: 75-01
+Status: Ready to execute
+Last activity: 2026-07-10 — Phase 75 planned (5 plans / 3 waves; CHAN-01..04)
 
 Progress: [██░░░░░░░░] 33% (2/6 v1.10 phases)
 
@@ -117,6 +117,11 @@ Recent decisions affecting current work:
 - [Phase 74]: Evolved test_no_put_handler_exists into put-exists + 405 operational PUT (Pitfall 1)
 - [Phase 74]: RBAC /config cases use temp store + operator_config_enabled=True for allow paths
 - [Phase 74]: TDD RED skipped: handlers already landed in 74-02; this plan is proof-only
+- [Phase 75 planning]: Store wins when OperatorConfigStore.path exists; else env fallback (OQ-1)
+- [Phase 75 planning]: WeCom apply helper in wecom-service/channel_wiring.py; from_operator_doc on channel package (OQ-2)
+- [Phase 75 planning]: Platform flags read-only on /config/channels; add wecom_channel_enabled (not channel_delivery_enabled)
+- [Phase 75 planning]: Restart-to-apply MVP via metadata.apply_semantics=restart_required; no hot-reload
+- [Phase 75 planning]: Enhance GET/PUT /config/channels in-place with effective dual-knob block; no platform-flag PUT
 
 ### Pending Todos
 
@@ -139,21 +144,22 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T08:03:42.304Z
-Stopped at: Completed 74-03-PLAN.md
+Last session: 2026-07-10T08:20:00.000Z
+Stopped at: Phase 75 planned — ready to execute 75-01
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
 Requirements: .planning/REQUIREMENTS.md (20/20 mapped)
 Research summary: .planning/research/SUMMARY.md
+Phase 75 plans: .planning/phases/75-channel-config-apply/75-0{1,2,3,4,5}-PLAN.md
+Phase 75 validation: .planning/phases/75-channel-config-apply/75-VALIDATION.md
+Phase 74 verification: .planning/phases/74-admin-config-api-rbac/74-VERIFICATION.md
 Phase 74 plans: .planning/phases/74-admin-config-api-rbac/74-0{1,2,3}-PLAN.md
-Phase 74 validation: .planning/phases/74-admin-config-api-rbac/74-VALIDATION.md
 Phase 73 verification: .planning/phases/73-operator-config-foundation/73-VERIFICATION.md
-Phase 73 research/context: .planning/phases/73-operator-config-foundation/
 Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Continue Phase 74: execute 74-03 (config tests + evolve test_read_only)
+- Execute Phase 75: `/gsd-execute-phase 75` (start 75-01 Wave 1)
 - Carried human gates (Phase 5 / 8 / QQ `--live`) remain open — do not auto-close
