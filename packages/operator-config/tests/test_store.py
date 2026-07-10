@@ -123,6 +123,13 @@ class TestOperatorConfigStore(unittest.TestCase):
             self.assertEqual(Path(dst), path)
             self.assertEqual(Path(src), path.with_suffix(path.suffix + ".tmp"))
 
+    def test_gitignore_covers_operator_config_tmp_sibling(self) -> None:
+        """WR-04: atomic-write .tmp siblings must be gitignored like the store file."""
+        root = Path(__file__).resolve().parents[3]
+        gitignore = (root / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn(".inkstatute/operator-config.json.tmp", gitignore)
+        self.assertIn("operator-config.json.tmp", gitignore)
+
     def test_save_rejects_invalid_document_without_writing(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "operator-config.json"

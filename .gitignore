@@ -19,7 +19,9 @@ secrets/
 *.lock
 # Operator config store (refs-only JSON; never commit local runtime copies)
 .inkstatute/operator-config.json
+.inkstatute/operator-config.json.tmp
 operator-config.json
+operator-config.json.tmp
 logs/
 router_logs/
 sessions/
