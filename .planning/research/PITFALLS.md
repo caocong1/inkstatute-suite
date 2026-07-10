@@ -1,428 +1,388 @@
-# Pitfalls Research: v1.9 QQBot Host Composition
+# Pitfalls Research
 
-**Domain:** Adding a thin production QQBot webhook host, runtime channel registration, full-path smoke Protocol hardening, and controlled live QQ integration on top of the shipped v1.8 package-level QQBot loop.
-**Researched:** 2026-07-09
+**Domain:** Adding a writable Operator Config Console + provider catalogs + vision/main hybrid routing to InkStatute (channel+adapter platform with existing default-OFF flags, secret refs, read-only admin UI, QQ dual-knob, WeCom output boundary, Hermes as separate agent backend)
+**Researched:** 2026-07-10
 **Confidence:** HIGH
 
-This research covers common mistakes when **composing host-level production paths around existing packages** — not re-implementing Ed25519, normalization, sender, or session logic. v1.8 already shipped those as composable modules (`packages/channels/qqbot`, 321 unit tests, `dependencies=[]`, ADAPTER-04 no-wecom, Protocol freeze, flag default OFF) with audit status `gaps_found`: no production webhook host, no `DefaultRunRuntime.channels` registration / flag→config mapping, and smoke `--dry-run` that exercises leaf helpers only. v1.9 must close those gaps without unfreezing Protocols, without leaking WeCom into qqbot, without deleting Phase 08 lawyer-trial artifacts, and without auto-claiming live QQ acceptance.
+This research covers common mistakes when **adding writable operator configuration and vision routing on top of an already-shipped platform** — not greenfield admin UIs. InkStatute already has: `admin-console-api` / `admin-web-ui` (strictly read-only, field allowlist), `RuntimeFeatureFlags` (all default OFF), QQ dual-knob (`RuntimeFeatureFlags.qqbot_channel_enabled` AND `QQBotHostConfig.enabled`), process-edge `*_REF` / `secret://` resolution, WeCom output boundary, and Hermes as an agent backend that must **not** be configured from this project. Phases continue from **73**.
 
-Suggested phase themes (roadmap may renumber): **HOST** (thin webhook composition), **REG** (runtime registration + dual-knob mapping), **SMOKE** (Protocol-path dry-run), **LIVE** (controlled `--live` human gate), **SAFETY** (freeze / secrets / Phase-08 preservation).
+Suggested phase themes (roadmap may renumber): **73 SAFETY** (config schema + secret-ref contract + flag defaults), **74 CHANNEL-CFG** (QQ/WeCom writable config without dual-knob collapse), **75 PROVIDER-CFG** (vendor + custom OpenAI-compatible catalogs), **76 MODEL-CATALOG** (built-in selectable models + capability metadata), **77 VISION-ROUTE** (auto/always/never hybrid), **78 PERSIST-AUDIT** (persistence, process-edge resolve, audit log), **79 DOCS-GATES** (operator docs + smoke honesty + carried human gates).
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Building a fat host that reimplements package logic
+### Pitfall 1: Configuring Hermes from the InkStatute console
 
 **What goes wrong:**
-The host re-copies signature verification, normalization, token refresh, sender envelopes, or session resolution instead of calling `QQBotChannelAdapter.verify_and_ack` / `normalize_inbound` / `deliver`, `QQBotRuntimeIngress.handle_callback`, and `handle_feedback_callback`. Two divergent code paths appear: unit tests stay green on the package while production webhook behavior drifts. Bugs fixed in v1.8 modules never reach the live host.
+The config console writes Hermes profile fields, `~/.hermes` paths, gateway adapters, model lists, or WeCom/QQ credentials into Hermes runtime. Operators “fix” channel/provider settings by editing the agent backend. Hermes gateway/meta notices re-enter the user path; InkStatute stops owning channel ingress/egress; AGENTS.md / V2 PRD boundary collapses.
 
 **Why it happens:**
-v1.8 modules look “library-only” and hosts feel incomplete without local logic. WeCom’s `services/wecom-service` is a large reference, so developers clone its shape instead of a thin compose layer over already-complete qqbot packages.
+Hermes is the first production agent backend and historically owned channels. Operators and implementers conflate “configure the lawyer bot” with “configure Hermes.” Existing Hermes WeCom/QQ connections look like the natural place to put new knobs.
 
 **How to avoid:**
-- Keep the host as orchestration only: HTTP raw body + headers → `RawInbound` → `verify_and_ack` → (message) ingress/session → `deliver`; (interaction) `handle_feedback_callback` → optional interaction ACK.
-- Do not duplicate Ed25519, envelope builders, or `SessionScope` construction in the host.
-- Place the host under `services/` (or a thin `scripts`/entry module that imports packages), never thicken `packages/channels/qqbot` with a server framework.
+- Hard rule: console mutates **InkStatute-owned** config only (channel hosts, provider_model / model-gateway lanes, vision routing). Never write Hermes core, gateway, profile secrets, or `~/.hermes`.
+- Persist config under InkStatute services/packages; resolve secrets at InkStatute process edge.
+- Document explicitly: Hermes remains agent logic only; channel + provider UI is InkStatute-owned.
+- Gate tests: no Hermes filesystem/profile write APIs; no import of Hermes config writers from the console package.
 
 **Warning signs:**
-- Host file contains `derive_keypair`, `normalize_message_event`, or copy-pasted SHA/Ed25519 helpers.
-- Host tests mock QQ OpenAPI instead of composing Fake transports through the adapter.
-- Package README still says “host maps flag→config” but no host code does that mapping.
+- API fields named `hermes_*`, `profile_path`, `gateway_*` in writable schemas.
+- README says “edit Hermes model” or points operators at `~/.hermes`.
+- Enabling QQ/WeCom in the console also toggles Hermes gateway adapters.
 
 **Phase to address:**
-HOST — first composition plan must wire existing public APIs only.
+Phase 73 SAFETY + Phase 74 CHANNEL-CFG — schema allowlist and boundary tests first.
 
 ---
 
-### Pitfall 2: Treating package-green as “deployed webhook host complete”
+### Pitfall 2: Planting raw secrets in writable config objects or API responses
 
 **What goes wrong:**
-Teams ship v1.9 claiming production QQBot readiness because 321 package tests and leaf smoke pass. Operators still have no single HTTPS callback that joins ACK → ingress/session/feedback → deliver. The v1.8 audit gap is papered over with “modules exist.”
+UI/API accepts or echoes API keys, WeCom tokens, QQ BotSecrets, or provider keys as plaintext fields. Values land in config JSON, contract logs, admin responses, browser localStorage, or git. Breaks SAFE-02 / AGENTS.md and the existing health allowlist that already excludes secret refs and `api_base_url` from read views.
 
 **Why it happens:**
-v1.8 phase success criteria were package-scoped by design. Habit is to treat unittest green as product-complete.
+Writable UIs default to “value in, value out.” Smoke `--live` already uses value env vars; developers copy that shape into production config. Read-only admin never needed write-path redaction discipline.
 
 **How to avoid:**
-- Define done as: one host entrypoint that composes the full path under default-OFF flags, plus a dry-run that calls adapter + session Protocol surfaces.
-- Keep “live QQ acceptance” out of done; require operator evidence for LIVE.
-- Re-run the v1.8 audit gap checklist as v1.9 exit criteria.
+- Config schema stores **refs only** (`secret://…`, `env:VAR`, or named `*_REF`). Values resolve once at process edge (same pattern as `QQBotHostConfig` + `resolve_secret_ref`).
+- GET responses return ref shapes / “configured: true|false”, never secret values. Mask on write-ack.
+- Reject payloads that look like raw tokens in `*_REF` fields (fail closed).
+- Ban-list tests: no `Authorization`, BotSecret, corp secret, or key material in config persistence, audit events, or evidence JSON.
 
 **Warning signs:**
-- ROADMAP/REQUIREMENTS mark HOST-* complete without a webhook handler module.
-- Smoke evidence steps still only list `signature` / `send_text` / `send_keyboard` / `callback` leaf helpers.
-- No process binds an HTTPS path QQ can call for `op=13` and `op=0`/`12`.
+- Form fields labeled “API Key” without “reference” wording.
+- Config dump includes `sk-…`, AES keys, or BotSecret hex.
+- `.env.example` and console schema diverge (one refs, one values).
 
 **Phase to address:**
-HOST + milestone verification — explicit “host composition present” gate.
+Phase 73 SAFETY + Phase 78 PERSIST-AUDIT.
 
 ---
 
-### Pitfall 3: Dual-knob desync (`RuntimeFeatureFlags` vs `QQBotChannelConfig`)
+### Pitfall 3: Collapsing QQ dual-knob into a single UI toggle
 
 **What goes wrong:**
-Host enables `RuntimeFeatureFlags.qqbot_channel_enabled=True` but constructs `QQBotChannelAdapter(QQBotChannelConfig())` (still `enabled=False`), or the reverse. ACK/delivery stay refused (`503`) while operators believe the platform flag is on. Or config is enabled without injecting `token_manager` + `transport`, so `_live_io_ready()` stays false and the adapter remains fixture-only.
+Console exposes one “Enable QQBot” switch that sets only `RuntimeFeatureFlags.qqbot_channel_enabled` **or** only `QQBotHostConfig.enabled`. Live injection stays stripped; ACK returns refuse; operators believe the channel is on. Or the UI sets both True while skipping transport/token injection, leaving `_live_io_ready()` false.
 
 **Why it happens:**
-README already documents that the adapter gates solely on `QQBotChannelConfig.enabled` (+ injected transports) and does **not** import `RuntimeFeatureFlags`. Host authors forget the mapping. Dual defaults both `False` hide the bug until someone opts in one knob only.
+Dual-knob AND semantics are easy to oversimplify in UX. v1.9 already documented the pitfall; a writable UI reintroduces it by “making enablement simple.”
 
 **How to avoid:**
-- Host construction must be: `QQBotChannelConfig(enabled=flags.qqbot_channel_enabled, …refs…)` plus injected Fake/Urllib transports when live IO is intended.
-- Add a REG-phase test: flag True → config.enabled True → with transports, `capabilities().metadata["network_io"]` is True; flag False → ACK refused.
-- Never teach the adapter to import `RuntimeFeatureFlags` (keeps package embeddable and freeze-safe).
+- Model enablement as two explicit knobs (platform flag + host config), both default OFF, AND-gated in wiring — do not invent a third shadow flag that bypasses either.
+- UI copy must state: both must be ON; smoke `--live` value env ≠ host `*_REF` enablement.
+- Regression tests from Phase 69: flag-alone / host-alone / both-on with and without transports.
 
 **Warning signs:**
-- Host reads only `INKSTATUTE_QQBOT_CHANNEL_ENABLED` into flags but not into `QQBotChannelConfig`.
-- Health reports `fixture_only=True` after “enabling” the channel in ops docs.
-- Registration inserts an adapter into `channels=` that cannot deliver.
+- Single boolean `qqbot_enabled` in the writable schema with no dual mapping.
+- Health shows `fixture_only=True` after “enable” in UI.
+- Docs claim console enablement replaces dual-knob.
 
 **Phase to address:**
-REG — flag→config mapping + transport injection tests.
+Phase 74 CHANNEL-CFG.
 
 ---
 
-### Pitfall 4: Registering into `DefaultRunRuntime.channels` without a real host path
+### Pitfall 4: Mutating the read-only admin console in place
 
 **What goes wrong:**
-Someone adds `QQBotChannelAdapter` to `DefaultRunRuntime(..., channels=(adapter,))` in a unit test or factory and calls that “runtime registration.” Outbound `deliver` may be reachable from the runtime, but inbound QQ webhooks never hit `verify_and_ack` → ingress. Operators still cannot register a callback URL.
+Teams add POST/PUT to `admin-console-api` or flip `metadata.read_only` false on existing session/task/feedback views. Field allowlists weaken; RBAC/TenantGuard assumptions break; “ops read views” and “config writes” share one blast radius. Existing `test_read_only.py` (no post/put/delete handlers) becomes a silent casualty.
 
 **Why it happens:**
-`DefaultRunRuntime` already accepts `channels=()`; it is the most visible “registration” hook. Inbound webhook ownership is easy to forget because WeCom also separates ingress service from runtime.
+Admin Web UI already exists; extending it feels cheaper than a separate config surface. M2/M3 treated admin as read-only by design — that constraint is easy to forget under milestone pressure.
 
 **How to avoid:**
-- Treat REG as two deliverables: (1) flag→config factory that builds a live-ready adapter, (2) HOST webhook that uses that factory and calls ingress after ACK.
-- Document that `channels=` enables runtime-mediated delivery, not QQ platform callback receipt.
-- Integration test: simulated HTTP callback → adapter ACK → `QQBotRuntimeIngress.handle_callback` → (fake) deliver.
+- Prefer a **separate** config API/service (or clearly versioned `/config` write surface) with its own flag (default OFF), authz, and audit trail.
+- Keep existing admin GET views read-only and allowlisted; do not reuse their serializers for secret-bearing config.
+- If sharing the admin-web-ui shell, isolate write routes behind a distinct flag and backend enforcement (UI hide ≠ authz).
 
 **Warning signs:**
-- Only constructor/unit changes under `platform-runtime` with no HTTP/webhook module.
-- Ingress tests remain package-only; no host-level composition test.
+- `handle_admin_post` appears next to `handle_admin_get`.
+- Config endpoints return the same envelopes as `/sessions` without write audit fields.
+- Flag freeze tests break because write paths piggyback `admin_api_enabled` alone.
 
 **Phase to address:**
-REG after or with HOST — registration without webhook is incomplete.
+Phase 73 SAFETY (surface split) before any write handlers.
 
 ---
 
-### Pitfall 5: HTTP host breaks Ed25519 by consuming/re-serializing the body
+### Pitfall 5: Logging or persisting raw legal image payloads on vision turns
 
 **What goes wrong:**
-Framework middleware parses JSON first; the host verifies signature over `json.dumps(parsed)` or a second read of an empty body. Validation (`op=13`) or event verify fails intermittently. Worse: host skips verify “temporarily” to get URL registration working — forging risk (seen in other QQ webhook products that only sign the challenge and never verify pushes).
+Inbound WeCom/QQ images (contracts, IDs, case materials) are base64-logged, written into contract events, stored in config audit, or forwarded to providers with full retention. Violates `raw_payload_ref` privacy baseline and legal work-product expectations. Vision “debug” dumps become the highest-risk leak surface in the product.
 
 **Why it happens:**
-Package tests pass raw bytes/fixtures into `verify_and_ack`. Real ASGI/WSGI stacks make raw-body access awkward. Pressure to pass QQ console URL validation encourages verify bypass.
+Multimodal debugging wants the bytes. Provider SDKs accept `image_url` / base64 inline. Teams treat images like text prompts and forget AGENTS.md: prefer refs; never commit/store raw legal payloads by default.
 
 **How to avoid:**
-- Read **raw body bytes once**; pass the same bytes into signature verify; parse JSON only after.
-- Map `X-Signature-Ed25519` / `X-Signature-Timestamp` into `RawInbound` metadata exactly as the adapter expects.
-- Fail closed on missing/invalid signature for non-challenge traffic; never ship `VERIFY_SIGNATURE=false` as default.
-- Host tests: official demo vector through the HTTP handler, not only through `signature.py`.
+- Ingress stores media as refs (`raw_payload_ref` / object-store keys); vision runner resolves bytes ephemerally at process edge.
+- Contract/audit events record: media ref, content-type, size hash, provider/model id, routing decision — **not** image bytes or OCR full text by default.
+- Provider calls: prefer zero-retention / non-training endpoints where policy requires; never commit fixtures with real client scans.
+- Privacy gate tests: vision path fixtures must fail if raw base64 or `data:image` appears in JSONL/evidence.
 
 **Warning signs:**
-- Host calls `await request.json()` before verify.
-- Logs show verify failures only in production, never in unit tests.
-- Feature flag or env to disable signature verification defaults on.
+- Vision request builders concatenate base64 into logged dicts.
+- Evidence JSON grows megabytes on image turns.
+- “Temporary” debug flag dumps images to `/tmp` inside the repo tree.
 
 **Phase to address:**
-HOST — raw-body contract in the first webhook plan.
+Phase 77 VISION-ROUTE + Phase 78 PERSIST-AUDIT.
 
 ---
 
-### Pitfall 6: Host ACK path too slow or wrong shape for `op=13` / two-tier ACK
+### Pitfall 6: Wrong or missing vision capability metadata → silent mis-route
 
 **What goes wrong:**
-Host awaits full Hermes/agent work inside the webhook request before returning. QQ retries or drops the callback. Or host always returns generic `{"op":12}` for validation challenges, so callback URL registration never succeeds. Or interaction events get webhook ACK but never `PUT /interactions/{id}` when live IO is on.
+Catalog marks a text-only model (e.g. GLM-class) as vision-capable, or leaves capability unknown. `INKSTATUTE_VISION_ROUTING=auto` either skips the vision model (images ignored / errors) or always double-calls vision+main (cost/latency + inconsistent answers). Custom OpenAI-compatible endpoints inherit “supports vision” from the vendor template incorrectly.
 
 **Why it happens:**
-Package adapter already encodes challenge + two-tier ACK, but the host must return the adapter’s response body/status promptly and must not block on agent completion. Long legal tasks tempt synchronous handling.
+OpenAI-compatible APIs look identical for chat and vision until runtime. Catalogs copy marketing names without a capability probe. `.env.example` documents `auto|always|never` but code treats unknown as “assume multimodal.”
 
 **How to avoid:**
-- Webhook handler: verify_and_ack → return ACK/challenge body immediately; schedule ingress/agent/deliver asynchronously (same pattern as WeCom quick-ACK + control plane).
-- Assert `op=13` responses contain `plain_token` + hex signature from adapter metadata/body.
-- Live path: preserve adapter’s `op12_plus_interaction_put` behavior; dry-run must not perform real PUT (existing smoke invariant).
+- Model catalog entries require explicit `supports_vision: true|false` (no silent default true).
+- `auto`: if inbound has image AND main `supports_vision=false` → vision then main; if main true → main only; if capability unknown → fail closed or force explicit operator choice.
+- Probe/custom endpoint registration must set capability from operator declaration + optional non-mutating probe — never infer solely from URL path.
+- Fixture matrix: text-only main + image inbound; multimodal main + image; no-image turn (must not call vision).
 
 **Warning signs:**
-- Single request spans agent `submit_run` before HTTP response.
-- QQ console validation fails while package `handle_validation_challenge` tests pass.
-- Smoke live evidence shows interaction without ack step.
+- Catalog rows without capability fields.
+- Production traces show vision calls on every turn including pure text.
+- Operator sets vision model empty but routing=`auto` and images “disappear” without error.
 
 **Phase to address:**
-HOST (fast ACK) + LIVE (two-tier ACK evidence).
+Phase 76 MODEL-CATALOG + Phase 77 VISION-ROUTE.
 
 ---
 
-### Pitfall 7: Smoke “hardening” that still only hits leaf helpers — or hits the network in CI
+### Pitfall 7: Vision→main handoff leaks provider/gateway meta past the output boundary
 
 **What goes wrong:**
-Dry-run is extended with more sender/token assertions but still never calls `QQBotChannelAdapter` Protocol methods or `QQBotRuntimeIngress` / session runtime. False confidence returns. Alternatively, “full path” smoke accidentally constructs `Urllib*` transports in default CI, flaking or leaking credentials.
+Vision stage errors (“rate limit”, “model xyz unavailable”, provider stack traces) or intermediate captions are delivered raw to WeCom/QQ. Hermes/gateway-style notices reappear via a new path. Legal conclusions get mixed with routing debug. Dual-model turns bypass the assistant output boundary because they are “not Hermes.”
 
 **Why it happens:**
-Current `scripts/smoke_test.py` is explicitly leaf-oriented (signature, Fake egress, feedback helper). Extending steps is easier than composing adapter+ingress. Live env vars in developer shells leak into CI.
+Output boundary was built for Hermes meta/gateway/update/command. New provider_model / vision paths feel “already InkStatute-owned” so filtering is skipped. Error strings from SDKs are user-facing by accident.
 
 **How to avoid:**
-- SMOKE dry-run must invoke: `verify_and_ack` + `normalize_inbound` (or ingress `handle_callback`) + `deliver` with Fake transports, and record Protocol-path steps in sanitized evidence.
-- Keep `--live` fail-closed: missing env → non-zero exit before Urllib construction (existing pattern).
-- CI runs only `--dry-run`; never auto-run `--live`.
-- Evidence must keep `not_live_acceptance: true` for dry-run; forbid secret substrings (existing allowlist).
+- Every channel deliver path (WeCom + QQ host) runs the same output policy on vision errors, provider failures, and intermediate vision text.
+- User-visible failures use InkStatute service copy only; provider/model ids stay in operator logs/refs.
+- Do not stream raw vision captions to users unless product policy explicitly allows sanitized summaries.
+- Contract tests: vision failure fixtures must assert boundary `rewrite|block`, not `allow` of provider text.
 
 **Warning signs:**
-- Evidence `steps` keys unchanged from v1.8 leaf set.
-- Import graph of dry-run still avoids `QQBotChannelAdapter` / `QQBotRuntimeIngress`.
-- CI job passes `INKSTATUTE_QQBOT_*` value secrets.
+- User messages contain `openai`, `ollama`, `404 model`, or API base URLs.
+- Vision errors skip `boundary_action` in smoke/Protocol evidence.
+- Separate “vision deliver” helper that does not call output policy.
 
 **Phase to address:**
-SMOKE — Protocol-path dry-run as explicit requirement.
+Phase 77 VISION-ROUTE (wire through existing boundary; do not fork a second egress).
 
 ---
 
-### Pitfall 8: Auto-claiming live QQ acceptance from `--live` exit 0
+### Pitfall 8: Auto-claiming live acceptance from config-console smoke
 
 **What goes wrong:**
-A green `scripts/smoke_test.py --live` (or a single successful C2C send) is written into VERIFICATION/UAT as “QQBot production accepted.” Milestone done definition absorbs a human gate. Parallel Phase 05/08 WeCom gates get confused with QQ live.
+CI or autonomous phase complete marks WeCom UAT, lawyer trial, or QQ `--live` acceptance done because the config UI saved settings and a dry-run passed. `not_live_acceptance=true` discipline from v1.9 is lost. Carried human gates are closed without operator judgment.
 
 **Why it happens:**
-Operators want a checkbox; smoke toolkit looks like acceptance. v1.8 already deferred live as HUMAN GATE; pressure returns in v1.9.
+Writable config feels like “production readiness.” Prior milestones already fought this for QQ smoke; a new console reopens the claim path.
 
 **How to avoid:**
-- LIVE phase delivers capability + runbook + sanitized evidence schema only.
-- Acceptance requires human-signed evidence (operator, timestamp, bot app id ref, scenario list); automation may only produce candidate evidence with `not_live_acceptance` / explicit human-gate markers unless an operator flips a documented acceptance artifact.
-- Do not mark Phase 08 lawyer-trial or Phase 05 WeCom UAT complete from QQ smoke.
+- Config smoke/dry-run always stamps non-acceptance; never flip carried Phase 5 / Phase 8 / QQ live gates from console evidence.
+- Separate “config schema valid” from “live channel/provider accepted.”
+- Runbook: enabling knobs in UI ≠ live OpenAPI/WeCom UAT.
 
 **Warning signs:**
-- REQUIREMENTS traceability shows LIVE-* “Complete” from CI alone.
-- Evidence JSON lacks operator attestation fields but STATUS says accepted.
-- Phase 08 directory cleared or “superseded by QQ.”
+- SUMMARY/VERIFICATION cites console screenshot as live acceptance.
+- Evidence sets `not_live_acceptance=false`.
+- ROADMAP checks off human gates in the same phase as config CRUD.
 
 **Phase to address:**
-LIVE — human gate protocol; SAFETY — preserve Phase 08 artifacts.
+Phase 79 DOCS-GATES (and every phase’s verification wording).
 
 ---
 
-### Pitfall 9: Unfreezing ChannelAdapter / BackendAdapter to “make the host fit”
+### Pitfall 9: Rebuilding Hermes model gateway / treating provider catalog as Hermes config
 
 **What goes wrong:**
-Host needs a new hook (e.g. `handle_webhook`, `register`, streaming QQ events), so someone adds a 7th `ChannelAdapter` method or mutates BackendAdapter. `test_contract_freeze_not_violated.py` and contract-test-suite baselines fail or are weakened. Every channel/backend implementer pays the tax.
+Milestone scope expands into forking Hermes model gateway, skill registry, or MCP registry “so the console can manage models.” Provider catalog becomes a second source of truth that fights Hermes lawfirm runtime. Violates AGENTS.md: do not rebuild Hermes core systems unless a phase explicitly changes scope.
 
 **Why it happens:**
-Composition friction feels like a Protocol gap. Extending the Protocol seems cleaner than adapting HTTP↔existing six methods.
+v1.7 already has `model_gateway` / `hybrid_routing` flags and provider_model multi-provider runners. Implementers either ignore them and rebuild, or wire the console straight into Hermes internals for “one model list.”
 
 **How to avoid:**
-- Keep Protocol at exactly 6 channel methods / 9 backend methods unless a phase explicitly changes scope and updates freeze tests + all implementers.
-- Put HTTP/webhook specifics in the host; keep adapter methods as the only channel boundary.
-- If a new host-facing helper is needed, add a plain function/class in qqbot or the service — not a Protocol method.
+- Console configures **InkStatute** provider_model / model-gateway **lanes** and catalogs; Hermes mode continues to use existing adapter bootstrap — not Hermes file edits.
+- Reuse `ProviderModelBackendConfig.api_key_ref` patterns; do not invent parallel secret fields inside Hermes profiles.
+- Scope check in Phase 73: no new Hermes core packages; no writes under Hermes profile bundles from console code.
 
 **Warning signs:**
-- PR touches `packages/platform-runtime/src/platform_runtime/protocols.py` method set.
-- Freeze tests rewritten to expect 7 methods “temporarily.”
-- WeCom/web_sse adapters forced to stub new methods.
+- PRs touch Hermes upstream trees or copy gateway routers into `services/`.
+- Single “models” table claimed to drive both Hermes and provider_model without an adapter boundary.
+- Flag `model_gateway_enabled` flipped default True to “make the console work.”
 
 **Phase to address:**
-SAFETY (baseline) — reaffirm freeze before HOST/REG work.
+Phase 73 SAFETY + Phase 75 PROVIDER-CFG.
 
 ---
 
-### Pitfall 10: WeCom import leakage into `packages/channels/qqbot` (ADAPTER-04)
+### Pitfall 10: Writable config bypasses default-OFF flags / backend enforcement
 
 **What goes wrong:**
-Host author “reuses” WeCom ingress/session/output helpers by importing `wecom_service` from qqbot package modules, or moves host code into the qqbot package and pulls WeCom types. ADAPTER-04 and `test_no_wecom_import.py` fail — or worse, tests are narrowed so only old modules are scanned.
+Saving `enabled=true` in config immediately opens live IO even when `RuntimeFeatureFlags` are False, or the Web UI hides controls but write APIs accept unauthenticated/flag-off mutations. Mirrors the classic “frontend flag only” failure mode.
 
 **Why it happens:**
-WeCom is the only full service reference. Shared need (output policy, session patterns) already lives in `channel-core` / `platform-runtime`; people still reach for `wecom_service`.
+Config persistence is treated as source of truth above feature flags. Dual systems (flags vs stored config) race; the write path forgets `require_enabled`.
 
 **How to avoid:**
-- Host may depend on qqbot + platform-runtime + channel-core + feedback-service; qqbot package must not import `wecom_service`.
-- Reuse `channel_core.output_policy` / `owned_notices`, not WeCom-only modules.
-- Extend `test_no_wecom_import.py` to any new qqbot production modules; keep `dependencies=[]` unless a phase explicitly adds optional extras outside the frozen package invariant.
+- New console flag(s) default False; write and read-config routes call `require_enabled`.
+- Channel/provider activation remains fail-closed: stored config AND runtime flags AND secret resolution success.
+- Authz on server: static token / RBAC — never “UI disabled ⇒ secure.”
+- Tests: flag off → 403/disabled even with valid config body; flag on + config off → still fail closed for live IO.
 
 **Warning signs:**
-- `wecom_service` string in new qqbot `.py` files.
-- pyproject `dependencies` no longer `[]`.
-- Host logic merged into `packages/channels/qqbot/src` with HTTP framework deps.
+- Config service starts with writes enabled whenever `ADMIN_API_TOKEN` is set.
+- No `operator_config_enabled` (or equivalent) in `RuntimeFeatureFlags`.
+- Browser can PUT config while API flag is off.
 
 **Phase to address:**
-SAFETY + HOST — isolation tests on every new module.
-
----
-
-### Pitfall 11: Hermes meta/gateway notices leak on the new QQ deliver path
-
-**What goes wrong:**
-Host wires backend results straight to `deliver` without `apply_output_policy` / owned notices. Ordinary QQ users see Hermes update/command/help/status text. WeCom path stays clean; QQ becomes the leak channel.
-
-**Why it happens:**
-Adapter already applies policy in some deliver branches; host-level “shortcut deliver” or raw backend stdout bypasses it. New composition forgets the boundary that WeCom learned the hard way.
-
-**How to avoid:**
-- Every user-visible QQ egress goes through the same output-boundary rules as WeCom (`channel_core.apply_output_policy`).
-- Host must not send backend meta strings via a side channel (raw OpenAPI call outside adapter.deliver).
-- Add a host/SMOKE fixture where backend yields a gateway-like notice and assert deliver content is owned-notice or blocked, not raw meta.
-
-**Warning signs:**
-- Host calls `send_message` directly with backend stdout.
-- Deliver tests only cover happy-path legal text.
-- Capability docs claim “parity with WeCom output boundary” without a failing-meta fixture.
-
-**Phase to address:**
-HOST (boundary on compose) + SMOKE (meta fixture).
-
----
-
-### Pitfall 12: Deleting or “archiving away” Phase 08 lawyer-trial directory
-
-**What goes wrong:**
-Milestone cleanup treats `.planning/phases/08-lawyer-trial-acceptance/` as stale V2 noise and removes it while adding QQ host work. Carried human-gate evidence and templates disappear; STATE.md continuity breaks.
-
-**Why it happens:**
-v1.9 focus is QQ; Phase 08 is WeCom lawyer trial and looks unrelated. Aggressive `.planning` hygiene.
-
-**How to avoid:**
-- Explicit SAFETY constraint: do not delete Phase 08 directory; QQ live does not replace it.
-- Milestone scripts/checklists list Phase 08 as carry-forward, not in-scope delete.
-- If moving artifacts, copy+link — never unlink without human approval.
-
-**Warning signs:**
-- Git status shows deleted `08-*` UAT/evidence templates.
-- STATE.md “Parallel Human Gate” section removed “to simplify.”
-
-**Phase to address:**
-SAFETY — continuous; verify at milestone open/close.
-
----
-
-### Pitfall 13: Committing secrets, tokens, runtime DBs, or raw payloads via host/smoke
-
-**What goes wrong:**
-Host `.env.example` gets real values; smoke evidence includes `Authorization`, openids, message bodies, or callback payloads; runbooks paste bot secrets. Repo and CI logs become secret stores.
-
-**Why it happens:**
-Live debugging needs real credentials; evidence “helpfulness” fights sanitization. v1.8 smoke already bans many keys — host logs are a new surface.
-
-**How to avoid:**
-- Secrets only via external env/secret manager; config carries `*_ref` only.
-- Reuse smoke sanitizer allowlists for host debug evidence; hash openids; drop raw bodies.
-- Pre-commit / tests: refuse forbidden evidence keys; scan for `DEMO_BOT_SECRET` only as public vector in tests, never as production secret.
-
-**Warning signs:**
-- `INKSTATUTE_QQBOT_CLIENT_SECRET` value in repo files.
-- Evidence JSON contains `http://` or `access_token`.
-- Host writes callback JSONL with full `raw_payload`.
-
-**Phase to address:**
-HOST + SMOKE + LIVE — sanitization as exit criterion.
+Phase 73 SAFETY + Phase 74/75 write routes.
 
 ---
 
 ## Technical Debt Patterns
 
+Shortcuts that seem reasonable but create long-term problems.
+
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Leaf-only smoke | Fast green CI | False production confidence | Never as HOST/SMOKE done |
-| Flag on without transport injection | Looks “enabled” | Silent fixture-only mode | Never in production host |
-| Sync agent inside webhook | Simpler code | QQ retries, timeouts, duplicate turns | Never for legal long tasks |
-| Disable signature verify to pass URL check | Unblocks console setup | Forged inbound turns | Never |
-| Import WeCom helpers into qqbot | Faster copy | ADAPTER-04 break, channel coupling | Never |
-| Claim live from `--live` exit 0 | Instant “done” | Fake acceptance, safety bypass | Never |
-| Add Protocol method for webhook | Feels clean | Freeze break across channels | Only if explicit unfreeze phase |
-| In-process wakeup store only | No deps | Multi-worker recall wrong | Dev-only; document durable store for multi-instance |
+| Extend read-only admin with POST | Fast UI reuse | Breaks read-only contract, allowlist, audit story | Never for secret-bearing config |
+| Single “enable channel” boolean | Simpler UX | Dual-knob desync, false “live” belief | Never for QQ; WeCom must keep fail-closed parity |
+| Store API keys in config JSON “for MVP” | Faster demo | Secret sprawl, git/log leaks | Never — refs only from day one |
+| Infer vision support from model name | Less catalog work | Silent mis-route, legal image mishandling | Never — explicit capability field |
+| Log base64 images “temporarily” | Easier debug | Legal privacy incident | Never in contract logs / evidence |
+| Wire console to Hermes `~/.hermes` | Familiar ops path | Destroys channel ownership boundary | Never |
+| Share smoke value-env with host `*_REF` | One credential story | Operators plant values in REF fields | Never — document two lanes |
+| Default new flags to True so UI “works” | Demo green | Accidental live IO | Never |
 
 ## Integration Gotchas
 
+Common mistakes when connecting to external services.
+
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| QQ HTTPS callback | Host returns HTML/framework 200 without challenge body | Return adapter challenge JSON for `op=13`; fast ACK for events |
-| QQ webhook vs WebSocket | Enable both or wrong mode | Webhook XOR WebSocket on QQ side; InkStatute v1.9 is webhook host |
-| Raw body signature | Verify parsed JSON | Verify `timestamp + raw_body` bytes ([QQ sign docs](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/sign.html)) |
-| `DefaultRunRuntime.channels` | Treat as inbound webhook registration | Use for delivery registration; pair with HOST ingress |
-| Dual enable knobs | Flip only platform flag | Map flag → `QQBotChannelConfig.enabled` + inject transports |
-| Feedback INTERACTION | Message path only in host | Compose `handle_feedback_callback` + live interaction ACK |
-| Output boundary | Direct OpenAPI send from host | Only `adapter.deliver` / policy-wrapped content |
-| Smoke `--live` | Run in CI / mark UAT complete | Operator-only; human gate evidence |
-| Phase 08 carry | Delete trial dir during QQ milestone | Preserve `.planning/phases/08-lawyer-trial-acceptance/` |
+| QQBot host | UI enable ≠ dual-knob + transport injection | Map both knobs; inject transports only when live IO intended; keep `*_REF` |
+| WeCom service | Console writes Hermes WeCom gateway creds | Write InkStatute wecom-service refs only; output boundary stays on egress |
+| Provider OpenAI-compatible | Assume `/v1` means vision + tools identical | Explicit capability + probe; normalize errors before user delivery |
+| Vision provider | Send client scans with training-on retention | Prefer policy-approved endpoints; ref-first; no raw bytes in logs |
+| Hermes agent backend | Console “syncs” model/provider into Hermes | Do not configure Hermes from this project; adapter consumes InkStatute run inputs only |
+| Admin token auth | Reuse `ADMIN_API_TOKEN` without write-scope separation | Separate flag + tighter authz/audit for mutations |
+| Model gateway (v1.7) | Rebuild gateway instead of configuring existing lane | Configure behind `model_gateway_enabled` default OFF; no Hermes fork |
+| Smoke `--live` | Treat successful live leaf send as host+console acceptance | Keep `not_live_acceptance=true`; human archival only |
 
 ## Performance Traps
 
+Patterns that work at small scale but fail as usage grows.
+
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Blocking webhook on Hermes | QQ retries, duplicate AgentTurns | ACK first, async run | First long legal answer |
-| Token fetch on every deliver | Latency spikes, 401 bursts | Reuse `TokenManager` cache in host-scoped singleton | Moderate traffic |
-| In-memory idempotency only | Duplicate turns after restart/multi-worker | Durable idempotency key store at host | >1 worker or restart mid-retry |
-| Passive reply after window | `MSG_EXPIRE` / silent fail | Respect scene windows; owned notice / active strategy | Group >5m, C2C >60m |
+| Vision+main on every text turn | 2× latency/cost | Gate vision on inbound image + routing mode | First busy lawyer day |
+| Inline base64 in hot path logs | Disk/CPU spikes, PII risk | Ref-only logging | Dozens of image messages |
+| Catalog fetch on every request | UI/API latency | Cache catalog; version stamp | Multi-operator editing |
+| Unbounded custom provider list | Slow validation, confused routing | Cap + validation + health probe | Tens of custom endpoints |
+| Synchronous vision then main without timeout budget | Channel ACK/reply timeouts | Per-stage timeouts; fail closed with service notice | Large scans / slow vision APIs |
 
 ## Security Mistakes
 
+Domain-specific security issues beyond general web security.
+
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Skip Ed25519 on pushes | Forged lawyer turns / feedback ([prior art](https://github.com/lobehub/lobehub/issues/16538)) | Mandatory verify; no default bypass |
-| Commit bot/client secrets | Credential theft, impersonation | Refs only; env outside repo |
-| Raw legal text in host logs | Privacy / compliance breach | `raw_payload_ref`, hash, allowlisted evidence |
-| Host enables channel by default | Accidental production exposure | Flags/config default OFF |
-| Meta notice leak on QQ | Users see Hermes operator UI | `apply_output_policy` on all egress |
+| Secrets in writable config / GET bodies | Credential theft, git commit | Refs only; allowlist; mask; ban-list tests |
+| UI-only disable of config writes | Unauthorized channel/provider enable | Backend `require_enabled` + authz |
+| Image bytes in contract JSONL | Legal privilege / privacy breach | `raw_payload_ref`; privacy gates |
+| Custom provider URL without SSRF controls | Internal network pivot | Allowlist schemes/hosts; block link-local/metadata IPs |
+| Config audit without actor identity | No forensics after bad enable | Audit who/when/what-ref (never what-secret) |
+| Mixing smoke value env into production REF fields | Secrets in wrong store | Schema validation of ref shapes |
+| Weakening health allowlist to “show config” | Leak refs/paths/base URLs | Keep allowlist; separate operator config view with redaction |
 
 ## UX Pitfalls
 
+Common user experience mistakes in this domain.
+
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Validation fails, bot never receives | “QQ bot is dead” with no events | Correct `op=13` host response + runbook |
-| Slow ACK then silence | User retries, duplicate asks | Fast ACK + owned progress notice |
-| Live smoke marked accepted, bot still OFF | Operators think done; users blocked | Human gate checklist separate from enablement |
-| Feedback buttons no ACK | Keyboard clicks feel broken | Two-tier interaction ACK on live path |
+| One Enable toggle for QQ | Operators think live works; it doesn’t | Show dual-knob status + “live IO ready” explicitly |
+| “API Key” free-text without ref hint | Secrets pasted into config | Label as secret reference; link to `.env.example` / runbook |
+| Vision routing jargon only | Mis-set `auto/always/never` | Short examples: text-only main + image → vision then main |
+| Error text from providers to lawyers | Confusing / non-legal UX; possible meta leak | InkStatute service notices only |
+| Catalog of 100 models unsorted | Wrong model selected | Built-in curated catalog + capability badges (vision yes/no) |
+| Saving config implies “accepted live” | False confidence | Banner: dry-run/config ≠ live UAT / human gates |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Production webhook host:** Exists and composes `verify_and_ack` → ingress/session/feedback → `deliver` — verify one module path, not only package unit tests.
-- [ ] **Flag→config mapping:** `qqbot_channel_enabled` True constructs `QQBotChannelConfig(enabled=True)` — verify REG test.
-- [ ] **Transport injection:** Live-ready adapter has `token_manager` + `transport` so `_live_io_ready()` is True — verify capabilities `network_io`.
-- [ ] **Raw-body verify:** HTTP handler verifies demo vector without re-serialization — verify host-level test.
-- [ ] **op=13 through host:** Challenge response returned on webhook — verify console registration or fixture HTTP test.
-- [ ] **Smoke Protocol path:** Dry-run evidence includes adapter/session steps — verify step keys / import calls.
-- [ ] **Dry-run non-acceptance:** Evidence has `not_live_acceptance: true` — verify sanitizer.
-- [ ] **Live is human gate:** No REQUIREMENT marked accepted from CI `--live` alone — verify traceability notes.
-- [ ] **Protocol freeze:** Still 6 ChannelAdapter methods — verify `test_contract_freeze_not_violated.py`.
-- [ ] **No wecom in qqbot:** New modules pass `test_no_wecom_import.py` — verify AST scan scope includes them.
-- [ ] **Output boundary:** Meta fixture blocked on QQ deliver path — verify policy test.
-- [ ] **Phase 08 preserved:** `.planning/phases/08-lawyer-trial-acceptance/` still present — verify tree.
-- [ ] **Secrets:** No value secrets in repo/evidence — verify smoke forbidden keys + git scan.
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Secret refs:** Writable schema rejects raw secrets; GET never returns values — verify ban-list tests green
+- [ ] **Dual-knob:** QQ enable in UI maps to **both** flag and host config; transports injected only when intended — verify Phase-69-style matrix
+- [ ] **Hermes boundary:** No console code writes Hermes profile/gateway — verify import/allowlist gate
+- [ ] **Read-only admin preserved:** Existing `/sessions|/tasks|/feedback` still `read_only: true` with no POST — verify `test_read_only.py`
+- [ ] **Vision capability:** Every catalog model has explicit `supports_vision` — verify unknown ≠ multimodal
+- [ ] **Vision privacy:** Image turns log refs only — verify privacy scan on vision fixtures
+- [ ] **Output boundary:** Vision/provider errors rewritten/blocked on WeCom and QQ deliver — verify boundary fixtures
+- [ ] **Flags default OFF:** New console/provider/vision flags False — verify feature_flags introspection test
+- [ ] **Live honesty:** Evidence/docs still `not_live_acceptance`; carried human gates untouched — verify Phase 79 wording
+- [ ] **Docs parity:** README + `.env.example` + runbook match console fields (refs vs smoke values)
 
 ## Recovery Strategies
 
+When pitfalls occur despite prevention, how to recover.
+
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Fat host drift | HIGH | Delete duplicated logic; rewire to package APIs; add composition tests |
-| Dual-knob desync | LOW | Fix factory mapping; add REG regression test |
-| Body/signature break | MEDIUM | Fix raw-body handling; add demo-vector HTTP test; rotate secrets if bypass was deployed |
-| Smoke false confidence | MEDIUM | Extend dry-run to Protocol path; keep leaf steps as sub-checks only |
-| False live acceptance | HIGH | Reopen LIVE as human gate; attach operator evidence; revert “accepted” markers |
-| Protocol unfreeze | HIGH | Revert Protocol; restore freeze tests; move behavior to host/helpers |
-| WeCom leak into qqbot | MEDIUM | Remove imports; move shared code to channel-core; widen no-wecom tests |
-| Phase 08 deleted | HIGH | Restore from git; re-link STATE.md carry-forward |
-| Secret commit | HIGH | Rotate QQ bot secrets; purge history if needed; strengthen scanners |
+| Raw secrets in config store | HIGH | Rotate all exposed keys; scrub store/logs; force ref-only migration; audit git history |
+| Hermes configured from console | HIGH | Revert Hermes writes; restore InkStatute-owned channel path; reaffirm output boundary; delete console→Hermes APIs |
+| Dual-knob collapse | MEDIUM | Restore AND mapping; add UI status for both knobs; regression tests |
+| Image bytes in contract logs | HIGH | Purge/redact logs; rotate storage; tighten privacy gate; notify per legal policy |
+| Mis-routed vision | MEDIUM | Fix catalog capabilities; set routing fail-closed; replay fixtures |
+| Live acceptance auto-claimed | LOW–MEDIUM | Reopen human gates in STATE/ROADMAP; stamp evidence non-acceptance; do not delete Phase 08 artifacts |
+| Admin read-only broken | MEDIUM | Split write surface; restore GET-only handlers; re-freeze allowlist tests |
 
 ## Pitfall-to-Phase Mapping
 
+How roadmap phases should address these pitfalls. Phases continue from 73.
+
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Fat host / reimplementation | HOST | Host imports package public APIs only; no duplicated crypto/normalize |
-| Package-green ≠ host-complete | HOST + milestone gate | Webhook entrypoint exists; audit gaps closed |
-| Dual-knob desync | REG | Flag True/False × config × transports matrix tests |
-| channels= without webhook | REG + HOST | Composition test: HTTP→ACK→ingress→deliver |
-| Raw body / verify bypass | HOST | Demo vector via HTTP handler; no default bypass |
-| Slow/wrong ACK / op=13 | HOST + LIVE | Challenge fixture; ACK-before-agent; interaction PUT on live only |
-| Leaf-only or networked CI smoke | SMOKE | Protocol-path dry-run; CI dry-run only |
-| Auto live acceptance | LIVE | Human attestation required; CI cannot complete LIVE-* |
-| Protocol unfreeze | SAFETY | Freeze tests unchanged (6 / 9 methods) |
-| WeCom import leak | SAFETY + HOST | `test_no_wecom_import` covers new modules; `dependencies=[]` |
-| Hermes meta leak on QQ | HOST + SMOKE | Meta fixture → owned notice / block |
-| Phase 08 deletion | SAFETY | Directory present at open and close |
-| Secret/payload commit | HOST + SMOKE + LIVE | Sanitizer + ref-only config |
+| Hermes configured from console | 73 SAFETY, 74 CHANNEL-CFG | No Hermes write APIs; boundary/import tests |
+| Raw secrets in config/API | 73 SAFETY, 78 PERSIST-AUDIT | Ref-shape validation + ban-list on GET/persist/audit |
+| QQ dual-knob collapse | 74 CHANNEL-CFG | Flag-alone / host-alone / both-on matrix |
+| Mutating read-only admin in place | 73 SAFETY | `test_read_only.py` still green; separate write surface |
+| Raw legal image persistence | 77 VISION-ROUTE, 78 PERSIST-AUDIT | Privacy scan on vision fixtures/evidence |
+| Wrong vision capability / mis-route | 76 MODEL-CATALOG, 77 VISION-ROUTE | Explicit capability + auto/always/never fixture matrix |
+| Vision errors bypass output boundary | 77 VISION-ROUTE | Boundary fixtures on vision/provider failures |
+| Auto-claim live acceptance | 79 DOCS-GATES | `not_live_acceptance`; carried gates unchanged |
+| Rebuild Hermes gateway / wrong catalog authority | 73 SAFETY, 75 PROVIDER-CFG | Scope gate; reuse provider_model/model-gateway lanes |
+| Config writes bypass default-OFF | 73 SAFETY, 74–75 | `require_enabled` on write routes; flags default False |
+| Custom endpoint SSRF / capability lie | 75 PROVIDER-CFG, 76 MODEL-CATALOG | URL allowlist + declared capability |
+| Smoke value-env vs host REF confusion | 74 CHANNEL-CFG, 79 DOCS-GATES | Docs + schema reject values in REF fields |
+| Vision+main cost on text turns | 77 VISION-ROUTE | No vision call without inbound image (unless `always`) |
+| Provider meta in lawyer-facing text | 77 VISION-ROUTE | Output policy on all provider paths |
 
 ## Sources
 
-- In-repo: `.planning/PROJECT.md` (v1.9 goal), `.planning/milestones/v1.8-MILESTONE-AUDIT.md` (host/smoke/live gaps), `.planning/STATE.md` (carried gates, Phase 08 preserve), `AGENTS.md` (secrets, output boundary, scope).
-- In-repo: `packages/channels/qqbot` (`adapter.py` `_live_io_ready`, `config.py` dual-knob, `ingress_runtime.py` host-callable boundary), `tests/test_contract_freeze_not_violated.py`, `tests/test_feature_flag.py`, `tests/test_no_wecom_import.py`, `scripts/smoke_test.py` (leaf dry-run + live human gate).
-- Prior milestone pitfalls: `.planning/research/PITFALLS.md` (v1.8 package-level; superseded by this host-composition focus).
-- Official QQ Bot signature / webhook validation: [安全和授权](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/sign.html), [事件订阅与通知](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/event-emit.html) (MEDIUM–HIGH; raw body + op=13).
-- Ecosystem warning: forged QQ webhooks when verify skipped ([lobehub#16538](https://github.com/lobehub/lobehub/issues/16538)) — LOW–MEDIUM confidence as external incident, HIGH as pattern match to “challenge-only verify.”
-- Community webhook host notes (ports, webhook XOR websocket): [bub-qq README](https://github.com/bubbuild/bub-contrib/blob/main/packages/bub-qq/README.md) — MEDIUM.
+- Repo: `.planning/PROJECT.md` (v1.10 goals, secret-ref + vision decisions, Hermes-not-configured)
+- Repo: `AGENTS.md` (no Hermes rebuild; no secrets in git; output boundary; `raw_payload_ref`)
+- Repo: `runbook/SMOKE_TEST_RUNBOOK.md` (dual-knob, `*_REF` vs smoke value env, `not_live_acceptance`)
+- Repo: `.env.example` (provider/vision routing knobs; InkStatute path — not Hermes)
+- Repo: `services/admin-console-api` read-only contract + field allowlist (`test_read_only.py`, README)
+- Repo: `packages/backends/provider_model/.../config.py` (`api_key_ref` not raw key)
+- Repo: `packages/platform-runtime/.../feature_flags.py` (all default OFF, including `model_gateway_enabled` / `hybrid_routing_enabled`)
+- ConfigCat: feature-flag mistakes — frontend-only flags; secrets in flags ([configcat.com/blog/feature-flag-best-practices](https://configcat.com/blog/feature-flag-best-practices/)) — MEDIUM
+- Multi-provider routing: dialect/schema breakage on fallback; capability-specific vision differences ([tianpan.co JSON-mode fallback](https://tianpan.co/blog/2026-04-27-json-mode-dialect-fallback-router-breakage), LiteLLM/multi-provider guides) — MEDIUM
+- Legal/vision privacy: raw document images to cloud LLMs; ZDR and logging risks ([vaquill.ai legal AI data path](https://www.vaquill.ai/blog/where-your-legal-ai-data-actually-goes), GDPR document-processing patterns) — MEDIUM
+- Secret-ref operator patterns: plaintext in CR/config specs vs `secretKeyRef` (OpenFeature / Superset operator security docs) — MEDIUM
+
+**Confidence notes:** InkStatute-specific pitfalls (Hermes boundary, dual-knob, read-only admin, live-acceptance honesty) are HIGH confidence from repo evidence. Generic multi-provider dialect and legal-image residency claims are MEDIUM (ecosystem sources; validate per chosen providers in Phase 75–77).
 
 ---
-*Pitfalls research for: v1.9 QQBot Host Composition (add host/registration/smoke/live on existing v1.8 packages)*
-*Researched: 2026-07-09*
+*Pitfalls research for: InkStatute v1.10 Operator Config Console + vision routing*
+*Researched: 2026-07-10*

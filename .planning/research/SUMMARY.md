@@ -1,176 +1,173 @@
 # Project Research Summary
 
-**Project:** 墨律 InkStatute — v1.9 QQBot Host Composition
-**Domain:** Thin production QQBot webhook host composition over shipped v1.8 channel packages
-**Researched:** 2026-07-09
+**Project:** InkStatute v1.10 Operator Config Console
+**Domain:** Operator config plane (writable channel / provider / model catalog / vision routing) on an existing channel+adapter platform
+**Researched:** 2026-07-10
 **Confidence:** HIGH
 
 ## Executive Summary
 
-v1.9 closes the accepted v1.8 audit gaps: there is still no deployable InkStatute-owned QQBot webhook host, no production wiring of `QQBotChannelAdapter` into `DefaultRunRuntime.channels`, and smoke dry-run only exercises leaf helpers. Experts in this repo build channel hosts as thin composition layers — stdlib HTTP edge, package-owned Protocol IO, explicit DI into `DefaultRunRuntime` — not as second adapters or multi-channel gateways. Package-level QQBot (signature, normalize, token, egress, session, ingress, feedback, leaf smoke) is already validated and must be reused, not re-selected.
+v1.10 is not a greenfield admin product — it is an **InkStatute-owned operator config plane** layered onto shipped read-only admin surfaces, QQ/WeCom hosts, `provider_model`, and default-OFF feature flags. Experts in this niche (Hermes provider UX, OpenWebUI/LiteLLM connections, vision-fallback gateways) ship curated vendor + custom OpenAI-compatible endpoints, selectable model catalogs with capability flags, secret-ref credentials, and explicit vision→main mix for image turns. InkStatute should mirror that UX **without** writing Hermes `~/.hermes` or rebuilding Hermes gateway/router/skill systems.
 
-The recommended approach is a new `services/qqbot-service/` with `dependencies=[]`, mirroring admin-web-ui’s pure `handle_*_request` + `http.server` pattern and WeCom’s host/package split (without importing `wecom_service`). Host factory maps dual default-OFF knobs (`RuntimeFeatureFlags.qqbot_channel_enabled` → `QQBotChannelConfig.enabled`), injects transports only when live-ready, registers the adapter into `channels=()`, and composes `verify_and_ack` → message/feedback branch → ingress/session → `deliver`. Smoke extends `scripts/smoke_test.py --dry-run` across the full adapter/session Protocol path with Fakes; `--live` stays a HUMAN GATE.
+**Recommended approach:** Add a new `packages/operator-config/` authority (schemas, atomic JSON store, loader, built-in catalog) and a thin vision-router at run-prep; **extend** `admin-console-api` + `admin-web-ui` for flag-gated `/config/*` mutations; materialize docs into existing channel/`ProviderModelBackendConfig` shapes with process-edge `resolve_secret_ref`. Keep `dependencies = []`, stdlib SSR forms, dual-knob channel enablement, and Protocols frozen.
 
-Key risks are fat-host reimplementation, dual-knob desync, raw-body signature breakage, leaf-only smoke false confidence, Protocol unfreeze, WeCom import leakage, Hermes meta leak on QQ deliver, and auto-claiming live acceptance. Mitigate with composition-only host APIs, REG matrix tests, ACK-first webhook semantics, Protocol-path smoke evidence, freeze/no-wecom gates, output-boundary fixtures, and operator attestation for LIVE.
+**Key risks:** (1) collapsing the Hermes ownership boundary by editing agent profiles from the console; (2) planting raw secrets in config/API responses; (3) collapsing QQ dual-knob into one toggle; (4) silent image drop or vision meta leaking past the output boundary; (5) auto-claiming live WeCom/QQ acceptance from config smoke. Mitigate with refs-only schemas + ban-list tests, separate write surface + `operator_config_enabled=False`, dual-knob UI/matrix tests, fail-closed vision routing with AttachmentRef privacy, and `not_live_acceptance` honesty on carried human gates.
 
 ## Key Findings
 
 ### Recommended Stack
 
-No new PyPI packages. Reuse vendored `_ed25519` + lazy `urllib` transports already shipped in v1.8; do not reintroduce `cryptography` / `httpx`. Host HTTP uses Python 3.11+ stdlib `http.server` with a testable pure handler. Composition imports existing `inkstatute-channels-qqbot`, `platform-runtime`, `feedback-service`, and Fake adapters for dry-run.
+Extend existing empty-deps Python hosts rather than introducing FastAPI/React/DB. Writable config lives in `admin-console-api` / `admin-web-ui`; persistence is an atomic JSON file (`INKSTATUTE_OPERATOR_CONFIG_PATH`); secrets remain refs resolved at process edge. Optional `openai>=2.45.0,<3` stays a host-only lazy install for probes — never a hard package dependency. Full detail: [STACK.md](STACK.md).
 
 **Core technologies:**
-- Python 3.11+ stdlib `http.server` — thin production webhook host — matches admin-web-ui / lawyer-web-chat; zero new deps
-- `inkstatute-channels-qqbot` 0.1.0 — adapter / ingress / session / feedback primitives — host composes, never forks
-- `platform-runtime` (`DefaultRunRuntime`, `RuntimeFeatureFlags`) — channel registration via constructor injection — no Protocol change
-- `feedback-service` — INTERACTION → queue normalize/dedupe — PYTHONPATH composition like package tests
-- stdlib `asyncio` + Fake transports — sync HTTP → async Protocol methods; CI dry-run without network
-
-**What NOT to add:** FastAPI/Starlette, `qq-botpy` / WebSocket mode, new DB/queue/Redis, Protocol unfreeze, flag defaults flipped to True, WeCom imports into qqbot host.
-
-Details: [STACK.md](STACK.md)
+- **Extend `admin-console-api`:** Writable `/config/*` GET/PUT with allowlist + RBAC — reuses auth; avoids a new mega-service
+- **Extend `admin-web-ui`:** Stdlib SSR forms + CSRF — no React/Vite for operator CRUD
+- **Python 3.11+ stdlib:** Dataclasses, atomic JSON store, `html.escape`, CSP — preserves `dependencies = []`
+- **Existing channel + `ProviderModelBackendConfig`:** Same `*_ref` / `api_key_ref` shapes; additive vision fields
+- **`RuntimeFeatureFlags` + `rbac`:** `operator_config_enabled=False`; `/config` for ADMIN/OPERATOR only
+- **Built-in catalog JSON + generalized `resolve_secret_ref`:** InkStatute SoT for models; hosts resolve values
 
 ### Expected Features
 
-v1.8 package loop is **not** new table stakes. v1.9 table stakes are host-composition capabilities only.
+Operators expect a single InkStatute console for channels + providers + vision — not another README scavenger hunt or Hermes CLI. MVP must prove refs-only persistence, dual-knob safety, catalog-backed main model selection, and runtime vision auto-mix. Defer live `/models` refresh, audit trail, hot-reload, and LiteLLM-style budgets. Full detail: [FEATURES.md](FEATURES.md).
 
 **Must have (table stakes):**
-- Thin production webhook host composing `verify_and_ack` → ingress/session/feedback → `deliver` (default-OFF)
-- Fast verify-and-ACK before heavy agent work (op=13 challenge + op=12 body promptly)
-- Flag→config→adapter factory (dual knobs + transport injection for `_live_io_ready`)
-- Explicit `DefaultRunRuntime.channels` registration (not auto-discovery)
-- Smoke dry-run over full adapter/session Protocol path with Fake transports + sanitized evidence
-- Controlled `--live` path retained as HUMAN GATE (no CI auto-claim)
-- ADAPTER-04 / Protocol freeze / no-wecom / secrets-as-refs preserved
+- Channel config UI/API (QQ + WeCom) with dual-knob effective state
+- Secret-ref-only credential fields (never raw tokens in store/API)
+- Provider registry: built-in vendors + custom OpenAI-compatible
+- Built-in model catalog with `supports_vision` + main model selection
+- Vision routing policy + runtime auto mix for image turns
+- RBAC-gated writes, connection probes, operator docs
 
 **Should have (competitive):**
-- WeCom-parity host shape (channel-swappable composition at service layer)
-- Protocol-path smoke as CI confidence gate
-- Explicit dual-knob factory with 503-when-disabled
-- Sanitized evidence allowlist extensions for new Protocol steps
+- Effective-config / dual-knob audit view
+- Vision capability as first-class catalog metadata + user-safe vision notices
+- Backend-mode aware panels (Hermes mode ≠ provider_model editor)
+- Config change audit trail; optional live catalog refresh for custom endpoints
 
-**Defer (v1.9.x / later):**
-- Durable wakeup/idempotency stores for multi-instance
-- Async verify→enqueue→ACK queue service
-- Multi-channel mega-gateway; WebSocket QQ ingress
-- Auto live acceptance / synthetic lawyer trial from smoke
-
-Details: [FEATURES.md](FEATURES.md)
+**Defer (v2+ / later):**
+- Hot-reload without restart; LiteLLM budgets/virtual keys; per-lawyer model switching
+- Classical OCR-only vision path; editing Hermes profiles; auto-enable every `/models` entry
 
 ### Architecture Approach
 
-**Create `services/qqbot-service/`.** Do not extend `wecom-service` with QQ routes. Package stays library-pure; host owns HTTP edge, secret resolution, wiring, and ACK-first composition. ChannelAdapter remains frozen at 6 methods; registration is host construction, not `platform-runtime` auto-discovery.
+Split an **operator plane** (admin UI → admin API → operator-config store) from the **runtime plane** (hosts load docs → dual-knob + secret resolve → VisionRouter at run-prep → BackendAdapter). Do not put catalog CRUD inside `model-gateway`; do not add a 7th ChannelAdapter method for vision; do not invent a second auth stack. Full detail: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 **Major components:**
-1. `qqbot-service` webhook host — HTTP receive, raw-body capture, compose Protocol path, return ACK
-2. Host wiring factory — flag→config→adapter→`DefaultRunRuntime.channels`→ingress
-3. Reused `QQBotChannelAdapter` / `QQBotRuntimeIngress` / `QQBotSessionRuntime` / `feedback_ingress` — Protocol IO + session/feedback
-4. Reused `DefaultRunRuntime` + `RuntimeFeatureFlags` — embeddable runtime; flags default OFF
-5. Modified `scripts/smoke_test.py` — Protocol-path dry-run + live HUMAN GATE
-
-Details: [ARCHITECTURE.md](ARCHITECTURE.md)
+1. **`packages/operator-config/`** — schemas, store, loader, catalog, refs-only validation
+2. **Vision router** — AttachmentRef + capability flags → `main_direct` | `vision_then_main` | `reject_unsupported`
+3. **Admin mutate surface** — `/config/*` on existing admin-console-api + SSR pages; flags + RBAC
+4. **Host wiring** — QQ/WeCom load operator docs with `from_env` fallback; Protocols frozen
+5. **provider_model / gateway** — consume catalog selection; gateway remains composite runtime, not the console
 
 ### Critical Pitfalls
 
-1. **Fat host reimplements package logic** — compose public adapter/ingress/feedback APIs only; no duplicated Ed25519/normalize/send
-2. **Package-green ≠ host complete** — done requires webhook entrypoint + Protocol-path dry-run, not 321 unit tests alone
-3. **Dual-knob desync** — map `qqbot_channel_enabled` → `QQBotChannelConfig.enabled` and inject transports when live IO intended
-4. **Raw-body / signature break** — read bytes once before JSON parse; never default-bypass verify
-5. **Leaf-only smoke or CI `--live`** — dry-run must call adapter + session/ingress + deliver with Fakes; live stays operator HUMAN GATE
-6. **Protocol unfreeze / WeCom import / meta leak / Phase 08 deletion** — keep 6/9 methods; no `wecom_service` in qqbot; `apply_output_policy` on all egress; preserve lawyer-trial artifacts
+Top risks when adding writable config + vision on this platform. Full detail: [PITFALLS.md](PITFALLS.md).
 
-Details: [PITFALLS.md](PITFALLS.md)
+1. **Configuring Hermes from the console** — mutate InkStatute channels/provider_model only; gate tests ban Hermes filesystem/profile writers
+2. **Raw secrets in config/API** — refs-only schema; GET returns configured booleans; ban-list tests for `sk-…` / tokens
+3. **Collapsing QQ dual-knob** — UI shows platform flag AND host enabled; preserve Phase-69 matrix
+4. **Silent image drop / wrong vision capability** — explicit `supports_vision`; fail closed when vision missing; never default unknown→multimodal
+5. **Vision/provider meta past output boundary + live-acceptance auto-claim** — same output policy on vision errors; smoke stamps `not_live_acceptance`; carried human gates untouched
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure (roadmap may renumber):
+Based on research, suggested **6-phase** structure starting at **Phase 73** (after v1.9 Phase 72). Aligns with architecture dependency order; folds pitfalls’ SAFETY / PERSIST / DOCS themes into foundation and polish rather than seven thin phases.
 
-### Phase 1: Host Skeleton + Safety Baseline (SAFETY/HOST)
-**Rationale:** Gate coverage and isolation invariants must exist before HTTP composition ships.
-**Delivers:** `services/qqbot-service/` package layout, `pyproject.toml` with `dependencies=[]`, V2 gate PYTHONPATH entry, tests for default-OFF / no-wecom / no Protocol-contract edits.
-**Addresses:** Default-OFF + ADAPTER-04 isolation; secret-ref discipline.
-**Avoids:** Protocol unfreeze; WeCom import leakage; Phase 08 deletion; shipping HTTP before wiring invariants.
+### Phase 73: Operator Config Foundation
+**Rationale:** Schemas, store, refs-only validation, and default-OFF flags unblock every later surface; safety gates must exist before any write handler.
+**Delivers:** `packages/operator-config/` (Channel/Provider/Model/Vision docs), atomic JSON store, secret-ref validators, `operator_config_enabled` (+ optional `vision_routing_enabled`) default False, gate coverage entry.
+**Addresses:** Secret-ref persistence contract; Hermes-not-SoT boundary in schema allowlist.
+**Avoids:** Raw secrets in store; Hermes `~/.hermes` fields; new DB/queue; Protocol unfreeze.
 
-### Phase 2: Runtime Registration / Wiring (REG)
-**Rationale:** Ingress composition needs a factory that correctly maps dual knobs and injects the adapter into `channels=()`.
-**Delivers:** `wiring.py` factory: flags→`QQBotChannelConfig`→`QQBotChannelAdapter`→`DefaultRunRuntime(channels=...)`; FakeBackend unit tests; disabled path refuses live IO.
-**Addresses:** Flag→config→adapter wiring; runtime registration.
-**Avoids:** Dual-knob desync; auto-register inside `DefaultRunRuntime`; registration-without-webhook treated as done (pair with Phase 3).
+### Phase 74: Admin Config API + RBAC
+**Rationale:** Mutate path needs authz and allowlist before UI or host apply; keep existing read views read-only.
+**Delivers:** `/config/channels|providers|catalog|vision` GET/PUT on `admin-console-api`; RBAC matrix for ADMIN/OPERATOR; field allowlist; `require_enabled` on writes; planted-secret → 400 tests.
+**Uses:** operator-config package; existing static token + TenantGuard patterns.
+**Avoids:** Weakening `/sessions|/tasks|/feedback` read-only contract; UI-only “security.”
 
-### Phase 3: Webhook Composition Path (HOST)
-**Rationale:** Closes v1.8 audit gap #1 — the missing production callback URL path.
-**Delivers:** Pure `handle_qqbot_webhook_request` + thin `http.server` wrapper; raw body → `verify_and_ack` → challenge / feedback / `QQBotRuntimeIngress` → output boundary → `deliver`; ACK-first semantics; Fake transports in unit tests.
-**Addresses:** Thin production webhook host; fast verify-and-ACK.
-**Avoids:** Fat host; body re-serialization; sync agent before ACK; Hermes meta leak; Hermes-as-channel-boundary.
+### Phase 75: Channel Config Apply (QQ + WeCom)
+**Rationale:** Prove ops→runtime end-to-end without models; dual-knob is the highest channel-specific footgun.
+**Delivers:** Loader → `QQBotChannelConfig` / `WeComChannelConfig`; host wiring with env fallback; admin-web-ui channel page with dual-knob effective state; CSRF on forms.
+**Addresses:** Channel config table stakes; dual-knob visibility.
+**Avoids:** Single-toggle bypass; writing Hermes WeCom/QQ gateway creds.
 
-### Phase 4: Smoke Protocol-Path Hardening (SMOKE)
-**Rationale:** Leaf-only dry-run was the v1.8 false-confidence gap; CI must prove host/package Protocol wiring without network.
-**Delivers:** Extended `scripts/smoke_test.py --dry-run` steps (`adapter_ack`, normalize/ingress, deliver); evidence allowlist; `not_live_acceptance=true`.
-**Addresses:** Full adapter/session Protocol-path smoke; sanitized evidence.
-**Avoids:** Leaf-only “hardening”; Urllib/network in CI dry-run.
+### Phase 76: Provider Registry + Built-in Model Catalog
+**Rationale:** Catalog + custom OpenAI-compatible endpoints make provider config usable; vision needs `supports_vision` metadata first.
+**Delivers:** Static vendor/model catalog JSON; custom provider docs; wire `ProviderModelBackendConfig`; optional connection probe; provider/model UI pages.
+**Uses:** provider_model runners; optional lazy openai probe; model-gateway as optional consumer only.
+**Avoids:** Hermes gateway rebuild; auto-enable all `/models`; raw `api_key` fields.
 
-### Phase 5: Controlled Live Integration (LIVE)
-**Rationale:** Live capability is required for operators but must not redefine milestone acceptance.
-**Delivers:** Host + smoke `--live` with env secrets + Urllib transports; runbook updates; sanitized candidate evidence only.
-**Addresses:** Controlled live path as HUMAN GATE.
-**Avoids:** Auto-claim live acceptance from CI/`--live` exit 0; conflating Phase 05/08 WeCom gates with QQ live.
+### Phase 77: Vision Routing Runtime
+**Rationale:** Core milestone differentiator (GLM text-main + image turns); depends on catalog capabilities and existing AttachmentRef normalize paths.
+**Delivers:** VisionRouter plans; `auto|always|never` (or `auto|always_preprocess|main_only`); vision→main mix; fail-closed user notices; privacy fixtures (no image bytes in contract logs); output-boundary on vision/provider errors.
+**Addresses:** Vision routing table stakes + capability metadata.
+**Avoids:** Silent image drop; vision on every text turn; provider stack traces to lawyers; ChannelAdapter 7th method.
+
+### Phase 78: Console Polish, Docs & Gate Honesty
+**Rationale:** Remaining UI polish, README/`.env.example`/runbook parity, and explicit non-acceptance of carried live gates.
+**Delivers:** Remaining admin-web-ui polish; operator docs (console ↔ env/ref keys; dual-knob; vision policy; “do not edit Hermes”); smoke/dry-run evidence with `not_live_acceptance`; no auto-close of Phase 5 / Phase 8 / QQ live gates.
+**Addresses:** Operator docs; connection-probe UX polish if deferred from 76.
+**Avoids:** Claiming live UAT from config CRUD screenshots.
 
 ### Phase Ordering Rationale
 
-- Safety/wiring before HTTP edge — prevents shipping an insecure or desynced host
-- Composition before smoke claims — smoke must call the same helpers the host uses
-- Live last and gated — dry-run Protocol path can ship without live evidence
-- Package modules are complete — do not re-phase signature/normalize/token work
+- Foundation → API → (channel ∥ provider) → vision → docs matches schema/auth/runtime dependencies and FEATURES.md dependency graph.
+- After Phase 74, **Phases 75 and 76 can run in parallel waves**; Phase 77 waits on catalog `supports_vision`.
+- Safety pitfalls (Hermes boundary, refs-only, flags OFF, read-only admin preserved) are front-loaded in 73–74 so later phases cannot “demo green” by skipping them.
+- Persistence audit concerns are enforced from Phase 73 (schema) through 77–78 (vision privacy + docs), not deferred to a late-only audit phase.
+- No new top-level HTTP service; no Hermes profile editing; Protocols stay frozen.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (HOST):** Async post-ACK worker vs in-request completion for long agent runs — decide ACK scheduling under QQ ~3s window
-- **Phase 5 (LIVE):** Operator evidence / attestation schema for human-gate archive (reuse smoke evidence v1 with live steps)
+- **Phase 77:** Exact vision→main injection format (structured block vs caption); timeout budgets; provider_model vs dedicated vision call shape — MEDIUM gap in FEATURES/ARCHITECTURE
+- **Phase 75–76:** Hot-reload vs restart-to-apply semantics for hosts holding live adapters — pick one in plan-phase
+- **Phase 76:** Custom endpoint SSRF allowlist policy details for operator-supplied base URLs
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (SAFETY/HOST skeleton):** admin-web-ui + gate-coverage patterns are established
-- **Phase 2 (REG):** README already documents flag→config; constructor injection is frozen embeddable pattern
-- **Phase 4 (SMOKE):** Extend existing smoke toolkit; Fake stack already in-repo
+- **Phase 73:** Dataclass schemas + atomic JSON + feature flags — well-established in-repo patterns
+- **Phase 74:** admin-console-api route/RBAC/allowlist extension — clear existing patterns
+- **Phase 78:** README/runbook alignment — documentation, not novel architecture
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | In-repo patterns (admin-web-ui, qqbot empty-deps, urllib/_ed25519); explicit rejection of v1.8 draft cryptography/httpx |
-| Features | HIGH | Sourced from v1.8 audit gaps + PROJECT.md active HOST/SMOKE/LIVE requirements |
-| Architecture | HIGH | Clear NEW vs REUSE vs FROZEN table; WeCom parallel documented without coupling |
-| Pitfalls | HIGH | Host-composition pitfalls mapped to phases; QQ raw-body/op=13 docs + prior forge incidents as pattern warnings |
+| Stack | HIGH | In-repo empty-deps hosts + PyPI openai 2.45.0 verified; alternatives explicitly rejected |
+| Features | HIGH | Hermes/OpenWebUI/LiteLLM + vision-fallback sources; InkStatute shipped surfaces mapped |
+| Architecture | HIGH | ADR-0001 + shipped adapters/admin/channels; package names MEDIUM |
+| Pitfalls | HIGH | Repo-specific (Hermes, dual-knob, read-only admin, live honesty); ecosystem vision/privacy MEDIUM |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Post-ACK concurrency model:** Whether v1.9 MVP uses bounded in-process follow-up vs a minimal async worker — resolve in Phase 3 plan; do not invent a queue service unless ACK deadlines force it
-- **HTTP server binding details:** stdlib `ThreadingHTTPServer` vs shared-loop thread for asyncio — confirm in plan-phase only if deps are proposed (default: stdlib, no ASGI)
-- **Live attestation fields:** Exact operator sign-off artifact shape for LIVE acceptance — document in runbook; keep out of CI gates
-- **Multi-instance durability:** In-memory wakeup/idempotency acceptable for controlled trial; flag as tech debt if multi-worker deploy appears
+- **Hot-reload vs restart:** Architecture allows either; MVP should document restart-to-apply unless a phase plan proves safe in-process reload — resolve in Phase 75/78 planning.
+- **Vision injection format:** Structured extract vs caption into main prompt — decide in Phase 77 plan-phase with fixture matrix.
+- **Capability on AdapterCapabilitySet vs catalog-only:** Prefer catalog-only `supports_vision` to avoid contract freeze — confirm in Phase 76.
+- **Multi-tenant scoped config:** Defer unless `multi_tenant_enabled` is promoted; single-tenant MVP first.
+- **Exact package split:** `vision-router` standalone vs submodule of `operator-config` — roadmapper may pick either; keep vision decision testable without HTTP.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `.planning/PROJECT.md` — v1.9 milestone goals and active requirements
-- `.planning/milestones/v1.8-MILESTONE-AUDIT.md` — host / registration / smoke gaps
-- `packages/channels/qqbot/` — adapter, ingress, config, transports, freeze/no-wecom tests
-- `packages/platform-runtime/` — `DefaultRunRuntime`, `RuntimeFeatureFlags`, frozen Protocols
-- `services/admin-web-ui/` — stdlib HTTP + pure handler pattern
-- `services/wecom-service/` — host/package split reference (library-only; no QQ routes)
-- `scripts/smoke_test.py` — leaf dry-run + `--live` HUMAN GATE baseline
-- `AGENTS.md` — channel ownership, secrets, output boundary, empty-deps culture
+- In-repo: `AGENTS.md`, `.planning/PROJECT.md` (v1.10 decisions), `docs/architecture/adr/ADR-0001-platform-layering.md`
+- In-repo: `services/admin-console-api`, `services/admin-web-ui`, `services/qqbot-service` (SAFE-02, dual-knob), channel configs, `provider_model` config, `platform-runtime` feature flags, `.env.example`
+- Hermes Agent provider docs — built-in vs custom, catalogs, aux/vision paths
+- OpenWebUI OpenAI-compatible connection docs; openai PyPI **2.45.0** (2026-07-09)
+- Vision fallback: 9router#1419, OpenCode vision-fallback issues, Fallback Vision gateway patterns
 
 ### Secondary (MEDIUM confidence)
-- QQ Bot signature / event subscription docs — raw body + op=13 validation patterns
-- Industry webhook verify→ACK guidance — pattern only; queue deferred for v1.9 MVP
+- LiteLLM ↔ OpenWebUI model_list / admin patterns
+- Multimodal cost routing guidance (text on text models; vision only for image turns)
+- ConfigCat feature-flag anti-patterns; legal-AI image residency / ZDR discussions
+- Prior `.planning/research/STACK.md` (v1.9 host composition empty-deps pattern)
 
-### Tertiary (LOW–MEDIUM confidence)
-- External forge incidents when webhook verify skipped — pattern match, not InkStatute-specific
-- Community webhook XOR WebSocket notes — confirms webhook-first scope for v1.9
+### Tertiary (LOW confidence)
+- Exact InkStatute vision prompt injection productization maturity — validate in Phase 77
+- Multi-provider dialect/schema breakage on fallback — validate per chosen vendors in Phase 76–77
 
 ---
-*Research completed: 2026-07-09*
+*Research completed: 2026-07-10*
 *Ready for roadmap: yes*
