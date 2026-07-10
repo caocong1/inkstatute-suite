@@ -70,6 +70,21 @@ class QqbotStoreApplyScaffoldTests(unittest.TestCase):
         self.assertIsNone(via_mapping.token_secret_ref)
         self.assertIsNone(via_mapping.bot_secret_ref)
 
+    def test_from_operator_doc_unknown_secret_uri_does_not_raise(self) -> None:
+        """WR-02: store-valid generalized secret:// must not crash host compose."""
+        host = QQBotHostConfig.from_operator_doc(
+            {
+                "enabled": True,
+                "app_id_ref": "secret://qqbot/custom-app-id",
+                "app_secret_ref": "env:QQBOT_APP_SECRET",
+                "token_secret_ref": "secret://qqbot/app-id",
+            }
+        )
+        self.assertIs(host.enabled, True)
+        self.assertIsNone(host.app_id_ref)  # outside host allowlist → drop
+        self.assertEqual(host.app_secret_ref, "env:QQBOT_APP_SECRET")
+        self.assertEqual(host.token_secret_ref, "secret://qqbot/app-id")
+
     def test_store_file_exists_loads_host_from_store(self) -> None:
         try:
             from qqbot_service.config import load_qqbot_host_config

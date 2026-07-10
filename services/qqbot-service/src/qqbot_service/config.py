@@ -5,9 +5,25 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from qqbot_service.secrets import normalize_config_secret_ref
+from qqbot_service.secrets import InvalidSecretRefError, normalize_config_secret_ref
 
 __all__ = ["QQBotHostConfig", "load_qqbot_host_config"]
+
+
+def _safe_host_ref(raw: object, *, field: str) -> str | None:
+    """Normalize a host secret ref; drop unusable shapes without crashing compose.
+
+    Operator-config accepts generalized ``secret://`` paths; the QQ host
+    allowlist is narrower. Fail closed for live IO (``None``) rather than
+    aborting restart-to-apply materialize (WR-02).
+    """
+    try:
+        return normalize_config_secret_ref(
+            raw if isinstance(raw, str) or raw is None else None,
+            field=field,
+        )
+    except InvalidSecretRefError:
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,24 +88,10 @@ class QQBotHostConfig:
 
         return cls(
             enabled=enabled,
-            app_id_ref=normalize_config_secret_ref(
-                app_id_raw if isinstance(app_id_raw, str) or app_id_raw is None else None,
-                field="app_id_ref",
-            ),
-            app_secret_ref=normalize_config_secret_ref(
-                app_secret_raw
-                if isinstance(app_secret_raw, str) or app_secret_raw is None
-                else None,
-                field="app_secret_ref",
-            ),
-            token_secret_ref=normalize_config_secret_ref(
-                token_raw if isinstance(token_raw, str) or token_raw is None else None,
-                field="token_secret_ref",
-            ),
-            bot_secret_ref=normalize_config_secret_ref(
-                bot_raw if isinstance(bot_raw, str) or bot_raw is None else None,
-                field="bot_secret_ref",
-            ),
+            app_id_ref=_safe_host_ref(app_id_raw, field="app_id_ref"),
+            app_secret_ref=_safe_host_ref(app_secret_raw, field="app_secret_ref"),
+            token_secret_ref=_safe_host_ref(token_raw, field="token_secret_ref"),
+            bot_secret_ref=_safe_host_ref(bot_raw, field="bot_secret_ref"),
         )
 
 
