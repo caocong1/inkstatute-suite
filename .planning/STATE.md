@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: completed
-stopped_at: Phase 72 verified (passed); --no-transition
-last_updated: "2026-07-10T05:25:00.000Z"
-last_activity: 2026-07-10 -- Phase 72 verified (passed); --no-transition
+status: Awaiting next milestone
+stopped_at: Milestone v1.9 archived; awaiting next milestone
+last_updated: "2026-07-10T05:35:00.000Z"
+last_activity: 2026-07-10 — Milestone v1.9 completed and archived
 progress:
   total_phases: 5
   completed_phases: 5
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-09)
+See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 72 verified (passed); --no-transition
+**Current focus:** Planning next milestone (`$gsd-new-milestone`)
 
 ## Current Position
 
-Phase: 72 (controlled-live-integration) — COMPLETE
-Plan: 2 of 2
-Status: Phase 72 verified (passed); --no-transition
-Last activity: 2026-07-10 -- Phase 72 verified (passed); --no-transition
+Phase: Milestone v1.9 complete — archived
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-10 — Milestone v1.9 completed and archived
 
 Progress: [██████████] 100%
 
@@ -54,9 +54,9 @@ Items acknowledged and deferred at milestone close on 2026-07-02:
 | tech_debt | Phase 20 SQLite file-backed db_path production injection | deployment configuration step |
 | tech_debt | Phase 24 MemoryEvalRunner in-memory vs SQLite baseline | both modes tested and documented |
 | tech_debt | Phase 25 external adapter spikes | sanitized simulations only; no live provider integration |
-| tech_debt | v1.8 host webhook composition (adapter↔ingress/session/feedback) | in scope for v1.9 Phases 68-70 |
+| tech_debt | v1.8 host webhook composition (adapter↔ingress/session/feedback) | closed — v1.9 Phases 68-70 |
 | tech_debt | v1.8 smoke dry-run skips adapter/session Protocol path | closed — Phase 71 Protocol-path dry-run via host helpers |
-| uat_gap | v1.8 live QQ smoke (`scripts/smoke_test.py --live`) | HUMAN GATE remains — Phase 72 autonomous proofs passed; live OpenAPI acceptance not claimed |
+| uat_gap | v1.8/v1.9 live QQ smoke (`scripts/smoke_test.py --live`) | HUMAN GATE remains — Phase 72 autonomous proofs passed; live OpenAPI acceptance not claimed |
 
 ### Parallel Human Gate (v1.0)
 
@@ -327,19 +327,16 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T05:24:14.187Z
-Stopped at: Phase 72 verified (passed); --no-transition
+Last session: 2026-07-10T05:35:00.000Z
+Stopped at: Milestone v1.9 archived; awaiting next milestone
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
-Requirements: .planning/REQUIREMENTS.md
+Requirements: archived at .planning/milestones/v1.9-REQUIREMENTS.md (fresh REQUIREMENTS.md for next milestone)
 Research summary: .planning/research/SUMMARY.md
 Parallel human gate (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
-v1.8 archive: .planning/milestones/v1.8-ROADMAP.md
+v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Phase 72 autonomous verification passed (`--no-transition`); live QQ `--live` acceptance remains HUMAN GATE
-- Preserve `.planning/phases/08-lawyer-trial-acceptance/` (Phase 8 carried human gate; do not clear)
-- Phase 5 live WeCom UAT remains carried human gate — do not mark complete from QQ smoke
-- Optional: run controlled `scripts/smoke_test.py --live` per `runbook/SMOKE_TEST_RUNBOOK.md` and archive sanitized evidence under `.planning/phases/72-controlled-live-integration/evidence/`
+- Start the next milestone with `$gsd-new-milestone`

@@ -2,6 +2,50 @@
 
 *A living document updated after each milestone. Lessons feed forward into future planning.*
 
+## Milestone: v1.9 — QQBot Host Composition
+
+**Shipped:** 2026-07-10
+**Phases:** 5 | **Plans:** 14 | **Tasks:** 29
+
+### What Was Built
+
+- Empty-deps `services/qqbot-service/` host skeleton with V2 gate coverage and secret-ref process-edge resolution.
+- Dual-knob runtime wiring injecting `QQBotChannelAdapter` into `DefaultRunRuntime.channels` with disabled-path refuse.
+- ACK-first stdlib webhook composing package Protocol methods end-to-end with Fake transports.
+- Smoke `--dry-run` Protocol-path hardening via host helpers; sanitized non-acceptance evidence.
+- Controlled `--live` honesty gates + operator runbook; live OpenAPI acceptance remains HUMAN GATE.
+
+### What Worked
+
+- Closing only v1.8 accepted host gaps kept scope tight and avoided re-phasing package crypto/normalize/send.
+- Composition-only host + Protocol freeze preserved ADAPTER-04 and empty-deps invariants.
+- Same-day 14-plan execution with audit-passed close kept planning files compact after archive.
+
+### What Was Inefficient
+
+- Info-tier review leftovers (CALLBACK_PATH duplication, AST dynamic-import miss) remain as non-blocking debt.
+- `--live` stayed on leaf OpenAPI path rather than host Protocol rewrite — documented tradeoff, but splits proof surfaces.
+
+### Patterns Established
+
+- Host services compose package Protocol methods; they do not reimplement channel crypto/normalize/send.
+- Dual default-OFF knobs + explicit channel injection beat auto-discovery for live-IO safety.
+- CI dry-run must exercise the same host helpers as production composition, or fail closed.
+
+### Key Lessons
+
+1. Accepted audit gaps make excellent next-milestone scope when they are composition/wiring, not feature rewrites.
+2. Preserve carried human-gate phase dirs (Phase 08) during phase archival — never delete them with milestone phases.
+3. Force `not_live_acceptance=true` in evidence schemas so CI cannot silently claim live success.
+
+### Cost Observations
+
+- Model mix: not tracked in repo-local artifacts.
+- Sessions: single-day autonomous GSD execution for Phases 68–72.
+- Notable: Milestone closed same calendar day as execution start after audit passed.
+
+---
+
 ## Milestone: v1.2 — Conversational Context and Memory Foundation
 
 **Shipped:** 2026-07-02
@@ -58,16 +102,19 @@
 |-----------|----------|--------|------------|
 | v1.1 | multiple | 5 | Established default-off reusable platform seams. |
 | v1.2 | multiple | 6 | Added memory/context runtime behavior and enforced audit-driven closure before archive. |
+| v1.9 | same-day | 5 | Closed prior-milestone accepted gaps via composition-only host + Protocol-path CI honesty. |
 
 ### Cumulative Quality
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
-|-----------|-------|----------|-------------------|
+|-----------|------|----------|-------------------|
 | v1.1 | 287 V2 gate tests | Contract, runtime, channel, backend, and solution-loader gates | Runtime, adapter, channel, SDK, and solution-loader foundations default-off |
 | v1.2 | 51 WeCom-service tests plus contract/runtime suites cited in phase verification | Context, memory, interrupt, feedback, adapter, and WeCom session-runtime flows | Memory/context contracts, resolver, interrupt store, memory policy, adapter manifest, ingress helper |
+| v1.9 | Host + smoke Protocol-path suites; 27 V2 gates with qqbot-service entry | Host composition, dual-knob wiring, ACK-first webhook, Protocol-path dry-run | `services/qqbot-service/` empty-deps composition host |
 
 ### Top Lessons
 
 1. Keep active planning files small after archive; full history belongs in milestone snapshots.
 2. Separate autonomous-completable code/fixture work from live legal and operator gates.
 3. Use post-phase milestone audits to catch missing cross-layer behavior before declaring a milestone shipped.
+4. Composition hosts should call the same Protocol helpers CI dry-run proves — leaf-only paths must fail closed.

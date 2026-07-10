@@ -2,34 +2,31 @@
 
 ## What This Is
 
-墨律 InkStatute V2 is an InkStatute-owned WeCom service plus backend-neutral platform contract and agent-adapter layer. Hermes `lawfirm` is the first production agent backend; V2 adds WeCom receive/send, industry-neutral contracts, agent adapter contracts, Hermes bootstrap/version boundaries, assistant output filtering, shadow event recording, feedback normalization, read-only views, CI gates, and lawyer trial acceptance.
+墨律 InkStatute V2 is an InkStatute-owned WeCom service plus backend-neutral platform contract and agent-adapter layer, with a second production channel path for QQBot. Hermes `lawfirm` is the first production agent backend; V2 adds WeCom receive/send, industry-neutral contracts, agent adapter contracts, Hermes bootstrap/version boundaries, assistant output filtering, shadow event recording, feedback normalization, read-only views, CI gates, lawyer trial acceptance, and a thin QQBot webhook host that composes the package-level channel Protocol without reimplementing crypto/normalize/send.
 
-V2 is for proving that the running lawyer assistant can be received and sent through InkStatute's own WeCom service, observed, replayed, validated, deployed through a low-coupling agent adapter, presented as a pure lawyer WeCom bot, and evolved through a stable platform contract without rebuilding Hermes core systems.
+V2 is for proving that the running lawyer assistant can be received and sent through InkStatute-owned channel services, observed, replayed, validated, deployed through a low-coupling agent adapter, presented as a pure lawyer bot, and evolved through a stable platform contract without rebuilding Hermes core systems.
 
 ## Core Value
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: v1.9 QQBot Host Composition
+## Current Milestone
 
-**Goal:** Assemble the v1.8 QQBot package-level channel into a deployable production webhook host path, harden smoke coverage across the full adapter/session Protocol stack, and enable controlled live QQ integration while keeping live acceptance as a human gate.
+Awaiting next milestone via `$gsd-new-milestone`.
 
-**Target features:**
-- Thin production webhook host composing `verify_and_ack` → ingress/session/feedback → `deliver`
-- Runtime registration of `QQBotChannelAdapter` into `DefaultRunRuntime.channels` / flag→config mapping
-- Smoke dry-run hardening that exercises the full adapter/session Protocol path (not leaf helpers only)
-- Controlled QQ live integration capability (`--live` remains HUMAN GATE; do not auto-claim live acceptance)
+**Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
 
-**Not in this milestone's done definition:**
-- Phase 5 live WeCom UAT (carried human gate)
-- Phase 8 five-workday lawyer trial (carried human gate)
-- Claiming deployed live QQBot acceptance without operator evidence
+## Previous: v1.9 QQBot Host Composition — SHIPPED
 
+**Shipped:** 2026-07-10
+**Status:** COMPLETE — 5/5 phases shipped (68-72), 11/11 requirements satisfied, audit passed. Closed v1.8 accepted host-composition gaps: thin `services/qqbot-service/` webhook host, dual-knob runtime registration, Protocol-path smoke dry-run, controlled live HUMAN GATE docs/honesty.
+
+**Archive:** [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
 
 ## Previous: v1.8 QQBot Channel Production — SHIPPED
 
 **Shipped:** 2026-07-09
-**Status:** COMPLETE with accepted gaps — 10/10 phases shipped (58-67), 28/28 package-level requirements satisfied, 321 qqbot unit tests green. Audit status `gaps_found`: production host webhook composition deferred; smoke dry-run skips full adapter/session Protocol path; live QQ smoke remains a human gate.
+**Status:** COMPLETE with accepted gaps closed by v1.9 — 10/10 phases shipped (58-67), 28/28 package-level requirements satisfied, 321 qqbot unit tests green. Host composition / Protocol-path smoke / controlled live path delivered in v1.9; live QQ OpenAPI acceptance remains a human gate.
 
 **Archive:** [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
 
@@ -65,6 +62,11 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ### Validated
 
+- ✓ v1.9 HOST-*: Thin QQBot production webhook host composing verify_and_ack → ingress/session/feedback → deliver (default-OFF) — v1.9 (Phases 68-70)
+- ✓ v1.9 REG-*: Runtime registration of QQBotChannelAdapter into DefaultRunRuntime.channels / flag→config dual-knob mapping — v1.9 (Phase 69)
+- ✓ v1.9 SMOKE-*: Smoke dry-run exercises full adapter/session Protocol path via host helpers — v1.9 (Phase 71)
+- ✓ v1.9 LIVE-*: Controlled QQ live path with fail-closed env + runbook; acceptance remains HUMAN GATE — v1.9 (Phase 72)
+- ✓ v1.9 SAFE-*: ADAPTER-04 host isolation + secret refs at process edge — v1.9 (Phase 68)
 - Existing Hermes `lawfirm` profile is already running as the lawyer assistant backend.
 - Hermes source inspection confirms `agent:end` response filtering is insufficient as a complete user-output boundary because gateway/update/restart/delivery/status paths can send directly through platform adapters.
 - Existing Hermes WeCom, QQ Bot, and WeChat gateway connections exist as runtime evidence and migration inputs, with WeCom as the V2 acceptance channel. Target V2 WeCom ingress/egress is owned by InkStatute, not Hermes gateway.
@@ -90,11 +92,10 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ### Active
 
-- [ ] v1.9 HOST-*: Thin QQBot production webhook host composing verify_and_ack → ingress/session/feedback → deliver (default-OFF).
-- [ ] v1.9 HOST-*: Runtime registration of QQBotChannelAdapter into DefaultRunRuntime.channels / flag→config mapping.
-- [ ] v1.9 SMOKE-*: Harden smoke dry-run to exercise full adapter/session Protocol path.
-- [ ] v1.9 LIVE-*: Controlled QQ live integration path (`--live` remains HUMAN GATE).
-- [ ] Complete the five-workday lawyer trial acceptance criteria. (human gate — carried, not v1.9 done definition)
+- [ ] Complete the five-workday lawyer trial acceptance criteria. (human gate — carried)
+- [ ] Phase 5 live WeCom UAT operator confirmation. (human gate — carried)
+- [ ] Operator `--live` QQ OpenAPI acceptance evidence. (human gate — carried; not auto-claimed)
+- [ ] Future host/ops candidates from v1.9 archive: HOST-F01 durable wakeup stores; HOST-F02 async ACK queue; HOST-F03 health endpoints (promote via next milestone if selected)
 - [x] Define the V2 platform contract package with five event schemas, async task states, error categories, JSON Schema, Python bindings, and fixtures.
 - [x] Model AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision as platform events with traceable relationships.
 - [x] Build a contract test suite before production Hermes hook work.
@@ -172,9 +173,19 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 | Keep platform-native memory as the lawyer-assistant default and route Zep/Hindsight, OpenViking/ReMe, and Mem0 through future sanitized spikes | The component study favors different providers for graph/audit, file-auditable, and PoC use cases, but live legal memory still needs privacy, deletion/export, residency, security, review, benchmark, and license gates | Decided 2026-07-02 |
 | Build v1.3 as native production memory first, with external providers as measured adapter spikes | A legal-memory system needs deletion/export, tenant isolation, human review, traceability, and raw-payload controls before provider convenience; external tools must beat or complement the native baseline through sanitized evidence | Decided 2026-07-02 |
 | Start M2 (v1.6) before formal V2 acceptance, accepting the PRD §11 dependency violation as risk | V2 code closure is READY (9/9 code reqs, 479 tests, 0 gaps); the only remaining V2 gates are human (Phase 5 live WeCom UAT + Phase 8 lawyer trial) which run in parallel. Blocking all M2 code work on human gates would waste autonomous capacity. Risk accepted: M2 features are contract-compatible extensions, not V2-acceptance-critical paths. | Decided 2026-07-03 |
-| Start v1.9 QQBot Host Composition to close v1.8 host-level gaps | v1.8 delivered package-level QQBot production loop with audit `gaps_found`; next value is a thin production webhook host + smoke Protocol-path hardening + controlled live integration, without claiming live acceptance | Decided 2026-07-09 |
+| Start v1.9 QQBot Host Composition to close v1.8 host-level gaps | v1.8 delivered package-level QQBot production loop with audit `gaps_found`; next value is a thin production webhook host + smoke Protocol-path hardening + controlled live integration, without claiming live acceptance | ✓ Good — shipped 2026-07-10 |
+| Host is composition-only (`services/qqbot-service/`); package owns crypto/normalize/send | Avoid duplicating channel logic; keep ADAPTER-04 freeze and empty host deps | ✓ Good — v1.9 |
+| Dual default-OFF knobs + explicit `channels=(QQBotChannelAdapter,)` injection | Accidental live IO prevention; no platform-runtime auto-discovery | ✓ Good — v1.9 |
+| Smoke dry-run must exercise host Protocol path (not leaf helpers only) | CI honesty: leaf-only evidence cannot claim host-complete | ✓ Good — v1.9 |
+| `--live` remains HUMAN GATE; CI never auto-claims live acceptance | Live needs secrets, fresh msg_id, human judgment | ✓ Good — v1.9 |
 
 ## Shipped Milestones
+
+### v1.9 QQBot Host Composition (Shipped: 2026-07-10)
+
+Thin `services/qqbot-service/` webhook host composing package Protocol methods, dual-knob runtime registration, Protocol-path smoke dry-run, and controlled live HUMAN GATE honesty/runbook. Audit passed 11/11. Closed v1.8 accepted host-composition gaps.
+
+**Archive:** [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
 
 ### v1.7 M3 Platform Extensions (Shipped: 2026-07-06)
 
@@ -212,10 +223,10 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v1.8 QQBot Channel Production (Phases 58–67) — package-level QQBot production channel loop + dry-run smoke toolkit.
-- **Active milestone:** v1.9 QQBot Host Composition — defining requirements.
-- **v1.8 accepted gaps in scope for v1.9:** production host webhook composition; smoke Protocol-path hardening; controlled live QQ integration (acceptance remains human gate).
-- **Carried human gates (not v1.9 done):** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial.
+- **Last shipped:** v1.9 QQBot Host Composition (Phases 68–72) — thin QQBot webhook host + Protocol-path smoke + controlled live HUMAN GATE.
+- **Active milestone:** none — awaiting `$gsd-new-milestone`.
+- **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
+- **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
 
 
 ## Evolution
@@ -238,4 +249,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-09 — started milestone v1.9 QQBot Host Composition*
+*Last updated: 2026-07-10 after v1.9 milestone*

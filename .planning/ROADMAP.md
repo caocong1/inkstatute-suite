@@ -17,146 +17,49 @@
   - Archive: [v1.7-ROADMAP.md](milestones/v1.7-ROADMAP.md) | [v1.7-REQUIREMENTS.md](milestones/v1.7-REQUIREMENTS.md) | [v1.7-MILESTONE-AUDIT.md](milestones/v1.7-MILESTONE-AUDIT.md)
 - Complete **v1.8 QQBot Channel Production** - Phases 58-67 shipped 2026-07-09. Promoted QQBot from fixture-only proof to production-grade channel loop (signature, normalize, token, egress, rich media, session/ingress, adapter real IO, feedback+wakeup, smoke toolkit). Audit: gaps_found (host composition deferred; package-level 28/28 + 321 tests green). Live QQ smoke remains a human gate.
   - Archive: [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
-- 🚧 **v1.9 QQBot Host Composition** - Phases 68-72 (in progress). Thin production webhook host, runtime registration, Protocol-path smoke hardening, controlled live HUMAN GATE.
+- ✅ **v1.9 QQBot Host Composition** - Phases 68-72 shipped 2026-07-10. Thin production webhook host, runtime registration, Protocol-path smoke hardening, controlled live HUMAN GATE. Audit passed (11/11 requirements).
+  - Archive: [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
 
-## Current Milestone: v1.9 QQBot Host Composition
+## Current Milestone
 
-**Goal:** Assemble the v1.8 QQBot package-level channel into a deployable production webhook host path, harden smoke coverage across the full adapter/session Protocol stack, and enable controlled live QQ integration while keeping live acceptance as a human gate.
+Awaiting next milestone definition via `$gsd-new-milestone`.
 
-**Requirements:** `.planning/REQUIREMENTS.md` (11 requirements: HOST-01..03, REG-01..02, SMOKE-01..02, LIVE-01..02, SAFE-01..02)
+**Carried human gates (not closed by v1.9):**
 
-**Key context:**
-
-- Close v1.8 accepted audit gaps only — do not re-phase package signature/normalize/token/egress work.
-- Host is composition-only (`services/qqbot-service/`); package owns crypto/normalize/send.
-- Dual default-OFF knobs: `RuntimeFeatureFlags.qqbot_channel_enabled` → `QQBotChannelConfig.enabled`.
-- Explicit `DefaultRunRuntime(channels=(QQBotChannelAdapter,))` injection — no auto-discovery.
-- `--live` remains HUMAN GATE; CI must not auto-claim live acceptance.
-- Preserve `.planning/phases/08-lawyer-trial-acceptance/` (carried human gate; do not delete).
-- Phase numbering continues from v1.8 (next phase = 68).
-- Critical path: P68 (host skeleton + safety) → P69 (runtime registration) → P70 (webhook composition) → P71 (smoke Protocol-path) → P72 (controlled live HUMAN GATE).
+- Phase 5 live WeCom UAT
+- Phase 8 five-workday lawyer trial (artifacts preserved at `.planning/phases/08-lawyer-trial-acceptance/`)
+- Operator `--live` QQ OpenAPI acceptance (HUMAN GATE by design)
 
 ## Phases
 
-- [x] **Phase 68: Host Skeleton + Safety Baseline** - Create `services/qqbot-service/` layout with empty deps, V2 gate entry, and ADAPTER-04 / secret-ref safety invariants before HTTP composition.
-- [x] **Phase 69: Runtime Registration / Wiring** - Flag→config→adapter factory injects `QQBotChannelAdapter` into `DefaultRunRuntime.channels`; disabled path refuses live IO.
-- [x] **Phase 70: Webhook Composition Path** - Thin stdlib webhook host composes `verify_and_ack` → ingress/session/feedback → `deliver` with ACK-first semantics.
-- [x] **Phase 71: Smoke Protocol-Path Hardening** - Extend `--dry-run` to exercise full adapter/session Protocol path with Fake transports and sanitized evidence.
-- [x] **Phase 72: Controlled Live Integration** - Operator-run `--live` path + runbook remain HUMAN GATE; no CI auto-claim of live acceptance.
-
-## Phase Details
-
-### Phase 68: Host Skeleton + Safety Baseline
-
-**Goal:** Operators and CI can verify a deployable `services/qqbot-service/` skeleton exists with ADAPTER-04 isolation and secret-ref discipline before any webhook composition ships.
-**Depends on:** v1.8 completion (Phase 67)
-**Requirements:** SAFE-01, SAFE-02
-**Success Criteria** (what must be TRUE):
-
-1. `services/qqbot-service/` exists with `pyproject.toml` `dependencies=[]` and a V2 gate PYTHONPATH entry covering the new service.
-2. ChannelAdapter remains frozen at 6 methods; BackendAdapter remains frozen at 9 methods; no `wecom_service` import appears in the qqbot host/package path.
-3. Feature flags that gate QQBot live IO default to OFF (including `qqbot_channel_enabled`).
-4. Host config stores secrets as refs only; tests prove values are not committed and resolve only at process edge.
-5. `.planning/phases/08-lawyer-trial-acceptance/` remains present (carried human-gate artifacts preserved).
-
-**Plans:** 3 plans
-
-Plans:
-
-- [x] 68-01-PLAN.md — Create `services/qqbot-service/` skeleton with empty deps and V2 gate/compileall coverage
-- [x] 68-02-PLAN.md — Host refs-only config + process-edge `resolve_secret_ref` (SAFE-02)
-- [x] 68-03-PLAN.md — ADAPTER-04 host isolation: Protocol freeze, no-wecom, flag OFF, Phase 08 preserved
-
-### Phase 69: Runtime Registration / Wiring
-
-**Goal:** Host factory correctly maps dual default-OFF knobs and injects `QQBotChannelAdapter` into `DefaultRunRuntime.channels`, refusing live IO when disabled.
-**Depends on:** Phase 68
-**Requirements:** REG-01, REG-02, HOST-03
-**Success Criteria** (what must be TRUE):
-
-1. Host factory maps `RuntimeFeatureFlags.qqbot_channel_enabled` → `QQBotChannelConfig.enabled` and injects token_manager/transport only when `_live_io_ready`.
-2. Host constructs `DefaultRunRuntime` with explicit `channels=(QQBotChannelAdapter,)` — no auto-discovery inside `platform-runtime`.
-3. When QQBot is disabled (flags/config OFF), the composed path refuses live IO with explicit non-success behavior (e.g. 503/refuse) and does not call OpenAPI transports.
-4. FakeBackend unit tests cover enabled vs disabled wiring without network.
-
-**Plans:** 3 plans
-
-Plans:
-
-- [x] 69-01-PLAN.md — Flag→config factory + live-ready transport injection (REG-01)
-- [x] 69-02-PLAN.md — Explicit `DefaultRunRuntime(channels=(adapter,))` registration (REG-02)
-- [x] 69-03-PLAN.md — Disabled composed path refuses live IO / zero OpenAPI calls (HOST-03)
-
-### Phase 70: Webhook Composition Path
-
-**Goal:** Operators can deploy a thin InkStatute-owned QQBot webhook that composes package Protocol methods end-to-end with prompt verify-and-ACK before heavy agent work.
-**Depends on:** Phase 69
-**Requirements:** HOST-01, HOST-02
-**Success Criteria** (what must be TRUE):
-
-1. Operator can run a thin webhook host that composes `verify_and_ack` → ingress/session/feedback → `deliver` without reimplementing package crypto/normalize/send logic.
-2. Webhook returns verify-and-ACK promptly for op=13 validation challenge and op=12 body ACK before heavy agent work.
-3. Pure request handler + stdlib `http.server` wrapper capture raw body once, preserve signature verification, and apply output boundary on egress.
-4. Unit tests with Fake transports prove the composition path without live QQ network.
-
-**Plans:** 3 plans
-
-Plans:
-
-- [x] 70-01-PLAN.md — Pure ACK-first webhook handler (op=13/op=12/refuse) (HOST-02)
-- [x] 70-02-PLAN.md — Post-ACK ingress/feedback/deliver Fake composition (HOST-01)
-- [x] 70-03-PLAN.md — stdlib http.server wrapper + raw-body proofs + README
-
-### Phase 71: Smoke Protocol-Path Hardening
-
-**Goal:** CI dry-run proves the full adapter/session Protocol stack (not leaf helpers only) and emits sanitized non-acceptance evidence.
-**Depends on:** Phase 70
-**Requirements:** SMOKE-01, SMOKE-02
-**Success Criteria** (what must be TRUE):
-
-1. `scripts/smoke_test.py --dry-run` exercises verify_and_ack → ingress/session → deliver using Fake transports (not leaf helpers only).
-2. Protocol-path dry-run emits sanitized evidence under the existing allowlist schema with `not_live_acceptance=true` and no secrets/raw bodies.
-3. Dry-run exits 0 in CI without network/Urllib live transports.
-4. Smoke steps call the same host/package helpers the webhook composition uses (no parallel leaf-only path claimed as host-complete).
-
-**Plans:** 3 plans
-
-Plans:
-
-- [x] 71-01-PLAN.md — Mandatory Protocol-path dry-run via host webhook helpers (SMOKE-01)
-- [x] 71-02-PLAN.md — Protocol evidence allowlist + sanitization (SMOKE-02)
-- [x] 71-03-PLAN.md — CI honesty, leaf-vs-Protocol regression, runbook dry-run note
-
-### Phase 72: Controlled Live Integration
-
-**Goal:** Operators can run a controlled QQ live path with fail-closed env checks and documented enablement, while live acceptance remains an explicit HUMAN GATE.
-**Depends on:** Phase 71
-**Requirements:** LIVE-01, LIVE-02
-**Success Criteria** (what must be TRUE):
-
-1. Controlled `--live` path remains available with fail-closed env checks and is explicitly marked HUMAN GATE (CI/phase complete must not auto-claim live acceptance).
-2. Operator runbook documents host enablement, dual-knob mapping, dry-run vs live, and interaction ACK safety windows.
-3. Live evidence, when collected by an operator, stays sanitized/reference-first and is never required for autonomous phase completion.
-4. Phase 5 live WeCom UAT and Phase 8 lawyer trial remain carried human gates — not redefined as v1.9 done.
-
-**Plans:** 2 plans
-
-Plans:
-
-- [x] 72-01-PLAN.md — LIVE-01 fail-closed + CI honesty (no live network)
-- [x] 72-02-PLAN.md — LIVE-02 runbook enablement + dual-knob + regression
+No active phases. Next phase number continues from 73 after `$gsd-new-milestone`.
 
 ## Progress
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 68. Host Skeleton + Safety Baseline | 3/3 | Complete   | 2026-07-10 |
-| 69. Runtime Registration / Wiring | 3/3 | Complete   | 2026-07-10 |
-| 70. Webhook Composition Path | 3/3 | Complete   | 2026-07-10 |
-| 71. Smoke Protocol-Path Hardening | 3/3 | Complete   | 2026-07-10 |
-| 72. Controlled Live Integration | 2/2 | Complete   | 2026-07-10 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 68. Host Skeleton + Safety Baseline | v1.9 | 3/3 | Complete | 2026-07-10 |
+| 69. Runtime Registration / Wiring | v1.9 | 3/3 | Complete | 2026-07-10 |
+| 70. Webhook Composition Path | v1.9 | 3/3 | Complete | 2026-07-10 |
+| 71. Smoke Protocol-Path Hardening | v1.9 | 3/3 | Complete | 2026-07-10 |
+| 72. Controlled Live Integration | v1.9 | 2/2 | Complete | 2026-07-10 |
 
 ## Completed Milestones
+
+<details>
+<summary>✅ v1.9 QQBot Host Composition (Phases 68-72) — SHIPPED 2026-07-10</summary>
+
+- [x] Phase 68: Host Skeleton + Safety Baseline (3/3 plans) — completed 2026-07-10
+- [x] Phase 69: Runtime Registration / Wiring (3/3 plans) — completed 2026-07-10
+- [x] Phase 70: Webhook Composition Path (3/3 plans) — completed 2026-07-10
+- [x] Phase 71: Smoke Protocol-Path Hardening (3/3 plans) — completed 2026-07-10
+- [x] Phase 72: Controlled Live Integration (2/2 plans) — completed 2026-07-10
+
+**Full archive:** [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md) | [v1.9-phases](milestones/v1.9-phases/)
+
+**Closed v1.8 accepted gaps:** production host webhook composition; smoke Protocol-path hardening; controlled live path (acceptance remains HUMAN GATE).
+
+</details>
 
 <details>
 <summary>✅ v1.8 QQBot Channel Production (Phases 58-67) — SHIPPED 2026-07-09</summary>
@@ -173,8 +76,6 @@ Plans:
 - [x] Phase 67: One-Click Smoke-Test Toolkit — completed 2026-07-09
 
 **Full archive:** [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
-
-**Accepted gaps closed by v1.9:** production host webhook composition; smoke Protocol-path hardening; controlled live path (acceptance remains HUMAN GATE).
 
 </details>
 
@@ -228,7 +129,7 @@ Plans:
 
 ## Backlog
 
-No active backlog beyond v1.9 Future Requirements in REQUIREMENTS.md (HOST-F01..F03, PLAT-F01..F03).
+No active backlog beyond v1.9 Future Requirements archived in [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) (HOST-F01..F03, PLAT-F01..F03). Promote candidates into the next milestone via `$gsd-new-milestone`.
 
 ---
-*Last updated: 2026-07-09 after v1.9 QQBot Host Composition roadmap creation*
+*Last updated: 2026-07-10 after v1.9 QQBot Host Composition milestone complete*

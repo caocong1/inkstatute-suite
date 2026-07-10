@@ -1,5 +1,39 @@
 # Project Milestones: 墨律 InkStatute
 
+## v1.9 QQBot Host Composition (Shipped: 2026-07-10)
+
+**Delivered:** Assembled the v1.8 QQBot package-level channel into a deployable thin production webhook host (`services/qqbot-service/`), dual-knob runtime registration into `DefaultRunRuntime.channels`, Protocol-path smoke dry-run hardening, and controlled live HUMAN GATE honesty/runbook. Audit passed 11/11 requirements. Closed v1.8 accepted host-composition gaps without claiming live QQ OpenAPI acceptance.
+
+**Phases completed:** 68–72 (5 phases, 14 plans, 29 tasks)
+
+**Archive:** [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md) | [v1.9-phases](milestones/v1.9-phases/)
+
+**Key accomplishments:**
+
+- Empty-deps `services/qqbot-service/` package registered in V2 gates (27 gates) with compileall and contract PYTHONPATH coverage
+- Host secret refs resolve only at process edge; ADAPTER-04 freeze + no-wecom + flags default OFF
+- Dual-knob flag→config factory + explicit `channels=(QQBotChannelAdapter,)` injection; disabled path refuses live IO
+- ACK-first stdlib webhook composing verify_and_ack → ingress/feedback → deliver with Fake transports
+- Smoke `--dry-run` Protocol-path via host helpers; sanitized evidence with `not_live_acceptance=true`
+- Controlled `--live` fail-closed + runbook; CI never auto-claims live acceptance
+
+**Stats:**
+
+- 5 phases, 14 plans, 29 tasks
+- Timeline: 2026-07-10 (same-day ship)
+- Git range: feat(68-01) → docs(v1.9): milestone audit passed
+- Audit: passed (11/11 requirements, 5/5 phases, Nyquist compliant)
+
+**Known Gaps / Deferred at close:**
+
+- Operator `--live` against real QQ OpenAPI — HUMAN GATE (by design)
+- Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial — carried human gates
+- Info-tier tech debt from audit (AST dynamic-import miss, CALLBACK_PATH duplication, leaf `--live` path)
+
+**Follow-up:** Start next milestone with `$gsd-new-milestone`.
+
+---
+
 ## v1.8 QQBot Channel Production (Shipped: 2026-07-09)
 
 **Delivered:** Promoted the QQBot channel from v1.6 fixture-only proof to a complete V2 production-grade channel loop (Ed25519 signature + validation challenge, event normalization, access-token manager, text/markdown/keyboard egress, rich-media inbound/egress, session+ingress runtime, adapter real IO behind default-OFF flag, feedback loop parity + is_wakeup recall, and one-click dry-run smoke toolkit). Package-level 28/28 requirements satisfied; 321 qqbot unit tests green. Audit status `gaps_found` — production host webhook composition deferred; live QQ smoke remains a human gate.
