@@ -29,7 +29,7 @@ created: 2026-07-10
 
 - **After every task commit:** Run the plan-scoped unittest class listed in the task `<automated>` block
 - **After every plan wave:** Run full `test_smoke_toolkit` + `python3 scripts/smoke_test.py --dry-run`
-- **Before `/gsd-verify-work`:** Full toolkit green + dry-run CLI exits 0 with Protocol steps present
+- **Before `/gsd-verify-work`:** Full toolkit green + dry-run CLI exits 0 with Protocol steps `adapter_ack` / `session_ingress` / `adapter_deliver` present
 - **Max feedback latency:** 60 seconds for quick command
 
 ---
@@ -55,6 +55,7 @@ created: 2026-07-10
 - [x] Existing smoke CLI (`scripts/smoke_test.py`) — harden in place; no new framework
 - [x] Existing `qqbot-channel` V2 gate discover covers toolkit tests — no new gate name
 - [x] Host helpers from Phase 70 (`webhook.py`, `wiring.py`) available for import once `services/qqbot-service/src` is on path
+- [x] Evidence step key names from RESEARCH Pattern 2: `adapter_ack`, `session_ingress`, `adapter_deliver`
 - [x] Test classes created in-plan (71-01 / 71-02 / 71-03) — no separate Wave 0 stub plan required
 
 *Existing infrastructure covers runners; new Protocol-path assertions are phase deliverables inside the existing toolkit file.*
