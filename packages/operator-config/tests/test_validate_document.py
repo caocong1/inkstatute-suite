@@ -21,7 +21,24 @@ SK_PLANTED = "sk-" + "1234567890abcdefghijklmnop"
 BEARER_PLANTED = "Bearer " + ("A" * 20)
 PLANTED_RAW = "planted-raw-secret-value-NEVER-ON-CONFIG"
 
-_FORBIDDEN_RAW_KEYS = ("api_key", "token", "password", "bot_secret", "raw_payload")
+_FORBIDDEN_RAW_KEYS = (
+    "api_key",
+    "token",
+    "token_secret",
+    "password",
+    "bot_secret",
+    "app_secret",
+    "encoding_aes_key",
+    "aes_key",
+    "client_secret",
+    "raw_payload",
+    "raw_body",
+    "secret",
+    "private_key",
+)
+
+# Schema-parallel channel credential stems that must not appear as raw metadata keys.
+_SCHEMA_PARALLEL_RAW_KEYS = ("app_secret", "encoding_aes_key", "token_secret")
 
 
 class TestValidateDocument(unittest.TestCase):
@@ -71,6 +88,33 @@ class TestValidateDocument(unittest.TestCase):
                 self.assertNotIn("should-not-matter", message)
                 issues = OperatorConfigValidator().validate(doc)
                 self.assertIn("raw_secret_key_forbidden", {i.code for i in issues})
+
+    def test_rejects_schema_parallel_raw_secrets_in_channel_metadata(self) -> None:
+        """CFG-01: app_secret / encoding_aes_key / token_secret must not persist via metadata."""
+        for key in _SCHEMA_PARALLEL_RAW_KEYS:
+            with self.subTest(channel="qqbot", key=key):
+                planted = f"raw-{key}-value-NEVER-ON-CONFIG"
+                doc = OperatorConfigDocument(
+                    channels=ChannelsDoc(
+                        qqbot=QQBotChannelDoc(metadata={key: planted}),
+                    )
+                )
+                with self.assertRaises(OperatorConfigValidationError) as ctx:
+                    validate_document(doc)
+                message = str(ctx.exception)
+                self.assertNotIn(planted, message)
+                issues = OperatorConfigValidator().validate(doc)
+                self.assertIn("raw_secret_key_forbidden", {i.code for i in issues})
+            with self.subTest(channel="wecom", key=key):
+                planted = f"raw-{key}-value-NEVER-ON-CONFIG"
+                doc = OperatorConfigDocument(
+                    channels=ChannelsDoc(
+                        wecom=WeComChannelDoc(metadata={key: planted}),
+                    )
+                )
+                with self.assertRaises(OperatorConfigValidationError) as ctx:
+                    validate_document(doc)
+                self.assertNotIn(planted, str(ctx.exception))
 
     def test_rejects_planted_sk_marker_without_echo(self) -> None:
         doc = OperatorConfigDocument(

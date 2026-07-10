@@ -41,12 +41,19 @@ FORBIDDEN_HERMES_FIELD_NAMES: frozenset[str] = frozenset(
 )
 
 # CFG-01 — raw credential / payload keys (require *_ref instead).
+# Includes schema-parallel channel credential stems (app_secret, token_secret,
+# encoding_aes_key) so metadata cannot smuggle the non-_ref form of those fields.
 FORBIDDEN_RAW_SECRET_KEYS: frozenset[str] = frozenset(
     {
         "api_key",
         "token",
+        "token_secret",
         "password",
         "bot_secret",
+        "app_secret",
+        "encoding_aes_key",
+        "aes_key",
+        "client_secret",
         "raw_payload",
         "raw_body",
         "secret",

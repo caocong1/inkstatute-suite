@@ -134,6 +134,24 @@ class TestOperatorConfigStore(unittest.TestCase):
                 store.save(bad, feature_flags=_enabled_flags())
             self.assertFalse(path.exists())
 
+    def test_save_rejects_schema_parallel_raw_secrets_without_writing(self) -> None:
+        """CR-01: app_secret / encoding_aes_key / token_secret in metadata must not persist."""
+        for key in ("app_secret", "encoding_aes_key", "token_secret"):
+            with self.subTest(key=key):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp) / "operator-config.json"
+                    store = OperatorConfigStore(path)
+                    planted = f"raw-{key}-should-not-persist"
+                    bad = OperatorConfigDocument(
+                        channels=ChannelsDoc(
+                            qqbot=QQBotChannelDoc(metadata={key: planted}),
+                        )
+                    )
+                    with self.assertRaises(OperatorConfigValidationError) as ctx:
+                        store.save(bad, feature_flags=_enabled_flags())
+                    self.assertNotIn(planted, str(ctx.exception))
+                    self.assertFalse(path.exists())
+
     def test_default_path_helper_reads_env(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             configured = Path(tmp) / "custom-config.json"
