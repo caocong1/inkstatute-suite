@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-current_plan: 01
-status: ready_to_execute
+current_plan: 2
+status: executing
 stopped_at: Phase 75 planned — ready to execute 75-01
-last_updated: "2026-07-10T08:20:00.000Z"
-last_activity: 2026-07-10 — Phase 75 plans created (5 plans, 3 waves)
+last_updated: "2026-07-10T08:24:26.734Z"
+last_activity: 2026-07-10 — Phase 75 planned (5 plans / 3 waves; CHAN-01..04)
 progress:
   total_phases: 6
-  completed_phases: 2
-  total_plans: 13
-  completed_plans: 6
-  percent: 33
+  completed_phases: 0
+  total_plans: 14
+  completed_plans: 7
+  percent: 0
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-07-10)
 ## Current Position
 
 Phase: 75 of 78 (Channel Config Apply)
-Current Plan: 01 of 05
+Current Plan: 2
 Total Plans in Phase: 5
-Plan: 75-01
+Plan: 2 of 5
 Status: Ready to execute
 Last activity: 2026-07-10 — Phase 75 planned (5 plans / 3 waves; CHAN-01..04)
 
@@ -76,6 +76,7 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 | Phase 74 P01 | 2min | 2 tasks | 6 files |
 | Phase 74 P02 | 3min | 2 tasks | 3 files |
 | Phase 74 P03 | 2min | 3 tasks | 4 files |
+| Phase 75 P01 | 4min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -122,6 +123,9 @@ Recent decisions affecting current work:
 - [Phase 75 planning]: Platform flags read-only on /config/channels; add wecom_channel_enabled (not channel_delivery_enabled)
 - [Phase 75 planning]: Restart-to-apply MVP via metadata.apply_semantics=restart_required; no hot-reload
 - [Phase 75 planning]: Enhance GET/PUT /config/channels in-place with effective dual-knob block; no platform-flag PUT
+- [Phase ?]: wecom_channel_enabled placed next to qqbot_channel_enabled; never reuse channel_delivery_enabled
+- [Phase 75]: Wave 0 scaffolds intentionally fail under discover until Plans 02–05 implement production code
+- [Phase 75]: operator_config_src added only to qqbot-service and wecom-service gates (admin gates already covered in Phase 74)
 
 ### Pending Todos
 
@@ -144,7 +148,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T08:20:00.000Z
+Last session: 2026-07-10T08:23:52.585Z
 Stopped at: Phase 75 planned — ready to execute 75-01
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md

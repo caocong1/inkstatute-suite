@@ -98,7 +98,8 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 75-01-PLAN.md — wecom_channel_enabled + freeze + Wave 0 scaffolds + host gate PYTHONPATH
+
+- [x] 75-01-PLAN.md — wecom_channel_enabled + freeze + Wave 0 scaffolds + host gate PYTHONPATH
 - [ ] 75-02-PLAN.md — /config/channels effective dual-knob + apply_semantics restart_required
 - [ ] 75-03-PLAN.md — QQ store→host load (store wins if file exists) + dual-knob preserved
 - [ ] 75-04-PLAN.md — WeCom from_operator_doc + wecom-service channel_wiring dual-knob
@@ -156,7 +157,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 73. Operator Config Foundation | v1.10 | 3/3 | Complete    | 2026-07-10 |
 | 74. Admin Config API + RBAC | v1.10 | 3/3 | Complete    | 2026-07-10 |
-| 75. Channel Config Apply | v1.10 | 0/TBD | Not started | - |
+| 75. Channel Config Apply | v1.10 | 1/5 | In Progress|  |
 | 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
 | 77. Vision Routing Runtime | v1.10 | 0/TBD | Not started | - |
 | 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/TBD | Not started | - |
