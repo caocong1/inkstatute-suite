@@ -15,6 +15,9 @@ from .schemas import OperatorConfigDocument
 from .secrets import InvalidSecretRefError, normalize_config_secret_ref
 
 __all__ = [
+    "FORBIDDEN_HERMES_FIELD_NAMES",
+    "FORBIDDEN_PATH_SUBSTRINGS",
+    "FORBIDDEN_RAW_SECRET_KEYS",
     "OperatorConfigValidator",
     "ValidationIssue",
     "validate_document",

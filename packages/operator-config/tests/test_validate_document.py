@@ -134,6 +134,31 @@ class TestValidateDocument(unittest.TestCase):
         self.assertNotIn(SK_PLANTED, message)
         self.assertNotIn("sk-", message)
 
+    def test_rejects_password_equals_marker_without_echo(self) -> None:
+        planted = "password=" + PLANTED_RAW
+        doc = OperatorConfigDocument(
+            channels=ChannelsDoc(
+                wecom=WeComChannelDoc(metadata={"legacy": planted}),
+            )
+        )
+        with self.assertRaises(OperatorConfigValidationError) as ctx:
+            validate_document(doc)
+        message = str(ctx.exception)
+        self.assertNotIn(PLANTED_RAW, message)
+        self.assertNotIn("password=", message)
+
+    def test_validator_collects_issues_without_raising(self) -> None:
+        doc = OperatorConfigDocument(
+            channels=ChannelsDoc(
+                qqbot=QQBotChannelDoc(metadata={"api_key": SK_PLANTED}),
+            )
+        )
+        issues = OperatorConfigValidator().validate(doc)
+        self.assertGreaterEqual(len(issues), 1)
+        blob = " ".join(f"{i.code}:{i.message}" for i in issues)
+        self.assertNotIn(SK_PLANTED, blob)
+        self.assertNotIn("sk-", blob)
+
 
 if __name__ == "__main__":
     unittest.main()
