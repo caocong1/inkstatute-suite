@@ -1,6 +1,7 @@
 ---
 phase: 73-operator-config-foundation
 reviewed: 2026-07-10T07:36:31Z
+fixed: 2026-07-10T07:40:01Z
 depth: standard
 files_reviewed: 11
 files_reviewed_list:
@@ -20,15 +21,21 @@ findings:
   warning: 4
   info: 2
   total: 7
-status: findings
+fixed_counts:
+  critical: 1
+  warning: 4
+  info_deferred: 2
+status: fixed
+fix_report: .planning/phases/73-operator-config-foundation/73-REVIEW-FIX.md
 ---
 
 # Phase 73: Code Review Report
 
 **Reviewed:** 2026-07-10T07:36:31Z
+**Fixed:** 2026-07-10T07:40:01Z (see `73-REVIEW-FIX.md`)
 **Depth:** standard
 **Files Reviewed:** 11
-**Status:** findings
+**Status:** fixed (CR-01 + WR-01..04 applied; IN-01/IN-02 deferred)
 
 ## Summary
 
@@ -145,15 +152,18 @@ operator-config.json.tmp
 **File:** `packages/operator-config/src/inkstatute_operator_config/schemas.py:38`
 **Issue:** `frozen=True` does not deep-freeze `metadata: dict`. Callers can mutate `doc.channels.qqbot.metadata` after construction (including between `validate_document` and `asdict` in `save`). Low practical risk in single-threaded hosts, but weakens the “immutable document” contract.
 **Fix:** Document that metadata must be treated as immutable, or copy metadata at validate/save boundaries (`metadata=dict(metadata)` / `MappingProxyType`).
+**Status:** deferred (low practical risk; deep-freeze expands schema contract beyond Phase 73 scope)
 
 ### IN-02: Comment vs regex mismatch for `secret://` segment count
 
 **File:** `packages/operator-config/src/inkstatute_operator_config/secrets.py:19-23`
 **Issue:** Comment says “one or more slash-separated segments”; the regex requires a first segment plus `(?:/…)+` (two or more). Docstring correctly says two+. Harmless but confusing for maintainers.
 **Fix:** Align the comment with the docstring/regex (“two or more slash-separated safe segments”).
+**Status:** deferred (low-value comment cleanup; docstring already correct)
 
 ---
 
 _Reviewed: 2026-07-10T07:36:31Z_
+_Fixed: 2026-07-10T07:40:01Z — CR-01, WR-01..04; IN-01/IN-02 deferred (see 73-REVIEW-FIX.md)_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
