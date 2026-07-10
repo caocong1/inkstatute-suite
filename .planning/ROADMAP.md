@@ -52,7 +52,12 @@
   1. Operator can persist channel/provider/catalog/vision config documents in an InkStatute store that accepts secret refs only and never stores raw secret values
   2. When `operator_config_enabled` is OFF (default), config mutate paths refuse writes
   3. Config schemas/validators reject Hermes `~/.hermes` / profile filesystem paths as config authority
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 73-01-PLAN.md — Empty-deps package scaffold, refs-only schemas, shape-only secret-ref normalize
+- [ ] 73-02-PLAN.md — Document validators + Hermes filesystem/profile ban-list (CFG-03)
+- [ ] 73-03-PLAN.md — Atomic JSON store, operator_config_enabled gate, V2 gate registration
 
 ### Phase 74: Admin Config API + RBAC
 **Goal**: Admin/operator roles can read and write config through an explicit `/config/*` API while lawyer/viewer roles cannot mutate and existing operational views stay read-only
