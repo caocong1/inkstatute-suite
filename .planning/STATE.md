@@ -79,7 +79,6 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 | Phase 75 P01 | 4min | 2 tasks | 9 files |
 | Phase 75 P04 | 2min | 2 tasks | 5 files |
 | Phase 75 P03 | 2min | 2 tasks | 4 files |
-| Phase 75 P03 | 2min | 2 tasks | 4 files |
 | Phase 75 P02 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
