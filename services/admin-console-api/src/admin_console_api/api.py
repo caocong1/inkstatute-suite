@@ -1,10 +1,8 @@
 """Main entry point for the Admin Console API.
 
-``handle_admin_get`` is the only public handler.  It gates on the
-``admin_api_enabled`` feature flag, validates auth (static token when
-``rbac_enabled=False`` or RBAC token with role+tenant claims when
-``rbac_enabled=True``), and routes to read-only view handlers.  No
-POST/PUT/DELETE handlers exist.
+Operational views (sessions/tasks/feedback/health/gates) remain GET-only via
+``handle_admin_get``. Config mutate is explicit via ``handle_admin_put`` and
+only accepts ``/config/*`` (ADM-03). Non-config PUT returns 405 after auth.
 """
 
 from __future__ import annotations
@@ -13,7 +11,7 @@ import os
 from typing import Any, Mapping
 from urllib.parse import parse_qs
 
-from conversation_read_view.privacy import scrub_contract_payload
+from inkstatute_operator_config import OperatorConfigStore
 from platform_runtime.feature_flags import (
     RuntimeFeatureDisabledError,
     RuntimeFeatureFlags,
@@ -26,6 +24,7 @@ from platform_runtime.tenant_scope import (
 from rbac import RbacGuard, resolve_identity
 
 from .auth import check_auth_header, extract_auth_header, resolve_admin_token
+from .config_api import handle_config_get, handle_config_put
 from .gates import handle_gates
 from .health import handle_health
 from .views import handle_feedback, handle_sessions, handle_tasks
@@ -49,27 +48,19 @@ def _resolve_rbac_secret(
     return token if token else None
 
 
-def handle_admin_get(
+def _authenticate_admin(
     path: str,
     query: str | Mapping[str, str] | None,
     headers: Mapping[str, str] | None,
-    read_model: Any,
-    feedback_queue: list[dict[str, Any]] | None,
     feature_flags: RuntimeFeatureFlags,
     env: Mapping[str, str] | None = None,
     rbac_secret: str | None = None,
-) -> tuple[int, dict[str, Any]]:
-    """Gate on feature flag + auth, then route to read-only view handlers.
+) -> tuple[int, dict[str, Any]] | tuple[None, tuple[str, dict[str, str], Any, Any]]:
+    """Shared admin_api flag + auth + RBAC + tenant pipeline.
 
-    Returns ``(status_code, response_dict)``.  Read-only — no mutations.
-
-    When ``feature_flags.rbac_enabled`` is ``True``, the caller must present a
-    valid short-lived RBAC token with role+tenant claims; ``RbacGuard`` then
-    enforces role-based access per endpoint.  When ``False``, the v1.6
-    static-token path runs unchanged.
+    On success returns ``(None, (route_path, route_query, identity, tenant_filter))``.
+    On failure returns ``(status_code, error_body)``.
     """
-
-    # Step 1 — feature flag gate
     try:
         feature_flags.require_enabled("admin_api_enabled")
     except RuntimeFeatureDisabledError:
@@ -80,7 +71,6 @@ def handle_admin_get(
             },
         }
 
-    # Step 2 — auth (RBAC token or static token depending on flag)
     auth_header = extract_auth_header(headers)
     route_path, route_query = _split_path_query(path, query)
     identity = None
@@ -100,7 +90,6 @@ def handle_admin_get(
                     "message": "invalid or expired RBAC token",
                 },
             }
-        # Step 2b — RBAC role guard (default-deny)
         guard = RbacGuard()
         if not guard.check(identity.role, route_path):
             return 403, {
@@ -111,7 +100,6 @@ def handle_admin_get(
                 },
             }
     else:
-        # v1.6 static-token path (unchanged)
         expected_token = resolve_admin_token(env)
         if expected_token is None:
             return 403, {
@@ -127,17 +115,41 @@ def handle_admin_get(
                     "message": "missing or invalid Authorization header",
                 },
             }
-        # Synthetic identity for static-token path (tenant_id="default")
         from rbac import Identity, Role
+
         identity = Identity(role=Role.ADMIN, tenant_id="default")
 
-    # Step 2c — tenant scope resolution + guard enforcement
     resolver = TenantScopeResolver(feature_flags=feature_flags)
     tenant_guard = TenantGuard(feature_flags=feature_flags)
-    scope = resolver.resolve(TenantScopeRequestContext(identity=identity, headers=headers))
+    scope = resolver.resolve(
+        TenantScopeRequestContext(identity=identity, headers=headers)
+    )
     tenant_filter = tenant_guard.enforce(scope)
+    return None, (route_path, route_query, identity, tenant_filter)
 
-    # Step 3 — route dispatch
+
+def handle_admin_get(
+    path: str,
+    query: str | Mapping[str, str] | None,
+    headers: Mapping[str, str] | None,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    feature_flags: RuntimeFeatureFlags,
+    env: Mapping[str, str] | None = None,
+    rbac_secret: str | None = None,
+    *,
+    config_store: OperatorConfigStore | None = None,
+) -> tuple[int, dict[str, Any]]:
+    """Gate on feature flag + auth, then route to view / config handlers.
+
+    Operational views remain read-only. ``/config/*`` is the config surface
+    (``read_only=False`` metadata) served via ``handle_config_get``.
+    """
+    auth = _authenticate_admin(path, query, headers, feature_flags, env, rbac_secret)
+    if auth[0] is not None:
+        return auth  # type: ignore[return-value]
+    route_path, route_query, _identity, tenant_filter = auth[1]
+
     if route_path == "/sessions" or route_path.startswith("/sessions/"):
         return handle_sessions(route_path, route_query, read_model, tenant_filter=tenant_filter)
 
@@ -153,7 +165,51 @@ def handle_admin_get(
     if route_path == "/gates":
         return handle_gates()
 
+    if route_path == "/config" or route_path.startswith("/config/"):
+        store = config_store if config_store is not None else OperatorConfigStore()
+        return handle_config_get(route_path, store, feature_flags)
+
     return 404, not_found_response("route", route_path)
+
+
+def handle_admin_put(
+    path: str,
+    body: Any,
+    headers: Mapping[str, str] | None,
+    feature_flags: RuntimeFeatureFlags,
+    env: Mapping[str, str] | None = None,
+    *,
+    config_store: OperatorConfigStore | None = None,
+    rbac_secret: str | None = None,
+    read_model: Any = None,
+    feedback_queue: list[dict[str, Any]] | None = None,
+) -> tuple[int, dict[str, Any]]:
+    """Auth then mutate ``/config/*`` only; operational PUT → 405 after auth.
+
+    ``read_model`` / ``feedback_queue`` are accepted for call-site symmetry and
+    unused (config store is the mutate authority).
+    """
+    del read_model, feedback_queue  # pipeline symmetry only
+
+    auth = _authenticate_admin(path, None, headers, feature_flags, env, rbac_secret)
+    if auth[0] is not None:
+        return auth  # type: ignore[return-value]
+    route_path, _route_query, _identity, _tenant_filter = auth[1]
+
+    if route_path == "/config" or route_path.startswith("/config/"):
+        store = config_store if config_store is not None else OperatorConfigStore()
+        return handle_config_put(route_path, body, store, feature_flags)
+
+    return 405, {
+        "error": {
+            "code": "method_not_allowed",
+            "message": "PUT is only allowed on /config/*",
+        },
+        "metadata": {
+            "admin_api": True,
+            "read_only": True,
+        },
+    }
 
 
 def _split_path_query(
@@ -191,4 +247,4 @@ def not_found_response(resource: str, identifier: str) -> dict[str, Any]:
     }
 
 
-__all__ = ["handle_admin_get"]
+__all__ = ["handle_admin_get", "handle_admin_put"]
