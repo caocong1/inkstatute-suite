@@ -162,6 +162,35 @@ class TestOperatorConfigStore(unittest.TestCase):
             ):
                 self.assertEqual(default_operator_config_path(), configured)
 
+    def test_load_rejects_invalid_document_fail_closed(self) -> None:
+        """WR-01: corrupted/hand-edited store with raw secrets must not load as SoT."""
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "operator-config.json"
+            planted = "raw-app-secret-should-not-load"
+            path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "channels": {
+                            "qqbot": {
+                                "channel_id": "qqbot",
+                                "enabled": False,
+                                "metadata": {"app_secret": planted},
+                            },
+                            "wecom": {"channel_id": "wecom", "enabled": False},
+                        },
+                        "providers": [],
+                        "catalog": {},
+                        "vision": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            store = OperatorConfigStore(path)
+            with self.assertRaises(OperatorConfigValidationError) as ctx:
+                store.load()
+            self.assertNotIn(planted, str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

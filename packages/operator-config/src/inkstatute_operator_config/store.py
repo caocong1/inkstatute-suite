@@ -131,7 +131,11 @@ class OperatorConfigStore:
         self.path = Path(path) if path is not None else default_operator_config_path()
 
     def load(self) -> OperatorConfigDocument:
-        """Load the document, or return defaults when the store file is missing."""
+        """Load and validate the document, or return defaults when missing.
+
+        Fail-closed: hand-edited or corrupted store files that violate CFG-01/03
+        raise ``OperatorConfigValidationError`` rather than returning as SoT.
+        """
         if not self.path.is_file():
             return OperatorConfigDocument()
         try:
@@ -143,7 +147,9 @@ class OperatorConfigStore:
             ) from exc
         if not isinstance(payload, Mapping):
             raise OperatorConfigStoreError("operator config root must be a JSON object")
-        return document_from_payload(payload)
+        document = document_from_payload(payload)
+        validate_document(document)
+        return document
 
     def save(
         self,
