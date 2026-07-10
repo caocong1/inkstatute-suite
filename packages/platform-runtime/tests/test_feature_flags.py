@@ -122,5 +122,32 @@ class OperatorConfigFeatureFlagTests(unittest.TestCase):
         field_names = {f.name for f in fields(RuntimeFeatureFlags)}
         self.assertIn(self.FLAG, field_names)
 
+
+class WeComChannelFeatureFlagTests(unittest.TestCase):
+    """CHAN-03: wecom_channel_enabled defaults OFF (parity with qqbot_channel_enabled)."""
+
+    FLAG = "wecom_channel_enabled"
+
+    def test_wecom_channel_enabled_defaults_false(self) -> None:
+        flags = RuntimeFeatureFlags()
+        self.assertIs(flags.wecom_channel_enabled, False)
+
+    def test_wecom_channel_require_enabled_raises_when_false(self) -> None:
+        flags = RuntimeFeatureFlags()
+        with self.assertRaisesRegex(
+            RuntimeFeatureDisabledError,
+            "runtime feature flag disabled: wecom_channel_enabled",
+        ):
+            flags.require_enabled(self.FLAG)
+
+    def test_wecom_channel_require_enabled_passes_when_true(self) -> None:
+        flags = RuntimeFeatureFlags(wecom_channel_enabled=True)
+        flags.require_enabled(self.FLAG)
+
+    def test_wecom_channel_flag_field_exists(self) -> None:
+        field_names = {f.name for f in fields(RuntimeFeatureFlags)}
+        self.assertIn(self.FLAG, field_names)
+
+
 if __name__ == "__main__":
     unittest.main()

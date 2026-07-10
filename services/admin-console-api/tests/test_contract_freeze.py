@@ -78,6 +78,8 @@ class ContractFreezeTests(unittest.TestCase):
             "lawyer_web_chat_enabled",
             # v1.10 Operator Config Console — Phase 73
             "operator_config_enabled",
+            # v1.10 Phase 75 — WeCom platform dual-knob (CHAN-03)
+            "wecom_channel_enabled",
         }
         self.assertEqual(flag_names, expected_flags)
 
@@ -85,8 +87,9 @@ class ContractFreezeTests(unittest.TestCase):
         # Phase 74 Wave 0: admin-console-api and related gates that compose
         # admin_api_src must also list operator_config_src (definition +
         # operator-config gate + four admin-importing gates => >= 5).
+        # Phase 75 Wave 0: qqbot-service + wecom-service also list it (>= 7).
         text = _V2_GATES.read_text(encoding="utf-8")
-        self.assertGreaterEqual(text.count("operator_config_src"), 5)
+        self.assertGreaterEqual(text.count("operator_config_src"), 7)
 
     def test_protocols_py_not_modified_by_phase42(self) -> None:
         # protocols.py is importable and the Protocol classes are present.
