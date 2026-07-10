@@ -74,7 +74,7 @@ Each task was committed atomically:
 1. **Task 1: channels.py form render/parse + api_client.proxy_put** - `a47f9b2` (feat)
 2. **Task 2: Wire GET/POST /config/channels + green form tests + README honesty** - `d6e09ce` (feat)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `45664a1` (docs: complete plan)
 
 ## Files Created/Modified
 
