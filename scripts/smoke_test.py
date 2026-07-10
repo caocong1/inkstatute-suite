@@ -464,15 +464,18 @@ class _RecordingScheduler:
 
     def __init__(self) -> None:
         self.thunks: list[Callable[[], Any]] = []
+        self.results: list[Any] = []
 
     def __call__(self, thunk: Callable[[], Any]) -> None:
         self.thunks.append(thunk)
 
     def run_all(self) -> None:
+        self.results.clear()
         for thunk in list(self.thunks):
             result = thunk()
             if asyncio.iscoroutine(result):
-                asyncio.run(result)
+                result = asyncio.run(result)
+            self.results.append(result)
 
 
 def _load_c2c_envelope() -> dict[str, Any]:
@@ -585,22 +588,31 @@ def _step_protocol_path_dry_run() -> dict[str, dict[str, Any]]:
     # Post-ACK composition runs on the sync side (thunk owns its asyncio.run).
     scheduler.run_all()
 
+    # Primary evidence: allowlisted fields from composition return (not hardcoded).
+    comp = scheduler.results[0] if scheduler.results else {}
+    if not isinstance(comp, Mapping):
+        comp = {}
+    run_id = comp.get("run_id")
+
+    # Secondary fail-closed: Fake side effects must also show activity.
     submitted = getattr(backend, "submitted_requests", None) or []
     deliveries = getattr(wired.adapter, "deliveries", None) or []
     deliver_count = getattr(message_transport, "call_count", 0) or 0
-    ingress_ok = len(submitted) >= 1
-    deliver_ok = deliver_count >= 1 and len(deliveries) >= 1
 
     session_ingress = {
-        "ok": ingress_ok,
-        "ingress_action": "accepted" if ingress_ok else None,
-        "run_id_present": ingress_ok,
-        "branch": "message",
+        "ok": bool(run_id) and comp.get("branch") == "message" and len(submitted) >= 1,
+        "ingress_action": comp.get("ingress_action"),
+        "run_id_present": bool(run_id),
+        "branch": comp.get("branch") or "message",
     }
     adapter_deliver = {
-        "ok": deliver_ok,
-        "deliver_accepted": deliver_ok,
-        "boundary_action": "allow" if deliver_ok else None,
+        "ok": (
+            bool(comp.get("deliver_accepted"))
+            and deliver_count >= 1
+            and len(deliveries) >= 1
+        ),
+        "deliver_accepted": bool(comp.get("deliver_accepted")),
+        "boundary_action": comp.get("boundary_action"),
     }
     return {
         "adapter_ack": adapter_ack,
