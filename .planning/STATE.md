@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: verifying
+status: completed
 stopped_at: Phase 72 verified (passed); --no-transition
-last_updated: "2026-07-10T05:24:14.192Z"
+last_updated: "2026-07-10T05:25:00.000Z"
 last_activity: 2026-07-10 -- Phase 72 verified (passed); --no-transition
 progress:
   total_phases: 5
@@ -339,6 +339,7 @@ v1.8 archive: .planning/milestones/v1.8-ROADMAP.md
 
 ## Operator Next Steps
 
-- Approve v1.9 roadmap (Phases 68-72), then `$gsd-plan-phase 68`
-- Preserve `.planning/phases/08-lawyer-trial-acceptance/` (carried human gate; do not clear)
-- Phase 72 live QQ remains HUMAN GATE — do not auto-claim from CI
+- Phase 72 autonomous verification passed (`--no-transition`); live QQ `--live` acceptance remains HUMAN GATE
+- Preserve `.planning/phases/08-lawyer-trial-acceptance/` (Phase 8 carried human gate; do not clear)
+- Phase 5 live WeCom UAT remains carried human gate — do not mark complete from QQ smoke
+- Optional: run controlled `scripts/smoke_test.py --live` per `runbook/SMOKE_TEST_RUNBOOK.md` and archive sanitized evidence under `.planning/phases/72-controlled-live-integration/evidence/`
