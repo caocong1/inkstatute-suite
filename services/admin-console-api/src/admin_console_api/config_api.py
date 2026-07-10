@@ -105,13 +105,24 @@ def _normalize_section_body(
     section: str,
     body: Any,
 ) -> tuple[Any, dict[str, Any] | None]:
-    """Prefer body == section JSON value; unwrap ``{"providers": [...]}`` once."""
+    """Prefer body == section JSON value; unwrap ``{section: value}`` once.
+
+    Reject multi-section / full-document shaped bodies so a wrapped PUT cannot
+    silently replace the section with schema defaults (CR-01).
+    """
     if section == "providers":
         if isinstance(body, list):
             return body, None
         if isinstance(body, Mapping) and "providers" in body and isinstance(
             body["providers"], list
         ):
+            foreign = (CONFIG_SECTIONS - {"providers"}) & set(body.keys())
+            if foreign:
+                return None, _error(
+                    "invalid_config",
+                    "providers body must be the section value only "
+                    f"(unexpected keys: {sorted(foreign)})",
+                )
             return body["providers"], None
         return None, _error(
             "invalid_config",
@@ -123,6 +134,18 @@ def _normalize_section_body(
             "invalid_config",
             f"{section} section body must be a JSON object",
         )
+
+    foreign = (CONFIG_SECTIONS - {section}) & set(body.keys())
+    if foreign:
+        return None, _error(
+            "invalid_config",
+            f"{section} body must be the section value only "
+            f"(unexpected keys: {sorted(foreign)})",
+        )
+
+    if set(body.keys()) == {section} and isinstance(body[section], Mapping):
+        return dict(body[section]), None
+
     return dict(body), None
 
 

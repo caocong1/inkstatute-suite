@@ -296,6 +296,75 @@ class ConfigApiStaticTokenTests(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertEqual(body["error"]["code"], "not_found")
 
+    def test_wrapped_channels_body_unwraps_without_wipe(self) -> None:
+        """CR-01: {"channels": {...}} must unwrap, not silently reset defaults."""
+        seed_status, _ = handle_admin_put(
+            "/config/channels",
+            _VALID_CHANNELS,
+            self.headers,
+            self.flags,
+            self.env,
+            config_store=self.store,
+        )
+        self.assertEqual(seed_status, 200)
+
+        status, body = handle_admin_put(
+            "/config/channels",
+            {"channels": _VALID_CHANNELS},
+            self.headers,
+            self.flags,
+            self.env,
+            config_store=self.store,
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body["data"]["qqbot"]["app_id_ref"], "env:QQBOT_APP_ID")
+        self.assertIs(body["data"]["qqbot"]["enabled"], True)
+
+    def test_full_document_shaped_channels_put_rejected(self) -> None:
+        """CR-01: multi-section document body on /config/channels → 400."""
+        seed_status, _ = handle_admin_put(
+            "/config/channels",
+            _VALID_CHANNELS,
+            self.headers,
+            self.flags,
+            self.env,
+            config_store=self.store,
+        )
+        self.assertEqual(seed_status, 200)
+
+        status, body = handle_admin_put(
+            "/config/channels",
+            {
+                "channels": _VALID_CHANNELS,
+                "providers": _VALID_PROVIDERS,
+                "catalog": {"provider_id": None, "model_id": None},
+                "vision": {
+                    "routing_mode": None,
+                    "main_model_id": None,
+                    "vision_model_id": None,
+                },
+            },
+            self.headers,
+            self.flags,
+            self.env,
+            config_store=self.store,
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body["error"]["code"], "invalid_config")
+
+        get_status, get_body = handle_admin_get(
+            "/config/channels",
+            "",
+            self.headers,
+            self.read_model,
+            self.feedback_queue,
+            self.flags,
+            self.env,
+            config_store=self.store,
+        )
+        self.assertEqual(get_status, 200)
+        self.assertEqual(get_body["data"]["qqbot"]["app_id_ref"], "env:QQBOT_APP_ID")
+
 
 if __name__ == "__main__":
     unittest.main()
