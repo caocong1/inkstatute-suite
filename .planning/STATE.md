@@ -3,16 +3,16 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
 current_plan: 3
-status: executing
-stopped_at: Completed 73-02-PLAN.md
-last_updated: "2026-07-10T07:26:52.021Z"
-last_activity: 2026-07-10 — Completed 73-02 (validate_document + Hermes ban-list)
+status: verifying
+stopped_at: Completed 73-03-PLAN.md
+last_updated: "2026-07-10T07:31:25.780Z"
+last_activity: 2026-07-10 — Completed 73-03 (flag-gated atomic store + V2 gate)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 2
-  percent: 67
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -22,7 +22,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.10 Operator Config Console — Phase 73 executing (73-02 complete; 73-03 next)
+**Current focus:** v1.10 Operator Config Console — Phase 73 complete (ready for verification); Phase 74 next
 
 ## Current Position
 
@@ -30,10 +30,10 @@ Phase: 73 of 78 (Operator Config Foundation) — first of 6 v1.10 phases
 Current Plan: 3
 Total Plans in Phase: 3
 Plan: 3 of 3
-Status: Ready to execute
-Last activity: 2026-07-10 — Completed 73-02 (validate_document + Hermes ban-list)
+Status: Phase complete — ready for verification
+Last activity: 2026-07-10 — Completed 73-03 (flag-gated atomic store + V2 gate)
 
-Progress: [██████░░░░] 67%
+Progress: [██████████] 100% (phase plans)
 
 ### Deferred Items
 
@@ -55,19 +55,21 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 
 **Velocity:**
 
-- Total plans completed: 89
+- Total plans completed: 90
 - Average duration: N/A
 - Total execution time: ~0.03 hours
 
 **Recent Trend:**
 
-- Last 5 plans: Phase 73 P02 (3 min); Phase 73 P01 (2 min); Phase 72 P01/P02 (2–3 min)
+- Last 5 plans: Phase 73 P03 (3 min); Phase 73 P02 (3 min); Phase 73 P01 (2 min); Phase 72 P01/P02 (2–3 min)
 - Trend: N/A (new milestone)
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 73 | 01 | 2min | 3 | 8 |
 | 73 | 02 | 3min | 2 | 4 |
+
+| 73 | 03 | 3min | 3 | 11 |
 
 *Updated after each plan completion*
 
@@ -97,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 73]: validate_document raises on errors; OperatorConfigValidator collects issues
 - [Phase 73]: Hermes authority banned via path substrings + hermes_* field names in nested walks
 - [Phase 73]: Validation errors expose codes@paths only — never planted secrets
+- [Phase 73]: OperatorConfigDisabledError wraps RuntimeFeatureDisabledError for package-level CFG-02 clarity
+- [Phase 73]: Default store path is .inkstatute/operator-config.json when INKSTATUTE_OPERATOR_CONFIG_PATH unset
+- [Phase 73]: save order is mandatory: flag gate then validate_document then atomic write
 
 ### Pending Todos
 
@@ -119,8 +124,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T07:26:51.964Z
-Stopped at: Completed 73-02-PLAN.md
+Last session: 2026-07-10T07:31:04.693Z
+Stopped at: Completed 73-03-PLAN.md
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
@@ -132,4 +137,4 @@ v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Continue Phase 73 with plan 73-03 (atomic store + operator_config_enabled gate)
+- Run phase verification for Phase 73, then plan/execute Phase 74 (Admin Config API + RBAC)

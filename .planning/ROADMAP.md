@@ -61,7 +61,7 @@ Plans:
 
 - [x] 73-01-PLAN.md — Empty-deps package scaffold, refs-only schemas, shape-only secret-ref normalize
 - [x] 73-02-PLAN.md — Document validators + Hermes filesystem/profile ban-list (CFG-03)
-- [ ] 73-03-PLAN.md — Atomic JSON store, operator_config_enabled gate, V2 gate registration
+- [x] 73-03-PLAN.md — Atomic JSON store, operator_config_enabled gate, V2 gate registration
 
 ### Phase 74: Admin Config API + RBAC
 
@@ -140,7 +140,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 73. Operator Config Foundation | v1.10 | 2/3 | In Progress|  |
+| 73. Operator Config Foundation | v1.10 | 3/3 | Complete   | 2026-07-10 |
 | 74. Admin Config API + RBAC | v1.10 | 0/TBD | Not started | - |
 | 75. Channel Config Apply | v1.10 | 0/TBD | Not started | - |
 | 76. Provider Registry + Model Catalog | v1.10 | 0/TBD | Not started | - |
