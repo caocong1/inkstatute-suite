@@ -76,7 +76,7 @@ Each task was committed atomically:
    - `506df56` test(74-01): add failing /config RBAC matrix and route tests
    - `e091dc3` feat(74-01): register /config in RBAC matrix and ROUTE_PREFIXES
 
-**Plan metadata:** (docs commit after SUMMARY)
+**Plan metadata:** `5f16089` (docs: complete plan)
 
 _Note: TDD tasks used RED → GREEN commits per task._
 
