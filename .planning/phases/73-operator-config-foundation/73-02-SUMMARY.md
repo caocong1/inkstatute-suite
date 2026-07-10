@@ -72,7 +72,7 @@ Each task was committed atomically:
 1. **Task 1: Implement validate_document with Hermes ban-list and refs-only checks** - `ac4ad24` (test) → `3feea03` (feat)
 2. **Task 2: Prove CFG-03 Hermes ban-list and CFG-01 planted-secret document rejection** - `aa104c5` (test)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `11424e5` (docs: complete plan)
 
 ## Files Created/Modified
 
@@ -109,7 +109,14 @@ None - no external service configuration required.
 - Task 1: RED `ac4ad24` → GREEN `3feea03`
 - Task 2: expanded coverage `aa104c5` (implementation already green from Task 1)
 
-## Self-Check: PENDING
+## Self-Check: PASSED
+
+- All 4 key files FOUND
+- Commits ac4ad24, 3feea03, aa104c5 FOUND
+- Hermes banlist + validate_document unittest discovers OK (17 tests)
+- Full operator-config suite OK (39 tests)
+- `rg Path.home()` clean; `~/.hermes` only as ban-list constant in validate.py
+- No admin HTTP / store.py added (Plan 03 scope)
 
 ---
 *Phase: 73-operator-config-foundation*
