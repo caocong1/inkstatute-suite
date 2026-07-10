@@ -52,74 +52,120 @@ def document_to_payload(document: OperatorConfigDocument) -> dict[str, Any]:
     return asdict(document)
 
 
+def _as_object(value: object, label: str) -> Mapping[str, Any]:
+    """Require a mapping (or None → empty); raise store error on bad shapes."""
+    if value is None:
+        return {}
+    if not isinstance(value, Mapping):
+        raise OperatorConfigStoreError(f"{label} must be an object")
+    return value
+
+
+def _optional_str(value: object, label: str) -> str | None:
+    """Accept None or str for optional string fields; reject other types."""
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise OperatorConfigStoreError(f"{label} must be a string or null")
+    return value
+
+
+def _schema_version(value: object) -> int:
+    if value is None:
+        return 1
+    try:
+        return int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError) as exc:
+        raise OperatorConfigStoreError("schema_version must be an integer") from exc
+
+
 def document_from_payload(payload: Mapping[str, Any]) -> OperatorConfigDocument:
-    """Parse a JSON mapping into a frozen ``OperatorConfigDocument``."""
+    """Parse a JSON mapping into a frozen ``OperatorConfigDocument``.
+
+    Fail-closed on bad shapes: non-object metadata, non-numeric schema_version,
+    and non-object provider list items raise ``OperatorConfigStoreError``
+    (never bare ``ValueError`` / silent drops).
+    """
     if not isinstance(payload, Mapping):
         raise OperatorConfigStoreError("operator config payload must be a JSON object")
 
-    channels_raw = payload.get("channels") or {}
-    if not isinstance(channels_raw, Mapping):
-        raise OperatorConfigStoreError("channels must be an object")
-
-    qqbot_raw = channels_raw.get("qqbot") or {}
-    wecom_raw = channels_raw.get("wecom") or {}
-    if not isinstance(qqbot_raw, Mapping) or not isinstance(wecom_raw, Mapping):
-        raise OperatorConfigStoreError("channel documents must be objects")
+    channels_raw = _as_object(payload.get("channels"), "channels")
+    qqbot_raw = _as_object(channels_raw.get("qqbot"), "channels.qqbot")
+    wecom_raw = _as_object(channels_raw.get("wecom"), "channels.wecom")
 
     providers_raw = payload.get("providers") or ()
     if not isinstance(providers_raw, (list, tuple)):
         raise OperatorConfigStoreError("providers must be a list")
 
-    catalog_raw = payload.get("catalog") or {}
-    vision_raw = payload.get("vision") or {}
-    if not isinstance(catalog_raw, Mapping) or not isinstance(vision_raw, Mapping):
-        raise OperatorConfigStoreError("catalog and vision must be objects")
+    catalog_raw = _as_object(payload.get("catalog"), "catalog")
+    vision_raw = _as_object(payload.get("vision"), "vision")
 
-    providers = tuple(
-        ProviderDoc(
-            provider_id=str(item.get("provider_id", "")),
-            kind=str(item.get("kind", "")),
-            enabled=bool(item.get("enabled", False)),
-            api_base_url=item.get("api_base_url"),
-            api_key_ref=item.get("api_key_ref"),
-            metadata=dict(item.get("metadata") or {}),
+    providers: list[ProviderDoc] = []
+    for index, item in enumerate(providers_raw):
+        if not isinstance(item, Mapping):
+            raise OperatorConfigStoreError(f"providers[{index}] must be an object")
+        providers.append(
+            ProviderDoc(
+                provider_id=str(item.get("provider_id", "")),
+                kind=str(item.get("kind", "")),
+                enabled=bool(item.get("enabled", False)),
+                api_base_url=_optional_str(
+                    item.get("api_base_url"), f"providers[{index}].api_base_url"
+                ),
+                api_key_ref=_optional_str(
+                    item.get("api_key_ref"), f"providers[{index}].api_key_ref"
+                ),
+                metadata=dict(_as_object(item.get("metadata"), f"providers[{index}].metadata")),
+            )
         )
-        for item in providers_raw
-        if isinstance(item, Mapping)
-    )
 
     return OperatorConfigDocument(
-        schema_version=int(payload.get("schema_version", 1)),
+        schema_version=_schema_version(payload.get("schema_version", 1)),
         channels=ChannelsDoc(
             qqbot=QQBotChannelDoc(
                 channel_id=str(qqbot_raw.get("channel_id", "qqbot")),
                 enabled=bool(qqbot_raw.get("enabled", False)),
-                app_id_ref=qqbot_raw.get("app_id_ref"),
-                app_secret_ref=qqbot_raw.get("app_secret_ref"),
-                token_secret_ref=qqbot_raw.get("token_secret_ref"),
-                bot_secret_ref=qqbot_raw.get("bot_secret_ref"),
-                metadata=dict(qqbot_raw.get("metadata") or {}),
+                app_id_ref=_optional_str(qqbot_raw.get("app_id_ref"), "channels.qqbot.app_id_ref"),
+                app_secret_ref=_optional_str(
+                    qqbot_raw.get("app_secret_ref"), "channels.qqbot.app_secret_ref"
+                ),
+                token_secret_ref=_optional_str(
+                    qqbot_raw.get("token_secret_ref"), "channels.qqbot.token_secret_ref"
+                ),
+                bot_secret_ref=_optional_str(
+                    qqbot_raw.get("bot_secret_ref"), "channels.qqbot.bot_secret_ref"
+                ),
+                metadata=dict(_as_object(qqbot_raw.get("metadata"), "channels.qqbot.metadata")),
             ),
             wecom=WeComChannelDoc(
                 channel_id=str(wecom_raw.get("channel_id", "wecom")),
                 enabled=bool(wecom_raw.get("enabled", False)),
-                token_secret_ref=wecom_raw.get("token_secret_ref"),
-                encoding_aes_key_secret_ref=wecom_raw.get(
-                    "encoding_aes_key_secret_ref"
+                token_secret_ref=_optional_str(
+                    wecom_raw.get("token_secret_ref"), "channels.wecom.token_secret_ref"
                 ),
-                corp_id_ref=wecom_raw.get("corp_id_ref"),
-                metadata=dict(wecom_raw.get("metadata") or {}),
+                encoding_aes_key_secret_ref=_optional_str(
+                    wecom_raw.get("encoding_aes_key_secret_ref"),
+                    "channels.wecom.encoding_aes_key_secret_ref",
+                ),
+                corp_id_ref=_optional_str(
+                    wecom_raw.get("corp_id_ref"), "channels.wecom.corp_id_ref"
+                ),
+                metadata=dict(_as_object(wecom_raw.get("metadata"), "channels.wecom.metadata")),
             ),
         ),
-        providers=providers,
+        providers=tuple(providers),
         catalog=CatalogSelectionDoc(
-            provider_id=catalog_raw.get("provider_id"),
-            model_id=catalog_raw.get("model_id"),
+            provider_id=_optional_str(catalog_raw.get("provider_id"), "catalog.provider_id"),
+            model_id=_optional_str(catalog_raw.get("model_id"), "catalog.model_id"),
         ),
         vision=VisionPolicyDoc(
-            routing_mode=vision_raw.get("routing_mode"),
-            main_model_id=vision_raw.get("main_model_id"),
-            vision_model_id=vision_raw.get("vision_model_id"),
+            routing_mode=_optional_str(vision_raw.get("routing_mode"), "vision.routing_mode"),
+            main_model_id=_optional_str(
+                vision_raw.get("main_model_id"), "vision.main_model_id"
+            ),
+            vision_model_id=_optional_str(
+                vision_raw.get("vision_model_id"), "vision.vision_model_id"
+            ),
         ),
     )
 

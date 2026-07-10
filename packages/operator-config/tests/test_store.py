@@ -11,7 +11,10 @@ from unittest import mock
 
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 
-from inkstatute_operator_config.errors import OperatorConfigValidationError
+from inkstatute_operator_config.errors import (
+    OperatorConfigStoreError,
+    OperatorConfigValidationError,
+)
 from inkstatute_operator_config.schemas import (
     CatalogSelectionDoc,
     ChannelsDoc,
@@ -24,6 +27,7 @@ from inkstatute_operator_config.schemas import (
 from inkstatute_operator_config.store import (
     OperatorConfigStore,
     default_operator_config_path,
+    document_from_payload,
 )
 
 
@@ -190,6 +194,38 @@ class TestOperatorConfigStore(unittest.TestCase):
             with self.assertRaises(OperatorConfigValidationError) as ctx:
                 store.load()
             self.assertNotIn(planted, str(ctx.exception))
+
+    def test_document_from_payload_rejects_non_object_metadata(self) -> None:
+        """WR-03: metadata string/list must raise OperatorConfigStoreError, not ValueError."""
+        with self.assertRaises(OperatorConfigStoreError) as ctx:
+            document_from_payload(
+                {
+                    "channels": {
+                        "qqbot": {"metadata": "not-an-object"},
+                        "wecom": {},
+                    }
+                }
+            )
+        self.assertIn("metadata", str(ctx.exception))
+        self.assertIsInstance(ctx.exception, OperatorConfigStoreError)
+
+    def test_document_from_payload_rejects_non_numeric_schema_version(self) -> None:
+        with self.assertRaises(OperatorConfigStoreError) as ctx:
+            document_from_payload({"schema_version": "not-a-number"})
+        self.assertIn("schema_version", str(ctx.exception))
+
+    def test_document_from_payload_rejects_non_object_provider_items(self) -> None:
+        """WR-03: corrupt provider list items must not be silently dropped."""
+        with self.assertRaises(OperatorConfigStoreError) as ctx:
+            document_from_payload(
+                {
+                    "providers": [
+                        {"provider_id": "ok", "kind": "ok"},
+                        "dropped-silently-before",
+                    ]
+                }
+            )
+        self.assertIn("providers[1]", str(ctx.exception))
 
 
 if __name__ == "__main__":
