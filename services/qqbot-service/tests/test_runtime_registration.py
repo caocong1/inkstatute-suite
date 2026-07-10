@@ -74,6 +74,7 @@ class RuntimeRegistrationTests(unittest.TestCase):
             backend=FakeBackendAdapter(),
             flags=RuntimeFeatureFlags(qqbot_channel_enabled=True),
             host_config=QQBotHostConfig(
+                enabled=True,
                 app_id_ref="secret://qqbot/app-id",
                 app_secret_ref="secret://qqbot/app-secret",
                 bot_secret_ref="secret://qqbot/bot-secret",

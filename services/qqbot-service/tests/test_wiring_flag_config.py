@@ -49,10 +49,10 @@ class WiringFlagConfigTests(unittest.TestCase):
     """REG-01 dual-knob mapping and live-injection proofs."""
 
     def test_build_channel_config_maps_flag_true_to_enabled_true(self) -> None:
-        # REG-01: flags.qqbot_channel_enabled → channel_config.enabled
+        # REG-01 / WR-02: both knobs ON → channel_config.enabled True
         flags = RuntimeFeatureFlags(qqbot_channel_enabled=True)
         host = QQBotHostConfig(
-            enabled=False,  # host.enabled must not drive channel enabled alone
+            enabled=True,
             app_id_ref="secret://qqbot/app-id",
             app_secret_ref="secret://qqbot/app-secret",
             token_secret_ref="secret://qqbot/token",
@@ -65,8 +65,33 @@ class WiringFlagConfigTests(unittest.TestCase):
         self.assertEqual(channel_config.token_secret_ref, host.token_secret_ref)
         self.assertEqual(channel_config.bot_secret_ref, host.bot_secret_ref)
 
+    def test_host_enabled_false_keeps_channel_disabled_even_if_flag_true(self) -> None:
+        # WR-02: dual-knob AND — host OFF cannot be overridden by platform flag
+        flags = RuntimeFeatureFlags(qqbot_channel_enabled=True)
+        host = QQBotHostConfig(enabled=False)
+        channel_config = build_qqbot_channel_config(flags=flags, host_config=host)
+        self.assertIs(channel_config.enabled, False)
+
+        token_manager, message_transport, _ = _live_fakes()
+        wired = build_qqbot_wired_runtime(
+            backend=FakeBackendAdapter(),
+            flags=flags,
+            host_config=QQBotHostConfig(
+                enabled=False,
+                app_id_ref="secret://qqbot/app-id",
+                app_secret_ref="secret://qqbot/app-secret",
+                bot_secret_ref="secret://qqbot/bot-secret",
+            ),
+            token_manager=token_manager,
+            transport=message_transport,
+        )
+        self.assertIs(wired.channel_config.enabled, False)
+        self.assertIs(wired.live_io_ready, False)
+        self.assertIsNone(wired.adapter._token_manager)
+        self.assertIsNone(wired.adapter._transport)
+
     def test_build_channel_config_maps_flag_false_to_enabled_false(self) -> None:
-        # W-03: factory uses flags only — False flag → enabled False
+        # W-03: factory uses flags AND host — False flag → enabled False
         flags = RuntimeFeatureFlags(qqbot_channel_enabled=False)
         host = QQBotHostConfig(enabled=True)  # conceptual host ON must not override
         channel_config = build_qqbot_channel_config(flags=flags, host_config=host)
@@ -83,6 +108,7 @@ class WiringFlagConfigTests(unittest.TestCase):
         token_manager, message_transport, _ = _live_fakes()
         flags = RuntimeFeatureFlags(qqbot_channel_enabled=True)
         host = QQBotHostConfig(
+            enabled=True,
             app_id_ref="secret://qqbot/app-id",
             app_secret_ref="secret://qqbot/app-secret",
             bot_secret_ref="secret://qqbot/bot-secret",

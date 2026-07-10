@@ -48,13 +48,15 @@ Config `from_env` reads only `INKSTATUTE_QQBOT_CHANNEL_ENABLED` and
 
 Host factory (`qqbot_service.wiring`) owns dual-knob mapping and live injection:
 
-1. **Flag → config:** `RuntimeFeatureFlags.qqbot_channel_enabled` maps onto
-   `QQBotChannelConfig.enabled`. `QQBotHostConfig.enabled` alone cannot enable
-   the channel.
+1. **Dual-knob AND → config:** `QQBotChannelConfig.enabled` is
+   `flags.qqbot_channel_enabled and host_config.enabled` (both default OFF).
+   Either knob alone cannot enable the channel.
 2. **Live injection:** `token_manager` and `transport` are injected into
-   `QQBotChannelAdapter` only when the platform flag is ON **and** both deps are
-   available. When the flag is OFF, caller-supplied transports are stripped so
-   `_live_io_ready()` stays False.
+   `QQBotChannelAdapter` only when the composed channel is ON **and** both deps
+   are available. When either knob is OFF, caller-supplied transports are
+   stripped so `_live_io_ready()` stays False. Env auto-build of
+   `TokenManager` also requires an explicit `token_transport` (fail closed —
+   never silent `UrllibTokenTransport`).
 3. **Explicit DI:** `DefaultRunRuntime` is constructed with
    `channels=(adapter,)` — no auto-discovery inside `platform-runtime`.
 

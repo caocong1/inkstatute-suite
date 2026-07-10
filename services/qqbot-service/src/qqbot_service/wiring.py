@@ -1,9 +1,10 @@
-"""Host composition factory: flag→config mapping and live-IO injection (REG-01).
+"""Host composition factory: dual-knob mapping and live-IO injection (REG-01).
 
-Maps ``RuntimeFeatureFlags.qqbot_channel_enabled`` onto
-``QQBotChannelConfig.enabled`` and injects ``token_manager`` / ``transport``
-only when the composed path is live-ready. The adapter never imports feature
-flags — mapping lives only in this host module.
+Maps ``RuntimeFeatureFlags.qqbot_channel_enabled`` AND
+``QQBotHostConfig.enabled`` onto ``QQBotChannelConfig.enabled`` and injects
+``token_manager`` / ``transport`` only when the composed path is live-ready.
+The adapter never imports feature flags — mapping lives only in this host
+module.
 """
 
 from __future__ import annotations
@@ -45,12 +46,14 @@ def build_qqbot_channel_config(
     flags: RuntimeFeatureFlags,
     host_config: QQBotHostConfig,
 ) -> QQBotChannelConfig:
-    """Map platform flag → channel config.enabled; copy secret refs from host.
+    """Map dual default-OFF knobs → channel config.enabled; copy secret refs.
 
-    ``host_config.enabled`` alone must not enable the channel (W-03 / REG-01).
+    Channel enablement is fail-closed AND of
+    ``flags.qqbot_channel_enabled`` and ``host_config.enabled``. Either knob
+    alone must not enable the channel (W-03 / REG-01 / WR-02).
     """
     return QQBotChannelConfig(
-        enabled=flags.qqbot_channel_enabled,
+        enabled=bool(flags.qqbot_channel_enabled and host_config.enabled),
         app_id_ref=host_config.app_id_ref,
         app_secret_ref=host_config.app_secret_ref,
         token_secret_ref=host_config.token_secret_ref,
@@ -71,10 +74,12 @@ def build_qqbot_wired_runtime(
     """Compose channel config, adapter, and ``DefaultRunRuntime`` with explicit DI.
 
     Live injection (REG-01 / W-04 / W-05):
-    - Flag OFF → strip ``token_manager`` and ``transport`` even if caller passed them.
-    - Flag ON → inject only when both deps are available (caller-injected, or
-      ``TokenManager`` built from resolved ``app_id_ref`` / ``app_secret_ref`` when
-      ``env``, ``transport``, and ``token_transport`` are provided).
+    - Composed channel OFF (flag or host) → strip ``token_manager`` and
+      ``transport`` even if caller passed them.
+    - Composed channel ON → inject only when both deps are available
+      (caller-injected, or ``TokenManager`` built from resolved
+      ``app_id_ref`` / ``app_secret_ref`` when ``env``, ``transport``, and
+      ``token_transport`` are provided).
     - Env auto-build never omits ``transport=`` on ``TokenManager``: without an
       explicit ``token_transport``, the factory fails closed (no TokenManager).
       Production callers must pass ``UrllibTokenTransport()`` (or equivalent)
@@ -87,7 +92,7 @@ def build_qqbot_wired_runtime(
     injected_token_manager: TokenManager | None = None
     injected_transport: object | None = None
 
-    if feature_flags.qqbot_channel_enabled:
+    if channel_config.enabled:
         resolved_token_manager = token_manager
         if (
             resolved_token_manager is None
