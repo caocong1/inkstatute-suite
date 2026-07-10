@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: verifying
-stopped_at: Completed 69-02 and 69-03; phase ready for verification (--no-transition)
-last_updated: "2026-07-10T04:54:43.422Z"
-last_activity: 2026-07-10 -- Phase 69 verified (passed); --no-transition
+status: executing
+stopped_at: Completed 70-01-PLAN.md; starting 70-02
+last_updated: "2026-07-10T04:55:16.046Z"
+last_activity: 2026-07-10 -- Phase 70 execution started
 progress:
   total_phases: 5
   completed_phases: 2
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 69 complete; Phase 70 not started (--no-transition)
+**Current focus:** Phase 70 — webhook-composition-path
 
 ## Current Position
 
-Phase: 69 (runtime-registration-wiring) — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete — ready for verification
-Last activity: 2026-07-10 -- Phase 69 verified (passed); --no-transition
+Phase: 70 (webhook-composition-path) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-07-10 -- Phase 70 execution started
 
 Progress: [████░░░░░░] 40%
 
@@ -158,6 +158,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 69 P01 | 12min | 2 tasks | 4 files |
 | Phase 69 P02 | 6min | 2 tasks | 1 files |
 | Phase 69 P03 | 6min | 2 tasks | 2 files |
+| Phase 70 P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -272,6 +273,7 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 69]: Disabled adapters still register in runtime.channels; live IO remains gated by _live_io_ready
 - [Phase ?]: [Phase 69]: Plan 01 wiring already passed channels=(adapter,); Plan 02 is proof-only
 - [Phase ?]: [Phase 69]: HOST-03 proofs always go through build_qqbot_wired_runtime (composed path)
+- [Phase ?]: Handler is async; returns (status, body_bytes, headers); Plan 01 stubs post-ACK composition
 
 ### Pending Todos
 
@@ -307,8 +309,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T04:54:43.418Z
-Stopped at: Completed 69-02 and 69-03; phase ready for verification (--no-transition)
+Last session: 2026-07-10T04:55:16.041Z
+Stopped at: Completed 70-01-PLAN.md; starting 70-02
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
