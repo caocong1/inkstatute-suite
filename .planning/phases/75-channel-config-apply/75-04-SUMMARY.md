@@ -69,7 +69,7 @@ Each task was committed atomically:
 1. **Task 1: WeComChannelConfig.from_operator_doc (channel package)** - `a6245bc` (feat)
 2. **Task 2: wecom-service channel_wiring dual-knob + load helper** - `6145e86` (feat)
 
-**Plan metadata:** _(pending final docs commit)_
+**Plan metadata:** `a7722c9` (docs: complete plan)
 
 _Note: Wave 0 RED scaffolds landed in 75-01; this plan greened them (TDD GREEN commits)._
 
