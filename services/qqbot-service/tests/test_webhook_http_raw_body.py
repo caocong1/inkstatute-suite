@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import io
 import json
+import time
 import unittest
 from http.server import BaseHTTPRequestHandler
 from typing import Any
@@ -220,6 +221,25 @@ class WebhookHttpRawBodyTests(unittest.TestCase):
         payload = json.loads(wfile.getvalue())
         self.assertIn("plain_token", payload)
         self.assertEqual(scheduled, [])
+
+    def test_default_post_ack_scheduler_reports_errors(self) -> None:
+        """CR-02: failures after ACK must surface via on_error (not silent)."""
+        from qqbot_service.http_server import default_post_ack_scheduler
+
+        seen: list[str] = []
+
+        def on_error(exc: BaseException) -> None:
+            seen.append(type(exc).__name__)
+
+        def boom() -> None:
+            raise RuntimeError("composition_failed_fixture")
+
+        default_post_ack_scheduler(boom, on_error=on_error)
+        # Daemon thread — wait briefly for the failure signal.
+        deadline = time.time() + 2.0
+        while not seen and time.time() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(seen, ["RuntimeError"])
 
 
 if __name__ == "__main__":

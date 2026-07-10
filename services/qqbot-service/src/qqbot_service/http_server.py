@@ -7,6 +7,7 @@ Reads Content-Length body bytes once from ``rfile`` and delegates to
 from __future__ import annotations
 
 import asyncio
+import sys
 import threading
 from collections.abc import Callable, Mapping
 from http.server import BaseHTTPRequestHandler
@@ -17,11 +18,14 @@ from qqbot_service.webhook import handle_qqbot_webhook_request
 __all__ = [
     "DEFAULT_MAX_BODY_BYTES",
     "QQBotWebhookServer",
+    "default_post_ack_error_handler",
     "default_post_ack_scheduler",
     "read_request_body_once",
 ]
 
 DEFAULT_MAX_BODY_BYTES = 1_048_576  # 1 MiB fail-closed ceiling
+
+PostAckErrorHandler = Callable[[BaseException], None]
 
 
 def read_request_body_once(
@@ -55,17 +59,38 @@ def read_request_body_once(
     return rfile.read(length)
 
 
-def default_post_ack_scheduler(thunk: Callable[[], Any]) -> None:
-    """Production default: run post-ACK work on a daemon thread."""
+def default_post_ack_error_handler(exc: BaseException) -> None:
+    """Sanitized failure signal — exception type only, never secrets/payloads."""
+    sys.stderr.write(f"qqbot-post-ack failed type={type(exc).__name__}\n")
+
+
+def default_post_ack_scheduler(
+    thunk: Callable[[], Any],
+    *,
+    on_error: PostAckErrorHandler | None = None,
+) -> None:
+    """Production default: run post-ACK work on a daemon thread.
+
+    Exceptions are swallowed so the HTTP process never crashes after ACK, but
+    a sanitized failure signal is always emitted via ``on_error`` (default:
+    stderr with exception type only).
+    """
+    error_handler = on_error or default_post_ack_error_handler
 
     def _runner() -> None:
         try:
             result = thunk()
             if asyncio.iscoroutine(result):
                 asyncio.run(result)
-        except Exception:
+        except Exception as exc:
             # Never crash the HTTP process from background composition.
-            return None
+            try:
+                error_handler(exc)
+            except Exception:
+                # Error handler must not take down the daemon thread either.
+                sys.stderr.write(
+                    f"qqbot-post-ack failed type={type(exc).__name__}\n"
+                )
 
     thread = threading.Thread(target=_runner, name="qqbot-post-ack", daemon=True)
     thread.start()
@@ -79,6 +104,7 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
     - ``self.server.wired`` — ``QQBotWiredRuntime``
     - ``self.server.env`` — injected env mapping for secret resolve
     - ``self.server.post_ack_scheduler`` — optional; defaults to daemon thread
+    - ``self.server.on_post_ack_error`` — optional sanitized failure callback
     - ``self.server.max_body_bytes`` — optional body ceiling
     """
 
@@ -105,8 +131,16 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
 
         env = getattr(self.server, "env", None) or {}
         scheduler = getattr(self.server, "post_ack_scheduler", None)
+        on_error = getattr(self.server, "on_post_ack_error", None)
         if scheduler is None:
-            scheduler = default_post_ack_scheduler
+            if on_error is not None:
+
+                def _bound_scheduler(thunk: Callable[[], Any]) -> None:
+                    default_post_ack_scheduler(thunk, on_error=on_error)
+
+                scheduler = _bound_scheduler
+            else:
+                scheduler = default_post_ack_scheduler
 
         status, resp_body, resp_headers = asyncio.run(
             handle_qqbot_webhook_request(
