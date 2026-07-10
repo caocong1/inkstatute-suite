@@ -1,15 +1,38 @@
-"""Integration tests for RBAC enforcement in handle_admin_get."""
+"""Integration tests for RBAC enforcement in handle_admin_get / handle_admin_put."""
 
 from __future__ import annotations
 
+import tempfile
 import unittest
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from admin_console_api.api import handle_admin_get
+from admin_console_api.api import handle_admin_get, handle_admin_put
+from inkstatute_operator_config.store import OperatorConfigStore
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 from rbac import Role, issue_token
 from rbac.token import _b64url_encode
+
+_VALID_CHANNELS = {
+    "qqbot": {
+        "channel_id": "qqbot",
+        "enabled": True,
+        "app_id_ref": "env:QQBOT_APP_ID",
+        "app_secret_ref": None,
+        "token_secret_ref": None,
+        "bot_secret_ref": None,
+        "metadata": {},
+    },
+    "wecom": {
+        "channel_id": "wecom",
+        "enabled": False,
+        "token_secret_ref": None,
+        "encoding_aes_key_secret_ref": None,
+        "corp_id_ref": None,
+        "metadata": {},
+    },
+}
 
 
 def _expired_token(secret: str, role_str: str = "admin", tenant_id: str = "t1") -> str:
@@ -208,6 +231,140 @@ class RbacEnabledTests(unittest.TestCase):
         )
         self.assertEqual(status, 403)
         self.assertEqual(body["error"]["code"], "forbidden")
+
+
+class RbacConfigSurfaceTests(unittest.TestCase):
+    """ADMIN/OPERATOR allow /config; LAWYER/VIEWER deny GET and PUT (ADM-01)."""
+
+    def setUp(self) -> None:
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.store_path = Path(self._tmpdir.name) / "operator-config.json"
+        self.store = OperatorConfigStore(self.store_path)
+        self.flags = RuntimeFeatureFlags(
+            admin_api_enabled=True,
+            operator_config_enabled=True,
+            rbac_enabled=True,
+        )
+        self.rbac_secret = "test-secret"
+        self.read_model = FakeReadModel()
+        self.feedback_queue: list[dict] = []
+
+    def _rbac_headers(self, role: Role, tenant_id: str = "t1") -> dict[str, str]:
+        token = issue_token(self.rbac_secret, role=role, tenant_id=tenant_id)
+        return {"Authorization": f"Bearer {token}"}
+
+    def test_admin_get_put_config_channels_returns_200(self) -> None:
+        headers = self._rbac_headers(Role.ADMIN)
+        put_status, put_body = handle_admin_put(
+            "/config/channels",
+            _VALID_CHANNELS,
+            headers,
+            self.flags,
+            env={},
+            config_store=self.store,
+            rbac_secret=self.rbac_secret,
+        )
+        self.assertEqual(put_status, 200)
+        self.assertEqual(put_body["data"]["qqbot"]["app_id_ref"], "env:QQBOT_APP_ID")
+
+        get_status, get_body = handle_admin_get(
+            "/config/channels",
+            "",
+            headers,
+            self.read_model,
+            self.feedback_queue,
+            self.flags,
+            env={},
+            rbac_secret=self.rbac_secret,
+            config_store=self.store,
+        )
+        self.assertEqual(get_status, 200)
+        self.assertEqual(get_body["data"]["qqbot"]["app_id_ref"], "env:QQBOT_APP_ID")
+
+    def test_operator_get_put_config_channels_returns_200(self) -> None:
+        headers = self._rbac_headers(Role.OPERATOR)
+        put_status, _ = handle_admin_put(
+            "/config/channels",
+            _VALID_CHANNELS,
+            headers,
+            self.flags,
+            env={},
+            config_store=self.store,
+            rbac_secret=self.rbac_secret,
+        )
+        self.assertEqual(put_status, 200)
+
+        get_status, _ = handle_admin_get(
+            "/config/channels",
+            "",
+            headers,
+            self.read_model,
+            self.feedback_queue,
+            self.flags,
+            env={},
+            rbac_secret=self.rbac_secret,
+            config_store=self.store,
+        )
+        self.assertEqual(get_status, 200)
+
+    def test_lawyer_get_put_config_channels_returns_403(self) -> None:
+        headers = self._rbac_headers(Role.LAWYER)
+        get_status, get_body = handle_admin_get(
+            "/config/channels",
+            "",
+            headers,
+            self.read_model,
+            self.feedback_queue,
+            self.flags,
+            env={},
+            rbac_secret=self.rbac_secret,
+            config_store=self.store,
+        )
+        self.assertEqual(get_status, 403)
+        self.assertEqual(get_body["error"]["code"], "forbidden")
+
+        put_status, put_body = handle_admin_put(
+            "/config/channels",
+            _VALID_CHANNELS,
+            headers,
+            self.flags,
+            env={},
+            config_store=self.store,
+            rbac_secret=self.rbac_secret,
+        )
+        self.assertEqual(put_status, 403)
+        self.assertEqual(put_body["error"]["code"], "forbidden")
+        self.assertFalse(self.store_path.exists())
+
+    def test_viewer_get_put_config_channels_returns_403(self) -> None:
+        headers = self._rbac_headers(Role.VIEWER)
+        get_status, get_body = handle_admin_get(
+            "/config/channels",
+            "",
+            headers,
+            self.read_model,
+            self.feedback_queue,
+            self.flags,
+            env={},
+            rbac_secret=self.rbac_secret,
+            config_store=self.store,
+        )
+        self.assertEqual(get_status, 403)
+        self.assertEqual(get_body["error"]["code"], "forbidden")
+
+        put_status, put_body = handle_admin_put(
+            "/config/channels",
+            _VALID_CHANNELS,
+            headers,
+            self.flags,
+            env={},
+            config_store=self.store,
+            rbac_secret=self.rbac_secret,
+        )
+        self.assertEqual(put_status, 403)
+        self.assertEqual(put_body["error"]["code"], "forbidden")
+        self.assertFalse(self.store_path.exists())
 
 
 if __name__ == "__main__":
