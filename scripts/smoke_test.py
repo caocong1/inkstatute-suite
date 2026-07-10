@@ -280,18 +280,21 @@ def sanitize_evidence(evidence: Mapping[str, Any]) -> dict[str, Any]:
 
 def load_live_credentials() -> dict[str, str]:
     """Load live value env vars. Fail closed on missing keys; never log values."""
-    missing = [k for k in LIVE_ENV_KEYS if not os.environ.get(k)]
+    missing = [
+        k for k in LIVE_ENV_KEYS
+        if not (os.environ.get(k) or "").strip()
+    ]
     if missing:
         # Fail closed — list key *names* only, never values.
         raise SystemExit(
             "live mode requires env vars (values not shown): " + ", ".join(missing)
         )
     return {
-        "bot_secret": os.environ["INKSTATUTE_QQBOT_BOT_SECRET"],
-        "user_openid": os.environ["INKSTATUTE_QQBOT_USER_OPENID"],
-        "msg_id": os.environ["INKSTATUTE_QQBOT_REPLY_MSG_ID"],
-        "app_id": os.environ["INKSTATUTE_QQBOT_APP_ID"],
-        "client_secret": os.environ["INKSTATUTE_QQBOT_CLIENT_SECRET"],
+        "bot_secret": os.environ["INKSTATUTE_QQBOT_BOT_SECRET"].strip(),
+        "user_openid": os.environ["INKSTATUTE_QQBOT_USER_OPENID"].strip(),
+        "msg_id": os.environ["INKSTATUTE_QQBOT_REPLY_MSG_ID"].strip(),
+        "app_id": os.environ["INKSTATUTE_QQBOT_APP_ID"].strip(),
+        "client_secret": os.environ["INKSTATUTE_QQBOT_CLIENT_SECRET"].strip(),
     }
 
 

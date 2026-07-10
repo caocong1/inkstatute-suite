@@ -477,6 +477,30 @@ class TestLiveEnvFailClosed(unittest.TestCase):
         finally:
             os.environ.update(saved)
 
+    def test_whitespace_only_env_fails_closed(self) -> None:
+        """Whitespace-only values must fail closed before network (WR-01)."""
+        smoke = _load_smoke_module()
+        saved = {
+            k: os.environ.pop(k) for k in list(os.environ) if k.startswith("INKSTATUTE_QQBOT_")
+        }
+        whitespace_keys = list(smoke.LIVE_ENV_KEYS)
+        try:
+            for key in whitespace_keys:
+                os.environ[key] = "   "
+            with self.assertRaises(SystemExit) as ctx:
+                smoke.load_live_credentials()
+            msg = str(ctx.exception)
+            self.assertNotEqual(getattr(ctx.exception, "code", 1), 0)
+            for key in whitespace_keys:
+                self.assertIn(key, msg, msg=f"whitespace key name not listed: {key}")
+            self.assertNotIn("   ", msg)
+            for value in saved.values():
+                self.assertNotIn(value, msg)
+        finally:
+            for key in whitespace_keys:
+                os.environ.pop(key, None)
+            os.environ.update(saved)
+
 
 class TestLiveHumanGateHonesty(unittest.TestCase):
     """LIVE-01: --live remains HUMAN GATE; script never auto-claims acceptance."""
