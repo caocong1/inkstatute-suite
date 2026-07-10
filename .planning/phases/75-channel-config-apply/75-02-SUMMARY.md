@@ -70,7 +70,7 @@ Each task was committed atomically:
 1. **Task 1: Implement channels effective block + apply_semantics on GET/PUT** - `8af651c` (feat)
 2. **Task 2: Green effective matrix + no-echo + README** - `cd80047` (test)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `a7c0413` (docs: complete plan)
 
 ## Files Created/Modified
 
