@@ -71,7 +71,7 @@ Each task was committed atomically:
 1. **Task 1: Create config_api.py section GET/PUT handlers** — `cc1ba7c` (feat)
 2. **Task 2: Wire handle_admin_get / handle_admin_put dispatch** — `cb943ac` (feat)
 
-**Plan metadata:** (pending docs commit)
+**Plan metadata:** `8d6893d` (docs: complete plan)
 
 ## Files Created/Modified
 
