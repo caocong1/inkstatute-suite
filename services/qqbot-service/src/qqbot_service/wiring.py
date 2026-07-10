@@ -10,7 +10,7 @@ module.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Any, Mapping
 
 from inkstatute_channels_qqbot.adapter import QQBotChannelAdapter
 from inkstatute_channels_qqbot.config import QQBotChannelConfig
@@ -19,7 +19,7 @@ from platform_runtime.feature_flags import RuntimeFeatureFlags
 from platform_runtime.protocols import BackendAdapter
 from platform_runtime.runtime import DefaultRunRuntime
 
-from qqbot_service.config import QQBotHostConfig
+from qqbot_service.config import QQBotHostConfig, load_qqbot_host_config
 from qqbot_service.secrets import resolve_secret_ref
 
 __all__ = [
@@ -70,12 +70,18 @@ def build_qqbot_wired_runtime(
     backend: BackendAdapter,
     flags: RuntimeFeatureFlags | None = None,
     host_config: QQBotHostConfig | None = None,
+    config_store: Any | None = None,
     env: Mapping[str, str] | None = None,
     token_manager: TokenManager | None = None,
     transport: object | None = None,
     token_transport: object | None = None,
 ) -> QQBotWiredRuntime:
     """Compose channel config, adapter, and ``DefaultRunRuntime`` with explicit DI.
+
+    When ``host_config`` is omitted, host settings load via
+    ``load_qqbot_host_config(store=config_store, env=env)`` (store wins when
+    the operator-config file exists; else env). Dual-knob AND remains in
+    ``build_qqbot_channel_config`` — the store only supplies host_config.
 
     Live injection (REG-01 / W-04 / W-05):
     - Composed channel OFF (flag or host) → strip ``token_manager`` and
@@ -90,7 +96,10 @@ def build_qqbot_wired_runtime(
       deliberately; Fake paths must inject ``FakeTokenTransport``.
     """
     feature_flags = flags if flags is not None else RuntimeFeatureFlags()
-    host = host_config if host_config is not None else QQBotHostConfig()
+    if host_config is not None:
+        host = host_config
+    else:
+        host = load_qqbot_host_config(store=config_store, env=env)
     channel_config = build_qqbot_channel_config(flags=feature_flags, host_config=host)
 
     injected_token_manager: TokenManager | None = None

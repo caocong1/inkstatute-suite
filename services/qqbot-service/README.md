@@ -41,6 +41,24 @@ assigned onto the config object. Resolve values at process edge with
 Config `from_env` reads only `INKSTATUTE_QQBOT_CHANNEL_ENABLED` and
 `INKSTATUTE_QQBOT_*_REF` keys. Planted raw value keys are ignored.
 
+## Operator config store apply (Phase 75)
+
+`load_qqbot_host_config` / `build_qqbot_wired_runtime(..., config_store=...)`
+read the operator-config store at **process start / compose time**:
+
+- When `OperatorConfigStore.path` exists → host settings come from
+  `channels.qqbot` (store wins).
+- When the store file is absent → fall back to `QQBotHostConfig.from_env`.
+- Dual-knob AND is unchanged: platform `qqbot_channel_enabled` AND host
+  `enabled` must both be ON. The store only supplies host_config; it cannot
+  set the platform flag.
+- Materialize copies secret **refs** only — `resolve_secret_ref` stays at the
+  live-injection edge.
+
+**MVP apply semantics: restart required.** Editing operator config does not
+hot-reload adapters; restart the QQBot host process to pick up store changes.
+This path does not claim live QQ OpenAPI acceptance (carried human gate).
+
 ## Runtime wiring (Phase 69)
 
 Host factory (`qqbot_service.wiring`) owns dual-knob mapping and live injection:
