@@ -7,7 +7,14 @@ import unittest
 from rbac.matrix import PERMISSIONS_MATRIX
 from rbac.roles import Role
 
-ADMIN_API_ROUTE_PREFIXES = ("/sessions", "/tasks", "/feedback", "/health", "/gates")
+ADMIN_API_ROUTE_PREFIXES = (
+    "/sessions",
+    "/tasks",
+    "/feedback",
+    "/health",
+    "/gates",
+    "/config",
+)
 
 
 class PermissionsMatrixTests(unittest.TestCase):
@@ -24,6 +31,14 @@ class PermissionsMatrixTests(unittest.TestCase):
             PERMISSIONS_MATRIX["/feedback"],
             frozenset({Role.ADMIN, Role.OPERATOR}),
         )
+
+    def test_config_admin_operator(self) -> None:
+        self.assertEqual(
+            PERMISSIONS_MATRIX["/config"],
+            frozenset({Role.ADMIN, Role.OPERATOR}),
+        )
+        self.assertNotIn(Role.LAWYER, PERMISSIONS_MATRIX["/config"])
+        self.assertNotIn(Role.VIEWER, PERMISSIONS_MATRIX["/config"])
 
     def test_sessions_all_roles(self) -> None:
         self.assertEqual(
