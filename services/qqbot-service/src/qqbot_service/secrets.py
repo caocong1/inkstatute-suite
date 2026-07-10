@@ -6,17 +6,21 @@ Values appear only when callers inject an env mapping. This module never reads
 
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import Mapping
 
 __all__ = ["REF_TO_VALUE_ENV", "resolve_secret_ref"]
 
 # secret:// paths → value env var names (aligned with smoke live naming).
-REF_TO_VALUE_ENV: dict[str, str] = {
-    "secret://qqbot/app-id": "INKSTATUTE_QQBOT_APP_ID",
-    "secret://qqbot/app-secret": "INKSTATUTE_QQBOT_CLIENT_SECRET",
-    "secret://qqbot/token": "INKSTATUTE_QQBOT_TOKEN",
-    "secret://qqbot/bot-secret": "INKSTATUTE_QQBOT_BOT_SECRET",
-}
+# Frozen so importers cannot redirect resolution at runtime.
+REF_TO_VALUE_ENV: Mapping[str, str] = MappingProxyType(
+    {
+        "secret://qqbot/app-id": "INKSTATUTE_QQBOT_APP_ID",
+        "secret://qqbot/app-secret": "INKSTATUTE_QQBOT_CLIENT_SECRET",
+        "secret://qqbot/token": "INKSTATUTE_QQBOT_TOKEN",
+        "secret://qqbot/bot-secret": "INKSTATUTE_QQBOT_BOT_SECRET",
+    }
+)
 
 
 def resolve_secret_ref(ref: str | None, env: Mapping[str, str]) -> str | None:
