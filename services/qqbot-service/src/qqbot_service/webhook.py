@@ -246,6 +246,18 @@ async def run_post_ack_composition(
     if normalized.message is not None:
         turn_meta = dict(getattr(normalized.message, "metadata", {}) or {})
 
+    # scene/scene_id come from package normalize; do not invent "c2c".
+    # For group turns scene_id is group_openid; member openid is message.user_id.
+    scene = turn_meta.get("scene")
+    user_openid = turn_meta.get("user_openid") or getattr(
+        normalized.message, "user_id", None
+    )
+    group_openid = turn_meta.get("group_openid")
+    if scene == "group" and not group_openid:
+        group_openid = turn_meta.get("scene_id")
+    elif scene == "c2c" and not user_openid:
+        user_openid = turn_meta.get("scene_id")
+
     delivery = ChannelDelivery(
         delivery_id=f"qqbot-deliv-{outcome.run_id or 'noreply'}",
         channel_id="qqbot",
@@ -253,10 +265,9 @@ async def run_post_ack_composition(
         content=decision.visible_text,
         metadata={
             "delivery_type": "text",
-            "scene": turn_meta.get("scene") or "c2c",
-            "user_openid": turn_meta.get("user_openid")
-            or turn_meta.get("scene_id")
-            or getattr(normalized.message, "user_id", None),
+            "scene": scene,
+            "user_openid": user_openid,
+            "group_openid": group_openid,
             "msg_id": turn_meta.get("message_id") or turn_meta.get("msg_id"),
             "message_id": turn_meta.get("message_id"),
             "received_at": when,

@@ -10,6 +10,7 @@ import ast
 import asyncio
 import json
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -40,7 +41,10 @@ SECRET_ENV = {
     "INKSTATUTE_QQBOT_CLIENT_SECRET": "fixture-client-secret",
     "INKSTATUTE_QQBOT_BOT_SECRET": DEMO_BOT_SECRET,
 }
-FIXED_NOW = "2026-07-10T04:00:00Z"
+# Keep inside C2C (1h) and group (5m) passive-reply windows relative to wall clock.
+FIXED_NOW = (datetime.now(timezone.utc) - timedelta(seconds=30)).strftime(
+    "%Y-%m-%dT%H:%M:%SZ"
+)
 FIXTURE_REPLY = "根据相关裁判观点，合同解除需审查约定解除与法定解除要件。"
 
 
@@ -166,6 +170,55 @@ class WebhookCompositionTests(unittest.TestCase):
         self.assertNotIn(DEMO_BOT_SECRET, meta_blob)
         self.assertNotIn("fixture-token", meta_blob)
         self.assertNotIn("Authorization", meta_blob)
+
+    def test_group_at_message_delivery_metadata_maps_openids(self) -> None:
+        """CR-01: group scene_id → group_openid; member openid stays user_openid."""
+        wired, backend, transport = _enabled_wired()
+        envelope = _load_envelope("qqbot_group_at_message.json")
+        headers, body = _signed_http(envelope)
+        scheduler = RecordingScheduler()
+
+        status, resp_body, _ = run(
+            handle_qqbot_webhook_request(
+                "POST",
+                CALLBACK_PATH,
+                headers,
+                body,
+                wired=wired,
+                env=SECRET_ENV,
+                post_ack_scheduler=scheduler,
+                received_at=FIXED_NOW,
+                reply_text=FIXTURE_REPLY,
+                tenant_id="tenant-fixture",
+                workspace_id="ws-fixture",
+                bot_instance_id="bot-fixture",
+            )
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(resp_body), {"op": 12})
+        scheduler.run_all()
+
+        self.assertGreaterEqual(len(backend.submitted_requests), 1)
+        self.assertGreaterEqual(transport.call_count, 1)
+        self.assertGreaterEqual(len(wired.adapter.deliveries), 1)
+        delivery = wired.adapter.deliveries[-1]
+        self.assertEqual(delivery.metadata.get("scene"), "group")
+        self.assertEqual(
+            delivery.metadata.get("group_openid"), "FIXTURE_GROUP_OPENID_001"
+        )
+        self.assertEqual(
+            delivery.metadata.get("user_openid"), "FIXTURE_MEMBER_OPENID_001"
+        )
+        # Must not put group openid into the C2C user_openid slot.
+        self.assertNotEqual(
+            delivery.metadata.get("user_openid"),
+            delivery.metadata.get("group_openid"),
+        )
+        # Wire URL must target the group endpoint, not the member as a C2C user.
+        last_url = transport.calls[-1].get("url") or ""
+        self.assertIn("/v2/groups/FIXTURE_GROUP_OPENID_001/messages", last_url)
+        self.assertNotIn("/v2/users/FIXTURE_GROUP_OPENID_001/", last_url)
 
     def test_interaction_feedback_path_without_message_ingress(self) -> None:
         wired, backend, transport = _enabled_wired()
