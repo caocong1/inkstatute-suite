@@ -201,8 +201,8 @@ async def run_post_ack_composition(
         ):
             ensure_interaction_ack(
                 prior_ack_metadata=ack.metadata,
-                message_transport=getattr(wired.adapter, "_transport", None),
-                token_manager=getattr(wired.adapter, "_token_manager", None),
+                message_transport=wired.message_transport,
+                token_manager=wired.token_manager,
             )
         evidence["status"] = "completed"
         return evidence

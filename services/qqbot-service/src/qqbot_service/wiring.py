@@ -39,6 +39,10 @@ class QQBotWiredRuntime:
     adapter: QQBotChannelAdapter
     runtime: DefaultRunRuntime
     live_io_ready: bool
+    # Read-only live-IO deps for host composition (interaction ACK, etc.).
+    # Prefer these over reaching into adapter private attributes.
+    message_transport: object | None = None
+    token_manager: TokenManager | None = None
 
 
 def build_qqbot_channel_config(
@@ -136,4 +140,6 @@ def build_qqbot_wired_runtime(
         adapter=adapter,
         runtime=runtime,
         live_io_ready=live_io_ready,
+        message_transport=injected_transport,
+        token_manager=injected_token_manager,
     )
