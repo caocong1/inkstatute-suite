@@ -620,8 +620,9 @@ class TestRunbookLiveEnablement(unittest.TestCase):
             "runbook must mention Phase 8 lawyer trial gate",
         )
         self.assertTrue(
-            "carried" in lower or "remain" in lower or "not" in lower and "v1.9 done" in lower,
-            "runbook must state Phase 5/8 remain carried human gates",
+            ("carried" in lower and "human gate" in lower)
+            and ("not v1.9 done" in lower or "not redefined" in lower),
+            "runbook must state Phase 5/8 remain carried human gates (not v1.9 done)",
         )
 
     def test_phase72_archival_path(self) -> None:
