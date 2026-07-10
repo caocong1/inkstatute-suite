@@ -41,7 +41,7 @@
 - [x] **Phase 68: Host Skeleton + Safety Baseline** - Create `services/qqbot-service/` layout with empty deps, V2 gate entry, and ADAPTER-04 / secret-ref safety invariants before HTTP composition.
 - [x] **Phase 69: Runtime Registration / Wiring** - Flag→config→adapter factory injects `QQBotChannelAdapter` into `DefaultRunRuntime.channels`; disabled path refuses live IO.
 - [x] **Phase 70: Webhook Composition Path** - Thin stdlib webhook host composes `verify_and_ack` → ingress/session/feedback → `deliver` with ACK-first semantics.
-- [ ] **Phase 71: Smoke Protocol-Path Hardening** - Extend `--dry-run` to exercise full adapter/session Protocol path with Fake transports and sanitized evidence.
+- [x] **Phase 71: Smoke Protocol-Path Hardening** - Extend `--dry-run` to exercise full adapter/session Protocol path with Fake transports and sanitized evidence.
 - [ ] **Phase 72: Controlled Live Integration** - Operator-run `--live` path + runbook remain HUMAN GATE; no CI auto-claim of live acceptance.
 
 ## Phase Details
@@ -125,7 +125,7 @@ Plans:
 
 - [x] 71-01-PLAN.md — Mandatory Protocol-path dry-run via host webhook helpers (SMOKE-01)
 - [x] 71-02-PLAN.md — Protocol evidence allowlist + sanitization (SMOKE-02)
-- [ ] 71-03-PLAN.md — CI honesty, leaf-vs-Protocol regression, runbook dry-run note
+- [x] 71-03-PLAN.md — CI honesty, leaf-vs-Protocol regression, runbook dry-run note
 
 ### Phase 72: Controlled Live Integration
 
@@ -148,7 +148,7 @@ Plans:
 | 68. Host Skeleton + Safety Baseline | 3/3 | Complete   | 2026-07-10 |
 | 69. Runtime Registration / Wiring | 3/3 | Complete   | 2026-07-10 |
 | 70. Webhook Composition Path | 3/3 | Complete   | 2026-07-10 |
-| 71. Smoke Protocol-Path Hardening | 2/3 | In Progress|  |
+| 71. Smoke Protocol-Path Hardening | 3/3 | Complete   | 2026-07-10 |
 | 72. Controlled Live Integration | 0/TBD | Not started | - |
 
 ## Completed Milestones

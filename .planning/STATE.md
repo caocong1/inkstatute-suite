@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: executing
-stopped_at: Completed 71-02-PLAN.md; executing 71-03
-last_updated: "2026-07-10T05:13:33.077Z"
-last_activity: 2026-07-10 -- Phase 71 execution started
+status: completed
+stopped_at: Phase 71 verified (passed); --no-transition
+last_updated: "2026-07-10T05:14:45.000Z"
+last_activity: 2026-07-10 -- Phase 71 verified (passed); --no-transition
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 12
-  completed_plans: 11
-  percent: 60
+  completed_plans: 12
+  percent: 80
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 71 — smoke-protocol-path-hardening
+**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 71 complete; Phase 72 not started (--no-transition)
 
 ## Current Position
 
-Phase: 71 (smoke-protocol-path-hardening) — EXECUTING
+Phase: 71 (smoke-protocol-path-hardening) — COMPLETE
 Plan: 3 of 3
-Status: Ready to execute
-Last activity: 2026-07-10 -- Phase 71 execution started
+Status: Phase 71 verified (passed); --no-transition
+Last activity: 2026-07-10 -- Phase 71 verified (passed); --no-transition
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 80%
 
 ### Deferred Items
 
@@ -55,7 +55,7 @@ Items acknowledged and deferred at milestone close on 2026-07-02:
 | tech_debt | Phase 24 MemoryEvalRunner in-memory vs SQLite baseline | both modes tested and documented |
 | tech_debt | Phase 25 external adapter spikes | sanitized simulations only; no live provider integration |
 | tech_debt | v1.8 host webhook composition (adapter↔ingress/session/feedback) | in scope for v1.9 Phases 68-70 |
-| tech_debt | v1.8 smoke dry-run skips adapter/session Protocol path | in scope for v1.9 Phase 71 |
+| tech_debt | v1.8 smoke dry-run skips adapter/session Protocol path | closed — Phase 71 Protocol-path dry-run via host helpers |
 | uat_gap | v1.8 live QQ smoke (`scripts/smoke_test.py --live`) | in scope for v1.9 Phase 72 — HUMAN GATE |
 
 ### Parallel Human Gate (v1.0)
@@ -163,6 +163,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 70 P03 | 1min | 2 tasks | 4 files |
 | Phase 71 P01 | 2min | 2 tasks | 2 files |
 | Phase 71 P02 | 2min | 2 tasks | 2 files |
+| Phase 71 P03 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -283,6 +284,8 @@ Recent decisions affecting current work:
 - [Phase 71]: Protocol path uses handle_qqbot_webhook_request + build_qqbot_wired_runtime (not leaf-only)
 - [Phase 71]: Plan 01 allowlists only ok for Protocol steps; Plan 02 expands RESEARCH keys
 - [Phase 71]: Keep schema inkstatute.qqbot.smoke_evidence.v1 (no v2 fork)
+- [Phase 71]: No new run_v2_gates.py gate — reuse qqbot-channel discover
+- [Phase 71]: Phase 72 owns live; dry-run never claims live acceptance
 
 ### Pending Todos
 
@@ -318,8 +321,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T05:13:33.072Z
-Stopped at: Completed 71-02-PLAN.md; executing 71-03
+Last session: 2026-07-10T05:14:45Z
+Stopped at: Phase 71 verified (passed); --no-transition
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
