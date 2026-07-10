@@ -30,13 +30,20 @@ Root `OperatorConfigDocument` (`schema_version: int = 1`) nests:
 
 ```python
 from inkstatute_operator_config import (
+    OperatorConfigDocument,
+    ChannelsDoc,
+    QQBotChannelDoc,
+    WeComChannelDoc,
+    ProviderDoc,
+    CatalogSelectionDoc,
+    VisionPolicyDoc,
     OperatorConfigError,
     OperatorConfigValidationError,
 )
 ```
 
-Schemas and secret-ref normalize land in subsequent Plan 01 tasks; store/validate/flag
-gate land in Plans 02–03.
+Secret-ref normalize lands in the next Plan 01 task; store/validate/flag gate land in
+Plans 02–03.
 
 ## Tests
 
