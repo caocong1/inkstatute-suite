@@ -1,10 +1,11 @@
 ---
 phase: 72
 slug: controlled-live-integration
-status: draft
+status: verified
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-07-10
+verified: 2026-07-10
 ---
 
 # Phase 72 — Validation Strategy
@@ -40,11 +41,11 @@ created: 2026-07-10
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 72-01-01 | 01 | 1 | LIVE-01 | T-72-01 / T-72-02 | RED live human-gate honesty tests (no network) | unit | `unittest …TestLiveHumanGateHonesty` (expect fail or establish baseline) | ✅ W0 existing file | ⬜ pending |
-| 72-01-02 | 01 | 1 | LIVE-01 | T-72-01 / T-72-03 | GREEN live path honesty stamps + fail-closed | unit+CLI | `TestLiveEnvFailClosed` + `TestLiveHumanGateHonesty` + `--live` cleared-env exit ≠0 | ✅ | ⬜ pending |
-| 72-02-01 | 02 | 2 | LIVE-02 | T-72-05 / T-72-06 | RED runbook LIVE-02 cue tests | unit | `unittest …TestRunbookLiveEnablement` (expect fail) | ✅ W0 existing file | ⬜ pending |
-| 72-02-02 | 02 | 2 | LIVE-02 | T-72-05 / T-72-07 / T-72-08 | GREEN runbook host enablement + dual-knob + ACK windows + Phase 5/8 carried | unit | `TestRunbookLiveEnablement` + cue python -c | ✅ | ⬜ pending |
-| 72-02-03 | 02 | 2 | LIVE-01 / LIVE-02 | T-72-02 / T-72-04 | Full toolkit + dry-run regression; gates never --live | unit+CLI | `unittest test_smoke_toolkit` + `smoke_test.py --dry-run` + grep gates | ✅ | ⬜ pending |
+| 72-01-01 | 01 | 1 | LIVE-01 | T-72-01 / T-72-02 | RED live human-gate honesty tests (no network) | unit | `unittest …TestLiveHumanGateHonesty` (expect fail or establish baseline) | ✅ W0 existing file | ✅ green |
+| 72-01-02 | 01 | 1 | LIVE-01 | T-72-01 / T-72-03 | GREEN live path honesty stamps + fail-closed | unit+CLI | `TestLiveEnvFailClosed` + `TestLiveHumanGateHonesty` + `--live` cleared-env exit ≠0 | ✅ | ✅ green |
+| 72-02-01 | 02 | 2 | LIVE-02 | T-72-05 / T-72-06 | RED runbook LIVE-02 cue tests | unit | `unittest …TestRunbookLiveEnablement` (expect fail) | ✅ W0 existing file | ✅ green |
+| 72-02-02 | 02 | 2 | LIVE-02 | T-72-05 / T-72-07 / T-72-08 | GREEN runbook host enablement + dual-knob + ACK windows + Phase 5/8 carried | unit | `TestRunbookLiveEnablement` + cue python -c | ✅ | ✅ green |
+| 72-02-03 | 02 | 2 | LIVE-01 / LIVE-02 | T-72-02 / T-72-04 | Full toolkit + dry-run regression; gates never --live | unit+CLI | `unittest test_smoke_toolkit` + `smoke_test.py --dry-run` + grep gates | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

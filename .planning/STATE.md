@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
 status: verifying
-stopped_at: Phase 71 verified (passed); --no-transition
-last_updated: "2026-07-10T05:21:35.223Z"
-last_activity: 2026-07-10 -- Phase 71 verified (passed); --no-transition
+stopped_at: Phase 72 verified (passed); --no-transition
+last_updated: "2026-07-10T05:24:14.192Z"
+last_activity: 2026-07-10 -- Phase 72 verified (passed); --no-transition
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 14
-  completed_plans: 13
-  percent: 80
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 71 complete; Phase 72 not started (--no-transition)
+**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 72 verified (passed); --no-transition
 
 ## Current Position
 
-Phase: 71 (smoke-protocol-path-hardening) — COMPLETE
-Plan: 3 of 3
-Status: Phase 71 verified (passed); --no-transition
-Last activity: 2026-07-10 -- Phase 71 verified (passed); --no-transition
+Phase: 72 (controlled-live-integration) — COMPLETE
+Plan: 2 of 2
+Status: Phase 72 verified (passed); --no-transition
+Last activity: 2026-07-10 -- Phase 72 verified (passed); --no-transition
 
-Progress: [████████░░] 80%
+Progress: [██████████] 100%
 
 ### Deferred Items
 
@@ -56,7 +56,7 @@ Items acknowledged and deferred at milestone close on 2026-07-02:
 | tech_debt | Phase 25 external adapter spikes | sanitized simulations only; no live provider integration |
 | tech_debt | v1.8 host webhook composition (adapter↔ingress/session/feedback) | in scope for v1.9 Phases 68-70 |
 | tech_debt | v1.8 smoke dry-run skips adapter/session Protocol path | closed — Phase 71 Protocol-path dry-run via host helpers |
-| uat_gap | v1.8 live QQ smoke (`scripts/smoke_test.py --live`) | in scope for v1.9 Phase 72 — HUMAN GATE |
+| uat_gap | v1.8 live QQ smoke (`scripts/smoke_test.py --live`) | HUMAN GATE remains — Phase 72 autonomous proofs passed; live OpenAPI acceptance not claimed |
 
 ### Parallel Human Gate (v1.0)
 
@@ -164,6 +164,8 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 71 P01 | 2min | 2 tasks | 2 files |
 | Phase 71 P02 | 2min | 2 tasks | 2 files |
 | Phase 71 P03 | 2min | 2 tasks | 2 files |
+| Phase 72 P01 | 2min | 2 tasks | 2 files |
+| Phase 72 P02 | 3min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -286,6 +288,10 @@ Recent decisions affecting current work:
 - [Phase 71]: Keep schema inkstatute.qqbot.smoke_evidence.v1 (no v2 fork)
 - [Phase 71]: No new run_v2_gates.py gate — reuse qqbot-channel discover
 - [Phase 71]: Phase 72 owns live; dry-run never claims live acceptance
+- [Phase 72]: sanitize_evidence always forces not_live_acceptance=True for structured smoke evidence
+- [Phase 72]: Preserve leaf OpenAPI --live path; do not rewrite through handle_qqbot_webhook_request
+- [Phase 72]: Archival path moved to .planning/phases/72-controlled-live-integration/evidence/
+- [Phase 72]: Phase 5 WeCom UAT and Phase 8 lawyer trial remain carried human gates in runbook
 
 ### Pending Todos
 
@@ -321,8 +327,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T05:21:35.218Z
-Stopped at: Phase 71 verified (passed); --no-transition
+Last session: 2026-07-10T05:24:14.187Z
+Stopped at: Phase 72 verified (passed); --no-transition
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md

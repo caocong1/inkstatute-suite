@@ -28,7 +28,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Live Integration
 
 - [x] **LIVE-01**: Controlled `--live` path remains available with fail-closed env checks and is explicitly a HUMAN GATE (CI/phase complete must not auto-claim live acceptance)
-- [ ] **LIVE-02**: Operator runbook documents host enablement, dual-knob mapping, dry-run vs live, and interaction ACK safety windows
+- [x] **LIVE-02**: Operator runbook documents host enablement, dual-knob mapping, dry-run vs live, and interaction ACK safety windows
 
 ### Safety Baseline
 
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SMOKE-01 | Phase 71 | Complete |
 | SMOKE-02 | Phase 71 | Complete |
 | LIVE-01 | Phase 72 | Complete |
-| LIVE-02 | Phase 72 | Pending |
+| LIVE-02 | Phase 72 | Complete |
 | SAFE-01 | Phase 68 | Complete |
 | SAFE-02 | Phase 68 | Complete |
 
