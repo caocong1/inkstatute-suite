@@ -17,10 +17,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Channel Config
 
-- [ ] **CHAN-01**: Operator can configure QQBot channel settings (enable knobs, credential refs, callback-related refs) via admin config API/UI
-- [ ] **CHAN-02**: Operator can configure WeCom channel settings (enable knobs, credential refs) via admin config API/UI
+- [x] **CHAN-01**: Operator can configure QQBot channel settings (enable knobs, credential refs, callback-related refs) via admin config API/UI
+- [x] **CHAN-02**: Operator can configure WeCom channel settings (enable knobs, credential refs) via admin config API/UI
 - [x] **CHAN-03**: Operator can see dual-knob effective enablement (platform flag AND host enabled) for QQ (and equivalent WeCom flags) — UI must not collapse to a single bypass toggle
-- [ ] **CHAN-04**: Credential fields accept secret refs only (`env:…` / `secret://…` shapes); GET responses never echo resolved secret values
+- [x] **CHAN-04**: Credential fields accept secret refs only (`env:…` / `secret://…` shapes); GET responses never echo resolved secret values
 
 ### Provider & Model Catalog
 
@@ -100,10 +100,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CFG-01 | Phase 73 | Complete |
 | CFG-02 | Phase 73 | Complete |
 | CFG-03 | Phase 73 | Complete |
-| CHAN-01 | Phase 75 | Pending |
-| CHAN-02 | Phase 75 | Pending |
+| CHAN-01 | Phase 75 | Complete |
+| CHAN-02 | Phase 75 | Complete |
 | CHAN-03 | Phase 75 | Complete |
-| CHAN-04 | Phase 75 | Pending |
+| CHAN-04 | Phase 75 | Complete |
 | PROV-01 | Phase 76 | Pending |
 | PROV-02 | Phase 76 | Pending |
 | PROV-03 | Phase 76 | Pending |

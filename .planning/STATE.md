@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-current_plan: 2
+current_plan: 5
 status: executing
-stopped_at: Phase 75 planned — ready to execute 75-01
-last_updated: "2026-07-10T08:24:26.734Z"
+stopped_at: Completed 75-03-PLAN.md
+last_updated: "2026-07-10T08:28:14.201Z"
 last_activity: 2026-07-10 — Phase 75 planned (5 plans / 3 waves; CHAN-01..04)
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 14
-  completed_plans: 7
+  completed_plans: 10
   percent: 0
 ---
 
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-07-10)
 ## Current Position
 
 Phase: 75 of 78 (Channel Config Apply)
-Current Plan: 2
+Current Plan: 5
 Total Plans in Phase: 5
-Plan: 2 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-10 — Phase 75 planned (5 plans / 3 waves; CHAN-01..04)
 
@@ -77,6 +77,10 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 | Phase 74 P02 | 3min | 2 tasks | 3 files |
 | Phase 74 P03 | 2min | 3 tasks | 4 files |
 | Phase 75 P01 | 4min | 2 tasks | 9 files |
+| Phase 75 P04 | 2min | 2 tasks | 5 files |
+| Phase 75 P03 | 2min | 2 tasks | 4 files |
+| Phase 75 P03 | 2min | 2 tasks | 4 files |
+| Phase 75 P02 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -126,6 +130,16 @@ Recent decisions affecting current work:
 - [Phase ?]: wecom_channel_enabled placed next to qqbot_channel_enabled; never reuse channel_delivery_enabled
 - [Phase 75]: Wave 0 scaffolds intentionally fail under discover until Plans 02–05 implement production code
 - [Phase 75]: operator_config_src added only to qqbot-service and wecom-service gates (admin gates already covered in Phase 74)
+- [Phase 75]: Dual-knob AND lives in wecom-service channel_wiring; channel package stays flag-free
+- [Phase 75]: enabled = wecom_channel_enabled AND doc.enabled (never channel_delivery_enabled)
+- [Phase 75]: Store wins when OperatorConfigStore.path.exists; env is bootstrap fallback only
+- [Phase 75]: effective is additive on channels only; non-channels keep prior metadata shape
+- [Phase 75]: apply_semantics=restart_required documents restart-to-apply MVP (no hot-reload)
+- [Phase 75]: Platform flags remain read-only via RuntimeFeatureFlags — never accepted on PUT
+- [Phase 75]: OQ-1: store wins when store.path.exists(); else from_env — not content-heuristic overrides
+- [Phase 75]: from_operator_doc accepts Mapping or QQBotChannelDoc-shaped object; no RuntimeFeatureFlags import in config.py
+- [Phase 75]: When host_config is None, wiring always calls load_qqbot_host_config (store and/or env) rather than empty QQBotHostConfig()
+- [Phase 75]: MVP apply semantics remain restart_required — no hot-reload
 
 ### Pending Todos
 
@@ -148,8 +162,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T08:23:52.585Z
-Stopped at: Phase 75 planned — ready to execute 75-01
+Last session: 2026-07-10T08:28:14.139Z
+Stopped at: Completed 75-03-PLAN.md
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
