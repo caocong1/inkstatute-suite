@@ -159,10 +159,14 @@ _STEP_KEY_ALLOW: dict[str, frozenset[str]] = {
             "ack_status",
         }
     ),
-    # Plan 01: minimal Protocol keys (ok only). Plan 02 expands allowlist (SMOKE-02).
-    "adapter_ack": frozenset({"ok"}),
-    "session_ingress": frozenset({"ok"}),
-    "adapter_deliver": frozenset({"ok"}),
+    # Protocol-path steps (SMOKE-02 / RESEARCH Pattern 2).
+    "adapter_ack": frozenset({"ok", "http_status", "op", "accepted"}),
+    "session_ingress": frozenset(
+        {"ok", "ingress_action", "run_id_present", "branch"}
+    ),
+    "adapter_deliver": frozenset(
+        {"ok", "deliver_accepted", "boundary_action"}
+    ),
 }
 
 # Substrings that must never appear in serialized evidence (SMOKE-04).
