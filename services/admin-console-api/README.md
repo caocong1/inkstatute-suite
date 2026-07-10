@@ -19,7 +19,22 @@ Section-scoped GET/PUT for ADMIN and OPERATOR only (LAWYER/VIEWER → `403 forbi
 - `GET /config/{channels,providers,catalog,vision}` — refs-only section JSON
 - `PUT /config/{channels,providers,catalog,vision}` — replace one section via `OperatorConfigStore`
 
-Bare `/config` and unknown sections return `404`. Secrets are stored and returned as `*_ref` values only — raw `api_key` / `sk-…` payloads are rejected (`400 invalid_config`) and never echoed.
+Bare `/config` and unknown sections return `404`. Secrets are stored and returned as `*_ref` values only — raw `api_key` / `sk-…` payloads are rejected (`400 invalid_config`) and never echoed. Admin handlers never resolve `secret://` / `env:` refs.
+
+### Channels dual-knob (`/config/channels`)
+
+Successful GET/PUT responses include an additive `effective` block alongside `data`:
+
+| Field | Meaning |
+|-------|---------|
+| `effective.{qqbot,wecom}.platform_flag` | Runtime flag (`qqbot_channel_enabled` / `wecom_channel_enabled`) |
+| `effective.{qqbot,wecom}.host_enabled` | Store `channels.*.enabled` (host knob) |
+| `effective.{qqbot,wecom}.effective_enabled` | `platform_flag AND host_enabled` |
+| `effective.{qqbot,wecom}.refs_configured` | Presence-only map of `*_ref` fields → bool |
+
+`data.*.enabled` remains the host knob only — never overwritten with the AND result. PUT accepts host `enabled` + `*_ref` fields only; platform flags are not writable via this API.
+
+Channels success metadata includes `apply_semantics: "restart_required"` (restart-to-apply MVP — no hot-reload claim).
 
 Handlers live in `config_api.py`; persist only through `OperatorConfigStore.save`. Inject a temp-path store in tests — never write the default `.inkstatute/operator-config.json` in CI.
 

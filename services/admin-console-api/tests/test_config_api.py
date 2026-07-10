@@ -93,6 +93,10 @@ class ConfigApiStaticTokenTests(unittest.TestCase):
         self.assertEqual(body["data"]["qqbot"]["app_id_ref"], "env:QQBOT_APP_ID")
         self.assertIs(body["metadata"]["config_surface"], True)
         self.assertIs(body["metadata"]["read_only"], False)
+        # Host knob stays host-only; effective is additive (CHAN-03).
+        self.assertIs(body["data"]["qqbot"]["enabled"], True)
+        self.assertIn("effective", body)
+        self.assertEqual(body["metadata"]["apply_semantics"], "restart_required")
         self.assertTrue(self.store_path.exists())
 
         get_status, get_body = handle_admin_get(
@@ -228,7 +232,10 @@ class ConfigApiStaticTokenTests(unittest.TestCase):
         )
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "invalid_config")
-        self.assertNotIn(PLANTED_RAW, _json_blob(body))
+        blob = _json_blob(body)
+        # CHAN-04: planted value absent from entire JSON including any effective keys.
+        self.assertNotIn(PLANTED_RAW, blob)
+        self.assertNotIn("effective", body)
         self.assertFalse(self.store_path.exists())
 
     def test_planted_sk_rejected_without_echo(self) -> None:
