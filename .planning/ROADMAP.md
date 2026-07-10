@@ -62,7 +62,8 @@
 **Plans:** 3 plans
 
 Plans:
-- [ ] 68-01-PLAN.md — Create `services/qqbot-service/` skeleton with empty deps and V2 gate/compileall coverage
+
+- [x] 68-01-PLAN.md — Create `services/qqbot-service/` skeleton with empty deps and V2 gate/compileall coverage
 - [ ] 68-02-PLAN.md — Host refs-only config + process-edge `resolve_secret_ref` (SAFE-02)
 - [ ] 68-03-PLAN.md — ADAPTER-04 host isolation: Protocol freeze, no-wecom, flag OFF, Phase 08 preserved
 
@@ -126,7 +127,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 68. Host Skeleton + Safety Baseline | 0/3 | Not started | - |
+| 68. Host Skeleton + Safety Baseline | 1/3 | In Progress|  |
 | 69. Runtime Registration / Wiring | 0/TBD | Not started | - |
 | 70. Webhook Composition Path | 0/TBD | Not started | - |
 | 71. Smoke Protocol-Path Hardening | 0/TBD | Not started | - |

@@ -32,7 +32,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Safety Baseline
 
-- [ ] **SAFE-01**: Host layer preserves ADAPTER-04 invariants: Protocol freeze (ChannelAdapter 6 methods), no `wecom_service` import into qqbot host/package path, feature flags default OFF
+- [x] **SAFE-01**: Host layer preserves ADAPTER-04 invariants: Protocol freeze (ChannelAdapter 6 methods), no `wecom_service` import into qqbot host/package path, feature flags default OFF
 - [ ] **SAFE-02**: Secrets remain refs in config; values resolve only at process edge — never committed; evidence/logs stay reference-first
 
 ## Future Requirements
@@ -83,10 +83,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SMOKE-02 | Phase 71 | Pending |
 | LIVE-01 | Phase 72 | Pending |
 | LIVE-02 | Phase 72 | Pending |
-| SAFE-01 | Phase 68 | Pending |
+| SAFE-01 | Phase 68 | Complete |
 | SAFE-02 | Phase 68 | Pending |
 
 **Coverage:**
+
 - v1.9 requirements: 11 total
 - Mapped to phases: 11
 - Unmapped: 0
