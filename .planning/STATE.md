@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: QQBot Host Composition
-status: verifying
-stopped_at: Phase 68 verified (passed); --no-transition
-last_updated: "2026-07-10T04:39:08.857Z"
-last_activity: 2026-07-10 -- Phase 68 marked complete
+status: executing
+stopped_at: Completed 69-01-PLAN.md
+last_updated: "2026-07-10T04:39:40.820Z"
+last_activity: 2026-07-10 -- Phase 69 execution started
 progress:
   total_phases: 5
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-09)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Milestone v1.9 QQBot Host Composition — Phase 68 ready to plan
+**Current focus:** Phase 69 — runtime-registration-wiring
 
 ## Current Position
 
-Phase: 68 — COMPLETE
-Plan: 3 of 3 in current phase
-Status: Phase complete — ready for verification
-Last activity: 2026-07-10 -- Phase 68 marked complete
+Phase: 69 (runtime-registration-wiring) — EXECUTING
+Plan: 1 of ?
+Status: Executing Phase 69
+Last activity: 2026-07-10 -- Phase 69 execution started
 
 Progress: [███░░░░░░░] 33%
 
@@ -155,6 +155,7 @@ Note: live cutover of any new platform lane also remains a human gate after pari
 | Phase 68 P01 | 8min | 2 tasks | 6 files |
 | Phase 68 P02 | 10min | 2 tasks | 5 files |
 | Phase 68 P03 | 6min | 2 tasks | 2 files |
+| Phase 69 P01 | 12min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -264,6 +265,8 @@ Recent decisions affecting current work:
 - [Phase 68]: Gate count is now 27 with qqbot-service after qqbot-channel
 - [Phase 68]: secret://qqbot/app-secret maps to INKSTATUTE_QQBOT_CLIENT_SECRET (smoke live naming)
 - [Phase 68]: resolve_secret_ref never reads os.environ; callers inject env Mapping
+- [Phase ?]: Channel enabled is driven solely by flags.qqbot_channel_enabled; host_config.enabled cannot override flag False
+- [Phase ?]: When flag OFF, caller-supplied token_manager/transport are stripped before adapter construction
 
 ### Pending Todos
 
@@ -299,8 +302,8 @@ Items acknowledged and carried forward from milestone closes:
 
 ## Session Continuity
 
-Last session: 2026-07-10T04:39:08.852Z
-Stopped at: Phase 68 verified (passed); --no-transition
+Last session: 2026-07-10T04:39:40.759Z
+Stopped at: Completed 69-01-PLAN.md
 Resume file: None
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
