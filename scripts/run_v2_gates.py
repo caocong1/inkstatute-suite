@@ -76,6 +76,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     multi_agent_src = repo_root / "packages" / "multi-agent-adapter" / "src"
     admin_web_ui_src = repo_root / "services" / "admin-web-ui" / "src"
     lawyer_web_chat_src = repo_root / "services" / "lawyer-web-chat" / "src"
+    operator_config_src = repo_root / "packages" / "operator-config" / "src"
 
     return (
         Gate(
@@ -102,6 +103,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "skill-registry",
             (py, "-m", "unittest", "discover", "-s", "packages/skill-registry/tests"),
             (skill_registry_src, platform_src, platform_runtime_src, rbac_src),
+        ),
+        Gate(
+            "operator-config",
+            (py, "-m", "unittest", "discover", "-s", "packages/operator-config/tests"),
+            (operator_config_src, platform_runtime_src),
         ),
         Gate(
             "router-service",
@@ -223,6 +229,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/platform-contract/src",
                 "packages/contract-test-suite/src",
                 "packages/platform-runtime/src",
+                "packages/operator-config/src",
                 "packages/skill-registry/src",
                 "packages/router-service/src",
                 "packages/mcp-registry/src",
