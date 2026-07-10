@@ -96,7 +96,8 @@ python3 scripts/smoke_test.py --live --callback-json /tmp/interaction-envelope.j
 | `--dry-run` | `0` when all steps ok | `schema=inkstatute.qqbot.smoke_evidence.v1`, `mode=dry-run`, `not_live_acceptance=true` | Fake only |
 | `--live` | `0` when all steps ok | `mode=live`; acceptance archival is a human decision | Real OpenAPI (Plan 03) |
 
-Per-step `ok` flags under `steps`: `signature`, `send_text` (`msg_type=0`), `send_keyboard` (`msg_type=2` + feedback actions), `callback` (`status=normalized`, `idempotency_key_present`), plus Protocol-path `adapter_ack`, `session_ingress`, `adapter_deliver`.
+Per-step `ok` flags under `steps` (dry-run): `signature`, `send_text` (`msg_type=0`), `send_keyboard` (`msg_type=2` + feedback actions), `callback` (`status=normalized`, `idempotency_key_present`), plus Protocol-path `adapter_ack`, `session_ingress`, `adapter_deliver`.
+Live (`--live`) currently records leaf steps only; host Protocol live coverage is Phase 72.
 
 Stdout and `--evidence-out` emit **sanitized JSON only**.
 
