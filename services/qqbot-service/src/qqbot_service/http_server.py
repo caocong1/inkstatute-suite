@@ -56,7 +56,15 @@ def read_request_body_once(
         raise ValueError("body_too_large")
     if length == 0:
         return b""
-    return rfile.read(length)
+    chunks: list[bytes] = []
+    remaining = length
+    while remaining > 0:
+        chunk = rfile.read(remaining)
+        if not chunk:
+            raise ValueError("incomplete_body")
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
 
 
 def default_post_ack_error_handler(exc: BaseException) -> None:

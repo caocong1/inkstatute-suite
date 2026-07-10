@@ -89,6 +89,44 @@ class WebhookHttpRawBodyTests(unittest.TestCase):
         self.assertEqual(body, payload)
         self.assertEqual(rfile.read_calls, 1)
 
+    def test_read_request_body_loops_until_content_length(self) -> None:
+        """WR-02: short rfile.read chunks must be reassembled to Content-Length."""
+
+        class ShortReadRfile:
+            def __init__(self, data: bytes, chunk_size: int = 3) -> None:
+                self._buf = data
+                self._pos = 0
+                self.read_calls = 0
+                self._chunk_size = chunk_size
+
+            def read(self, size: int = -1) -> bytes:
+                self.read_calls += 1
+                if size is None or size < 0:
+                    size = len(self._buf) - self._pos
+                take = min(size, self._chunk_size, len(self._buf) - self._pos)
+                if take <= 0:
+                    return b""
+                out = self._buf[self._pos : self._pos + take]
+                self._pos += take
+                return out
+
+        payload = b'{"op":0,"t":"C2C_MESSAGE_CREATE"}'
+        rfile = ShortReadRfile(payload, chunk_size=3)
+        body = read_request_body_once(
+            rfile, {"Content-Length": str(len(payload))}, max_body_bytes=1024
+        )
+        self.assertEqual(body, payload)
+        self.assertGreater(rfile.read_calls, 1)
+
+    def test_read_request_body_rejects_incomplete(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            read_request_body_once(
+                CountingRfile(b"abc"),
+                {"Content-Length": "10"},
+                max_body_bytes=1024,
+            )
+        self.assertEqual(str(ctx.exception), "incomplete_body")
+
     def test_read_request_body_zero_length(self) -> None:
         rfile = CountingRfile(b"")
         body = read_request_body_once(rfile, {"Content-Length": "0"}, max_body_bytes=1024)
