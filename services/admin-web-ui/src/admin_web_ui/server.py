@@ -16,6 +16,7 @@ import os
 import secrets
 from http.server import BaseHTTPRequestHandler
 from typing import Any, Mapping
+from urllib.parse import parse_qs
 
 from platform_runtime.feature_flags import (
     RuntimeFeatureDisabledError,
@@ -45,6 +46,9 @@ CSP_HEADER = "default-src 'self'; script-src 'self'; style-src 'self'"
 
 _BEARER_PREFIX = "Bearer "
 
+# Cap channels SSR POST bodies (WR-04) — form payloads are small refs-only.
+MAX_CHANNELS_POST_BYTES = 64 * 1024
+
 _SECTION_MAP = {
     "/": "index",
     "/sessions": "sessions",
@@ -56,6 +60,44 @@ _SECTION_MAP = {
 }
 
 _CHANNELS_PATH = "/config/channels"
+
+
+def _channels_post_body_usable(body: bytes | str | None) -> bool:
+    """True when POST carries at least one qqbot./wecom. field (CR-01).
+
+    Empty or marker-less bodies must not reach ``parse_channels_form`` → PUT,
+    which would persist all-disabled empty refs and wipe stored credentials.
+    """
+    if body is None:
+        return False
+    text = body.decode("utf-8", errors="replace") if isinstance(body, bytes) else str(body)
+    if not text.strip():
+        return False
+    parsed = parse_qs(text, keep_blank_values=True)
+    return any(
+        key.startswith("qqbot.") or key.startswith("wecom.") for key in parsed
+    )
+
+
+def _merge_channel_metadata_from_current(
+    section_payload: dict[str, Any],
+    current_data: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Preserve API-set channel metadata the SSR form does not edit (WR-01)."""
+    if not isinstance(current_data, Mapping):
+        return section_payload
+    merged = dict(section_payload)
+    for key in ("qqbot", "wecom"):
+        channel = merged.get(key)
+        existing = current_data.get(key)
+        if not isinstance(channel, dict) or not isinstance(existing, Mapping):
+            continue
+        meta = existing.get("metadata")
+        if isinstance(meta, Mapping):
+            channel = dict(channel)
+            channel["metadata"] = dict(meta)
+            merged[key] = channel
+    return merged
 
 
 def _resolve_rbac_secret(
@@ -265,7 +307,43 @@ def _handle_channels(
             return 500, html_body, response_headers
 
         form_body = body if body is not None else b""
+        if not _channels_post_body_usable(form_body):
+            html_body = render_channels_page(
+                {
+                    "error": {
+                        "code": "invalid_config",
+                        "message": "Channel config POST body is empty or missing fields",
+                    }
+                },
+                identity=identity,
+                boundary=boundary,
+                csrf_token=csrf_token,
+                error_message=ERROR_VALIDATION,
+            )
+            return 400, html_body, response_headers
+
         section_payload = parse_channels_form(form_body)
+
+        # Preserve channel metadata the form does not expose (WR-01).
+        get_status, get_data = client.proxy(
+            handle_admin_get,
+            _CHANNELS_PATH,
+            identity,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            feature_flags=feature_flags,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+            config_store=config_store,
+        )
+        if get_status == 200 and isinstance(get_data, dict):
+            current = get_data.get("data")
+            if isinstance(current, Mapping):
+                section_payload = _merge_channel_metadata_from_current(
+                    section_payload, current
+                )
+
         put_status, put_data = client.proxy_put(
             handle_admin_put,
             _CHANNELS_PATH,
@@ -383,6 +461,21 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
             length = int(length_raw)
         except ValueError:
             length = 0
+        if length < 0 or length > MAX_CHANNELS_POST_BYTES:
+            # Reject oversized/negative Content-Length without allocating (WR-04).
+            body_html = (
+                "<!DOCTYPE html><html><body>"
+                "<p class=\"error\">Request body too large</p>"
+                "</body></html>"
+            )
+            encoded = body_html.encode("utf-8")
+            self.send_response(413)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Security-Policy", CSP_HEADER)
+            self.send_header("Content-Length", str(len(encoded)))
+            self.end_headers()
+            self.wfile.write(encoded)
+            return
         raw = self.rfile.read(length) if length > 0 else b""
         self._dispatch("POST", body=raw)
 
@@ -417,4 +510,5 @@ __all__ = [
     "AdminWebUiServer",
     "handle_admin_web_ui_request",
     "CSP_HEADER",
+    "MAX_CHANNELS_POST_BYTES",
 ]

@@ -322,6 +322,89 @@ class ChannelsFormBehaviorTests(unittest.TestCase):
         )
         self.assertEqual(status, 405)
 
+    def test_empty_post_does_not_wipe_channel_config(self) -> None:
+        """CR-01: empty/marker-less POST must not proxy a wipe PUT."""
+        status, body, _headers = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.ADMIN),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=b"",
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(self.put_calls, [])
+        self.assertIn("Invalid secret reference", body)
+
+        status2, _body2, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.ADMIN),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=b"csrf_token=only",
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status2, 400)
+        self.assertEqual(self.put_calls, [])
+
+    def test_post_preserves_existing_channel_metadata(self) -> None:
+        """WR-01: SSR Save must not clear API-set channel metadata."""
+        seeded = {
+            "data": {
+                "qqbot": {
+                    **_FAKE_CHANNELS_GET["data"]["qqbot"],
+                    "metadata": {"source": "api-seed", "note": "keep-me"},
+                },
+                "wecom": {
+                    **_FAKE_CHANNELS_GET["data"]["wecom"],
+                    "metadata": {"tier": "ops"},
+                },
+            },
+            "effective": _FAKE_CHANNELS_GET["effective"],
+            "metadata": _FAKE_CHANNELS_GET["metadata"],
+        }
+        self.handle_get = _make_fake_get((200, seeded))
+        form = urlencode(
+            {
+                "csrf_token": "test-csrf",
+                "qqbot.enabled": "1",
+                "qqbot.app_id_ref": "env:QQBOT_APP_ID",
+                "wecom.token_secret_ref": "env:WECOM_TOKEN",
+            }
+        )
+        status, _body, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.ADMIN),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=form.encode("utf-8"),
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(len(self.put_calls), 1)
+        put_body = self.put_calls[0]["body"]
+        self.assertEqual(
+            put_body["qqbot"]["metadata"],
+            {"source": "api-seed", "note": "keep-me"},
+        )
+        self.assertEqual(put_body["wecom"]["metadata"], {"tier": "ops"})
+
+    def test_max_channels_post_bytes_constant(self) -> None:
+        """WR-04: POST body size cap is exported for the HTTP handler."""
+        from admin_web_ui.server import MAX_CHANNELS_POST_BYTES
+
+        self.assertGreaterEqual(MAX_CHANNELS_POST_BYTES, 1024)
+        self.assertLessEqual(MAX_CHANNELS_POST_BYTES, 1024 * 1024)
+
     def test_html_escape_on_ref_values(self) -> None:
         identity = Identity(role=Role.ADMIN, tenant_id="t1")
         data = {
