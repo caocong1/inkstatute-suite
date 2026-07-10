@@ -68,9 +68,20 @@ def handle_config_put(
 
     try:
         current = store.load()
+    except OperatorConfigValidationError as exc:
+        return 400, _error("invalid_config", str(exc))
+    except OperatorConfigStoreError as exc:
+        return 500, _error("config_store_error", _safe_store_message(exc))
+
+    try:
         payload = document_to_payload(current)
         payload[section] = section_value
         updated = document_from_payload(payload)
+    except OperatorConfigStoreError as exc:
+        # Shape/parse faults from the request body are client errors (WR-01).
+        return 400, _error("invalid_config", str(exc))
+
+    try:
         store.save(updated, feature_flags=feature_flags)
     except OperatorConfigDisabledError:
         return 403, _error(

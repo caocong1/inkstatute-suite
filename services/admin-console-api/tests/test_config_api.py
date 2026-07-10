@@ -365,6 +365,27 @@ class ConfigApiStaticTokenTests(unittest.TestCase):
         self.assertEqual(get_status, 200)
         self.assertEqual(get_body["data"]["qqbot"]["app_id_ref"], "env:QQBOT_APP_ID")
 
+    def test_nested_shape_errors_return_400_not_500(self) -> None:
+        """WR-01: document_from_payload shape faults are client errors."""
+        cases: list[tuple[str, Any]] = [
+            ("/config/channels", {"qqbot": "not-an-object"}),
+            ("/config/providers", ["not-an-object"]),
+            ("/config/catalog", {"provider_id": 123}),
+        ]
+        for path, payload in cases:
+            with self.subTest(path=path):
+                status, body = handle_admin_put(
+                    path,
+                    payload,
+                    self.headers,
+                    self.flags,
+                    self.env,
+                    config_store=self.store,
+                )
+                self.assertEqual(status, 400)
+                self.assertEqual(body["error"]["code"], "invalid_config")
+                self.assertFalse(self.store_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
