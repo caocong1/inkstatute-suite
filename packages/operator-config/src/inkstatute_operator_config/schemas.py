@@ -91,11 +91,25 @@ class CatalogSelectionDoc:
 
 @dataclass(frozen=True, slots=True)
 class VisionPolicyDoc:
-    """Vision routing policy stub (runtime flag deferred to Phase 77).
+    """Vision routing policy (VIS-01).
 
-    ``vision_provider_id`` links the optional dedicated vision provider instance
-    beside ``vision_model_id``. Phase 76 persists absent/partial/complete pairs;
-    Phase 77 owns routing modes and the complete vision editor (PROV-04).
+    ``routing_mode`` selects the vision routing strategy:
+
+    - ``auto`` — multimodal main model when it supports vision, otherwise a
+      vision→main mix. Requires a complete vision pair.
+    - ``always_preprocess`` — always route through the vision model before the
+      main model. Requires a complete vision pair.
+    - ``main_only`` — never invoke the vision model; the runtime ignores vision
+      fields, so an absent/partial/complete pair is a valid persisted draft.
+    - ``None`` (unset) preserves the Phase 76 draft-tolerant behavior: no
+      completeness enforcement, and a complete pair is still resolved if present.
+
+    A complete ``vision_provider_id`` + ``vision_model_id`` pair is resolved
+    against the operator provider registry by the same built-in-vendor or
+    custom-allowlist rules as the main catalog selection. ``main_model_id``
+    remains an optional echo of ``catalog.model_id``; the validator does not
+    require it to match the catalog section (the API plan owns that cross-section
+    echo, not the validator).
     """
 
     routing_mode: str | None = None

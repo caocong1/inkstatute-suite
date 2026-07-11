@@ -120,6 +120,16 @@ class TestOperatorConfigDocumentDefaults(unittest.TestCase):
         self.assertEqual(v.vision_provider_id, "vision-vendor")
         self.assertEqual(v.vision_model_id, "gpt-5")
 
+    def test_vision_policy_routing_mode_round_trip(self) -> None:
+        for mode in ("auto", "always_preprocess", "main_only"):
+            with self.subTest(mode=mode):
+                v = VisionPolicyDoc(routing_mode=mode)
+                self.assertEqual(v.routing_mode, mode)
+
+    def test_vision_policy_routing_mode_defaults_none(self) -> None:
+        v = VisionPolicyDoc()
+        self.assertIsNone(v.routing_mode)
+
     def test_credential_attrs_end_with_ref(self) -> None:
         for cls in (QQBotChannelDoc, WeComChannelDoc, ProviderDoc):
             for name in _credential_field_names(cls):

@@ -35,6 +35,14 @@ _SUPPORTED_PROVIDER_KINDS: frozenset[str] = frozenset(
     {"openai", "anthropic", "custom"}
 )
 
+# VIS-01 — vision routing modes accepted by the operator config validator.
+# ``auto`` (multimodal main if supports_vision, else vision→main mix),
+# ``always_preprocess`` (always vision→main mix), ``main_only`` (never invoke
+# vision). ``None`` (unset) preserves the Phase 76 draft-tolerant behavior.
+_SUPPORTED_ROUTING_MODES: frozenset[str] = frozenset(
+    {"auto", "always_preprocess", "main_only"}
+)
+
 # CFG-03 — Hermes filesystem / profile authority (RESEARCH + PLAN).
 FORBIDDEN_PATH_SUBSTRINGS: tuple[str, ...] = (
     "/.hermes",
@@ -234,15 +242,85 @@ class OperatorConfigValidator:
     def _check_vision_selection(
         self, doc: OperatorConfigDocument
     ) -> list[ValidationIssue]:
-        """Vision pair: only validated when both fields present (PROV-04/Phase 77)."""
-        return self._resolve_selection_pair(
-            doc,
-            provider_id=doc.vision.vision_provider_id,
-            model_id=doc.vision.vision_model_id,
-            provider_path="vision.vision_provider_id",
-            model_path="vision.vision_model_id",
-            allow_partial=True,
+        """Vision routing policy: routing_mode enum + pair completeness (VIS-01).
+
+        First validates ``routing_mode`` against ``_SUPPORTED_ROUTING_MODES``.
+        When the mode requires a vision step (``auto``/``always_preprocess``),
+        the vision provider/model pair must be complete. ``main_only`` and an
+        unset (``None``) mode remain draft-tolerant. A complete pair (any mode)
+        is still resolved against the operator registry by the same rules as the
+        main catalog selection. Messages expose codes/paths only — never the
+        rejected routing_mode value or secret contents.
+        """
+        issues: list[ValidationIssue] = []
+        routing_mode = doc.vision.routing_mode
+        if routing_mode is not None and routing_mode not in _SUPPORTED_ROUTING_MODES:
+            issues.append(
+                ValidationIssue(
+                    path="vision.routing_mode",
+                    code="unsupported_routing_mode",
+                    message=(
+                        "vision routing_mode must be one of auto, "
+                        "always_preprocess, or main_only"
+                    ),
+                    severity="error",
+                )
+            )
+            # An unsupported routing mode is fail-closed: do not attempt
+            # completeness enforcement under an unknown mode. A complete pair
+            # is still resolved below so registry errors are surfaced too.
+        elif routing_mode in ("auto", "always_preprocess"):
+            issues.extend(
+                self._check_vision_completeness(
+                    doc.vision.vision_provider_id,
+                    doc.vision.vision_model_id,
+                )
+            )
+        # ``main_only`` and ``None`` preserve the Phase 76 draft-tolerant
+        # behavior: absent/partial/complete pairs are all persisted drafts.
+        # A complete pair (any mode) is resolved against the registry.
+        issues.extend(
+            self._resolve_selection_pair(
+                doc,
+                provider_id=doc.vision.vision_provider_id,
+                model_id=doc.vision.vision_model_id,
+                provider_path="vision.vision_provider_id",
+                model_path="vision.vision_model_id",
+                allow_partial=True,
+            )
         )
+        return issues
+
+    def _check_vision_completeness(
+        self, vision_provider_id: str | None, vision_model_id: str | None
+    ) -> list[ValidationIssue]:
+        """Enforce a complete vision pair when the routing mode requires vision.
+
+        Emits ``incomplete_vision_selection`` at the missing field path
+        (``vision.vision_provider_id`` when only the model is present,
+        ``vision.vision_model_id`` when the provider is present or both are
+        absent). Messages never echo the present field value.
+        """
+        has_provider = bool(vision_provider_id)
+        has_model = bool(vision_model_id)
+        if has_provider and has_model:
+            return []
+        missing_path = (
+            "vision.vision_provider_id"
+            if has_model
+            else "vision.vision_model_id"
+        )
+        return [
+            ValidationIssue(
+                path=missing_path,
+                code="incomplete_vision_selection",
+                message=(
+                    "vision routing_mode requires both vision_provider_id and "
+                    "vision_model_id to be set"
+                ),
+                severity="error",
+            )
+        ]
 
     def _resolve_selection_pair(
         self,

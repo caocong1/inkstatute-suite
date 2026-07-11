@@ -512,6 +512,206 @@ class TestVisionSelectionValidation(unittest.TestCase):
         self.assertNotIn("not-allowed", message)
 
 
+class TestVisionRoutingModeValidation(unittest.TestCase):
+    """VIS-01: routing_mode enum validation + vision completeness gating."""
+
+    def test_supported_routing_modes_pass(self) -> None:
+        for mode in ("auto", "always_preprocess", "main_only"):
+            with self.subTest(mode=mode):
+                doc = OperatorConfigDocument(
+                    providers=(_openai_provider(),),
+                    vision=VisionPolicyDoc(
+                        routing_mode=mode,
+                        vision_provider_id="openai",
+                        vision_model_id="gpt-5",
+                    ),
+                )
+                self.assertEqual(validate_document(doc), [])
+
+    def test_unset_routing_mode_passes(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(
+                routing_mode=None,
+                vision_provider_id="openai",
+                vision_model_id="gpt-5",
+            ),
+        )
+        self.assertEqual(validate_document(doc), [])
+
+    def test_invalid_routing_mode_rejected_without_echo(self) -> None:
+        for bad in ("AUTO", "always", "off", "manual", "hybrid"):
+            with self.subTest(value=bad):
+                doc = OperatorConfigDocument(
+                    providers=(_openai_provider(),),
+                    vision=VisionPolicyDoc(
+                        routing_mode=bad,
+                        vision_provider_id="openai",
+                        vision_model_id="gpt-5",
+                    ),
+                )
+                with self.assertRaises(OperatorConfigValidationError) as ctx:
+                    validate_document(doc)
+                message = str(ctx.exception)
+                self.assertIn("unsupported_routing_mode", message)
+                self.assertIn("vision.routing_mode", message)
+                self.assertNotIn(bad, message)
+                issues = OperatorConfigValidator().validate(doc)
+                self.assertIn(
+                    "unsupported_routing_mode", {i.code for i in issues}
+                )
+
+    def test_auto_requires_complete_vision_pair(self) -> None:
+        for vision in (
+            VisionPolicyDoc(routing_mode="auto"),
+            VisionPolicyDoc(
+                routing_mode="auto", vision_provider_id="openai"
+            ),
+            VisionPolicyDoc(routing_mode="auto", vision_model_id="gpt-5"),
+        ):
+            with self.subTest(vision=vision):
+                doc = OperatorConfigDocument(
+                    providers=(_openai_provider(),), vision=vision
+                )
+                with self.assertRaises(OperatorConfigValidationError) as ctx:
+                    validate_document(doc)
+                message = str(ctx.exception)
+                self.assertIn("incomplete_vision_selection", message)
+
+    def test_always_preprocess_requires_complete_vision_pair(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(routing_mode="always_preprocess"),
+        )
+        with self.assertRaises(OperatorConfigValidationError) as ctx:
+            validate_document(doc)
+        self.assertIn("incomplete_vision_selection", str(ctx.exception))
+
+    def test_auto_absent_pair_path_points_at_vision_model_id(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(routing_mode="auto"),
+        )
+        issues = OperatorConfigValidator().validate(doc)
+        incomplete = [i for i in issues if i.code == "incomplete_vision_selection"]
+        self.assertEqual(len(incomplete), 1)
+        self.assertEqual(incomplete[0].path, "vision.vision_model_id")
+
+    def test_auto_partial_provider_only_path_points_at_model_id(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(
+                routing_mode="auto", vision_provider_id="openai"
+            ),
+        )
+        issues = OperatorConfigValidator().validate(doc)
+        incomplete = [i for i in issues if i.code == "incomplete_vision_selection"]
+        self.assertEqual(len(incomplete), 1)
+        self.assertEqual(incomplete[0].path, "vision.vision_model_id")
+
+    def test_auto_partial_model_only_path_points_at_provider_id(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(
+                routing_mode="auto", vision_model_id="gpt-5"
+            ),
+        )
+        issues = OperatorConfigValidator().validate(doc)
+        incomplete = [i for i in issues if i.code == "incomplete_vision_selection"]
+        self.assertEqual(len(incomplete), 1)
+        self.assertEqual(incomplete[0].path, "vision.vision_provider_id")
+
+    def test_main_only_allows_absent_pair(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(routing_mode="main_only"),
+        )
+        self.assertEqual(validate_document(doc), [])
+
+    def test_main_only_allows_partial_pair(self) -> None:
+        for vision in (
+            VisionPolicyDoc(
+                routing_mode="main_only", vision_provider_id="openai"
+            ),
+            VisionPolicyDoc(
+                routing_mode="main_only", vision_model_id="gpt-5"
+            ),
+        ):
+            with self.subTest(vision=vision):
+                doc = OperatorConfigDocument(
+                    providers=(_openai_provider(),), vision=vision
+                )
+                self.assertEqual(validate_document(doc), [])
+
+    def test_main_only_allows_complete_pair(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(
+                routing_mode="main_only",
+                vision_provider_id="openai",
+                vision_model_id="gpt-5",
+            ),
+        )
+        self.assertEqual(validate_document(doc), [])
+
+    def test_none_preserves_draft_tolerant_behavior(self) -> None:
+        for vision in (
+            VisionPolicyDoc(),
+            VisionPolicyDoc(vision_provider_id="openai"),
+            VisionPolicyDoc(vision_model_id="gpt-5"),
+            VisionPolicyDoc(
+                vision_provider_id="openai", vision_model_id="gpt-5"
+            ),
+        ):
+            with self.subTest(vision=vision):
+                doc = OperatorConfigDocument(
+                    providers=(_openai_provider(),), vision=vision
+                )
+                self.assertEqual(validate_document(doc), [])
+
+    def test_complete_pair_under_auto_still_resolved_against_registry(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(
+                routing_mode="auto",
+                vision_provider_id="ghost",
+                vision_model_id="gpt-5",
+            ),
+        )
+        with self.assertRaises(OperatorConfigValidationError) as ctx:
+            validate_document(doc)
+        message = str(ctx.exception)
+        self.assertIn("unknown_provider", message)
+        self.assertIn("vision.vision_provider_id", message)
+
+    def test_complete_pair_under_main_only_still_resolved_against_registry(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(
+                routing_mode="main_only",
+                vision_provider_id="openai",
+                vision_model_id="claude-opus-4-8",
+            ),
+        )
+        with self.assertRaises(OperatorConfigValidationError) as ctx:
+            validate_document(doc)
+        message = str(ctx.exception)
+        self.assertIn("builtin_model_vendor_mismatch", message)
+        self.assertIn("vision.vision_model_id", message)
+
+    def test_incomplete_vision_selection_does_not_echo_values(self) -> None:
+        doc = OperatorConfigDocument(
+            providers=(_openai_provider(),),
+            vision=VisionPolicyDoc(
+                routing_mode="auto", vision_provider_id="openai"
+            ),
+        )
+        with self.assertRaises(OperatorConfigValidationError) as ctx:
+            validate_document(doc)
+        message = str(ctx.exception)
+        self.assertNotIn("openai", message)
+
+
 class TestCatalogPublicExports(unittest.TestCase):
     def test_catalog_symbols_importable_from_package(self) -> None:
         import inkstatute_operator_config as pkg

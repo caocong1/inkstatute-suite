@@ -61,7 +61,7 @@ def _refs_only_doc() -> OperatorConfigDocument:
             ),
         ),
         catalog=CatalogSelectionDoc(provider_id="openai", model_id="gpt-5"),
-        vision=VisionPolicyDoc(routing_mode="off"),
+        vision=VisionPolicyDoc(routing_mode="main_only"),
     )
 
 
@@ -97,7 +97,7 @@ class TestOperatorConfigStore(unittest.TestCase):
             self.assertEqual(len(loaded.providers), 1)
             self.assertEqual(loaded.providers[0].api_key_ref, "env:OPENAI_API_KEY")
             self.assertEqual(loaded.catalog.model_id, "gpt-5")
-            self.assertEqual(loaded.vision.routing_mode, "off")
+            self.assertEqual(loaded.vision.routing_mode, "main_only")
 
             raw = json.loads(path.read_text(encoding="utf-8"))
             serialized = json.dumps(raw)
