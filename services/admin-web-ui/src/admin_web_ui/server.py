@@ -13,7 +13,6 @@ Request flow:
 from __future__ import annotations
 
 import os
-import secrets
 from http.server import BaseHTTPRequestHandler
 from typing import Any, Mapping
 from urllib.parse import parse_qs
@@ -41,6 +40,7 @@ from .catalog import (
     render_catalog_page,
 )
 from .channels import (
+    ERROR_CSRF,
     ERROR_FLAG_OFF,
     ERROR_FORBIDDEN,
     ERROR_GENERIC,
@@ -432,15 +432,11 @@ def _handle_channels(
     client: AdminApiClient,
     boundary: AdminUiBoundary,
     response_headers: dict[str, str],
+    csrf_token: str | None = None,
 ) -> tuple[int, str, dict[str, str]]:
-    """GET renders dual-knob form; POST parses form and proxies handle_admin_put.
-
-    NOTE: The channels route uses a random (unbound) csrf_token and does not
-    validate it on POST. Signed CSRF validation for this existing route is
-    deferred to Phase 78 (complete SSR surface audit). Phase 76 applies signed
-    CSRF only to the new providers/catalog/probe routes via csrf.py.
-    """
-    csrf_token = secrets.token_urlsafe(16)
+    """GET renders dual-knob form; POST validates CSRF and proxies handle_admin_put."""
+    del csrf_token  # route issues and validates its own signed token
+    save_token = issue_csrf_token(identity, _CHANNELS_PATH, signing_key=rbac_secret)
 
     if http_method == "POST":
         if handle_admin_put is None:
@@ -448,7 +444,7 @@ def _handle_channels(
                 {"error": {"code": "misconfigured", "message": ERROR_GENERIC}},
                 identity=identity,
                 boundary=boundary,
-                csrf_token=csrf_token,
+                csrf_token=save_token,
             )
             return 500, html_body, response_headers
 
@@ -463,12 +459,26 @@ def _handle_channels(
                 },
                 identity=identity,
                 boundary=boundary,
-                csrf_token=csrf_token,
+                csrf_token=save_token,
                 error_message=ERROR_VALIDATION,
             )
             return 400, html_body, response_headers
 
-        section_payload = parse_channels_form(form_body)
+        valid, form_map = _validate_post_csrf(
+            form_body, identity, _CHANNELS_PATH, rbac_secret=rbac_secret
+        )
+        if not valid:
+            html_body = render_channels_page(
+                {"error": {"code": "forbidden", "message": ERROR_CSRF}},
+                identity=identity,
+                boundary=boundary,
+                csrf_token=save_token,
+                error_message=ERROR_CSRF,
+            )
+            return 403, html_body, response_headers
+
+        assert form_map is not None  # validated above
+        section_payload = parse_channels_form(form_map)
 
         # Preserve channel metadata the form does not expose (WR-01).
         get_status, get_data = client.proxy(
@@ -507,7 +517,7 @@ def _handle_channels(
                 put_data,
                 identity=identity,
                 boundary=boundary,
-                csrf_token=csrf_token,
+                csrf_token=save_token,
                 flash=SUCCESS_FLASH,
                 flash_kind="success",
             )
@@ -545,7 +555,7 @@ def _handle_channels(
             display if isinstance(display, dict) else put_data,
             identity=identity,
             boundary=boundary,
-            csrf_token=csrf_token,
+            csrf_token=save_token,
             error_message=err_msg,
             read_only=code == "operator_config_disabled",
         )
@@ -568,7 +578,7 @@ def _handle_channels(
         api_data,
         identity=identity,
         boundary=boundary,
-        csrf_token=csrf_token,
+        csrf_token=save_token,
     )
     return status, html_body, response_headers
 

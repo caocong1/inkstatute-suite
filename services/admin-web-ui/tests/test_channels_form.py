@@ -25,6 +25,7 @@ from admin_web_ui.channels import (
     parse_channels_form,
     render_channels_page,
 )
+from admin_web_ui.csrf import issue_csrf_token
 from admin_web_ui.server import handle_admin_web_ui_request
 from inkstatute_operator_config.store import OperatorConfigStore
 from platform_runtime.feature_flags import RuntimeFeatureFlags
@@ -237,6 +238,10 @@ class ChannelsFormBehaviorTests(unittest.TestCase):
         token = issue_token(self.SECRET, role=role, tenant_id="tenant-1")
         return {"Authorization": f"Bearer {token}"}
 
+    def _valid_csrf_token(self, route: str, role: Role = Role.OPERATOR) -> str:
+        identity = Identity(role=role, tenant_id="tenant-1")
+        return issue_csrf_token(identity, route, signing_key=self.SECRET)
+
     def test_get_renders_dual_knob_and_restart_notice(self) -> None:
         status, body, _headers = handle_admin_web_ui_request(
             "/config/channels",
@@ -264,9 +269,10 @@ class ChannelsFormBehaviorTests(unittest.TestCase):
         self.assertNotIn("channel_delivery_enabled", body)
 
     def test_post_proxies_put_and_shows_restart_flash(self) -> None:
+        token = self._valid_csrf_token("/config/channels", role=Role.OPERATOR)
         form = urlencode(
             {
-                "csrf_token": "test-csrf",
+                "csrf_token": token,
                 "qqbot.enabled": "1",
                 "qqbot.app_id_ref": "env:QQBOT_APP_ID",
                 "qqbot.app_secret_ref": "secret://qqbot/app-secret",
@@ -337,7 +343,7 @@ class ChannelsFormBehaviorTests(unittest.TestCase):
         )
         self.assertEqual(status, 400)
         self.assertEqual(self.put_calls, [])
-        self.assertIn("Invalid secret reference", body)
+        self.assertIn("Invalid config", body)
 
         status2, _body2, _ = handle_admin_web_ui_request(
             "/config/channels",
@@ -370,9 +376,10 @@ class ChannelsFormBehaviorTests(unittest.TestCase):
             "metadata": _FAKE_CHANNELS_GET["metadata"],
         }
         self.handle_get = _make_fake_get((200, seeded))
+        token = self._valid_csrf_token("/config/channels", role=Role.ADMIN)
         form = urlencode(
             {
-                "csrf_token": "test-csrf",
+                "csrf_token": token,
                 "qqbot.enabled": "1",
                 "qqbot.app_id_ref": "env:QQBOT_APP_ID",
                 "wecom.token_secret_ref": "env:WECOM_TOKEN",
@@ -510,8 +517,13 @@ class ChannelsFormBehaviorTests(unittest.TestCase):
         )
         env = {"ADMIN_API_TOKEN": "static-admin-token"}
         headers = {"Authorization": "Bearer static-admin-token"}
+        token = issue_csrf_token(
+            Identity(role=Role.ADMIN, tenant_id="default"),
+            "/config/channels",
+        )
         form = urlencode(
             {
+                "csrf_token": token,
                 "qqbot.enabled": "1",
                 "qqbot.app_id_ref": "env:QQ_APP_ID",
                 "qqbot.app_secret_ref": "env:QQ_APP_SECRET",
@@ -550,6 +562,129 @@ class ChannelsFormBehaviorTests(unittest.TestCase):
         self.assertIn("env:QQ_APP_ID", get_body)
         self.assertIn("wecom_channel_enabled", get_body)
         self.assertIn("Effective: enabled", get_body)
+
+    def test_post_rejects_missing_csrf_token(self) -> None:
+        form = urlencode(
+            {
+                "qqbot.enabled": "1",
+                "qqbot.app_id_ref": "env:QQBOT_APP_ID",
+            }
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.OPERATOR),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=form.encode("utf-8"),
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 403)
+        self.assertEqual(self.put_calls, [])
+        self.assertIn("Request could not be verified", body)
+
+    def test_post_rejects_invalid_csrf_token(self) -> None:
+        form = urlencode(
+            {
+                "csrf_token": "not-a-token",
+                "qqbot.enabled": "1",
+                "qqbot.app_id_ref": "env:QQBOT_APP_ID",
+            }
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.OPERATOR),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=form.encode("utf-8"),
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 403)
+        self.assertEqual(self.put_calls, [])
+        self.assertIn("Request could not be verified", body)
+
+    def test_post_rejects_cross_route_csrf_token(self) -> None:
+        token = self._valid_csrf_token("/config/providers", role=Role.OPERATOR)
+        form = urlencode(
+            {
+                "csrf_token": token,
+                "qqbot.enabled": "1",
+                "qqbot.app_id_ref": "env:QQBOT_APP_ID",
+            }
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.OPERATOR),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=form.encode("utf-8"),
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 403)
+        self.assertEqual(self.put_calls, [])
+
+    def test_post_rejects_tampered_csrf_token(self) -> None:
+        token = self._valid_csrf_token("/config/channels", role=Role.OPERATOR)
+        tampered = token + "tampered"
+        form = urlencode(
+            {
+                "csrf_token": tampered,
+                "qqbot.enabled": "1",
+                "qqbot.app_id_ref": "env:QQBOT_APP_ID",
+            }
+        )
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.OPERATOR),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=form.encode("utf-8"),
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 403)
+        self.assertEqual(self.put_calls, [])
+
+    def test_page_contains_gate_honesty_banner(self) -> None:
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.ADMIN),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="GET",
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("This console does not close live acceptance gates", body)
+        self.assertIn("not_live_acceptance", body)
+
+    def test_csrf_error_is_exact_ui_spec_copy(self) -> None:
+        form = urlencode({"qqbot.enabled": "1"})
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/channels",
+            self._auth(Role.OPERATOR),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="POST",
+            body=form.encode("utf-8"),
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 403)
+        self.assertIn("Request could not be verified. Refresh the page and try again.", body)
 
 
 if __name__ == "__main__":

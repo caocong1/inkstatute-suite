@@ -13,7 +13,7 @@ from urllib.parse import parse_qs
 from rbac import Identity
 
 from .boundary import AdminUiBoundary
-from .dashboard import _page_template
+from .dashboard import _page_template, _render_gate_honesty_banner
 
 # UI-SPEC copy (exact strings)
 PAGE_TITLE = "Channel Config"
@@ -36,8 +36,10 @@ EMPTY_BODY = (
     "Save channel config. Hosts apply after process restart (MVP)."
 )
 ERROR_VALIDATION = (
-    "Invalid secret reference. Use `env:NAME`, a bare env key, or `secret://…`. "
-    "Raw secrets are rejected."
+    "Invalid config. Check the fields and try again."
+)
+ERROR_CSRF = (
+    "Request could not be verified. Refresh the page and try again."
 )
 ERROR_FLAG_OFF = (
     "Operator config writes are disabled (`operator_config_enabled` is OFF). "
@@ -66,7 +68,7 @@ def _esc(value: Any) -> str:
 def _bool_status(on: bool) -> tuple[str, str]:
     if on:
         return "ON", "status-ok"
-    return "OFF", "status-err"
+    return "OFF", "empty"
 
 
 def _ref_status(configured: bool) -> tuple[str, str]:
@@ -271,7 +273,7 @@ def render_channels_form(
     flag_off = not bool(metadata.get("operator_config_enabled", True)) if metadata else False
     disabled = read_only or flag_off
 
-    parts: list[str] = []
+    parts: list[str] = [_render_gate_honesty_banner()]
     if error_message:
         parts.append(_flash_html(error_message, kind="error"))
     elif flash:
@@ -434,6 +436,7 @@ __all__ = [
     "RESTART_NOTICE",
     "ERROR_FLAG_OFF",
     "ERROR_FORBIDDEN",
+    "ERROR_CSRF",
     "ERROR_VALIDATION",
     "ERROR_GENERIC",
 ]
