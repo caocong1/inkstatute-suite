@@ -269,6 +269,17 @@ class VisionRenderTests(unittest.TestCase):
         self.assertTrue(callable(render_vision_page))
         self.assertTrue(callable(parse_vision_form))
 
+    def test_page_contains_gate_honesty_banner(self) -> None:
+        identity = Identity(role=Role.ADMIN, tenant_id="tenant-1")
+        body = render_vision_page(
+            _FAKE_VISION_UNSET,
+            identity=identity,
+            csrf_token="vision-token",
+            probe_csrf_token="probe-token",
+        )
+        self.assertIn("This console does not close live acceptance gates", body)
+        self.assertIn("not_live_acceptance", body)
+
     def test_render_defaults_to_auto_when_routing_mode_unset(self) -> None:
         identity = Identity(role=Role.ADMIN, tenant_id="tenant-1")
         body = render_vision_page(

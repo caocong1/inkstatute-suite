@@ -18,7 +18,7 @@ from urllib.parse import parse_qs
 from rbac import Identity
 
 from .boundary import AdminUiBoundary
-from .dashboard import _page_template
+from .dashboard import _page_template, _render_gate_honesty_banner
 
 # UI-SPEC copy (exact strings)
 PAGE_TITLE = "Model Catalog"
@@ -179,7 +179,7 @@ def render_catalog_form(
     flag_off = not bool(metadata.get("operator_config_enabled", True))
     disabled = read_only or flag_off
 
-    parts: list[str] = []
+    parts: list[str] = [_render_gate_honesty_banner()]
     if error_message:
         parts.append(_flash_html(error_message, kind="error"))
     elif flash:

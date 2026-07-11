@@ -209,6 +209,21 @@ class CatalogFormScaffoldTests(unittest.TestCase):
         self.assertIn("Model Catalog", body)
         self.assertIn("Save catalog selection", body)
 
+    def test_page_contains_gate_honesty_banner(self) -> None:
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/catalog",
+            self._auth(Role.ADMIN),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="GET",
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("This console does not close live acceptance gates", body)
+        self.assertIn("not_live_acceptance", body)
+
     def test_get_renders_vendor_id_and_model_id_rows(self) -> None:
         """Catalog rows render vendor_id and model_id from API metadata."""
         status, body, _ = handle_admin_web_ui_request(

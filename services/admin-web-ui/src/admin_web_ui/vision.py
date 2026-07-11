@@ -18,7 +18,7 @@ from urllib.parse import parse_qs
 from rbac import Identity
 
 from .boundary import AdminUiBoundary
-from .dashboard import _page_template
+from .dashboard import _page_template, _render_gate_honesty_banner
 
 # UI-SPEC copy (exact strings)
 PAGE_TITLE = "Vision Config"
@@ -383,7 +383,7 @@ def render_vision_form(
     mode_disabled = read_only or flag_off
     vision_disabled = read_only or flag_off or mode == "main_only"
 
-    parts: list[str] = []
+    parts: list[str] = [_render_gate_honesty_banner()]
     if error_message:
         parts.append(_flash_html(error_message, kind="error"))
     if flash:

@@ -253,6 +253,21 @@ class ProvidersFormScaffoldTests(unittest.TestCase):
         self.assertIn("Provider Config", body)
         self.assertIn("Save provider config", body)
 
+    def test_page_contains_gate_honesty_banner(self) -> None:
+        status, body, _ = handle_admin_web_ui_request(
+            "/config/providers",
+            self._auth(Role.ADMIN),
+            feature_flags=self.flags,
+            handle_admin_get=self.handle_get,
+            read_model=None,
+            rbac_secret=self.SECRET,
+            method="GET",
+            handle_admin_put=self.handle_put,
+        )
+        self.assertEqual(status, 200)
+        self.assertIn("This console does not close live acceptance gates", body)
+        self.assertIn("not_live_acceptance", body)
+
     def test_get_renders_read_only_canonical_built_in_url(self) -> None:
         """Built-in vendor api_base_url renders as read-only text, not editable."""
         status, body, _ = handle_admin_web_ui_request(
