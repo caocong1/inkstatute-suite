@@ -128,6 +128,7 @@ class ConfigCatalogScaffoldTests(unittest.TestCase):
         *,
         headers: dict[str, str] | None = None,
         flags: RuntimeFeatureFlags | None = None,
+        rbac_secret: str | None = None,
     ) -> tuple[int, dict[str, Any]]:
         return handle_admin_put(
             "/config/catalog",
@@ -136,6 +137,7 @@ class ConfigCatalogScaffoldTests(unittest.TestCase):
             flags or self.flags,
             self.env,
             config_store=self.store,
+            rbac_secret=rbac_secret,
         )
 
     def _get_catalog(
@@ -143,6 +145,7 @@ class ConfigCatalogScaffoldTests(unittest.TestCase):
         *,
         headers: dict[str, str] | None = None,
         flags: RuntimeFeatureFlags | None = None,
+        rbac_secret: str | None = None,
     ) -> tuple[int, dict[str, Any]]:
         return handle_admin_get(
             "/config/catalog",
@@ -153,6 +156,7 @@ class ConfigCatalogScaffoldTests(unittest.TestCase):
             flags or self.flags,
             self.env,
             config_store=self.store,
+            rbac_secret=rbac_secret,
         )
 
     # --- Catalog metadata: vendor_id, model_id, supports_vision ---
@@ -211,7 +215,10 @@ class ConfigCatalogScaffoldTests(unittest.TestCase):
         )
         self.assertEqual(status, 400)
         self.assertEqual(body["error"]["code"], "invalid_config")
-        self.assertFalse(self.store_path.exists())
+        # Store exists from providers PUT, but mismatched catalog was not saved.
+        doc = self.store.load()
+        self.assertIsNone(doc.catalog.provider_id)
+        self.assertIsNone(doc.catalog.model_id)
 
     # --- Missing provider ---
 
@@ -314,6 +321,7 @@ class ConfigCatalogScaffoldTests(unittest.TestCase):
             _catalog_selection("primary-openai", "gpt-5"),
             headers=headers,
             flags=flags,
+            rbac_secret=secret,
         )
         self.assertEqual(status, 200)
 
@@ -332,6 +340,7 @@ class ConfigCatalogScaffoldTests(unittest.TestCase):
                     _catalog_selection("primary-openai", "gpt-5"),
                     headers=headers,
                     flags=flags,
+                    rbac_secret=secret,
                 )
                 self.assertEqual(status, 403)
                 self.assertEqual(body["error"]["code"], "forbidden")

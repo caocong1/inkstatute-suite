@@ -7,6 +7,7 @@ echo store filesystem paths.
 
 from __future__ import annotations
 
+import json
 from typing import Any, Mapping
 
 from inkstatute_operator_config import (
@@ -14,6 +15,11 @@ from inkstatute_operator_config import (
     OperatorConfigStore,
     OperatorConfigStoreError,
     OperatorConfigValidationError,
+)
+from inkstatute_operator_config.catalog import (
+    BUILTIN_MODEL_CATALOG,
+    BUILTIN_VENDOR_PROFILES,
+    builtin_vendor_profile,
 )
 from inkstatute_operator_config.store import document_from_payload, document_to_payload
 from platform_runtime.feature_flags import RuntimeFeatureFlags
@@ -46,11 +52,15 @@ def handle_config_get(
 
     payload = document_to_payload(document)
     body: dict[str, Any] = {
-        "data": payload[section],
+        "data": _json_safe(payload[section]),
         "metadata": _config_metadata(feature_flags, section=section),
     }
     if section == "channels":
         body["effective"] = _channels_effective(payload["channels"], feature_flags)
+    if section == "providers":
+        body["probe_targets"] = _probe_targets(document)
+    if section == "catalog":
+        body["catalog_entries"] = _catalog_entries()
     return 200, body
 
 
@@ -68,6 +78,10 @@ def handle_config_put(
     section_value, value_error = _normalize_section_body(section, body)
     if value_error is not None:
         return 400, value_error
+
+    # Fill canonical VendorProfile URLs for built-in providers with None api_base_url.
+    if section == "providers" and isinstance(section_value, list):
+        section_value = _fill_builtin_provider_urls(section_value)
 
     try:
         current = store.load()
@@ -98,11 +112,15 @@ def handle_config_put(
 
     saved = document_to_payload(updated)
     body: dict[str, Any] = {
-        "data": saved[section],
+        "data": _json_safe(saved[section]),
         "metadata": _config_metadata(feature_flags, section=section),
     }
     if section == "channels":
         body["effective"] = _channels_effective(saved["channels"], feature_flags)
+    if section == "providers":
+        body["probe_targets"] = _probe_targets(updated)
+    if section == "catalog":
+        body["catalog_entries"] = _catalog_entries()
     return 200, body
 
 
@@ -163,6 +181,15 @@ def _normalize_section_body(
     if set(body.keys()) == {section} and isinstance(body[section], Mapping):
         return dict(body[section]), None
 
+    allowed = _SECTION_ALLOWED_KEYS.get(section)
+    if allowed is not None:
+        extra = set(body.keys()) - allowed
+        if extra:
+            return None, _error(
+                "invalid_config",
+                f"{section} body contains unexpected keys: {sorted(extra)}",
+            )
+
     return dict(body), None
 
 
@@ -177,9 +204,28 @@ def _config_metadata(
         "operator_config_enabled": bool(feature_flags.operator_config_enabled),
         "read_only": False,
     }
-    if section == "channels":
-        # Restart-to-apply MVP (CHAN-03) — never claim live/hot-reload apply.
+    if section in ("channels", "providers", "catalog"):
+        # Restart-to-apply MVP — never claim live/hot-reload apply.
         metadata["apply_semantics"] = "restart_required"
+    if section == "providers":
+        metadata["builtin_vendor_profiles"] = [
+            {
+                "vendor_id": p.vendor_id,
+                "api_base_url": p.api_base_url,
+                "default_key_ref_env": p.default_key_ref_env,
+            }
+            for p in BUILTIN_VENDOR_PROFILES
+        ]
+    if section == "catalog":
+        metadata["builtin_catalog"] = [
+            {
+                "vendor_id": e.vendor_id,
+                "model_id": e.model_id,
+                "supports_vision": e.supports_vision,
+                "description": e.description,
+            }
+            for e in BUILTIN_MODEL_CATALOG
+        ]
     return metadata
 
 
@@ -230,6 +276,90 @@ def _channels_effective(
             "refs_configured": _refs_configured(we, _WECOM_REF_FIELDS),
         },
     }
+
+
+def _json_safe(obj: Any) -> Any:
+    """Convert tuples to lists for JSON-compatible response payloads."""
+    return json.loads(json.dumps(obj, default=str))
+
+
+# Allowed keys per section (rejects unexpected fields like planted secrets).
+_SECTION_ALLOWED_KEYS: dict[str, frozenset[str]] = {
+    "catalog": frozenset({"provider_id", "model_id"}),
+    "vision": frozenset({
+        "routing_mode",
+        "main_model_id",
+        "vision_model_id",
+        "vision_provider_id",
+    }),
+}
+
+
+def _fill_builtin_provider_urls(providers: list[Any]) -> list[Any]:
+    """Fill canonical VendorProfile URLs for built-in providers with None api_base_url.
+
+    Operators send ``api_base_url: None`` for built-in vendors; the API fills in
+    the exact canonical URL before persistence so server-side validation passes
+    and the stored document always carries the canonical endpoint (PROV-01).
+    """
+    filled: list[Any] = []
+    for item in providers:
+        if isinstance(item, Mapping):
+            kind = item.get("kind")
+            base_url = item.get("api_base_url")
+            if kind in ("openai", "anthropic") and not base_url:
+                profile = builtin_vendor_profile(kind)
+                if profile is not None:
+                    item = dict(item)
+                    item["api_base_url"] = profile.api_base_url
+        filled.append(item)
+    return filled
+
+
+def _probe_targets(document: Any) -> dict[str, dict[str, Any]]:
+    """Build refs-safe probe target metadata from the validated stored document.
+
+    Each entry exposes only ``status``, ``provider_id``, and ``model_id`` —
+    never ``api_key_ref``, resolved secrets, base URLs, headers, or endpoint
+    details. A complete valid pair exposes ``status='configured'`` with IDs;
+    absent/partial exposes ``status='not_configured'`` with None IDs.
+    """
+    main_pid = document.catalog.provider_id
+    main_mid = document.catalog.model_id
+    vision_pid = document.vision.vision_provider_id
+    vision_mid = document.vision.vision_model_id
+    return {
+        "main": _target_entry(main_pid, main_mid),
+        "vision": _target_entry(vision_pid, vision_mid),
+    }
+
+
+def _target_entry(provider_id: str | None, model_id: str | None) -> dict[str, Any]:
+    """Return a refs-safe probe target status entry."""
+    if provider_id and model_id:
+        return {
+            "status": "configured",
+            "provider_id": provider_id,
+            "model_id": model_id,
+        }
+    return {
+        "status": "not_configured",
+        "provider_id": None,
+        "model_id": None,
+    }
+
+
+def _catalog_entries() -> list[dict[str, Any]]:
+    """Serialize the built-in model catalog for the SSR consumer (PROV-03)."""
+    return [
+        {
+            "vendor_id": e.vendor_id,
+            "model_id": e.model_id,
+            "supports_vision": e.supports_vision,
+            "description": e.description,
+        }
+        for e in BUILTIN_MODEL_CATALOG
+    ]
 
 
 def _error(code: str, message: str) -> dict[str, Any]:

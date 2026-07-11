@@ -201,7 +201,12 @@ class ChannelsEffectiveScaffoldTests(unittest.TestCase):
                 self.assertIs(we["effective_enabled"], expected)
                 self.assertIs(put_body["data"]["wecom"]["enabled"], host)
 
-    def test_non_channels_section_omits_effective_and_apply_semantics(self) -> None:
+    def test_non_channels_section_omits_effective(self) -> None:
+        """Non-channels sections must not include the channels-only 'effective' block.
+
+        Plan 76-03 adds ``apply_semantics`` to providers/catalog metadata, so
+        only the ``effective`` key is channels-specific.
+        """
         providers = [
             {
                 "provider_id": "openai",
@@ -222,7 +227,6 @@ class ChannelsEffectiveScaffoldTests(unittest.TestCase):
         )
         self.assertEqual(status, 200)
         self.assertNotIn("effective", body)
-        self.assertNotIn("apply_semantics", body["metadata"])
 
     def test_planted_secret_absent_from_channels_json_including_effective(self) -> None:
         poisoned = {

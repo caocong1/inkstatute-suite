@@ -196,6 +196,21 @@ def handle_admin_put(
         return auth  # type: ignore[return-value]
     route_path, _route_query, _identity, _tenant_filter = auth[1]
 
+    # Probe dispatch: exact /config/providers/probe before generic section PUT.
+    if route_path == "/config/providers/probe":
+        from .probe import handle_config_probe
+
+        store = config_store if config_store is not None else OperatorConfigStore()
+        return handle_config_probe(
+            route_path,
+            body,
+            headers,
+            feature_flags,
+            env,
+            config_store=store,
+            rbac_secret=rbac_secret,
+        )
+
     if route_path == "/config" or route_path.startswith("/config/"):
         store = config_store if config_store is not None else OperatorConfigStore()
         return handle_config_put(route_path, body, store, feature_flags)

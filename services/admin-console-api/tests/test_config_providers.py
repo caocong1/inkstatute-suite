@@ -110,6 +110,7 @@ class ConfigProvidersScaffoldTests(unittest.TestCase):
         *,
         headers: dict[str, str] | None = None,
         flags: RuntimeFeatureFlags | None = None,
+        rbac_secret: str | None = None,
     ) -> tuple[int, dict[str, Any]]:
         return handle_admin_put(
             "/config/providers",
@@ -118,6 +119,7 @@ class ConfigProvidersScaffoldTests(unittest.TestCase):
             flags or self.flags,
             self.env,
             config_store=self.store,
+            rbac_secret=rbac_secret,
         )
 
     def _get_providers(
@@ -125,6 +127,7 @@ class ConfigProvidersScaffoldTests(unittest.TestCase):
         *,
         headers: dict[str, str] | None = None,
         flags: RuntimeFeatureFlags | None = None,
+        rbac_secret: str | None = None,
     ) -> tuple[int, dict[str, Any]]:
         return handle_admin_get(
             "/config/providers",
@@ -135,6 +138,7 @@ class ConfigProvidersScaffoldTests(unittest.TestCase):
             flags or self.flags,
             self.env,
             config_store=self.store,
+            rbac_secret=rbac_secret,
         )
 
     # --- PROV-01: canonical built-in vendor persistence ---
@@ -282,7 +286,7 @@ class ConfigProvidersScaffoldTests(unittest.TestCase):
         token = issue_token(secret, role=Role.OPERATOR, tenant_id="t1")
         headers = {"Authorization": f"Bearer {token}"}
         status, body = self._put_providers(
-            [_builtin_openai()], headers=headers, flags=flags
+            [_builtin_openai()], headers=headers, flags=flags, rbac_secret=secret
         )
         self.assertEqual(status, 200)
 
@@ -298,7 +302,7 @@ class ConfigProvidersScaffoldTests(unittest.TestCase):
                 token = issue_token(secret, role=role, tenant_id="t1")
                 headers = {"Authorization": f"Bearer {token}"}
                 status, body = self._put_providers(
-                    [_builtin_openai()], headers=headers, flags=flags
+                    [_builtin_openai()], headers=headers, flags=flags, rbac_secret=secret
                 )
                 self.assertEqual(status, 403)
                 self.assertEqual(body["error"]["code"], "forbidden")
