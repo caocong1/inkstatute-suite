@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 
 from admin_web_ui.boundary import AdminUiBoundary
-from admin_web_ui.dashboard import render_dashboard
+from admin_web_ui.dashboard import _render_gate_honesty_banner, render_dashboard
 from rbac import Identity, Role
+
+
+_DASHBOARD_SRC = Path(__file__).resolve().parents[1] / "src" / "admin_web_ui" / "dashboard.py"
 
 
 class DashboardRenderingTests(unittest.TestCase):
@@ -21,6 +25,54 @@ class DashboardRenderingTests(unittest.TestCase):
         self.assertIn("/feedback", html_doc)
         self.assertIn("/health", html_doc)
         self.assertIn("/gates", html_doc)
+        self.assertIn("/config/providers", html_doc)
+        self.assertIn("/config/catalog", html_doc)
+        self.assertIn("/config/vision", html_doc)
+
+    def test_render_index_contains_config_cards(self) -> None:
+        html_doc = render_dashboard("index", {}, identity=self.identity, boundary=self.boundary)
+        self.assertIn("Channel Config", html_doc)
+        self.assertIn("Provider Config", html_doc)
+        self.assertIn("Model Catalog", html_doc)
+        self.assertIn("Vision Config", html_doc)
+        self.assertIn("/config/channels", html_doc)
+        self.assertIn("/config/providers", html_doc)
+        self.assertIn("/config/catalog", html_doc)
+        self.assertIn("/config/vision", html_doc)
+
+    def test_index_contains_gate_honesty_banner(self) -> None:
+        html_doc = render_dashboard("index", {}, identity=self.identity, boundary=self.boundary)
+        self.assertIn("This console does not close live acceptance gates", html_doc)
+        self.assertIn("not_live_acceptance", html_doc)
+        self.assertIn('role="note"', html_doc)
+        self.assertIn('aria-label="Gate honesty notice"', html_doc)
+
+    def test_gates_contains_carried_human_gates_card(self) -> None:
+        data = {
+            "gates": [
+                {"name": "platform-contract", "status": "0"},
+            ],
+        }
+        html_doc = render_dashboard("gates", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("Carried human gates", html_doc)
+        self.assertIn("Phase 5 WeCom UAT", html_doc)
+        self.assertIn("Phase 8 lawyer trial", html_doc)
+        self.assertIn("QQ live acceptance", html_doc)
+        self.assertIn("Automated gate results do not replace live acceptance.", html_doc)
+
+    def test_gate_honesty_forbidden_phrases_absent(self) -> None:
+        src = _DASHBOARD_SRC.read_text(encoding="utf-8").lower()
+        self.assertNotIn("lawyer trial acceptance complete", src)
+        self.assertNotIn("live wecom uat passed", src)
+        self.assertNotIn("live qq openapi acceptance", src)
+        self.assertNotIn("live provider reachability", src)
+
+    def test_render_gate_honesty_banner_html_contract(self) -> None:
+        html = _render_gate_honesty_banner()
+        self.assertIn("This console does not close live acceptance gates", html)
+        self.assertIn("not_live_acceptance", html)
+        self.assertIn('role="note"', html)
+        self.assertIn('aria-label="Gate honesty notice"', html)
 
     def test_render_sessions_with_items(self) -> None:
         data = {

@@ -99,20 +99,24 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #f5f5f5; color: #222; }}
     .header {{ background: #1a1a2e; color: #fff; padding: 1rem 2rem; }}
-    .header h1 {{ margin: 0; font-size: 1.25rem; }}
+    .header h1 {{ margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.2; }}
     .nav {{ background: #16213e; padding: 0.5rem 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }}
-    .nav-link {{ color: #aaccff; text-decoration: none; font-size: 0.9rem; }}
+    .nav-link {{ color: #aaccff; text-decoration: none; font-size: 0.875rem; font-weight: 600; }}
     .nav-link:hover {{ color: #fff; }}
     .main {{ padding: 2rem; max-width: 1200px; margin: 0 auto; }}
     .section {{ background: #fff; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-    .section h2 {{ margin-top: 0; font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }}
-    .data-table {{ width: 100%; border-collapse: collapse; font-size: 0.85rem; }}
+    .section h2 {{ margin-top: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.2; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }}
+    .data-table {{ width: 100%; border-collapse: collapse; font-size: 0.875rem; }}
     .data-table td {{ padding: 0.4rem 0.6rem; border-bottom: 1px solid #eee; vertical-align: top; }}
     .data-table td.key {{ font-weight: 600; color: #555; white-space: nowrap; width: 200px; }}
     .data-table td.val {{ word-break: break-all; }}
     .card {{ background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }}
     .empty {{ color: #888; font-style: italic; }}
-    .identity {{ padding: 0.5rem 2rem; background: #0f3460; color: #aaccff; font-size: 0.8rem; }}
+    .identity {{ padding: 0.5rem 2rem; background: #0f3460; color: #aaccff; font-size: 0.875rem; font-weight: 600; }}
+    .notice-honesty {{ background: #f5f8ff; border: 1px solid #aaccff; border-radius: 6px; padding: 16px; margin-bottom: 16px; }}
+    .notice-honesty-heading {{ font-size: 0.875rem; font-weight: 600; color: #222; margin: 0 0 0.5rem 0; }}
+    .notice-honesty-body {{ font-size: 1rem; font-weight: 400; color: #222; margin: 0; }}
+    .notice-honesty-body code {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }}
     .error {{ color: #c0392b; font-weight: 600; }}
     .status-ok {{ color: #27ae60; font-weight: 600; }}
     .status-err {{ color: #c0392b; font-weight: 600; }}
@@ -220,8 +224,28 @@ def render_dashboard(
     return _page_template(title, body, identity)
 
 
+def _render_gate_honesty_banner() -> str:
+    """Render the shared gate-honesty banner (exact UI-SPEC copy)."""
+    return (
+        '    <div class="notice-honesty" role="note" aria-label="Gate honesty notice">\n'
+        '      <p class="notice-honesty-heading">This console does not close live acceptance gates</p>\n'
+        '      <p class="notice-honesty-body">Saving config or running a probe does not claim Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ live acceptance. Smoke and probe evidence remains <code>not_live_acceptance</code>.</p>\n'
+        '    </div>'
+    )
+
+
+def _render_carried_human_gates_card() -> str:
+    """Render the carried human gates card on the Gate Status page."""
+    return (
+        '    <div class="card">\n'
+        '      <h3>Carried human gates</h3>\n'
+        '      <p class="notice-honesty-body">Phase 5 WeCom UAT, Phase 8 lawyer trial, and QQ live acceptance remain open. Automated gate results do not replace live acceptance.</p>\n'
+        '    </div>'
+    )
+
+
 def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
-    """Render the dashboard index with navigation cards."""
+    """Render the dashboard index with navigation and config cards."""
     sections = [
         ("Sessions", "/sessions", "Inspect conversations and session details"),
         ("Tasks", "/tasks", "Inspect async tasks and their statuses"),
@@ -233,8 +257,23 @@ def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
             "/config/channels",
             "Configure QQ and WeCom enablement and credential refs",
         ),
+        (
+            "Provider Config",
+            "/config/providers",
+            "Configure built-in and custom OpenAI-compatible providers",
+        ),
+        (
+            "Model Catalog",
+            "/config/catalog",
+            "Select the main model from the built-in catalog",
+        ),
+        (
+            "Vision Config",
+            "/config/vision",
+            "Configure image-turn routing and dedicated vision model",
+        ),
     ]
-    cards = []
+    cards = [_render_gate_honesty_banner()]
     for label, href, desc in sections:
         cards.append(
             f'    <div class="card">\n'
@@ -296,10 +335,10 @@ def _render_health_section(data: dict[str, Any], boundary: AdminUiBoundary) -> s
 
 
 def _render_gates_section(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
-    """Render the gate status section."""
+    """Render the gate status section with automated gate cards and carried human gates."""
     gates = data.get("gates", data.get("items", []))
+    parts: list[str] = []
     if isinstance(gates, list) and gates:
-        parts = []
         for gate in gates:
             if isinstance(gate, dict):
                 name = _esc(gate.get("name", gate.get("gate", "")))
@@ -308,9 +347,11 @@ def _render_gates_section(data: dict[str, Any], boundary: AdminUiBoundary) -> st
                 parts.append(f'    <div class="card"><span>{name}</span> <span class="{status_class}">{_esc(status)}</span></div>')
             else:
                 parts.append(f'    <div class="card">{_esc(gate)}</div>')
-        return "\n".join(parts)
-    pairs = _esc_dict(data, boundary)
-    return _render_kv_table(pairs)
+    else:
+        pairs = _esc_dict(data, boundary)
+        parts.append(_render_kv_table(pairs))
+    parts.append(_render_carried_human_gates_card())
+    return "\n".join(parts)
 
 
-__all__ = ["render_dashboard"]
+__all__ = ["render_dashboard", "_render_gate_honesty_banner"]
