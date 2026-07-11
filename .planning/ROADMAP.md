@@ -119,13 +119,14 @@ Plans:
   3. Operator can pick a main model from a built-in selectable catalog that includes `supports_vision` metadata
   4. Operator can run a non-destructive connection probe for main (and vision when configured) that fail-closes on missing refs and does not log response bodies/secrets
 
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 
-- [ ] 76-01-PLAN.md — operator-config catalog + model_allowlist schema evolution + validators + Wave 0 scaffolds
-- [ ] 76-02-PLAN.md — admin-console-api connection probe (stdlib urllib) + providers/catalog metadata + API tests
-- [ ] 76-03-PLAN.md — admin-web-ui SSR provider registry + model catalog forms + probe button + tests
+- [ ] 76-01-PLAN.md — operator-config provider/catalog contracts, canonical invariants, and focused tests
+- [ ] 76-02-PLAN.md — disjoint Wave 0 API/UI scaffold tests only
+- [ ] 76-03-PLAN.md — admin-console-api provider/catalog behavior and SSRF-safe connection probe
+- [ ] 76-04-PLAN.md — admin-web-ui provider/catalog/probe SSR with signed route-bound CSRF
 
 **UI hint**: yes
 

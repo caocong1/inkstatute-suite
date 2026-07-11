@@ -232,7 +232,7 @@ Rules:
 
 | Kind | Control | Fields operator edits | Preset behavior |
 |------|---------|------------------------|-----------------|
-| Built-in vendor | `<select>` of fixed vendor IDs (e.g. `openai`, `anthropic`, …) | `provider_id`, `enabled`, `api_key_ref` | `api_base_url` is shown read-only (vendor preset). Model allowlist shows a read-only note: "Built-in catalog provided — see Model Catalog." |
+| Built-in vendor | `<select>` of fixed vendor IDs (`openai`, `anthropic`) | `provider_id`, `enabled`, `api_key_ref` | `api_base_url` is shown read-only and is also enforced server-side as the canonical vendor profile URL. Model allowlist is empty and shows a read-only note: "Built-in catalog provided — see Model Catalog." |
 | Custom OpenAI-compatible | `<select>` option `custom` (or `kind="custom"`) | `provider_id`, `enabled`, `api_base_url`, `api_key_ref`, model allowlist | `api_base_url` is editable text. Model allowlist is a required editable text field (comma-separated model IDs). |
 
 Display requirements:
@@ -253,14 +253,15 @@ Display requirements:
 
 | Concern | Contract |
 |---------|----------|
-| Trigger | A "Probe connection" submit button inside each provider card. Posts to `/config/providers/probe` with the provider index/id and CSRF token. |
+| Trigger | Route-bound forms post to `/config/providers/probe` with `target=main` or `target=vision` plus CSRF. Main resolves the stored catalog selection. Vision renders only when stored `vision_provider_id` and `vision_model_id` are both configured; otherwise the API returns generic `not_configured` without network access. Provider cards may also show which stored target references that provider. |
 | Mutates config? | No — probe is read-only against the provider endpoint; never calls `store.save`. |
 | Fail-closed on missing refs | If `api_key_ref` is unset/blank, probe returns the "missing ref" fail copy without making any network call. Never resolves a ref from the environment on the UI side. |
 | Logging | Probe result text is generic status only. Never logs the response body, resolved secret, or `Authorization` header. Server logs at most `provider_id` + success/fail boolean. |
 | Result display | Probe result renders in a dedicated block above the provider list (or inline within the probed card) using `.status-ok` / `.status-err` + the exact copy strings. Result is ephemeral (shown on the re-rendered page after POST; not persisted). |
 | RBAC | ADMIN/OPERATOR only; lawyer/viewer denied (match API 403). |
 | Flag gate | If `operator_config_enabled` is OFF, probe button is disabled and Error — flag off is shown. Probe does not bypass the flag gate. |
-| Vision probe | Probe for the vision model is deferred to Phase 77 (vision config is Phase 77). This phase probes the main provider endpoint only. |
+| Vision probe | Phase 76 probes a configured vision provider/model through the same stored-target, flag/RBAC, SSRF, no-redirect, vendor-auth, no-body, no-secret, non-mutating path as main. Phase 77 still owns vision routing behavior and the complete vision configuration form. |
+| Destination policy | Built-in kinds probe only their canonical HTTPS origins. Custom probes require HTTPS, reject userinfo and unsafe resolved IP ranges, and do not follow redirects; credentials never cross origins. |
 
 ---
 
@@ -273,7 +274,7 @@ Display requirements:
   - The `model_id` as the row label (monospace or label weight).
   - A **vision capability badge**: "Vision: supported" (`.status-ok` green) when `supports_vision` is true; "Vision: not supported" (muted `.empty`) when false.
   - An optional short description (Body text) if the catalog entry provides one.
-- The built-in catalog content is code-defined (a fixed tuple of model entries with `provider_id`, `model_id`, `supports_vision`, and optional description). It is not fetched from a remote `/models` endpoint (PROV-F01 deferred).
+- The built-in catalog content is code-defined (a fixed tuple of model entries with `vendor_id`, `model_id`, `supports_vision`, and optional description). `vendor_id` is a built-in kind; it is distinct from the operator-chosen registry `provider_id`. It is not fetched from a remote `/models` endpoint (PROV-F01 deferred).
 - `supports_vision` metadata is **required** on every catalog entry (boolean). This is the Phase 77 contract dependency — the UI must render it per row so operators can see vision capability before Phase 77 routing ships.
 
 ### Catalog selection
@@ -287,6 +288,7 @@ Display requirements:
 - The selection status line shows "Main model: `{provider_id}` / `{model_id}`" when set, or "No main model selected" when unset.
 - When no providers are configured in the registry, the catalog page shows a muted note: "Add a provider in Provider Config before selecting a main model." The radio list may still render but the save button is disabled (or save is rejected server-side with Error — validation).
 - The catalog form POSTs an object body matching Phase 74 `PUT /config/catalog` (`{"provider_id": "...", "model_id": "..."}`).
+- Server validation resolves `catalog.provider_id` to its registry provider. Built-in models must match that provider's `kind`; custom model IDs must appear in that provider's explicit `model_allowlist`. The UI may group/filter choices, but server-side rejection is authoritative.
 
 ### Submit payload shape
 
@@ -308,7 +310,7 @@ Display requirements:
 | Configured value | Show the **ref string only** (e.g. `env:FOO`); never a resolved secret |
 | Status adjacent to field | "Configured (ref stored)" or "Not set" |
 | Validation | Server: `normalize_config_secret_ref` shapes only + `validate_document`. On reject, show Error — validation copy; **do not echo** the rejected raw value if it looks like a planted secret (API already avoids echoing) |
-| CSRF | Hidden `csrf_token` field required on every POST (providers save, catalog save, probe). Phase 78 verifies full surface; Phase 76 forms that mutate or probe must still include CSRF when present |
+| CSRF | Every providers save, catalog save, and probe POST includes a server-generated signed `csrf_token`. The server binds the token to the authenticated identity + route, validates it with `hmac.compare_digest`, and returns 403 before proxying on missing/mismatch. Phase 78 audits the complete SSR surface; Phase 76 fully protects its new POST routes. |
 | RBAC | ADMIN/OPERATOR only; lawyer/viewer see error or are blocked before form (match API 403) |
 | Flag gate | If `operator_config_enabled` is false, render form read-only or disable submit/probe and show Error — flag off |
 

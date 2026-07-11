@@ -28,7 +28,7 @@ Vision routing runtime (Phase 77), complete SSR/docs/gate honesty (Phase 78). Li
 | PROV-01 | Operator can select a built-in vendor provider profile (base URL + key ref conventions + catalog binding) without editing Hermes | Code-defined vendor profile tuple in operator-config (vendor_id → preset `api_base_url` + key ref convention); SSR `<select>` of vendor IDs; `ProviderDoc.kind` carries the vendor id; `api_base_url` read-only when built-in |
 | PROV-02 | Operator can define a custom OpenAI-compatible provider (`api_base_url` + `api_key_ref` + explicit model allowlist) | Add `model_allowlist` field to `ProviderDoc`; SSR custom card with editable `api_base_url` + `api_key_ref` + comma-separated allowlist; validate allowlist non-empty for `kind=custom` |
 | PROV-03 | Operator can pick a main model from a built-in selectable catalog that includes `supports_vision` metadata | New code-defined `BuiltInCatalogEntry` tuple (provider_id, model_id, supports_vision, description) in operator-config; SSR `/config/catalog` radio list with vision badges; `CatalogSelectionDoc` persists provider_id + model_id |
-| PROV-04 | Operator can run a non-destructive connection probe for main (and vision when configured) that fail-closes on missing refs and does not log response bodies/secrets | New `POST /config/providers/probe` on admin-console-api (non-mutating, fail-closed on blank `api_key_ref`, stdlib `urllib` GET `/models`, generic status only); SSR probe button per provider card; vision probe deferred to Phase 77 |
+| PROV-04 | Operator can run a non-destructive connection probe for main (and vision when configured) that fail-closes on missing refs and does not log response bodies/secrets | New `POST /config/providers/probe` on admin-console-api accepts `target=main|vision`, resolves only stored provider/model selections, and reuses one non-mutating fail-closed stdlib probe path; Phase 76 adds the additive `VisionPolicyDoc.vision_provider_id` linkage needed to resolve a configured vision target |
 </phase_requirements>
 
 ## Summary
@@ -52,7 +52,7 @@ The connection probe (PROV-04) is the highest-risk surface. It must resolve `api
 | SSR provider registry form | Frontend Server (`admin-web-ui/providers.py`) | API proxy | Stdlib SSR; POST → `handle_admin_put` `/config/providers` |
 | SSR model catalog form | Frontend Server (`admin-web-ui/catalog.py`) | API proxy | Stdlib SSR; POST → `handle_admin_put` `/config/catalog` |
 | SSR probe action | Frontend Server (`admin-web-ui` server.py) | API probe handler | POST `/config/providers/probe`; re-render with ephemeral result |
-| Vision probe | Deferred Phase 77 | — | Vision config is Phase 77; this phase probes main provider endpoint only |
+| Main + configured-vision probe | admin-console-api `probe.py` | operator-config provider/catalog/vision refs | Phase 76 owns connection verification for both stored targets; Phase 77 still owns routing mode behavior and the complete vision configuration form |
 | Full CSRF / docs / gate honesty | Deferred Phase 78 | — | CONTEXT: incremental forms OK now; Phase 78 verifies complete surface |
 
 ## Standard Stack
@@ -184,16 +184,14 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class BuiltInCatalogEntry:
-    provider_id: str   # "openai", "anthropic", ...
-    model_id: str      # "gpt-4o", "claude-sonnet-4", ...
+    vendor_id: str     # built-in kind: "openai" or "anthropic"
+    model_id: str      # source-grounded API model ID
     supports_vision: bool
     description: str | None = None
 
 BUILTIN_MODEL_CATALOG: tuple[BuiltInCatalogEntry, ...] = (
-    BuiltInCatalogEntry("openai", "gpt-4o", True, "Multimodal main model"),
-    BuiltInCatalogEntry("openai", "gpt-4o-mini", True, "Smaller multimodal model"),
-    BuiltInCatalogEntry("anthropic", "claude-sonnet-4", True, "Anthropic multimodal"),
-    # ...
+    BuiltInCatalogEntry("openai", "gpt-5", True, "OpenAI multimodal main model"),
+    BuiltInCatalogEntry("anthropic", "claude-opus-4-8", True, "Anthropic multimodal main model"),
 )
 
 @dataclass(frozen=True, slots=True)
@@ -205,36 +203,50 @@ class VendorProfile:
 BUILTIN_VENDOR_PROFILES: tuple[VendorProfile, ...] = (
     VendorProfile("openai", "https://api.openai.com/v1", "OPENAI_API_KEY"),
     VendorProfile("anthropic", "https://api.anthropic.com/v1", "ANTHROPIC_API_KEY"),
-    # ...
 )
 ```
 
+`BuiltInCatalogEntry.vendor_id` is the vendor kind, while
+`CatalogSelectionDoc.provider_id` is the operator-chosen registry instance ID.
+Validation must resolve the selected provider instance before accepting a model:
+for built-ins, the entry's `vendor_id` must equal `ProviderDoc.kind`; for custom
+providers, `model_id` must appear in that provider's explicit `model_allowlist`.
+Built-in kinds must also store their canonical profile URL and an empty
+`model_allowlist`; API clients cannot bypass the read-only SSR preset.
+
+Official references checked 2026-07-11:
+- OpenAI lists models at `GET https://api.openai.com/v1/models` with Bearer authentication and demonstrates `gpt-5` image input: https://platform.openai.com/docs/api-reference/models and https://platform.openai.com/docs/quickstart
+- Anthropic's OpenAI compatibility base URL is `https://api.anthropic.com/v1/`; the native Models API uses `x-api-key` plus `anthropic-version`, and current model docs identify `claude-opus-4-8`: https://docs.anthropic.com/en/api/openai-sdk, https://docs.anthropic.com/en/api/models-list, and https://docs.anthropic.com/en/docs/about-claude/models/overview
+
 ### Pattern 2: Non-Destructive Connection Probe (stdlib, fail-closed, no body log)
-**What:** `POST /config/providers/probe` resolves `api_key_ref` from `os.environ` at the process edge, issues a single `urllib.request` GET to `{api_base_url}/models`, and returns a generic `ok`/`fail` status. It never calls `store.save`, never logs the response body, resolved key, or `Authorization` header, and fail-closes (no network call) when the ref is blank or unresolved.
-**When to use:** PROV-04 only. Vision probe deferred to Phase 77.
-**Trade-offs:** `GET /models` is the lightest non-destructive OpenAI-compatible reachability check; some custom endpoints may not implement `/models` — the probe treats non-200 as "could not reach" with the generic fail copy (no status code leaked to UI).
+**What:** `POST /config/providers/probe` resolves `api_key_ref` from `os.environ` at the process edge, validates the destination before attaching credentials, issues a single no-redirect `urllib.request` GET to `{api_base_url}/models`, and returns a generic `ok`/`fail` status. It never calls `store.save`, never logs or reads the response body, never logs the resolved key or auth header, and fail-closes (no network call) when the ref or destination is unsafe.
+**When to use:** PROV-04 for `target=main` and, when `vision_provider_id` plus `vision_model_id` are both configured, `target=vision`. Phase 77 owns routing behavior, not the connectivity probe.
+**Trade-offs:** `GET /models` is the documented non-destructive listing endpoint for both built-ins and the OpenAI-compatible custom contract. Custom endpoints that omit it fail with generic copy. Custom probes accept public HTTPS origins only: reject userinfo, non-HTTPS schemes, loopback/private/link-local/multicast/reserved/unspecified addresses, and redirects. Built-in origins are exact canonical profiles. OpenAI/custom use `Authorization: Bearer`; Anthropic uses `x-api-key` plus `anthropic-version: 2023-06-01`.
 **Example:**
 ```python
 # services/admin-console-api/src/admin_console_api/probe.py
 import os, urllib.request, urllib.error
 
-def probe_provider(provider_id, api_base_url, api_key_ref, *, env=None):
+def probe_provider(provider, *, env=None, resolver=None, opener=None):
     # Fail-closed on missing ref — NO network call.
-    if not api_key_ref or not api_key_ref.strip():
+    if not provider.api_key_ref or not provider.api_key_ref.strip():
         return {"ok": False, "code": "missing_ref"}
     source = env if env is not None else os.environ
     # Resolve ref → env value at the edge ONLY.
-    key = source.get(_ref_env_name(api_key_ref), "")
+    key = source.get(_ref_env_name(provider.api_key_ref), "")
     if not key:
         return {"ok": False, "code": "missing_ref"}
+    destination = validate_probe_destination(provider, resolver=resolver)
+    if destination is None:
+        return {"ok": False, "code": "unsafe_destination"}
     try:
+        headers = _probe_headers(provider.kind, key)
         req = urllib.request.Request(
-            f"{api_base_url.rstrip('/')}/models",
-            headers={"Authorization": f"Bearer {key}"},
+            f"{destination}/models",
+            headers=headers,
         )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            # We do NOT read/log the body. Status-only.
-            resp.getcode()  # touch to force response
+        with (opener or build_no_redirect_opener()).open(req, timeout=10) as resp:
+            resp.getcode()  # status-only; never call read()
         return {"ok": True, "code": "ok"}
     except urllib.error.HTTPError as exc:
         # Sanitize: never leak status code, body, or URL to UI/logs.
@@ -301,6 +313,12 @@ def parse_providers_form(form) -> list[dict]:  # list body for PUT /config/provi
 11. **SSR POST body wiping providers on empty submit** — Mirror `_channels_post_body_usable`: reject POST bodies with no `providers[N].*` fields so an empty submit does not persist an empty list and wipe stored providers. Drop blank-`provider_id` entries on parse. [VERIFIED: `server.py _channels_post_body_usable`]
 
 12. **Auto-claiming live acceptance** — DOC-02 / `not_live_acceptance`: saving provider/catalog config must not claim Phase 5/8/QQ `--live` acceptance. Success flash says "Restart runtime to apply" only. [VERIFIED: REQUIREMENTS DOC-02, AGENTS.md]
+
+13. **SSRF through custom probe URLs or redirects** — Never attach credentials before validating the origin. Custom probes are public HTTPS only, with userinfo and unsafe resolved addresses rejected. Disable redirects so credentials cannot cross origins. Built-in kinds use exact canonical vendor origins. [VERIFIED: Phase 76 security review; OWASP SSRF prevention guidance]
+
+14. **Treating a hidden CSRF field as protection** — Every provider save, catalog save, and probe POST must validate a server-generated signed token before proxying. Missing or mismatched tokens return 403. Use `hmac.compare_digest`; rendering an unvalidated random field is not mitigation. [VERIFIED: UI-SPEC page inventory; Phase 76 plan review]
+
+15. **Confusing vendor kind with provider instance ID** — Catalog entries bind to a built-in `vendor_id`; catalog selections bind to the operator's `provider_id`. Resolve the provider instance and enforce built-in kind/model compatibility or custom allowlist membership server-side. [VERIFIED: PROV-01/02/03 cross-section contract]
 
 ## Validation Architecture
 
@@ -436,17 +454,19 @@ def parse_providers_form(form) -> list[dict]:
 - **Output boundary:** Backend/gateway/system notices suppressed/converted before WeCom delivery. Probe errors must not leak provider stack traces to ordinary users (Phase 77 owns vision error boundary; Phase 76 probe UI copy is generic).
 - **Coding rules:** Keep changes scoped to Phase 76. Add tests before/with behavior changes (schemas, validators, probe, SSR parse/roundtrip). Prefer structured validators over ad hoc parsing. No new service/DB/queue/runtime dep unless Phase 76 plan requires (none required — stdlib + in-repo only). Update docs/GSD artifacts when implementation decisions change.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact built-in vendor list + catalog model entries** — UI-SPEC names `openai`, `anthropic` as examples but the full tuple is at the agent's discretion. The planner should pick a minimal, defensible set (e.g. `openai`, `anthropic`) with 2–4 catalog models each, all with explicit `supports_vision` booleans. Confirm `api_base_url` presets against current vendor docs during implementation (Anthropic base URL may differ from `https://api.anthropic.com/v1`). [ASSUMED — verify vendor base URLs at implementation time]
+1. **Built-in vendors and catalog entries:** exactly `openai` and `anthropic` for the v1.10 MVP. Canonical origins are `https://api.openai.com/v1` and `https://api.anthropic.com/v1`. The minimal source-grounded catalog starts with `gpt-5` and `claude-opus-4-8`, both with explicit `supports_vision=True`. Catalog expansion remains a code change; no live registry fetch. [RESOLVED 2026-07-11 — official vendor docs linked above]
 
-2. **Probe path: `GET /models` vs `GET /` vs 1-token chat completion** — `GET /models` is the lightest non-destructive OpenAI-compatible check, but not all custom endpoints implement it. Recommendation: use `GET /models` and treat any non-2xx as generic "could not reach" (no status code leaked). If a vendor is known to not implement `/models`, the probe still fail-closes safely. [ASSUMED — `GET /models` is the OpenAI-compatible convention]
+2. **Probe operation:** use the documented non-destructive `GET /models` operation and inspect status only. Never read response bodies. Missing endpoint support is a generic probe failure, not a fallback completion request. [RESOLVED 2026-07-11]
 
-3. **Anthropic probe dialect** — Anthropic Messages API uses `x-api-key` header, not `Authorization: Bearer`. The stdlib probe uses `Authorization: Bearer` (OpenAI-compatible). For built-in `anthropic` kind, the probe may need a vendor-specific header. Simplest MVP: probe is OpenAI-compatible-only; Anthropic built-in probe uses the Anthropic header convention. The planner should decide whether the probe branches on `kind` or stays OpenAI-compatible-only for MVP. [ASSUMED — recommend kind-aware header in probe helper]
+3. **Authentication dialect:** OpenAI and custom OpenAI-compatible providers use `Authorization: Bearer`; Anthropic uses `x-api-key` and `anthropic-version: 2023-06-01`. Probe behavior branches on built-in kind; custom providers follow the OpenAI-compatible contract. [RESOLVED 2026-07-11 — official API references linked above]
 
-4. **`CatalogSelectionDoc` referencing a provider not in the registry** — UI-SPEC says catalog save is rejected when no providers configured. Should validation also reject a catalog selection whose `provider_id` is not in the stored `providers` list? Recommend yes (cross-section consistency check in `validate_document`). [ASSUMED — recommend adding]
+4. **Catalog/provider consistency:** `CatalogSelectionDoc.provider_id` must resolve to exactly one provider registry entry. A built-in selection requires catalog `vendor_id == provider.kind`; a custom selection requires `model_id in provider.model_allowlist`. Unknown providers/models are rejected with codes and paths only. [RESOLVED 2026-07-11]
 
-5. **`model_allowlist` for built-in vendors** — UI-SPEC says built-in vendors show a read-only "Built-in catalog provided" note. Should `model_allowlist` be empty/stored for built-in kind, or populated from the catalog? Recommend: built-in vendors store an empty allowlist (catalog is the authority); custom providers require a non-empty allowlist. [ASSUMED — recommend this split]
+5. **Built-in allowlists and presets:** built-in providers store an empty `model_allowlist` and an exact canonical profile base URL; custom providers require public-HTTPS `api_base_url` plus a non-empty explicit allowlist. Both invariants are enforced server-side, not only by SSR controls. [RESOLVED 2026-07-11]
+
+6. **Configured vision target linkage:** Phase 76 adds optional `VisionPolicyDoc.vision_provider_id` beside the existing `vision_model_id`. The probe resolves `target=main` from `CatalogSelectionDoc` and `target=vision` from those two vision fields, validates the provider/model pair with the same built-in/custom rules, and returns `not_configured` without network access when either vision field is absent. Phase 77 owns editing/routing semantics for these fields. [RESOLVED 2026-07-11 — required by PROV-04]
 
 ## Confidence Assessment
 
@@ -457,7 +477,7 @@ def parse_providers_form(form) -> list[dict]:
 | Schema evolution | HIGH | ProviderDoc, store.py, validate.py read in full; additive `model_allowlist` + new catalog data are straightforward |
 | Probe design | HIGH | provider_model probe + openai_runner lazy-import pattern verified; stdlib urllib preserves empty-deps; Phase 73 env-read ban confirmed |
 | Pitfalls | HIGH | All pitfalls sourced from locked STATE.md decisions, UI-SPEC copy, and direct codebase inspection |
-| Built-in catalog content | MEDIUM | Exact vendor/model list is at agent discretion; vendor base URLs need implementation-time verification |
+| Built-in catalog content | HIGH | Minimal vendor/model set and auth/base URL conventions were resolved against official OpenAI and Anthropic docs on 2026-07-11 |
 
 ---
 

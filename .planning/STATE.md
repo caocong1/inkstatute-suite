@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-current_plan: 5
-status: verifying
-stopped_at: Completed 75-05-PLAN.md
-last_updated: "2026-07-10T08:34:38.076Z"
-last_activity: 2026-07-10 — Phase 75 planned (5 plans / 3 waves; CHAN-01..04)
+current_plan: 1
+status: executing
+stopped_at: Phase 76 UI-SPEC approved
+last_updated: "2026-07-10T17:03:36.266Z"
+last_activity: 2026-07-10 -- Phase 76 execution started
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 14
+  total_plans: 18
   completed_plans: 11
   percent: 0
 ---
@@ -22,18 +22,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** v1.10 Operator Config Console — Phase 75 Channel Config Apply (ready to execute)
+**Current focus:** Phase 76 — provider-registry-model-catalog
 
 ## Current Position
 
-Phase: 75 of 78 (Channel Config Apply)
-Current Plan: 5
-Total Plans in Phase: 5
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-07-10 — Phase 75 planned (5 plans / 3 waves; CHAN-01..04)
+Phase: 76 (provider-registry-model-catalog) — EXECUTING
+Current Plan: 1
+Total Plans in Phase: 4
+Plan: 1 of 4
+Status: Executing Phase 76
+Last activity: 2026-07-10 -- Phase 76 execution started
 
-Progress: [██░░░░░░░░] 33% (2/6 v1.10 phases)
+Progress: [███░░░░░░░] 50% (3/6 v1.10 phases)
 
 ### Deferred Items
 
@@ -55,7 +55,7 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 
 **Velocity:**
 
-- Total plans completed: 93
+- Total plans completed: 98
 - Average duration: N/A
 - Total execution time: ~0.03 hours
 
@@ -166,15 +166,16 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-10T08:34:38.072Z
-Stopped at: Completed 75-05-PLAN.md
-Resume file: None
+Last session: 2026-07-10T10:40:17.308Z
+Stopped at: Phase 76 UI-SPEC approved
+Resume file: .planning/phases/76-provider-registry-model-catalog/76-UI-SPEC.md
 Architecture basis: .planning/research/SUMMARY.md
 Execution plan: .planning/ROADMAP.md
 Requirements: .planning/REQUIREMENTS.md (20/20 mapped)
 Research summary: .planning/research/SUMMARY.md
 Phase 75 plans: .planning/phases/75-channel-config-apply/75-0{1,2,3,4,5}-PLAN.md
 Phase 75 validation: .planning/phases/75-channel-config-apply/75-VALIDATION.md
+Phase 75 verification: .planning/phases/75-channel-config-apply/75-VERIFICATION.md
 Phase 74 verification: .planning/phases/74-admin-config-api-rbac/74-VERIFICATION.md
 Phase 74 plans: .planning/phases/74-admin-config-api-rbac/74-0{1,2,3}-PLAN.md
 Phase 73 verification: .planning/phases/73-operator-config-foundation/73-VERIFICATION.md
@@ -183,5 +184,5 @@ v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Execute Phase 75: `/gsd-execute-phase 75` (start 75-01 Wave 1)
+- Plan Phase 76: `/gsd-plan-phase 76` (or discuss first)
 - Carried human gates (Phase 5 / 8 / QQ `--live`) remain open — do not auto-close
