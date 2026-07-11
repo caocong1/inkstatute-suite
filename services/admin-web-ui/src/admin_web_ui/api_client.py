@@ -64,7 +64,7 @@ class AdminApiClient:
         self,
         handle_admin_put: HandleAdminPut,
         path: str,
-        body: Mapping[str, Any],
+        body: Any,
         identity: Identity,
         *,
         feature_flags: Any,

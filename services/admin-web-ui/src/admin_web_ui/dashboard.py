@@ -76,6 +76,8 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/health", "Health"),
         ("/gates", "Gates"),
         ("/config/channels", "Channel Config"),
+        ("/config/providers", "Provider Config"),
+        ("/config/catalog", "Model Catalog"),
     ]
     nav_links = "\n".join(
         f'      <a href="{_esc(href)}" class="nav-link">{_esc(label)}</a>'
@@ -133,6 +135,15 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
     }}
     .btn-primary:disabled {{ opacity: 0.5; cursor: not-allowed; }}
     .restart-notice {{ margin-bottom: 1.5rem; }}
+    .section h2, .card h3 {{ font-size: 1.125rem; font-weight: 600; line-height: 1.2; }}
+    .provider-panel {{ margin-bottom: 3rem; }}
+    .badge-vision-yes {{ color: #27ae60; font-weight: 600; font-size: 0.875rem; padding: 4px 8px; }}
+    .badge-vision-no {{ color: #888; font-weight: 600; font-size: 0.875rem; padding: 4px 8px; }}
+    .catalog-row {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; padding: 1rem 0; border-bottom: 1px solid #eee; }}
+    .catalog-row:last-child {{ border-bottom: none; }}
+    .probe-result {{ margin-bottom: 1.5rem; }}
+    select {{ min-height: 44px; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 1rem; }}
+    select:focus-visible {{ outline: 2px solid #aaccff; outline-offset: 2px; }}
   </style>
 </head>
 <body>
