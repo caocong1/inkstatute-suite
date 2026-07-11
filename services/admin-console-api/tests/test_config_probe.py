@@ -281,6 +281,7 @@ class ConfigProbeScaffoldTests(unittest.TestCase):
         flags: RuntimeFeatureFlags | None = None,
         resolver: Callable[..., list] | None = None,
         opener: Callable[..., Any] | None = None,
+        rbac_secret: str | None = None,
     ) -> tuple[int, dict[str, Any]]:
         handle_config_probe = _try_import_probe()
         if handle_config_probe is None:
@@ -296,7 +297,7 @@ class ConfigProbeScaffoldTests(unittest.TestCase):
             flags or self.flags,
             self.env,
             config_store=self.store,
-            rbac_secret=None,
+            rbac_secret=rbac_secret,
             resolver=resolver or self.resolver,
             opener=opener or self.opener,
         )
@@ -483,7 +484,8 @@ class ConfigProbeScaffoldTests(unittest.TestCase):
                 headers = {"Authorization": f"Bearer {token}"}
                 opener = _RecordingOpener()
                 status, body = self._probe(
-                    {"target": "main"}, headers=headers, flags=flags, opener=opener
+                    {"target": "main"}, headers=headers, flags=flags, opener=opener,
+                    rbac_secret=secret,
                 )
                 self.assertEqual(status, 200)
 
@@ -501,7 +503,8 @@ class ConfigProbeScaffoldTests(unittest.TestCase):
                 headers = {"Authorization": f"Bearer {token}"}
                 opener = _RecordingOpener()
                 status, body = self._probe(
-                    {"target": "main"}, headers=headers, flags=flags, opener=opener
+                    {"target": "main"}, headers=headers, flags=flags, opener=opener,
+                    rbac_secret=secret,
                 )
                 self.assertEqual(status, 403)
                 self.assertEqual(body["error"]["code"], "forbidden")
@@ -536,24 +539,33 @@ class ConfigProbeScaffoldTests(unittest.TestCase):
     # --- SSRF matrix: scheme, userinfo, redirects, unsafe IP classes ---
 
     def test_non_https_custom_url_rejected(self) -> None:
-        """Custom probe URLs must be HTTPS only."""
+        """Custom probe URLs must be HTTPS only.
+
+        The store validation (Plan 76-01) rejects non-HTTPS custom URLs at PUT
+        time, so the provider is never persisted. The probe sees an empty store
+        and returns not_configured — the URL is never reached.
+        """
         provider = _custom_provider()
         provider["api_base_url"] = "http://custom.example.com/v1"
         self._seed_main(provider, "local-gpt")
         opener = _RecordingOpener()
         status, body = self._probe({"target": "main"}, opener=opener)
-        self.assertEqual(status, 400)
-        self.assertEqual(body["error"]["code"], "invalid_config")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["data"]["status"], "not_configured")
         self.assertEqual(opener.calls, [])
 
     def test_url_with_userinfo_rejected(self) -> None:
+        """Custom URLs with userinfo are rejected at PUT time by store validation.
+
+        The probe never sees the URL because the provider is not persisted.
+        """
         provider = _custom_provider()
         provider["api_base_url"] = "https://user:pass@custom.example.com/v1"
         self._seed_main(provider, "local-gpt")
         opener = _RecordingOpener()
         status, body = self._probe({"target": "main"}, opener=opener)
-        self.assertEqual(status, 400)
-        self.assertEqual(body["error"]["code"], "invalid_config")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["data"]["status"], "not_configured")
         self.assertEqual(opener.calls, [])
 
     def test_redirect_response_makes_zero_credential_forwarding(self) -> None:
@@ -658,13 +670,13 @@ class ConfigProbeScaffoldTests(unittest.TestCase):
 
     def test_openai_probe_uses_bearer_header(self) -> None:
         self._seed_main(_builtin_openai(), "gpt-5")
-        self._probe({"target": "main"})
+        status, body = self._probe({"target": "main"})
         headers = self.opener.calls[0]["headers"]
         auth = headers.get("Authorization") or headers.get("authorization")
         self.assertIsNotNone(auth)
         self.assertTrue(auth.startswith("Bearer "))
         # Never log the resolved key in the response.
-        self.assertNotIn("planted-openai-key", json.dumps(headers))
+        self.assertNotIn("planted-openai-key", json.dumps(body))
 
     def test_custom_probe_uses_bearer_header(self) -> None:
         self._seed_main(_custom_provider(), "local-gpt")
