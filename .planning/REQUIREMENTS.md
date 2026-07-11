@@ -31,10 +31,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Vision Routing
 
-- [ ] **VIS-01**: Operator can configure vision routing mode (`auto` | `always_preprocess` | `main_only`) plus optional dedicated vision provider/model
-- [ ] **VIS-02**: On image-bearing turns, runtime routes: multimodal main if `supports_vision`; else vision→main mix when vision model configured; else fail closed with InkStatute-owned notice (never silent image drop)
-- [ ] **VIS-03**: Text-only turns never invoke the vision model; contract/audit evidence stays reference-first (no raw image bytes in contract logs)
-- [ ] **VIS-04**: Vision/provider error paths pass through the assistant output boundary (no provider stack traces or gateway meta to ordinary users)
+- [x] **VIS-01**: Operator can configure vision routing mode (`auto` | `always_preprocess` | `main_only`) plus optional dedicated vision provider/model
+- [x] **VIS-02**: On image-bearing turns, runtime routes: multimodal main if `supports_vision`; else vision→main mix when vision model configured; else fail closed with InkStatute-owned notice (never silent image drop)
+- [x] **VIS-03**: Text-only turns never invoke the vision model; contract/audit evidence stays reference-first (no raw image bytes in contract logs)
+- [x] **VIS-04**: Vision/provider error paths pass through the assistant output boundary (no provider stack traces or gateway meta to ordinary users)
 
 ### Admin Surface & AuthZ
 
@@ -108,10 +108,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROV-02 | Phase 76 | Complete |
 | PROV-03 | Phase 76 | Complete |
 | PROV-04 | Phase 76 | Complete |
-| VIS-01 | Phase 77 | Pending |
-| VIS-02 | Phase 77 | Pending |
-| VIS-03 | Phase 77 | Pending |
-| VIS-04 | Phase 77 | Pending |
+| VIS-01 | Phase 77 | Complete |
+| VIS-02 | Phase 77 | Complete |
+| VIS-03 | Phase 77 | Complete |
+| VIS-04 | Phase 77 | Complete |
 | ADM-01 | Phase 74 | Complete |
 | ADM-02 | Phase 78 | Pending |
 | ADM-03 | Phase 74 | Complete |
