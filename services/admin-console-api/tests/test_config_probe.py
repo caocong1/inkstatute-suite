@@ -746,5 +746,204 @@ class ConfigProbeScaffoldTests(unittest.TestCase):
             self.assertNotIn(forbidden, blob)
 
 
+class ConfigProbeVisionRoutingModeTests(unittest.TestCase):
+    """VIS-01 (Plan 77-02): vision probe integration after a routing_mode save.
+
+    Proves that the existing Phase 76 vision probe path continues to resolve
+    the stored vision pair after a Phase 77 routing_mode save, that
+    ``main_only`` with no vision pair returns ``not_configured`` with zero
+    side effects, and that a partial vision pair under ``auto`` is rejected at
+    PUT time so the probe is never reached (validation gates probe availability).
+    """
+
+    def setUp(self) -> None:
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.store_path = Path(self._tmpdir.name) / "operator-config.json"
+        self.store = OperatorConfigStore(self.store_path)
+        self.flags = RuntimeFeatureFlags(
+            admin_api_enabled=True,
+            operator_config_enabled=True,
+        )
+        self.env = {
+            "ADMIN_API_TOKEN": "test-token",
+            "OPENAI_API_KEY": "planted-openai-key-NEVER-LOGGED",
+            "ANTHROPIC_API_KEY": "planted-anthropic-key-NEVER-LOGGED",
+        }
+        self.headers = {"Authorization": "Bearer test-token"}
+        self.resolver = _resolver_returning(_PUBLIC_ADDR)
+        self.opener = _RecordingOpener()
+
+    def _put(self, path: str, body: Any) -> tuple[int, dict[str, Any]]:
+        return handle_admin_put(
+            path,
+            body,
+            self.headers,
+            self.flags,
+            self.env,
+            config_store=self.store,
+        )
+
+    def _probe(
+        self,
+        body: dict[str, Any],
+        *,
+        resolver: Callable[..., list] | None = None,
+        opener: Callable[..., Any] | None = None,
+    ) -> tuple[int, dict[str, Any]]:
+        handle_config_probe = _try_import_probe()
+        if handle_config_probe is None:
+            self.fail(
+                "PROV-04: admin_console_api.probe.handle_config_probe not "
+                "implemented (Plan 76-03)"
+            )
+        return handle_config_probe(
+            "/config/providers/probe",
+            body,
+            self.headers,
+            self.flags,
+            self.env,
+            config_store=self.store,
+            rbac_secret=None,
+            resolver=resolver or self.resolver,
+            opener=opener or self.opener,
+        )
+
+    def _seed_registry_and_catalog(self) -> None:
+        """Seed providers + catalog so a complete vision pair can resolve."""
+        self._put("/config/providers", [_builtin_openai(), _builtin_anthropic()])
+        self._put(
+            "/config/catalog",
+            _catalog("primary-openai", "gpt-5"),
+        )
+
+    # --- Vision probe after routing_mode="auto" save with complete pair ---
+
+    def test_vision_probe_after_auto_save_resolves_stored_vision_pair(self) -> None:
+        self._seed_registry_and_catalog()
+        put_status, _ = self._put(
+            "/config/vision",
+            {
+                "routing_mode": "auto",
+                "main_model_id": "gpt-5",
+                "vision_provider_id": "primary-anthropic",
+                "vision_model_id": "claude-opus-4-8",
+            },
+        )
+        self.assertEqual(put_status, 200)
+        opener = _RecordingOpener()
+        status, body = self._probe({"target": "vision"}, opener=opener)
+        self.assertEqual(status, 200)
+        self.assertEqual(opener.calls[0]["url"], _ANTHROPIC_CANONICAL_URL + "/models")
+        result = body["data"]
+        self.assertIn(result["status"], ("ok", "fail"))
+        self.assertEqual(result["target"], "vision")
+        self.assertEqual(result["provider_id"], "primary-anthropic")
+        self.assertEqual(result["model_id"], "claude-opus-4-8")
+        # No-body / no-secret invariant preserved.
+        blob = json.dumps(body, ensure_ascii=False).lower()
+        self.assertNotIn("planted-anthropic-key", blob)
+        self.assertNotIn("authorization", blob)
+
+    def test_vision_probe_after_auto_save_calls_opener_once(self) -> None:
+        self._seed_registry_and_catalog()
+        self._put(
+            "/config/vision",
+            {
+                "routing_mode": "auto",
+                "main_model_id": "gpt-5",
+                "vision_provider_id": "primary-anthropic",
+                "vision_model_id": "claude-opus-4-8",
+            },
+        )
+        opener = _RecordingOpener()
+        self._probe({"target": "vision"}, opener=opener)
+        self.assertEqual(len(opener.calls), 1)
+
+    def test_vision_probe_after_auto_save_uses_anthropic_auth_dialect(self) -> None:
+        self._seed_registry_and_catalog()
+        self._put(
+            "/config/vision",
+            {
+                "routing_mode": "auto",
+                "main_model_id": "gpt-5",
+                "vision_provider_id": "primary-anthropic",
+                "vision_model_id": "claude-opus-4-8",
+            },
+        )
+        opener = _RecordingOpener()
+        self._probe({"target": "vision"}, opener=opener)
+        headers = opener.calls[0]["headers"]
+        api_key = headers.get("x-api-key") or headers.get("X-Api-Key")
+        self.assertIsNotNone(api_key)
+        version = headers.get("anthropic-version") or headers.get("Anthropic-Version")
+        self.assertEqual(version, "2023-06-01")
+        auth = headers.get("Authorization") or headers.get("authorization")
+        self.assertIsNone(auth)
+
+    # --- Vision probe after routing_mode="main_only" with no vision pair ---
+
+    def test_vision_probe_after_main_only_save_returns_not_configured(self) -> None:
+        self._seed_registry_and_catalog()
+        put_status, _ = self._put(
+            "/config/vision",
+            {
+                "routing_mode": "main_only",
+                "main_model_id": "gpt-5",
+                "vision_provider_id": None,
+                "vision_model_id": None,
+            },
+        )
+        self.assertEqual(put_status, 200)
+        opener = _RecordingOpener()
+        resolver = _resolver_returning(_PUBLIC_ADDR)
+        status, body = self._probe(
+            {"target": "vision"}, resolver=resolver, opener=opener
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body["data"]["status"], "not_configured")
+        self.assertEqual(opener.calls, [])
+
+    # --- Partial vision pair under auto rejected at PUT time (probe never reached)
+
+    def test_partial_vision_pair_under_auto_rejected_at_put_time(self) -> None:
+        """Plan 77-01 validation rejects auto + partial pair; probe never reached."""
+        self._seed_registry_and_catalog()
+        put_status, put_body = self._put(
+            "/config/vision",
+            {
+                "routing_mode": "auto",
+                "main_model_id": "gpt-5",
+                "vision_provider_id": "primary-anthropic",
+                "vision_model_id": None,
+            },
+        )
+        self.assertEqual(put_status, 400)
+        self.assertEqual(put_body["error"]["code"], "invalid_config")
+        # The partial pair was not persisted, so a vision probe sees no pair.
+        opener = _RecordingOpener()
+        status, body = self._probe({"target": "vision"}, opener=opener)
+        self.assertEqual(status, 200)
+        self.assertEqual(body["data"]["status"], "not_configured")
+        self.assertEqual(opener.calls, [])
+
+    # --- Vision probe does not mutate the store after a routing_mode save ---
+
+    def test_vision_probe_after_auto_save_does_not_mutate_store(self) -> None:
+        self._seed_registry_and_catalog()
+        self._put(
+            "/config/vision",
+            {
+                "routing_mode": "auto",
+                "main_model_id": "gpt-5",
+                "vision_provider_id": "primary-anthropic",
+                "vision_model_id": "claude-opus-4-8",
+            },
+        )
+        mtime_before = self.store_path.stat().st_mtime
+        self._probe({"target": "vision"})
+        self.assertEqual(self.store_path.stat().st_mtime, mtime_before)
+
+
 if __name__ == "__main__":
     unittest.main()

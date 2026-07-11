@@ -51,9 +51,12 @@ def handle_config_get(
         return 500, _error("config_store_error", _safe_store_message(exc))
 
     payload = document_to_payload(document)
+    metadata = _config_metadata(feature_flags, section=section)
+    if section == "vision":
+        metadata.update(_vision_status_metadata(document))
     body: dict[str, Any] = {
         "data": _json_safe(payload[section]),
-        "metadata": _config_metadata(feature_flags, section=section),
+        "metadata": metadata,
     }
     if section == "channels":
         body["effective"] = _channels_effective(payload["channels"], feature_flags)
@@ -83,6 +86,11 @@ def handle_config_put(
     if section == "providers" and isinstance(section_value, list):
         section_value = _fill_builtin_provider_urls(section_value)
 
+    # VIS-01: normalize empty-string vision fields to None so the SSR form's
+    # blank selects persist as None (draft-tolerant) rather than "".
+    if section == "vision" and isinstance(section_value, Mapping):
+        section_value = _normalize_vision_empty_strings(section_value)
+
     try:
         current = store.load()
     except OperatorConfigValidationError as exc:
@@ -111,9 +119,12 @@ def handle_config_put(
         return 500, _error("config_store_error", _safe_store_message(exc))
 
     saved = document_to_payload(updated)
+    metadata = _config_metadata(feature_flags, section=section)
+    if section == "vision":
+        metadata.update(_vision_status_metadata(updated))
     body: dict[str, Any] = {
         "data": _json_safe(saved[section]),
-        "metadata": _config_metadata(feature_flags, section=section),
+        "metadata": metadata,
     }
     if section == "channels":
         body["effective"] = _channels_effective(saved["channels"], feature_flags)
@@ -204,9 +215,11 @@ def _config_metadata(
         "operator_config_enabled": bool(feature_flags.operator_config_enabled),
         "read_only": False,
     }
-    if section in ("channels", "providers", "catalog"):
+    if section in ("channels", "providers", "catalog", "vision"):
         # Restart-to-apply MVP — never claim live/hot-reload apply.
         metadata["apply_semantics"] = "restart_required"
+    if section == "vision":
+        metadata["routing_modes"] = ["auto", "always_preprocess", "main_only"]
     if section == "providers":
         metadata["builtin_vendor_profiles"] = [
             {
@@ -314,6 +327,46 @@ def _fill_builtin_provider_urls(providers: list[Any]) -> list[Any]:
                     item["api_base_url"] = profile.api_base_url
         filled.append(item)
     return filled
+
+
+_VISION_STRING_FIELDS = (
+    "routing_mode",
+    "main_model_id",
+    "vision_model_id",
+    "vision_provider_id",
+)
+
+
+def _normalize_vision_empty_strings(vision: Mapping[str, Any]) -> dict[str, Any]:
+    """Normalize empty-string vision fields to None (VIS-01).
+
+    The SSR form submits blank selects as ``""``; the operator config schema
+    treats ``None`` as the draft-tolerant unset value. This keeps persisted
+    documents canonical so completeness checks see a truly absent field.
+    """
+    normalized = dict(vision)
+    for field in _VISION_STRING_FIELDS:
+        if normalized.get(field, None) == "":
+            normalized[field] = None
+    return normalized
+
+
+def _vision_status_metadata(document: Any) -> dict[str, Any]:
+    """Compute ``vision_configured`` and ``vision_status`` from the stored document.
+
+    ``vision_configured`` is True when both ``vision_provider_id`` and
+    ``vision_model_id`` are non-empty; ``vision_status`` is ``"configured"``
+    when both present, ``"not_configured"`` otherwise. Consumed by the SSR
+    vision form (VIS-01).
+    """
+    vision = document.vision
+    has_provider = bool(vision.vision_provider_id)
+    has_model = bool(vision.vision_model_id)
+    configured = has_provider and has_model
+    return {
+        "vision_configured": configured,
+        "vision_status": "configured" if configured else "not_configured",
+    }
 
 
 def _probe_targets(document: Any) -> dict[str, dict[str, Any]]:
