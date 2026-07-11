@@ -81,7 +81,8 @@ def has_image_attachments(turn: AgentTurn) -> bool:
     never fetches the image, and never stores raw bytes (VIS-03 reference-first).
     """
 
-    for attachment in turn.attachments:
+    attachments = getattr(turn, "attachments", None) or []
+    for attachment in attachments:
         if getattr(attachment, "kind", None) == "image":
             return True
         mime_type = getattr(attachment, "mime_type", None)
@@ -94,7 +95,8 @@ def _image_attachment_count(turn: AgentTurn) -> int:
     """Count image attachments without reading raw bytes."""
 
     count = 0
-    for attachment in turn.attachments:
+    attachments = getattr(turn, "attachments", None) or []
+    for attachment in attachments:
         if getattr(attachment, "kind", None) == "image":
             count += 1
             continue
