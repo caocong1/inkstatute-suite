@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
 current_plan: 78-04
-status: completed
-stopped_at: Phase 78 execution complete
-last_updated: "2026-07-12T00:00:00Z"
+status: gaps_found
+stopped_at: Milestone audit complete
+last_updated: "2026-07-12T05:55:00Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 6
@@ -184,5 +184,7 @@ v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- Phase 78 complete — v1.10 Operator Config Console milestone is ready for verification and acceptance.
+- v1.10 milestone audit complete: `.planning/v1.10-MILESTONE-AUDIT.md`.
+- Status: `gaps_found` — VIS-02/03/04 are not verified in any phase VERIFICATION.md and `VisionRouter` is not wired into the message/turn runtime.
+- Recommended: insert a closure phase to wire `VisionRouter.decide()` into the WeCom/QQBot/Hermes turn path.
 - Carried human gates (Phase 5 / 8 / QQ `--live`) remain open — do not auto-close.

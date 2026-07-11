@@ -19,7 +19,8 @@
   - Archive: [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
 - ✅ **v1.9 QQBot Host Composition** - Phases 68-72 shipped 2026-07-10. Thin production webhook host, runtime registration, Protocol-path smoke hardening, controlled live HUMAN GATE. Audit passed (11/11 requirements).
   - Archive: [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
-- 🚧 **v1.10 Operator Config Console** - Phases 73-78 (in progress). InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
+- ⚠️ **v1.10 Operator Config Console** - Phases 73-78 (execution complete; audit gaps_found). InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
+  - Audit: [v1.10-MILESTONE-AUDIT.md](v1.10-MILESTONE-AUDIT.md)
 
 ## Current Milestone
 
@@ -176,7 +177,7 @@ Plans:
 | 75. Channel Config Apply | v1.10 | 5/5 | Complete    | 2026-07-10 |
 | 76. Provider Registry + Model Catalog | v1.10 | 4/4 | Complete    | 2026-07-11 |
 | 77. Vision Routing Runtime | v1.10 | 4/4 | Complete    | 2026-07-11 |
-| 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/4 | Planned | - |
+| 78. Console SSR, Docs & Gate Honesty | v1.10 | 4/4 | Complete | 2026-07-12 |
 | 68. Host Skeleton + Safety Baseline | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 69. Runtime Registration / Wiring | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 70. Webhook Composition Path | v1.9 | 3/3 | Complete | 2026-07-10 |
