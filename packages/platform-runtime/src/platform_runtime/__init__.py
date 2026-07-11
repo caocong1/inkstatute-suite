@@ -161,6 +161,7 @@ from .tenant_scope import (
 )
 from .tenant_contract_log import TenantScopedContractLogStore
 from .tenant_cache import TenantNamespacedCache
+from .vision_router import VisionRoute, VisionRouter, VisionRoutingDecision
 
 __all__ = [
     "AckResponse",
@@ -295,6 +296,9 @@ __all__ = [
     "TenantScopeRequestContext",
     "TenantScopeResolver",
     "TenantScopedContractLogStore",
+    "VisionRoute",
+    "VisionRouter",
+    "VisionRoutingDecision",
     "evaluate_memory_adapter_manifest",
     "resolve_session_turn",
     "ScopedQueryFilter",
