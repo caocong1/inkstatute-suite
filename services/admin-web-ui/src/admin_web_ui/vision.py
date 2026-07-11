@@ -461,10 +461,8 @@ def render_vision_page(
         err = api_data["error"]
         if isinstance(err, dict):
             code = str(err.get("code", "unknown"))
-            if code == "forbidden":
-                error_message = ERROR_FORBIDDEN
-            elif code == "operator_config_disabled":
-                error_message = ERROR_FLAG_OFF
+            if code in ("forbidden", "operator_config_disabled"):
+                error_message = ERROR_FORBIDDEN if code == "forbidden" else ERROR_FLAG_OFF
                 read_only = True
             elif code == "invalid_config":
                 error_message = ERROR_VALIDATION
