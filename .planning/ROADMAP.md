@@ -142,7 +142,7 @@ Plans:
   3. Text-only turns never invoke the vision model; contract/audit evidence stays reference-first (no raw image bytes in contract logs)
   4. Vision/provider error paths pass through the assistant output boundary (no provider stack traces or gateway meta to ordinary users)
 
-**Plans**: TBD
+**Plans**: 4/4 plans complete
 **UI hint**: yes
 
 ### Phase 78: Console SSR, Docs & Gate Honesty
@@ -156,7 +156,15 @@ Plans:
   2. Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
   3. Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
 
-**Plans**: TBD
+**Plans**: 4/4 plans planned
+
+Plans:
+
+- [ ] 78-01-PLAN.md — Gate-honesty shared UI chrome + dashboard cards (ADM-02, DOC-02)
+- [ ] 78-02-PLAN.md — /config/channels signed route-bound CSRF + gate-honesty banner (ADM-02)
+- [ ] 78-03-PLAN.md — Provider/Catalog/Vision gate-honesty banner integration (ADM-02, DOC-02)
+- [ ] 78-04-PLAN.md — Operator docs, .env.example, and config runbook (DOC-01, DOC-02)
+
 **UI hint**: yes
 
 ## Progress
@@ -168,7 +176,7 @@ Plans:
 | 75. Channel Config Apply | v1.10 | 5/5 | Complete    | 2026-07-10 |
 | 76. Provider Registry + Model Catalog | v1.10 | 4/4 | Complete    | 2026-07-11 |
 | 77. Vision Routing Runtime | v1.10 | 4/4 | Complete    | 2026-07-11 |
-| 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/TBD | Not started | - |
+| 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/4 | Planned | - |
 | 68. Host Skeleton + Safety Baseline | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 69. Runtime Registration / Wiring | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 70. Webhook Composition Path | v1.9 | 3/3 | Complete | 2026-07-10 |
