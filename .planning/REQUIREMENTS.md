@@ -39,13 +39,13 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Admin Surface & AuthZ
 
 - [x] **ADM-01**: Admin/operator roles can GET/PUT config resources; lawyer/viewer roles are denied mutate
-- [ ] **ADM-02**: Admin Web UI exposes config pages (channels, providers/catalog, vision) as SSR forms with CSRF protection, extending the existing stdlib admin-web-ui (not a new SPA stack)
+- [x] **ADM-02**: Admin Web UI exposes config pages (channels, providers/catalog, vision) as SSR forms with CSRF protection, extending the existing stdlib admin-web-ui (not a new SPA stack)
 - [x] **ADM-03**: Existing read-only admin views (sessions/tasks/feedback/health/gates) remain read-only; config writes use an explicit `/config/*` surface
 
 ### Docs & Honesty
 
-- [ ] **DOC-01**: Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
-- [ ] **DOC-02**: Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
+- [x] **DOC-01**: Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
+- [x] **DOC-02**: Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
 
 ## Future Requirements
 
@@ -113,10 +113,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-03 | Phase 77 | Complete |
 | VIS-04 | Phase 77 | Complete |
 | ADM-01 | Phase 74 | Complete |
-| ADM-02 | Phase 78 | Pending |
+| ADM-02 | Phase 78 | Complete |
 | ADM-03 | Phase 74 | Complete |
-| DOC-01 | Phase 78 | Pending |
-| DOC-02 | Phase 78 | Pending |
+| DOC-01 | Phase 78 | Complete |
+| DOC-02 | Phase 78 | Complete |
 
 **Coverage:**
 
