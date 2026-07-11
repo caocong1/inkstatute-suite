@@ -830,12 +830,31 @@ def _handle_probe(
         body, identity, _PROBE_PATH, rbac_secret=rbac_secret
     )
     if not valid:
-        html_body = render_providers_page(
-            {"error": {"code": "forbidden", "message": PROVIDERS_ERROR_FORBIDDEN}},
-            identity=identity,
-            csrf_token=save_token,
-            probe_csrf_token=probe_token,
-        )
+        # Parse return_to without trusting the CSRF token so the correct page is
+        # re-rendered for a vision-probe CSRF failure.
+        text = body.decode("utf-8", errors="replace") if isinstance(body, bytes) else str(body or "")
+        raw_form = parse_qs(text, keep_blank_values=True)
+        raw_return_to = raw_form.get("return_to")
+        if isinstance(raw_return_to, list):
+            return_to = raw_return_to[0] if raw_return_to else ""
+        else:
+            return_to = str(raw_return_to or "")
+        return_to = return_to.strip()
+        if return_to == "vision":
+            vision_save_token = issue_csrf_token(identity, _VISION_PATH, signing_key=rbac_secret)
+            html_body = render_vision_page(
+                {"error": {"code": "forbidden", "message": VISION_ERROR_FORBIDDEN}},
+                identity=identity,
+                csrf_token=vision_save_token,
+                probe_csrf_token=probe_token,
+            )
+        else:
+            html_body = render_providers_page(
+                {"error": {"code": "forbidden", "message": PROVIDERS_ERROR_FORBIDDEN}},
+                identity=identity,
+                csrf_token=save_token,
+                probe_csrf_token=probe_token,
+            )
         return 403, html_body, response_headers
 
     assert form_map is not None  # validated above
