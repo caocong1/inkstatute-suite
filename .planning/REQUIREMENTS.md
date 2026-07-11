@@ -24,10 +24,10 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Provider & Model Catalog
 
-- [ ] **PROV-01**: Operator can select a built-in vendor provider profile (base URL + key ref conventions + catalog binding) without editing Hermes
-- [ ] **PROV-02**: Operator can define a custom OpenAI-compatible provider (`api_base_url` + `api_key_ref` + explicit model allowlist)
-- [ ] **PROV-03**: Operator can pick main model from a built-in selectable catalog that includes `supports_vision` metadata
-- [ ] **PROV-04**: Operator can run a non-destructive connection probe for main (and vision, when configured) that fail-closes on missing refs and does not log response bodies/secrets
+- [x] **PROV-01**: Operator can select a built-in vendor provider profile (base URL + key ref conventions + catalog binding) without editing Hermes
+- [x] **PROV-02**: Operator can define a custom OpenAI-compatible provider (`api_base_url` + `api_key_ref` + explicit model allowlist)
+- [x] **PROV-03**: Operator can pick main model from a built-in selectable catalog that includes `supports_vision` metadata
+- [x] **PROV-04**: Operator can run a non-destructive connection probe for main (and vision, when configured) that fail-closes on missing refs and does not log response bodies/secrets
 
 ### Vision Routing
 
@@ -104,10 +104,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAN-02 | Phase 75 | Complete |
 | CHAN-03 | Phase 75 | Complete |
 | CHAN-04 | Phase 75 | Complete |
-| PROV-01 | Phase 76 | Pending |
-| PROV-02 | Phase 76 | Pending |
-| PROV-03 | Phase 76 | Pending |
-| PROV-04 | Phase 76 | Pending |
+| PROV-01 | Phase 76 | Complete |
+| PROV-02 | Phase 76 | Complete |
+| PROV-03 | Phase 76 | Complete |
+| PROV-04 | Phase 76 | Complete |
 | VIS-01 | Phase 77 | Pending |
 | VIS-02 | Phase 77 | Pending |
 | VIS-03 | Phase 77 | Pending |
