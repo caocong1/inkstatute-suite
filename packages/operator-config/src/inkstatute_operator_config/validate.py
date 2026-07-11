@@ -173,7 +173,7 @@ class OperatorConfigValidator:
                         message="provider kind must be openai, anthropic, or custom",
                         severity="error",
                     )
-                    )
+                )
                 continue
             if provider.kind in BUILTIN_VENDOR_IDS:
                 profile = builtin_vendor_profile(provider.kind)

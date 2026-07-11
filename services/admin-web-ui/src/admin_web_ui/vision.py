@@ -77,14 +77,6 @@ PROBE_RESULT_FAIL_NOT_CONFIGURED = (
     "Probe skipped — vision provider or model is not configured. "
     "Select a vision provider and model, then retry."
 )
-PROBE_RESULT_FAIL_MISSING_REF = (
-    "Probe failed — the vision provider's API key ref is not set. "
-    "Configure the ref in Provider Config, then retry."
-)
-PROBE_RESULT_FAIL_NETWORK = (
-    "Probe failed — could not reach the vision provider endpoint. "
-    "Check the provider `api_base_url` and network, then retry."
-)
 PROBE_RESULT_FAIL_GENERIC = (
     "Probe failed — see the message above. No secrets or response bodies were logged."
 )
@@ -178,7 +170,6 @@ def _probe_result_html(result: Mapping[str, Any] | None) -> str:
     if not result:
         return ""
     status = str(result.get("status", "")).lower()
-    code = str(result.get("code", "")).lower() if "code" in result else ""
     if status == "ok":
         copy = PROBE_RESULT_SUCCESS
         css = "status-ok"
@@ -186,12 +177,7 @@ def _probe_result_html(result: Mapping[str, Any] | None) -> str:
         copy = PROBE_RESULT_FAIL_NOT_CONFIGURED
         css = "empty"
     elif status == "fail":
-        if code == "missing_ref":
-            copy = PROBE_RESULT_FAIL_MISSING_REF
-        elif code == "network":
-            copy = PROBE_RESULT_FAIL_NETWORK
-        else:
-            copy = PROBE_RESULT_FAIL_GENERIC
+        copy = PROBE_RESULT_FAIL_GENERIC
         css = "status-err"
     else:
         copy = PROBE_RESULT_FAIL_GENERIC

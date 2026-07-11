@@ -190,7 +190,16 @@ def _normalize_section_body(
         )
 
     if set(body.keys()) == {section} and isinstance(body[section], Mapping):
-        return dict(body[section]), None
+        section_value = dict(body[section])
+        allowed = _SECTION_ALLOWED_KEYS.get(section)
+        if allowed is not None:
+            extra = set(section_value.keys()) - allowed
+            if extra:
+                return None, _error(
+                    "invalid_config",
+                    f"{section} body contains unexpected keys: {sorted(extra)}",
+                )
+        return section_value, None
 
     allowed = _SECTION_ALLOWED_KEYS.get(section)
     if allowed is not None:
