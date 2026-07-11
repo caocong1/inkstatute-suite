@@ -500,7 +500,7 @@ class CatalogFormScaffoldTests(unittest.TestCase):
             operator_config_enabled=True,
             rbac_enabled=False,
         )
-        env = {"ADMIN_API_TOKEN": "static-admin-token"}
+        env = {"ADMIN_API_TOKEN": "static-admin-token", "RBAC_TOKEN_SECRET": self.SECRET}
         headers = {"Authorization": "Bearer static-admin-token"}
         identity = Identity(role=Role.ADMIN, tenant_id="default")
         token = self._valid_csrf_token(identity, "/config/catalog")

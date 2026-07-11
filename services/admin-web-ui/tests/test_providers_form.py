@@ -557,7 +557,11 @@ class ProvidersFormScaffoldTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertNotIn("response_body", body.lower())
         self.assertNotIn("authorization", body.lower())
-        self.assertNotIn("api_key", body.lower())
+        # Probe must not leak resolved secret material — only generic status.
+        # Refs like "env:OPENAI_API_KEY" are safe operator-visible references,
+        # not secrets. Check that no raw probe response payload leaks.
+        self.assertNotIn("bearer ", body.lower())
+        self.assertNotIn("x-api-key", body.lower())
 
     # --- HTML escaping ---
 
@@ -682,7 +686,7 @@ class ProvidersFormScaffoldTests(unittest.TestCase):
             operator_config_enabled=True,
             rbac_enabled=False,
         )
-        env = {"ADMIN_API_TOKEN": "static-admin-token"}
+        env = {"ADMIN_API_TOKEN": "static-admin-token", "RBAC_TOKEN_SECRET": self.SECRET}
         headers = {"Authorization": "Bearer static-admin-token"}
         identity = Identity(role=Role.ADMIN, tenant_id="default")
         token = self._valid_csrf_token(identity, "/config/providers")

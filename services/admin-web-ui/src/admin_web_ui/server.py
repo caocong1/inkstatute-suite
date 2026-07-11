@@ -31,6 +31,15 @@ from rbac import (
 
 from .api_client import AdminApiClient, HandleAdminGet, HandleAdminPut
 from .boundary import AdminUiBoundary
+from .catalog import (
+    ERROR_FLAG_OFF as CATALOG_ERROR_FLAG_OFF,
+    ERROR_FORBIDDEN as CATALOG_ERROR_FORBIDDEN,
+    ERROR_GENERIC as CATALOG_ERROR_GENERIC,
+    ERROR_VALIDATION as CATALOG_ERROR_VALIDATION,
+    SUCCESS_FLASH as CATALOG_SUCCESS_FLASH,
+    parse_catalog_form,
+    render_catalog_page,
+)
 from .channels import (
     ERROR_FLAG_OFF,
     ERROR_FORBIDDEN,
@@ -40,13 +49,23 @@ from .channels import (
     parse_channels_form,
     render_channels_page,
 )
+from .csrf import issue_csrf_token, validate_csrf_token
 from .dashboard import render_dashboard
+from .providers import (
+    ERROR_FLAG_OFF as PROVIDERS_ERROR_FLAG_OFF,
+    ERROR_FORBIDDEN as PROVIDERS_ERROR_FORBIDDEN,
+    ERROR_GENERIC as PROVIDERS_ERROR_GENERIC,
+    ERROR_VALIDATION as PROVIDERS_ERROR_VALIDATION,
+    SUCCESS_FLASH as PROVIDERS_SUCCESS_FLASH,
+    parse_providers_form,
+    render_providers_page,
+)
 
 CSP_HEADER = "default-src 'self'; script-src 'self'; style-src 'self'"
 
 _BEARER_PREFIX = "Bearer "
 
-# Cap channels SSR POST bodies (WR-04) — form payloads are small refs-only.
+# Cap config SSR POST bodies (WR-04) — form payloads are small refs-only.
 MAX_CHANNELS_POST_BYTES = 64 * 1024
 
 _SECTION_MAP = {
@@ -57,9 +76,23 @@ _SECTION_MAP = {
     "/health": "health",
     "/gates": "gates",
     "/config/channels": "channels",
+    "/config/providers": "providers",
+    "/config/providers/probe": "providers_probe",
+    "/config/catalog": "catalog",
 }
 
 _CHANNELS_PATH = "/config/channels"
+_PROVIDERS_PATH = "/config/providers"
+_PROBE_PATH = "/config/providers/probe"
+_CATALOG_PATH = "/config/catalog"
+
+# Routes that accept POST (all other routes remain GET-only).
+_POST_ROUTES = frozenset({
+    _CHANNELS_PATH,
+    _PROVIDERS_PATH,
+    _PROBE_PATH,
+    _CATALOG_PATH,
+})
 
 
 def _channels_post_body_usable(body: bytes | str | None) -> bool:
@@ -134,6 +167,7 @@ def handle_admin_web_ui_request(
     body: bytes | str | None = None,
     handle_admin_put: HandleAdminPut | None = None,
     config_store: Any = None,
+    handle_config_probe: Any = None,
 ) -> tuple[int, str, dict[str, str]]:
     """Handle a single admin web UI request (GET, or POST on ``/config/channels``).
 
@@ -173,11 +207,11 @@ def handle_admin_web_ui_request(
         )
         return 404, body_html, response_headers
 
-    # Operational routes remain GET-only (POST only on /config/channels).
-    if http_method == "POST" and route_path != _CHANNELS_PATH:
+    # Operational routes remain GET-only (POST only on config routes).
+    if http_method == "POST" and route_path not in _POST_ROUTES:
         body_html = render_dashboard(
-            section if section != "channels" else "index",
-            {"error": {"code": "method_not_allowed", "message": "POST is only allowed on /config/channels"}},
+            section if section not in ("channels", "providers", "catalog", "providers_probe") else "index",
+            {"error": {"code": "method_not_allowed", "message": "POST is only allowed on config routes"}},
             identity=None,
         )
         return 405, body_html, response_headers
@@ -202,7 +236,7 @@ def handle_admin_web_ui_request(
             rbac_enabled=True,
         )
         if identity is None:
-            render_section = section if section != "channels" else "index"
+            render_section = section if section not in ("channels", "providers", "catalog", "providers_probe") else "index"
             body_html = render_dashboard(
                 render_section,
                 {"error": {"code": "unauthorized", "message": "Invalid or expired RBAC token"}},
@@ -216,6 +250,16 @@ def handle_admin_web_ui_request(
             if section == "channels":
                 body_html = render_channels_page(
                     {"error": {"code": "forbidden", "message": ERROR_FORBIDDEN}},
+                    identity=identity,
+                )
+            elif section == "providers" or section == "providers_probe":
+                body_html = render_providers_page(
+                    {"error": {"code": "forbidden", "message": PROVIDERS_ERROR_FORBIDDEN}},
+                    identity=identity,
+                )
+            elif section == "catalog":
+                body_html = render_catalog_page(
+                    {"error": {"code": "forbidden", "message": CATALOG_ERROR_FORBIDDEN}},
                     identity=identity,
                 )
             else:
@@ -238,6 +282,65 @@ def handle_admin_web_ui_request(
     # Step 4/5 — channels GET/POST
     if route_path == _CHANNELS_PATH:
         return _handle_channels(
+            http_method=http_method,
+            body=body,
+            identity=identity,
+            auth_header=auth_header,
+            feature_flags=feature_flags,
+            handle_admin_get=handle_admin_get,
+            handle_admin_put=handle_admin_put,
+            config_store=config_store,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            env=env,
+            rbac_secret=secret,
+            client=client,
+            boundary=boundary,
+            response_headers=response_headers,
+        )
+
+    # Step 4/5 — providers GET/POST + probe POST
+    if route_path == _PROVIDERS_PATH:
+        return _handle_providers(
+            http_method=http_method,
+            body=body,
+            identity=identity,
+            auth_header=auth_header,
+            feature_flags=feature_flags,
+            handle_admin_get=handle_admin_get,
+            handle_admin_put=handle_admin_put,
+            config_store=config_store,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            env=env,
+            rbac_secret=secret,
+            client=client,
+            boundary=boundary,
+            response_headers=response_headers,
+        )
+
+    if route_path == _PROBE_PATH:
+        return _handle_probe(
+            body=body,
+            identity=identity,
+            auth_header=auth_header,
+            feature_flags=feature_flags,
+            handle_admin_get=handle_admin_get,
+            handle_config_probe=handle_config_probe,
+            handle_admin_put=handle_admin_put,
+            config_store=config_store,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            env=env,
+            rbac_secret=secret,
+            client=client,
+            boundary=boundary,
+            response_headers=response_headers,
+        )
+
+    # Step 4/5 — catalog GET/POST
+    if route_path == _CATALOG_PATH:
+        return _handle_catalog(
             http_method=http_method,
             body=body,
             identity=identity,
@@ -427,6 +530,503 @@ def _handle_channels(
     return status, html_body, response_headers
 
 
+def _extract_csrf_token(form_map: Mapping[str, Any]) -> str | None:
+    """Extract exactly one non-empty csrf_token from a parsed form map."""
+    raw = form_map.get("csrf_token")
+    if raw is None:
+        return None
+    if isinstance(raw, list):
+        values = [str(v).strip() for v in raw if str(v).strip()]
+        if len(values) != 1:
+            return None
+        return values[0]
+    text = str(raw).strip()
+    return text if text else None
+
+
+def _validate_post_csrf(
+    body: bytes | str | None,
+    identity: Identity,
+    route: str,
+    *,
+    rbac_secret: str | None,
+) -> tuple[bool, dict[str, Any] | None]:
+    """Parse form body, extract csrf_token, and validate against the exact route.
+
+    Returns ``(valid, form_map)``. ``form_map`` is the parsed form for downstream
+    use when valid, or ``None`` when CSRF failed (no proxy should proceed).
+    """
+    text = body.decode("utf-8", errors="replace") if isinstance(body, bytes) else str(body or "")
+    form_map = parse_qs(text, keep_blank_values=True)
+    token = _extract_csrf_token(form_map)
+    if token is None:
+        return False, None
+    if not validate_csrf_token(token, identity, route, signing_key=rbac_secret):
+        return False, None
+    return True, form_map
+
+
+def _vendor_profiles_from_metadata(
+    api_data: Mapping[str, Any] | None,
+) -> dict[str, dict[str, str]]:
+    """Build vendor_id → profile dict from API providers metadata."""
+    profiles: dict[str, dict[str, str]] = {}
+    if not isinstance(api_data, Mapping):
+        return profiles
+    metadata = api_data.get("metadata")
+    if not isinstance(metadata, Mapping):
+        return profiles
+    raw = metadata.get("builtin_vendor_profiles")
+    if not isinstance(raw, list):
+        return profiles
+    for entry in raw:
+        if isinstance(entry, Mapping):
+            vid = entry.get("vendor_id")
+            if isinstance(vid, str):
+                profiles[vid] = {
+                    "vendor_id": vid,
+                    "api_base_url": str(entry.get("api_base_url", "")),
+                    "default_key_ref_env": str(entry.get("default_key_ref_env", "")),
+                }
+    return profiles
+
+
+def _merge_provider_metadata(
+    parsed: list[dict[str, Any]],
+    current_data: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Preserve API-set provider metadata the SSR form does not edit (WR-01)."""
+    if not isinstance(current_data, Mapping):
+        return parsed
+    stored: dict[str, dict[str, Any]] = {}
+    data = current_data.get("data")
+    if isinstance(data, list):
+        for item in data:
+            if isinstance(item, Mapping):
+                pid = item.get("provider_id")
+                if isinstance(pid, str):
+                    stored[pid] = dict(item)
+    merged: list[dict[str, Any]] = []
+    for provider in parsed:
+        pid = provider.get("provider_id")
+        if pid and pid in stored:
+            existing = stored[pid]
+            meta = existing.get("metadata")
+            if isinstance(meta, Mapping):
+                provider = dict(provider)
+                provider["metadata"] = dict(meta)
+        merged.append(provider)
+    return merged
+
+
+def _handle_providers(
+    *,
+    http_method: str,
+    body: bytes | str | None,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    handle_admin_get: HandleAdminGet,
+    handle_admin_put: HandleAdminPut | None,
+    config_store: Any,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    client: AdminApiClient,
+    boundary: AdminUiBoundary,
+    response_headers: dict[str, str],
+) -> tuple[int, str, dict[str, str]]:
+    """GET renders provider registry; POST validates CSRF then proxies list PUT."""
+    save_token = issue_csrf_token(identity, _PROVIDERS_PATH, signing_key=rbac_secret)
+
+    if http_method == "POST":
+        valid, form_map = _validate_post_csrf(
+            body, identity, _PROVIDERS_PATH, rbac_secret=rbac_secret
+        )
+        if not valid:
+            html_body = render_providers_page(
+                {"error": {"code": "forbidden", "message": PROVIDERS_ERROR_FORBIDDEN}},
+                identity=identity,
+                csrf_token=save_token,
+            )
+            return 403, html_body, response_headers
+
+        if handle_admin_put is None:
+            html_body = render_providers_page(
+                {"error": {"code": "misconfigured", "message": PROVIDERS_ERROR_GENERIC}},
+                identity=identity,
+                csrf_token=save_token,
+            )
+            return 500, html_body, response_headers
+
+        assert form_map is not None  # validated above
+
+        # Fetch current data AFTER CSRF passes (T-76-27: merge metadata only post-CSRF).
+        get_status, get_data = client.proxy(
+            handle_admin_get,
+            _PROVIDERS_PATH,
+            identity,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            feature_flags=feature_flags,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+            config_store=config_store,
+        )
+        profiles = _vendor_profiles_from_metadata(get_data if get_status == 200 else None)
+        parsed = parse_providers_form(form_map, vendor_profiles=profiles)
+        if not parsed:
+            html_body = render_providers_page(
+                get_data if get_status == 200 else {"error": {"code": "invalid_config", "message": PROVIDERS_ERROR_VALIDATION}},
+                identity=identity,
+                csrf_token=save_token,
+                error_message=PROVIDERS_ERROR_VALIDATION,
+            )
+            return 400, html_body, response_headers
+
+        merged = _merge_provider_metadata(parsed, get_data if get_status == 200 else None)
+
+        put_status, put_data = client.proxy_put(
+            handle_admin_put,
+            _PROVIDERS_PATH,
+            merged,
+            identity,
+            feature_flags=feature_flags,
+            config_store=config_store,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+        )
+
+        if put_status == 200:
+            html_body = render_providers_page(
+                put_data,
+                identity=identity,
+                csrf_token=save_token,
+                flash=PROVIDERS_SUCCESS_FLASH,
+                flash_kind="success",
+            )
+            return 200, html_body, response_headers
+
+        error = put_data.get("error") if isinstance(put_data, dict) else None
+        code = error.get("code") if isinstance(error, dict) else None
+        if code == "forbidden":
+            err_msg = PROVIDERS_ERROR_FORBIDDEN
+        elif code == "operator_config_disabled":
+            err_msg = PROVIDERS_ERROR_FLAG_OFF
+        elif code == "invalid_config":
+            err_msg = PROVIDERS_ERROR_VALIDATION
+        else:
+            err_msg = PROVIDERS_ERROR_GENERIC
+
+        display = get_data if get_status == 200 else put_data
+        if isinstance(put_data, dict) and isinstance(put_data.get("data"), list):
+            display = put_data
+        html_body = render_providers_page(
+            display if isinstance(display, dict) else put_data,
+            identity=identity,
+            csrf_token=save_token,
+            error_message=err_msg,
+            read_only=code == "operator_config_disabled",
+        )
+        return put_status, html_body, response_headers
+
+    # GET
+    status, api_data = client.proxy(
+        handle_admin_get,
+        _PROVIDERS_PATH,
+        identity,
+        read_model=read_model,
+        feedback_queue=feedback_queue,
+        feature_flags=feature_flags,
+        env=env,
+        rbac_secret=rbac_secret,
+        auth_header=auth_header,
+        config_store=config_store,
+    )
+    html_body = render_providers_page(
+        api_data,
+        identity=identity,
+        csrf_token=save_token,
+    )
+    return status, html_body, response_headers
+
+
+def _handle_probe(
+    *,
+    body: bytes | str | None,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    handle_admin_get: HandleAdminGet,
+    handle_config_probe: Any,
+    handle_admin_put: HandleAdminPut | None,
+    config_store: Any,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    client: AdminApiClient,
+    boundary: AdminUiBoundary,
+    response_headers: dict[str, str],
+) -> tuple[int, str, dict[str, str]]:
+    """POST /config/providers/probe — validate CSRF, proxy stored-target probe, re-render."""
+    save_token = issue_csrf_token(identity, _PROVIDERS_PATH, signing_key=rbac_secret)
+
+    valid, form_map = _validate_post_csrf(
+        body, identity, _PROBE_PATH, rbac_secret=rbac_secret
+    )
+    if not valid:
+        html_body = render_providers_page(
+            {"error": {"code": "forbidden", "message": PROVIDERS_ERROR_FORBIDDEN}},
+            identity=identity,
+            csrf_token=save_token,
+        )
+        return 403, html_body, response_headers
+
+    assert form_map is not None  # validated above
+    # Extract target (main or vision) — the only field besides csrf_token.
+    raw_target = form_map.get("target")
+    if isinstance(raw_target, list):
+        target = raw_target[0] if raw_target else ""
+    else:
+        target = str(raw_target or "")
+    target = target.strip()
+    if target not in ("main", "vision"):
+        html_body = render_providers_page(
+            {"error": {"code": "invalid_config", "message": PROVIDERS_ERROR_VALIDATION}},
+            identity=identity,
+            csrf_token=save_token,
+        )
+        return 400, html_body, response_headers
+
+    # Proxy the probe — prefer dedicated handle_config_probe, fall back to handle_admin_put.
+    probe_body: dict[str, Any] = {"target": target}
+    if handle_config_probe is not None:
+        probe_status, probe_data = handle_config_probe(
+            _PROBE_PATH,
+            probe_body,
+            {"Authorization": auth_header} if auth_header else {},
+            feature_flags,
+            env,
+            config_store=config_store,
+            rbac_secret=rbac_secret,
+        )
+    elif handle_admin_put is not None:
+        probe_status, probe_data = client.proxy_put(
+            handle_admin_put,
+            _PROBE_PATH,
+            probe_body,
+            identity,
+            feature_flags=feature_flags,
+            config_store=config_store,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+        )
+    else:
+        html_body = render_providers_page(
+            {"error": {"code": "misconfigured", "message": PROVIDERS_ERROR_GENERIC}},
+            identity=identity,
+            csrf_token=save_token,
+        )
+        return 500, html_body, response_headers
+
+    # Re-GET provider data for re-render with ephemeral generic probe result.
+    get_status, get_data = client.proxy(
+        handle_admin_get,
+        _PROVIDERS_PATH,
+        identity,
+        read_model=read_model,
+        feedback_queue=feedback_queue,
+        feature_flags=feature_flags,
+        env=env,
+        rbac_secret=rbac_secret,
+        auth_header=auth_header,
+        config_store=config_store,
+    )
+
+    probe_result = None
+    if isinstance(probe_data, dict):
+        probe_result = probe_data.get("data")
+        if not isinstance(probe_result, Mapping):
+            probe_result = None
+
+    display = get_data if get_status == 200 else {"error": {"code": "probe_error", "message": PROVIDERS_ERROR_GENERIC}}
+    html_body = render_providers_page(
+        display,
+        identity=identity,
+        csrf_token=save_token,
+        probe_result=probe_result,
+    )
+    return 200, html_body, response_headers
+
+
+def _handle_catalog(
+    *,
+    http_method: str,
+    body: bytes | str | None,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    handle_admin_get: HandleAdminGet,
+    handle_admin_put: HandleAdminPut | None,
+    config_store: Any,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    client: AdminApiClient,
+    boundary: AdminUiBoundary,
+    response_headers: dict[str, str],
+) -> tuple[int, str, dict[str, str]]:
+    """GET renders model catalog; POST validates CSRF then proxies object PUT."""
+    save_token = issue_csrf_token(identity, _CATALOG_PATH, signing_key=rbac_secret)
+
+    if http_method == "POST":
+        valid, form_map = _validate_post_csrf(
+            body, identity, _CATALOG_PATH, rbac_secret=rbac_secret
+        )
+        if not valid:
+            html_body = render_catalog_page(
+                {"error": {"code": "forbidden", "message": CATALOG_ERROR_FORBIDDEN}},
+                identity=identity,
+                csrf_token=save_token,
+            )
+            return 403, html_body, response_headers
+
+        if handle_admin_put is None:
+            html_body = render_catalog_page(
+                {"error": {"code": "misconfigured", "message": CATALOG_ERROR_GENERIC}},
+                identity=identity,
+                csrf_token=save_token,
+            )
+            return 500, html_body, response_headers
+
+        assert form_map is not None  # validated above
+        section_payload = parse_catalog_form(form_map)
+
+        put_status, put_data = client.proxy_put(
+            handle_admin_put,
+            _CATALOG_PATH,
+            section_payload,
+            identity,
+            feature_flags=feature_flags,
+            config_store=config_store,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+        )
+
+        if put_status == 200:
+            # Re-GET to populate catalog_entries + providers for re-render.
+            display = _catalog_display(client, handle_admin_get, identity, auth_header,
+                                       feature_flags, read_model, feedback_queue,
+                                       env, rbac_secret, config_store)
+            display_data = display if isinstance(display, dict) else put_data
+            html_body = render_catalog_page(
+                display_data,
+                identity=identity,
+                csrf_token=save_token,
+                flash=CATALOG_SUCCESS_FLASH,
+                flash_kind="success",
+            )
+            return 200, html_body, response_headers
+
+        error = put_data.get("error") if isinstance(put_data, dict) else None
+        code = error.get("code") if isinstance(error, dict) else None
+        if code == "forbidden":
+            err_msg = CATALOG_ERROR_FORBIDDEN
+        elif code == "operator_config_disabled":
+            err_msg = CATALOG_ERROR_FLAG_OFF
+        elif code == "invalid_config":
+            err_msg = CATALOG_ERROR_VALIDATION
+        else:
+            err_msg = CATALOG_ERROR_GENERIC
+
+        display = _catalog_display(client, handle_admin_get, identity, auth_header,
+                                   feature_flags, read_model, feedback_queue,
+                                   env, rbac_secret, config_store)
+        display_data = display if isinstance(display, dict) else put_data
+        html_body = render_catalog_page(
+            display_data,
+            identity=identity,
+            csrf_token=save_token,
+            error_message=err_msg,
+            read_only=code == "operator_config_disabled",
+        )
+        return put_status, html_body, response_headers
+
+    # GET
+    display = _catalog_display(client, handle_admin_get, identity, auth_header,
+                               feature_flags, read_model, feedback_queue,
+                               env, rbac_secret, config_store)
+    status = 200
+    if not isinstance(display, dict):
+        display = {"error": {"code": "catalog_error", "message": CATALOG_ERROR_GENERIC}}
+        status = 500
+    html_body = render_catalog_page(
+        display,
+        identity=identity,
+        csrf_token=save_token,
+    )
+    return status, html_body, response_headers
+
+
+def _catalog_display(
+    client: AdminApiClient,
+    handle_admin_get: HandleAdminGet,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    config_store: Any,
+) -> dict[str, Any] | None:
+    """Fetch catalog + provider registry IDs so the renderer has both."""
+    cat_status, cat_data = client.proxy(
+        handle_admin_get,
+        _CATALOG_PATH,
+        identity,
+        read_model=read_model,
+        feedback_queue=feedback_queue,
+        feature_flags=feature_flags,
+        env=env,
+        rbac_secret=rbac_secret,
+        auth_header=auth_header,
+        config_store=config_store,
+    )
+    if cat_status != 200 or not isinstance(cat_data, dict):
+        return cat_data if isinstance(cat_data, dict) else None
+
+    # If catalog response already includes providers (test fixture), use it.
+    if "providers" not in cat_data:
+        prov_status, prov_data = client.proxy(
+            handle_admin_get,
+            _PROVIDERS_PATH,
+            identity,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            feature_flags=feature_flags,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+            config_store=config_store,
+        )
+        providers_list: list[Any] = []
+        if prov_status == 200 and isinstance(prov_data, dict):
+            data = prov_data.get("data")
+            if isinstance(data, list):
+                providers_list = data
+        cat_data = dict(cat_data)
+        cat_data["providers"] = providers_list
+    return cat_data
+
+
 def _extract_auth_header(headers: Mapping[str, str] | None) -> str | None:
     """Extract the Authorization header from request headers (case-insensitive)."""
     if headers is None:
@@ -493,6 +1093,7 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
             body=body,
             handle_admin_put=getattr(self.server, "handle_admin_put", None),  # type: ignore[attr-defined]
             config_store=getattr(self.server, "config_store", None),  # type: ignore[attr-defined]
+            handle_config_probe=getattr(self.server, "handle_config_probe", None),  # type: ignore[attr-defined]
         )
         encoded = html_body.encode("utf-8")
         self.send_response(status)
