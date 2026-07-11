@@ -81,12 +81,6 @@ PROBE_RESULT_FAIL_GENERIC = (
     "Probe failed — see the message above. No secrets or response bodies were logged."
 )
 
-EMPTY_HEADING = "No vision model selected"
-EMPTY_BODY = (
-    "Pick a routing mode above. Auto and Always preprocess need a dedicated vision provider and model; "
-    "Main only does not."
-)
-
 NO_PROVIDERS_NOTE = "Add a provider in Provider Config before selecting a vision model."
 CUSTOM_PROVIDER_NOTE = (
     "Custom provider models are not in the built-in catalog. Add the model ID to the provider's "
