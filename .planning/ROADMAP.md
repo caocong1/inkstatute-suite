@@ -40,7 +40,7 @@
 - [x] **Phase 75: Channel Config Apply** - QQ/WeCom channel config apply with dual-knob visibility and secret-ref credentials (completed 2026-07-10)
 - [x] **Phase 76: Provider Registry + Model Catalog** - Built-in vendors, custom OpenAI-compatible providers, catalog selection, connection probe (completed 2026-07-11)
 - [x] **Phase 77: Vision Routing Runtime** - Vision policy + image-turn routing with fail-closed notices and output-boundary safety (completed 2026-07-11)
-- [ ] **Phase 78: Console SSR, Docs & Gate Honesty** - Complete SSR config pages, operator docs, and `not_live_acceptance` honesty
+- [x] **Phase 78: Console SSR, Docs & Gate Honesty** - Complete SSR config pages, operator docs, and `not_live_acceptance` honesty (completed 2026-07-12)
 
 ## Phase Details
 
@@ -156,14 +156,14 @@ Plans:
   2. Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
   3. Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
 
-**Plans**: 4/4 plans planned
+**Plans**: 4/4 plans complete
 
 Plans:
 
-- [ ] 78-01-PLAN.md — Gate-honesty shared UI chrome + dashboard cards (ADM-02, DOC-02)
-- [ ] 78-02-PLAN.md — /config/channels signed route-bound CSRF + gate-honesty banner (ADM-02)
-- [ ] 78-03-PLAN.md — Provider/Catalog/Vision gate-honesty banner integration (ADM-02, DOC-02)
-- [ ] 78-04-PLAN.md — Operator docs, .env.example, and config runbook (DOC-01, DOC-02)
+- [x] 78-01-PLAN.md — Gate-honesty shared UI chrome + dashboard cards (ADM-02, DOC-02)
+- [x] 78-02-PLAN.md — /config/channels signed route-bound CSRF + gate-honesty banner (ADM-02)
+- [x] 78-03-PLAN.md — Provider/Catalog/Vision gate-honesty banner integration (ADM-02, DOC-02)
+- [x] 78-04-PLAN.md — Operator docs, .env.example, and config runbook (DOC-01, DOC-02)
 
 **UI hint**: yes
 
