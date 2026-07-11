@@ -1,10 +1,17 @@
-"""Process-local signed CSRF tokens bound to identity and route (PROV-01..04).
+"""Signed CSRF tokens bound to identity and route (PROV-01..04).
 
-Stdlib-only nonce+HMAC-SHA256 token helpers. The signing key is generated once
-at module import with ``secrets.token_bytes`` and is never derived from or
-exposed as the RBAC secret. Tokens bind the nonce, caller role, tenant, and
-exact route into a deterministic canonical payload, signed with HMAC-SHA256 and
-verified with ``hmac.compare_digest``.
+Stdlib-only nonce+HMAC-SHA256 token helpers. Tokens bind the nonce, caller
+role, tenant, and exact route into a deterministic canonical payload, signed
+with HMAC-SHA256 and verified with ``hmac.compare_digest``.
+
+Signing key resolution:
+- When ``signing_key`` is provided (production: the RBAC token secret shared
+  across processes), tokens are signed with that key, enabling cross-process
+  validity in multi-worker deployments.
+- When ``signing_key`` is ``None`` (RBAC disabled or tests), a process-local
+  key generated at module import is used. This is a fallback for single-process
+  deployments and tests only — multi-worker deployments with RBAC disabled will
+  have tokens fail across workers.
 
 Security invariants:
 - The canonical payload uses sorted compact JSON so there is no delimiter
@@ -12,9 +19,9 @@ Security invariants:
 - Validation fails closed on non-string, missing, malformed, empty, or
   extra-part tokens.
 - No tokens, key material, identity headers, or failures are logged.
-- No RBAC signing secret is reused, no nonce state is persisted, and no
-  cookies/sessions are added. Phase 78 owns the complete existing-surface CSRF
-  audit; this module fully protects the new Phase 76 POST routes only.
+- No nonce state is persisted, and no cookies/sessions are added. Phase 78 owns
+  the complete existing-surface CSRF audit; this module fully protects the new
+  Phase 76 POST routes only.
 """
 
 from __future__ import annotations
@@ -30,8 +37,8 @@ from rbac import Identity
 
 __all__ = ["issue_csrf_token", "validate_csrf_token"]
 
-# One private process-local 32-byte signing key, generated at import.
-# Never derived from or exposed as the RBAC secret.
+# Process-local 32-byte fallback signing key for single-process / test use.
+# Production callers pass signing_key=rbac_secret for cross-process validity.
 _PROCESS_KEY: bytes = secrets.token_bytes(32)
 
 
@@ -91,9 +98,10 @@ def issue_csrf_token(
 
     Returns ``{nonce}.{signature}`` where the signature binds the nonce,
     ``identity.role.value``, ``identity.tenant_id``, and the exact ``route``.
-    A fresh URL-safe random nonce is generated when none is supplied; the
-    ``signing_key`` and ``nonce`` parameters exist only for deterministic
-    tests — default callers use the private process key and a fresh nonce.
+    A fresh URL-safe random nonce is generated when none is supplied. The
+    ``signing_key`` parameter is used in production (passing the shared RBAC
+    secret for cross-process validity); when omitted, a process-local fallback
+    key is used (single-process / test only).
     """
     raw_nonce = nonce if nonce is not None else secrets.token_urlsafe(16)
     key = _resolve_key(signing_key)

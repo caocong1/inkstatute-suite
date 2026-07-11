@@ -115,7 +115,7 @@ def _probe_result_html(result: Mapping[str, Any] | None) -> str:
         copy = PROBE_RESULT_SUCCESS
         css = "status-ok"
     elif status == "not_configured":
-        copy = f"Probe target '{_esc(target)}' is not configured. Select a main model in Model Catalog first."
+        copy = f"Probe target '{target}' is not configured. Select a main model in Model Catalog first."
         css = "empty"
     elif status == "fail":
         copy = PROBE_RESULT_FAIL_GENERIC

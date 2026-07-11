@@ -396,7 +396,13 @@ def _handle_channels(
     boundary: AdminUiBoundary,
     response_headers: dict[str, str],
 ) -> tuple[int, str, dict[str, str]]:
-    """GET renders dual-knob form; POST parses form and proxies handle_admin_put."""
+    """GET renders dual-knob form; POST parses form and proxies handle_admin_put.
+
+    NOTE: The channels route uses a random (unbound) csrf_token and does not
+    validate it on POST. Signed CSRF validation for this existing route is
+    deferred to Phase 78 (complete SSR surface audit). Phase 76 applies signed
+    CSRF only to the new providers/catalog/probe routes via csrf.py.
+    """
     csrf_token = secrets.token_urlsafe(16)
 
     if http_method == "POST":
@@ -853,6 +859,11 @@ def _handle_probe(
         probe_result = probe_data.get("data")
         if not isinstance(probe_result, Mapping):
             probe_result = None
+
+    # When the probe handler returns an error (non-200), show a generic failure
+    # banner so the operator sees feedback instead of a silently blank page.
+    if probe_status != 200 or probe_result is None:
+        probe_result = {"status": "fail", "target": target}
 
     display = get_data if get_status == 200 else {"error": {"code": "probe_error", "message": PROVIDERS_ERROR_GENERIC}}
     html_body = render_providers_page(

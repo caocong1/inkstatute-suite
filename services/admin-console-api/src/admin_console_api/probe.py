@@ -103,7 +103,9 @@ def _resolve_env_name(ref: str | None) -> str | None:
 def _validate_custom_url(url: str) -> bool:
     """Structural public-HTTPS check for a custom provider URL.
 
-    Requires https, hostname, no userinfo/query/fragment, and a valid port.
+    Requires https, hostname, no userinfo/query/fragment, a valid port, and
+    rejects unsafe literal IP hostnames (loopback/private/link-local/etc.)
+    for consistency with ``validate._is_valid_custom_base_url``.
     Never raises — returns False for any malformed shape.
     """
     try:
@@ -119,6 +121,13 @@ def _validate_custom_url(url: str) -> bool:
     if parsed.query or parsed.fragment:
         return False
     if parsed.port is not None and not (1 <= parsed.port <= 65535):
+        return False
+    # Reject unsafe literal IP hostnames (defense-in-depth before DNS resolution).
+    try:
+        literal_ip = ipaddress.ip_address(parsed.hostname)
+    except ValueError:
+        literal_ip = None
+    if literal_ip is not None and _is_unsafe_ip(literal_ip):
         return False
     return True
 
