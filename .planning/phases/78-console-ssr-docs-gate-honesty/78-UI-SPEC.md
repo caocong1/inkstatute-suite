@@ -273,7 +273,7 @@ Reuse / extend existing classes from `dashboard.py` and the Phase 75/76/77 form 
 - The gate-honesty banner has `role="note"` and an `aria-label="Gate honesty notice"` so screen readers announce it once.
 - CSRF failure messages are associated with the form via a `<p class="error" role="status">` at the top of the section.
 - Status uses words ("configured", "not configured", "not required", "succeeded", "failed") plus color class — never color alone.
-- CSP remains strict (`default-src 'self'; script-src 'self'; style-src 'self'`); no inline scripts; no `innerHTML` of untrusted data — all dynamic strings through `html.escape`.
+- CSP remains strict (`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'`); no inline scripts; no `innerHTML` of untrusted data — all dynamic strings through `html.escape`.
 - Output boundary (`AdminUiBoundary`) applies to any free-text API messages before render.
 - Never render resolved secrets, `.env` file contents, store filesystem paths, probe response bodies, `Authorization` headers, or `api_key_ref` values.
 - Do not claim live WeCom/QQ acceptance or live provider reachability from saving config or running a probe.

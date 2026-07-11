@@ -70,7 +70,7 @@ from .vision import (
     render_vision_page,
 )
 
-CSP_HEADER = "default-src 'self'; script-src 'self'; style-src 'self'"
+CSP_HEADER = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
 
 _BEARER_PREFIX = "Bearer "
 

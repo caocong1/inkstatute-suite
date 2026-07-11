@@ -4,7 +4,7 @@ Server-side rendered operator dashboard and config console for InkStatute V2.
 
 Built on Python stdlib `http.server` with server-side HTML templates. All dynamic
 content is rendered as HTML-escaped plaintext (`html.escape`) — never `innerHTML`.
-A strict Content-Security-Policy header (`default-src 'self'; script-src 'self'; style-src 'self'`)
+A strict Content-Security-Policy header (`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'`)
 is set on every response.
 
 ## Feature Flag
