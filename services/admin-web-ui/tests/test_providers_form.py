@@ -326,9 +326,22 @@ class ProvidersFormScaffoldTests(unittest.TestCase):
             handle_admin_put=self.handle_put,
         )
         self.assertEqual(status, 200)
-        # Count <form> tags — there must be exactly one (the save form).
+        # Count <form> tags — save form + probe form (both top-level, not nested).
         form_count = body.count("<form")
-        self.assertEqual(form_count, 1)
+        self.assertGreaterEqual(form_count, 1)
+        # Verify no nested forms: no <form> between a <form> and its </form>.
+        # The save form and probe form are siblings, not nested.
+        import re
+        forms = re.findall(r'<form[^>]*>|</form>', body)
+        depth = 0
+        max_depth = 0
+        for tag in forms:
+            if not tag.startswith("</"):
+                depth += 1
+                max_depth = max(max_depth, depth)
+            else:
+                depth -= 1
+        self.assertEqual(max_depth, 1, "Nested <form> elements detected")
 
     # --- Probe form: route-bound main + conditional vision ---
 

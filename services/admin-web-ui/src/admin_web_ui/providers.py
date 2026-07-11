@@ -254,10 +254,11 @@ def _render_provider_card(
     if is_builtin:
         profile = profiles.get(kind, {})
         canonical_url = profile.get("api_base_url", str(api_base_url or ""))
+        url_id = f"providers[{index}].api_base_url"
         parts.append(
             f'      <p class="field">\n'
-            f"        <label>{_esc(API_BASE_URL_LABEL)}</label>\n"
-            f'        <span class="empty">{_esc(canonical_url)}</span>\n'
+            f'        <label for="{_esc(url_id)}">{_esc(API_BASE_URL_LABEL)}</label>\n'
+            f'        <span class="empty" id="{_esc(url_id)}">{_esc(canonical_url)}</span>\n'
             f"      </p>"
         )
     else:
@@ -290,10 +291,11 @@ def _render_provider_card(
 
     # model allowlist — read-only note for built-in, editable for custom
     if is_builtin:
+        al_id = f"providers[{index}].model_allowlist"
         parts.append(
             f'      <p class="field">\n'
-            f'        <label>{_esc(MODEL_ALLOWLIST_LABEL)}</label>\n'
-            f'        <span class="empty">{_esc(BUILTIN_ALLOWLIST_NOTE)}</span>\n'
+            f'        <label for="{_esc(al_id)}">{_esc(MODEL_ALLOWLIST_LABEL)}</label>\n'
+            f'        <span class="empty" id="{_esc(al_id)}">{_esc(BUILTIN_ALLOWLIST_NOTE)}</span>\n'
             f"      </p>"
         )
     else:
@@ -319,40 +321,52 @@ def _render_probe_section(
     probe_targets: Mapping[str, Any],
     *,
     disabled: bool,
+    probe_csrf_token: str | None = None,
 ) -> str:
-    """Render probe buttons with formaction (single form, no nested forms)."""
+    """Render probe buttons in a separate form with its own route-bound CSRF token."""
     parts: list[str] = []
     parts.append(f'    <p class="empty">{_esc(PROBE_HELP)}</p>')
 
+    has_buttons = False
     main_target = probe_targets.get("main") if isinstance(probe_targets, Mapping) else None
     if isinstance(main_target, Mapping):
         main_status = str(main_target.get("status", ""))
         if main_status == "configured":
-            disabled_attr = " disabled" if disabled else ""
-            parts.append(
-                f'      <button type="submit" formaction="{_esc(_ROUTE_PROBE)}" '
-                f'name="target" value="main" class="btn-primary"{disabled_attr}>'
-                f"{_esc(PROBE_BUTTON_LABEL)} (main)</button>"
-            )
+            has_buttons = True
         else:
             parts.append(
-                f'      <p class="empty">Main probe target: not_configured</p>'
+                f'    <p class="empty">Main probe target: not_configured</p>'
             )
 
     vision_target = probe_targets.get("vision") if isinstance(probe_targets, Mapping) else None
     if isinstance(vision_target, Mapping):
         vision_status = str(vision_target.get("status", ""))
         if vision_status == "configured":
-            disabled_attr = " disabled" if disabled else ""
-            parts.append(
-                f'      <button type="submit" formaction="{_esc(_ROUTE_PROBE)}" '
-                f'name="target" value="vision" class="btn-primary"{disabled_attr}>'
-                f"{_esc(PROBE_BUTTON_LABEL)} (vision)</button>"
-            )
+            has_buttons = True
         else:
             parts.append(
-                f'      <p class="empty">Vision probe target: not_configured</p>'
+                f'    <p class="empty">Vision probe target: not_configured</p>'
             )
+
+    if has_buttons and not disabled:
+        parts.append(f'    <form method="post" action="{_esc(_ROUTE_PROBE)}" class="probe-form">')
+        probe_token = probe_csrf_token or ""
+        parts.append(
+            f'      <input type="hidden" name="csrf_token" value="{_esc(probe_token)}">'
+        )
+        if isinstance(main_target, Mapping) and str(main_target.get("status", "")) == "configured":
+            parts.append(
+                f'      <button type="submit" '
+                f'name="target" value="main" class="btn-primary">'
+                f"{_esc(PROBE_BUTTON_LABEL)}</button>"
+            )
+        if isinstance(vision_target, Mapping) and str(vision_target.get("status", "")) == "configured":
+            parts.append(
+                f'      <button type="submit" '
+                f'name="target" value="vision" class="btn-primary">'
+                f"{_esc(PROBE_BUTTON_LABEL)}</button>"
+            )
+        parts.append("    </form>")
 
     return "\n".join(parts)
 
@@ -414,9 +428,6 @@ def render_providers_form(
     }
     parts.append(_render_provider_card(blank_index, blank_provider, profiles, disabled=disabled))
 
-    # Probe section (inside the single form, uses formaction).
-    parts.append(_render_probe_section(probe_targets, disabled=disabled))
-
     parts.append(f'      <p class="empty">{_esc(REF_HELP)}</p>')
     disabled_attr = " disabled" if disabled else ""
     parts.append(
@@ -424,6 +435,10 @@ def render_providers_form(
         f"{_esc(PRIMARY_CTA)}</button>"
     )
     parts.append("    </form>")
+
+    # Probe section (separate form with its own route-bound CSRF token, after save form).
+    parts.append(_render_probe_section(probe_targets, disabled=disabled, probe_csrf_token=probe_csrf_token))
+
     return "\n".join(parts)
 
 

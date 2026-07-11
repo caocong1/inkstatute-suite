@@ -645,6 +645,7 @@ def _handle_providers(
 ) -> tuple[int, str, dict[str, str]]:
     """GET renders provider registry; POST validates CSRF then proxies list PUT."""
     save_token = issue_csrf_token(identity, _PROVIDERS_PATH, signing_key=rbac_secret)
+    probe_token = issue_csrf_token(identity, _PROBE_PATH, signing_key=rbac_secret)
 
     if http_method == "POST":
         valid, form_map = _validate_post_csrf(
@@ -655,6 +656,7 @@ def _handle_providers(
                 {"error": {"code": "forbidden", "message": PROVIDERS_ERROR_FORBIDDEN}},
                 identity=identity,
                 csrf_token=save_token,
+                probe_csrf_token=probe_token,
             )
             return 403, html_body, response_headers
 
@@ -663,6 +665,7 @@ def _handle_providers(
                 {"error": {"code": "misconfigured", "message": PROVIDERS_ERROR_GENERIC}},
                 identity=identity,
                 csrf_token=save_token,
+                probe_csrf_token=probe_token,
             )
             return 500, html_body, response_headers
 
@@ -688,6 +691,7 @@ def _handle_providers(
                 get_data if get_status == 200 else {"error": {"code": "invalid_config", "message": PROVIDERS_ERROR_VALIDATION}},
                 identity=identity,
                 csrf_token=save_token,
+                probe_csrf_token=probe_token,
                 error_message=PROVIDERS_ERROR_VALIDATION,
             )
             return 400, html_body, response_headers
@@ -711,6 +715,7 @@ def _handle_providers(
                 put_data,
                 identity=identity,
                 csrf_token=save_token,
+                probe_csrf_token=probe_token,
                 flash=PROVIDERS_SUCCESS_FLASH,
                 flash_kind="success",
             )
@@ -734,6 +739,7 @@ def _handle_providers(
             display if isinstance(display, dict) else put_data,
             identity=identity,
             csrf_token=save_token,
+            probe_csrf_token=probe_token,
             error_message=err_msg,
             read_only=code == "operator_config_disabled",
         )
@@ -756,6 +762,7 @@ def _handle_providers(
         api_data,
         identity=identity,
         csrf_token=save_token,
+        probe_csrf_token=probe_token,
     )
     return status, html_body, response_headers
 
@@ -780,6 +787,7 @@ def _handle_probe(
 ) -> tuple[int, str, dict[str, str]]:
     """POST /config/providers/probe — validate CSRF, proxy stored-target probe, re-render."""
     save_token = issue_csrf_token(identity, _PROVIDERS_PATH, signing_key=rbac_secret)
+    probe_token = issue_csrf_token(identity, _PROBE_PATH, signing_key=rbac_secret)
 
     valid, form_map = _validate_post_csrf(
         body, identity, _PROBE_PATH, rbac_secret=rbac_secret
@@ -789,6 +797,7 @@ def _handle_probe(
             {"error": {"code": "forbidden", "message": PROVIDERS_ERROR_FORBIDDEN}},
             identity=identity,
             csrf_token=save_token,
+            probe_csrf_token=probe_token,
         )
         return 403, html_body, response_headers
 
@@ -805,6 +814,7 @@ def _handle_probe(
             {"error": {"code": "invalid_config", "message": PROVIDERS_ERROR_VALIDATION}},
             identity=identity,
             csrf_token=save_token,
+            probe_csrf_token=probe_token,
         )
         return 400, html_body, response_headers
 
@@ -837,6 +847,7 @@ def _handle_probe(
             {"error": {"code": "misconfigured", "message": PROVIDERS_ERROR_GENERIC}},
             identity=identity,
             csrf_token=save_token,
+            probe_csrf_token=probe_token,
         )
         return 500, html_body, response_headers
 
@@ -870,6 +881,7 @@ def _handle_probe(
         display,
         identity=identity,
         csrf_token=save_token,
+        probe_csrf_token=probe_token,
         probe_result=probe_result,
     )
     return 200, html_body, response_headers
