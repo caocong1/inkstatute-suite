@@ -75,18 +75,18 @@ docs/architecture/        # ADR / 架构
 - 只读 Admin API + Admin Web UI（会话/任务/反馈/健康/gates）
 - 输出边界、反馈标准化、会话只读视图、记忆与多后端扩展（多数 **feature flag 默认 OFF**）
 
-### 明确还没有（下一里程碑目标）
+### Operator Config Console (delivered)
 
-现有 `admin-web-ui` **只有只读运营看板**，不能配置通道或模型。
+The Admin Web UI now exposes server-side rendered (SSR) config pages under `/config/*`:
 
-计划增加 **运营配置页（Operator Config Console）**：
+- `/config/channels` — QQBot and WeCom enablement, dual-knob visibility, and secret-ref credentials
+- `/config/providers` — built-in vendor profiles (OpenAI, Anthropic) plus custom OpenAI-compatible endpoints
+- `/config/catalog` — main model selection from the built-in catalog with vision-capability badges
+- `/config/vision` — image-turn routing mode and optional dedicated vision provider/model
 
-1. **通道配置**：QQBot、企业微信（启用开关、回调/凭证引用、双开关安全默认 OFF）
-2. **Provider 配置**：类似 Hermes——内置厂商 + 自定义 OpenAI 兼容端点；模型目录内置可选
-3. **主模型 / 视觉模型分流**：
-   - 多模态主模型可自带识图 → 图片随主模型走
-   - 主模型不支持识图（如部分 GLM）→ 配置独立识图模型；用户发图时判定是否先走识图模型，再与主模型混合使用
-4. 密钥只存 **引用（ref）**，值在进程边解析；不进仓库、不进契约日志原文
+Each config page is rendered with `html.escape`, carries a signed CSRF token bound to the caller identity and route (HMAC-SHA256), and shows a gate-honesty notice. The admin console edits configuration. It does not perform live acceptance. Phase 5 WeCom UAT, Phase 8 lawyer trial, and QQ live acceptance remain carried human gates.
+
+Secrets are stored and edited as refs only (`env:…`, `secret://…`); values are resolved at the process edge, never in the UI or repo.
 
 ---
 
