@@ -1290,7 +1290,7 @@ def _handle_vision(
             csrf_token=save_token,
             probe_csrf_token=probe_token,
             error_message=err_msg,
-            read_only=code == "operator_config_disabled",
+            read_only=code in ("operator_config_disabled", "forbidden"),
         )
         return put_status, html_body, response_headers
 
