@@ -78,6 +78,7 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/config/channels", "Channel Config"),
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),
+        ("/config/vision", "Vision Config"),
     ]
     nav_links = "\n".join(
         f'      <a href="{_esc(href)}" class="nav-link">{_esc(label)}</a>'

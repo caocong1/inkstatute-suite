@@ -167,7 +167,7 @@ Plans:
 | 74. Admin Config API + RBAC | v1.10 | 3/3 | Complete    | 2026-07-10 |
 | 75. Channel Config Apply | v1.10 | 5/5 | Complete    | 2026-07-10 |
 | 76. Provider Registry + Model Catalog | v1.10 | 4/4 | Complete    | 2026-07-11 |
-| 77. Vision Routing Runtime | v1.10 | 0/TBD | Not started | - |
+| 77. Vision Routing Runtime | v1.10 | 4/4 | Complete   | 2026-07-11 |
 | 78. Console SSR, Docs & Gate Honesty | v1.10 | 0/TBD | Not started | - |
 | 68. Host Skeleton + Safety Baseline | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 69. Runtime Registration / Wiring | v1.9 | 3/3 | Complete | 2026-07-10 |

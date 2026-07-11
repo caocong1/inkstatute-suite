@@ -60,6 +60,15 @@ from .providers import (
     parse_providers_form,
     render_providers_page,
 )
+from .vision import (
+    ERROR_FLAG_OFF as VISION_ERROR_FLAG_OFF,
+    ERROR_FORBIDDEN as VISION_ERROR_FORBIDDEN,
+    ERROR_GENERIC as VISION_ERROR_GENERIC,
+    ERROR_VALIDATION as VISION_ERROR_VALIDATION,
+    SUCCESS_FLASH as VISION_SUCCESS_FLASH,
+    parse_vision_form,
+    render_vision_page,
+)
 
 CSP_HEADER = "default-src 'self'; script-src 'self'; style-src 'self'"
 
@@ -79,12 +88,14 @@ _SECTION_MAP = {
     "/config/providers": "providers",
     "/config/providers/probe": "providers_probe",
     "/config/catalog": "catalog",
+    "/config/vision": "vision",
 }
 
 _CHANNELS_PATH = "/config/channels"
 _PROVIDERS_PATH = "/config/providers"
 _PROBE_PATH = "/config/providers/probe"
 _CATALOG_PATH = "/config/catalog"
+_VISION_PATH = "/config/vision"
 
 # Routes that accept POST (all other routes remain GET-only).
 _POST_ROUTES = frozenset({
@@ -92,6 +103,7 @@ _POST_ROUTES = frozenset({
     _PROVIDERS_PATH,
     _PROBE_PATH,
     _CATALOG_PATH,
+    _VISION_PATH,
 })
 
 
@@ -210,7 +222,7 @@ def handle_admin_web_ui_request(
     # Operational routes remain GET-only (POST only on config routes).
     if http_method == "POST" and route_path not in _POST_ROUTES:
         body_html = render_dashboard(
-            section if section not in ("channels", "providers", "catalog", "providers_probe") else "index",
+            section if section not in ("channels", "providers", "catalog", "providers_probe", "vision") else "index",
             {"error": {"code": "method_not_allowed", "message": "POST is only allowed on config routes"}},
             identity=None,
         )
@@ -236,7 +248,7 @@ def handle_admin_web_ui_request(
             rbac_enabled=True,
         )
         if identity is None:
-            render_section = section if section not in ("channels", "providers", "catalog", "providers_probe") else "index"
+            render_section = section if section not in ("channels", "providers", "catalog", "providers_probe", "vision") else "index"
             body_html = render_dashboard(
                 render_section,
                 {"error": {"code": "unauthorized", "message": "Invalid or expired RBAC token"}},
@@ -260,6 +272,11 @@ def handle_admin_web_ui_request(
             elif section == "catalog":
                 body_html = render_catalog_page(
                     {"error": {"code": "forbidden", "message": CATALOG_ERROR_FORBIDDEN}},
+                    identity=identity,
+                )
+            elif section == "vision":
+                body_html = render_vision_page(
+                    {"error": {"code": "forbidden", "message": VISION_ERROR_FORBIDDEN}},
                     identity=identity,
                 )
             else:
@@ -341,6 +358,26 @@ def handle_admin_web_ui_request(
     # Step 4/5 — catalog GET/POST
     if route_path == _CATALOG_PATH:
         return _handle_catalog(
+            http_method=http_method,
+            body=body,
+            identity=identity,
+            auth_header=auth_header,
+            feature_flags=feature_flags,
+            handle_admin_get=handle_admin_get,
+            handle_admin_put=handle_admin_put,
+            config_store=config_store,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            env=env,
+            rbac_secret=secret,
+            client=client,
+            boundary=boundary,
+            response_headers=response_headers,
+        )
+
+    # Step 4/5 — vision GET/POST
+    if route_path == _VISION_PATH:
+        return _handle_vision(
             http_method=http_method,
             body=body,
             identity=identity,
@@ -818,6 +855,14 @@ def _handle_probe(
         )
         return 400, html_body, response_headers
 
+    # Extract optional return_to (vision probe form re-renders the vision page).
+    raw_return_to = form_map.get("return_to")
+    if isinstance(raw_return_to, list):
+        return_to = raw_return_to[0] if raw_return_to else ""
+    else:
+        return_to = str(raw_return_to or "")
+    return_to = return_to.strip()
+
     # Proxy the probe — prefer dedicated handle_config_probe, fall back to handle_admin_put.
     probe_body: dict[str, Any] = {"target": target}
     if handle_config_probe is not None:
@@ -851,7 +896,43 @@ def _handle_probe(
         )
         return 500, html_body, response_headers
 
-    # Re-GET provider data for re-render with ephemeral generic probe result.
+    probe_result = None
+    if isinstance(probe_data, dict):
+        probe_result = probe_data.get("data")
+        if not isinstance(probe_result, Mapping):
+            probe_result = None
+
+    # When the probe handler returns an error (non-200), show a generic failure
+    # banner so the operator sees feedback instead of a silently blank page.
+    if probe_status != 200 or probe_result is None:
+        probe_result = {"status": "fail", "target": target}
+
+    if return_to == "vision":
+        # Re-GET vision + catalog + provider data for the vision page re-render.
+        vision_save_token = issue_csrf_token(identity, _VISION_PATH, signing_key=rbac_secret)
+        display = _vision_display(
+            client,
+            handle_admin_get,
+            identity,
+            auth_header,
+            feature_flags,
+            read_model,
+            feedback_queue,
+            env,
+            rbac_secret,
+            config_store,
+        )
+        display_data = display if isinstance(display, dict) else {"error": {"code": "probe_error", "message": VISION_ERROR_GENERIC}}
+        html_body = render_vision_page(
+            display_data,
+            identity=identity,
+            csrf_token=vision_save_token,
+            probe_csrf_token=probe_token,
+            probe_result=probe_result,
+        )
+        return 200, html_body, response_headers
+
+    # Re-GET provider data for the providers page re-render.
     get_status, get_data = client.proxy(
         handle_admin_get,
         _PROVIDERS_PATH,
@@ -864,17 +945,6 @@ def _handle_probe(
         auth_header=auth_header,
         config_store=config_store,
     )
-
-    probe_result = None
-    if isinstance(probe_data, dict):
-        probe_result = probe_data.get("data")
-        if not isinstance(probe_result, Mapping):
-            probe_result = None
-
-    # When the probe handler returns an error (non-200), show a generic failure
-    # banner so the operator sees feedback instead of a silently blank page.
-    if probe_status != 200 or probe_result is None:
-        probe_result = {"status": "fail", "target": target}
 
     display = get_data if get_status == 200 else {"error": {"code": "probe_error", "message": PROVIDERS_ERROR_GENERIC}}
     html_body = render_providers_page(
@@ -1048,6 +1118,206 @@ def _catalog_display(
         cat_data = dict(cat_data)
         cat_data["providers"] = providers_list
     return cat_data
+
+
+def _vision_display(
+    client: AdminApiClient,
+    handle_admin_get: HandleAdminGet,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    config_store: Any,
+) -> dict[str, Any] | None:
+    """Fetch vision config + catalog + provider registry for the renderer."""
+    vis_status, vis_data = client.proxy(
+        handle_admin_get,
+        _VISION_PATH,
+        identity,
+        read_model=read_model,
+        feedback_queue=feedback_queue,
+        feature_flags=feature_flags,
+        env=env,
+        rbac_secret=rbac_secret,
+        auth_header=auth_header,
+        config_store=config_store,
+    )
+    if vis_status != 200 or not isinstance(vis_data, dict):
+        return vis_data if isinstance(vis_data, dict) else None
+
+    # The API metadata normally reflects the flag, but enforce it here so the
+    # renderer always disables the form when the flag is OFF.
+    vis_data = dict(vis_data)
+    metadata = vis_data.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+    metadata["operator_config_enabled"] = bool(feature_flags.operator_config_enabled)
+    vis_data["metadata"] = metadata
+
+    cat_data = _catalog_display(
+        client,
+        handle_admin_get,
+        identity,
+        auth_header,
+        feature_flags,
+        read_model,
+        feedback_queue,
+        env,
+        rbac_secret,
+        config_store,
+    )
+    if isinstance(cat_data, dict):
+        vis_data = dict(vis_data)
+        vis_data["catalog_entries"] = cat_data.get("catalog_entries", [])
+        vis_data["providers"] = cat_data.get("providers", [])
+    return vis_data
+
+
+def _handle_vision(
+    *,
+    http_method: str,
+    body: bytes | str | None,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    handle_admin_get: HandleAdminGet,
+    handle_admin_put: HandleAdminPut | None,
+    config_store: Any,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    client: AdminApiClient,
+    boundary: AdminUiBoundary,
+    response_headers: dict[str, str],
+) -> tuple[int, str, dict[str, str]]:
+    """GET renders vision config; POST validates CSRF then proxies object PUT."""
+    del boundary  # form uses escaped copy constants
+    save_token = issue_csrf_token(identity, _VISION_PATH, signing_key=rbac_secret)
+    probe_token = issue_csrf_token(identity, _PROBE_PATH, signing_key=rbac_secret)
+
+    if http_method == "POST":
+        valid, form_map = _validate_post_csrf(
+            body, identity, _VISION_PATH, rbac_secret=rbac_secret
+        )
+        if not valid:
+            html_body = render_vision_page(
+                {"error": {"code": "forbidden", "message": VISION_ERROR_FORBIDDEN}},
+                identity=identity,
+                csrf_token=save_token,
+                probe_csrf_token=probe_token,
+            )
+            return 403, html_body, response_headers
+
+        if handle_admin_put is None:
+            html_body = render_vision_page(
+                {"error": {"code": "misconfigured", "message": VISION_ERROR_GENERIC}},
+                identity=identity,
+                csrf_token=save_token,
+                probe_csrf_token=probe_token,
+            )
+            return 500, html_body, response_headers
+
+        assert form_map is not None  # validated above
+        section_payload = parse_vision_form(form_map)
+
+        put_status, put_data = client.proxy_put(
+            handle_admin_put,
+            _VISION_PATH,
+            section_payload,
+            identity,
+            feature_flags=feature_flags,
+            config_store=config_store,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+        )
+
+        if put_status == 200:
+            display = _vision_display(
+                client,
+                handle_admin_get,
+                identity,
+                auth_header,
+                feature_flags,
+                read_model,
+                feedback_queue,
+                env,
+                rbac_secret,
+                config_store,
+            )
+            display_data = display if isinstance(display, dict) else put_data
+            html_body = render_vision_page(
+                display_data,
+                identity=identity,
+                csrf_token=save_token,
+                probe_csrf_token=probe_token,
+                flash=VISION_SUCCESS_FLASH,
+                flash_kind="success",
+            )
+            return 200, html_body, response_headers
+
+        error = put_data.get("error") if isinstance(put_data, dict) else None
+        code = error.get("code") if isinstance(error, dict) else None
+        if code == "forbidden":
+            err_msg = VISION_ERROR_FORBIDDEN
+        elif code == "operator_config_disabled":
+            err_msg = VISION_ERROR_FLAG_OFF
+        elif code == "invalid_config":
+            err_msg = VISION_ERROR_VALIDATION
+        else:
+            err_msg = VISION_ERROR_GENERIC
+
+        display = _vision_display(
+            client,
+            handle_admin_get,
+            identity,
+            auth_header,
+            feature_flags,
+            read_model,
+            feedback_queue,
+            env,
+            rbac_secret,
+            config_store,
+        )
+        display_data = display if isinstance(display, dict) else put_data
+        html_body = render_vision_page(
+            display_data,
+            identity=identity,
+            csrf_token=save_token,
+            probe_csrf_token=probe_token,
+            error_message=err_msg,
+            read_only=code == "operator_config_disabled",
+        )
+        return put_status, html_body, response_headers
+
+    # GET
+    display = _vision_display(
+        client,
+        handle_admin_get,
+        identity,
+        auth_header,
+        feature_flags,
+        read_model,
+        feedback_queue,
+        env,
+        rbac_secret,
+        config_store,
+    )
+    status = 200
+    if not isinstance(display, dict):
+        display = {"error": {"code": "vision_error", "message": VISION_ERROR_GENERIC}}
+        status = 500
+    html_body = render_vision_page(
+        display,
+        identity=identity,
+        csrf_token=save_token,
+        probe_csrf_token=probe_token,
+    )
+    return status, html_body, response_headers
 
 
 def _extract_auth_header(headers: Mapping[str, str] | None) -> str | None:
