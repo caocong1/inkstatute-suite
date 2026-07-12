@@ -1,5 +1,37 @@
 # Project Milestones: 墨律 InkStatute
 
+## v1.10 v1.10 (Shipped: 2026-07-12)
+
+**Phases completed:** 7 phases, 26 plans, 58 tasks
+
+**Key accomplishments:**
+
+- Empty-deps `inkstatute-operator-config` with frozen refs-only OperatorConfigDocument schemas and shape-only secret-ref normalize (no qqbot-service dependency)
+- Fail-closed `validate_document` rejects Hermes filesystem/profile authority and planted raw secrets without echo, while accepting refs-only OperatorConfigDocument payloads
+- Default-OFF `operator_config_enabled` plus atomic JSON `OperatorConfigStore` that refuses writes when OFF, with V2 gate coverage and gitignored runtime store paths
+- Admin contract freeze unblocked for `operator_config_enabled`, `/config` registered as ADMIN+OPERATOR in matrix and route table, and operator-config on admin-related V2 gate PYTHONPATHs.
+- Admin/operator can GET and PUT `/config/{channels,providers,catalog,vision}` through pure store-backed handlers; operational PUT returns 405 after auth; flag-OFF PUT maps to 403 `operator_config_disabled` without bypassing `OperatorConfigStore.save`.
+- Default-OFF `wecom_channel_enabled` with freeze + host-gate PYTHONPATH, plus five failing Wave 0 scaffolds for Plans 02–05.
+- Additive `effective` dual-knob read model and `restart_required` apply semantics on GET/PUT `/config/channels` without collapsing host enabled or resolving secrets.
+- QQ host compose loads operator-config store when the file exists (else env), preserves dual-knob AND, and documents restart-to-apply.
+- WeCom host/doc materializer plus dual-knob AND wiring with store-wins-if-exists load, matching QQ apply parity.
+- Incremental admin-web-ui `/config/channels` SSR form with dual-knob QQ/WeCom panels, secret-ref fields, and POST→`handle_admin_put` proxy (restart-to-apply; CSRF audit deferred to Phase 78)
+- Frozen vendor/model catalog, model_allowlist + vision_provider_id linkage, and server-enforced provider/catalog/vision consistency validation in operator-config
+- Six RED test-only modules specifying canonical built-ins, custom allowlists, catalog binding, SSRF-safe probing, signed CSRF, and SSR provider/catalog flows before either service implementation changes
+- Stdlib SSR provider/catalog/probe surface with nonce+HMAC-SHA256 route-bound CSRF on every new POST route
+- Operator-config `routing_mode` enum validation and vision pair completeness enforcement gated by routing mode
+- Admin-console-api vision GET/PUT metadata (routing_modes, vision_configured, vision_status), empty-string normalization, and vision probe integration proof after a Phase 77 routing_mode save
+- Vision Config SSR page with routing-mode selector, provider/model selects, route-bound CSRF, and probe re-render, consuming Phase 77-02 API metadata.
+- Added shared gate-honesty UI chrome and dashboard/gate-status cards per the 78-UI-SPEC, plus Phase 78 typography/spacing fixes.
+- Upgraded `/config/channels` to signed, route-bound CSRF protection and added the gate-honesty banner to the channel form.
+- Integrated the shared gate-honesty banner into the Provider, Catalog, and Vision config forms and verified each page in tests.
+- Updated operator documentation and the example environment to describe the SSR config pages, CSRF model, and gate-honesty policy.
+- Make `DefaultRunRuntime` the consumer of `VisionRouter` for image-bearing turns.
+- Provide the resolver builder and backend capabilities so services can inject a production-ready vision routing pipeline.
+- Wire the vision resolver/runner into the real QQBot and WeCom service runtime compositions so image-bearing turns call `VisionRouter.decide()`.
+
+---
+
 ## v1.9 QQBot Host Composition (Shipped: 2026-07-10)
 
 **Delivered:** Assembled the v1.8 QQBot package-level channel into a deployable thin production webhook host (`services/qqbot-service/`), dual-knob runtime registration into `DefaultRunRuntime.channels`, Protocol-path smoke dry-run hardening, and controlled live HUMAN GATE honesty/runbook. Audit passed 11/11 requirements. Closed v1.8 accepted host-composition gaps without claiming live QQ OpenAPI acceptance.

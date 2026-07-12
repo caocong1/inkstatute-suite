@@ -1,12 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.10
-milestone_name: Operator Config Console
-current_plan: 3
-status: completed
+milestone_name: milestone
+status: Awaiting next milestone
 stopped_at: Phase 78 planning complete
-last_updated: "2026-07-12T07:36:07.375Z"
-last_activity: 2026-07-12
+last_updated: "2026-07-12T07:43:45.517Z"
+last_activity: 2026-07-12 — Milestone v1.10 completed and archived
 progress:
   total_phases: 7
   completed_phases: 7
@@ -26,14 +25,10 @@ See: .planning/PROJECT.md (updated 2026-07-10)
 
 ## Current Position
 
-Phase: 78.1 (close-gap-wire-visionrouter-into-turn-runtime-vis-02-03-04) — COMPLETED
-Current Plan: 3
-Total Plans in Phase: 3
-Plan: 3 of 3
-Status: Completed
-Last activity: 2026-07-12
-
-Progress: [████████░░] 86% (26/26 plans, 6/7 v1.10 phases)
+Phase: Milestone v1.10 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-12 — Milestone v1.10 completed and archived
 
 ### Deferred Items
 
@@ -184,7 +179,4 @@ v1.9 archive: .planning/milestones/v1.9-ROADMAP.md
 
 ## Operator Next Steps
 
-- v1.10 milestone audit complete: `.planning/v1.10-MILESTONE-AUDIT.md`.
-- Status: `gaps_found` — VIS-02/03/04 are not verified in any phase VERIFICATION.md and `VisionRouter` is not wired into the message/turn runtime.
-- Recommended: insert a closure phase to wire `VisionRouter.decide()` into the WeCom/QQBot/Hermes turn path.
-- Carried human gates (Phase 5 / 8 / QQ `--live`) remain open — do not auto-close.
+- Start the next milestone with /gsd-new-milestone
