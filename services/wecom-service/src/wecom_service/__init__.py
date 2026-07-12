@@ -52,6 +52,7 @@ from .task_flow import (
     task_stage_idempotency_key,
 )
 from .channel_wiring import build_wecom_channel_config, load_wecom_channel_config
+from .wiring import WeComWiredRuntime, build_wecom_wired_runtime
 
 __all__ = [
     "ActiveTaskRoute",
@@ -74,6 +75,7 @@ __all__ = [
     "WeComSessionRuntimeAction",
     "WeComSessionRuntimeOutcome",
     "WeComRuntimeIngress",
+    "WeComWiredRuntime",
     "ack_response",
     "apply_output_policy",
     "append_runtime_audit",
@@ -84,6 +86,7 @@ __all__ = [
     "build_template_card_envelope",
     "build_text_send_envelope",
     "build_wecom_channel_config",
+    "build_wecom_wired_runtime",
     "create_task_flow",
     "deadline_exceeded",
     "load_wecom_channel_config",

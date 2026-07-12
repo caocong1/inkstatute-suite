@@ -15,6 +15,7 @@ from typing import Any, Mapping
 from inkstatute_channels_qqbot.adapter import QQBotChannelAdapter
 from inkstatute_channels_qqbot.config import QQBotChannelConfig
 from inkstatute_channels_qqbot.token_manager import TokenManager
+from inkstatute_operator_config.vision_resolver import build_vision_resolver
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 from platform_runtime.protocols import BackendAdapter
 from platform_runtime.runtime import DefaultRunRuntime
@@ -43,6 +44,8 @@ class QQBotWiredRuntime:
     # Prefer these over reaching into adapter private attributes.
     message_transport: object | None = None
     token_manager: TokenManager | None = None
+    vision_resolver: object | None = None
+    vision_runner: object | None = None
 
 
 def build_qqbot_channel_config(
@@ -75,6 +78,7 @@ def build_qqbot_wired_runtime(
     token_manager: TokenManager | None = None,
     transport: object | None = None,
     token_transport: object | None = None,
+    vision_runner: object | None = None,
 ) -> QQBotWiredRuntime:
     """Compose channel config, adapter, and ``DefaultRunRuntime`` with explicit DI.
 
@@ -135,11 +139,20 @@ def build_qqbot_wired_runtime(
         token_manager=injected_token_manager,
         transport=injected_transport,
     )
+    # Build a vision resolver from operator config if a store is supplied.
+    # Store-less callers still get a fail-closed resolver for image-bearing turns.
+    vision_resolver = build_vision_resolver(
+        store=config_store,
+        backend=backend,
+        vision_runner=vision_runner,
+    )
     # Explicit one-element channels tuple — no auto-discovery (REG-02 shape).
     runtime = DefaultRunRuntime(
         backend=backend,
         channels=(adapter,),
         feature_flags=feature_flags,
+        vision_resolver=vision_resolver,
+        vision_runner=vision_runner,
     )
     live_io_ready = adapter._live_io_ready()
     return QQBotWiredRuntime(
@@ -151,4 +164,6 @@ def build_qqbot_wired_runtime(
         live_io_ready=live_io_ready,
         message_transport=injected_transport,
         token_manager=injected_token_manager,
+        vision_resolver=vision_resolver,
+        vision_runner=vision_runner,
     )

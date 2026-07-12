@@ -290,10 +290,10 @@ v1.10 Future Requirements (deferred): CFG-F01..F03, PROV-F01..F03, VIS-F01..F02,
   5. `wecom-service` declares dependencies and exports `build_wecom_wired_runtime` so `wecom_service` can import `inkstatute_channels_wecom` without errors
   6. Text-only turns never invoke the vision model; image-bearing `multimodal_main` turns pass `vision_decision` metadata to the backend
 
-**Plans**: 2/3 complete
+**Plans**: 3/3 complete
 
 Plans:
 
 - [x] 78.1-01-PLAN.md — Wire `vision_resolver`/`vision_runner` into `DefaultRunRuntime` and fail-closed synthetic runs
 - [x] 78.1-02-PLAN.md — Add `build_vision_resolver` in `operator-config`, backend `supports_vision` capabilities, and `OpenAIClientRunner` image attachment support
-- [ ] 78.1-03-PLAN.md — Update `qqbot-service` wiring/`http_server.py` and create `wecom-service` wiring + dependencies
+- [x] 78.1-03-PLAN.md — Update `qqbot-service` wiring/`http_server.py` and create `wecom-service` wiring + dependencies

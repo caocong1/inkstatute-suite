@@ -13,6 +13,9 @@ from collections.abc import Callable, Mapping
 from http.server import BaseHTTPRequestHandler
 from typing import Any
 
+from platform_runtime.feature_flags import RuntimeFeatureFlags
+
+from qqbot_service.wiring import build_qqbot_wired_runtime
 from qqbot_service.webhook import handle_qqbot_webhook_request
 
 __all__ = [
@@ -135,10 +138,22 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
 
         wired = getattr(self.server, "wired", None)
         if wired is None:
-            self._write_response(503, b'{"error":"not_configured"}', {
-                "Content-Type": "application/json; charset=utf-8",
-            })
-            return
+            backend = getattr(self.server, "backend", None)
+            config_store = getattr(self.server, "config_store", None)
+            if backend is None or config_store is None:
+                self._write_response(503, b'{"error":"not_configured"}', {
+                    "Content-Type": "application/json; charset=utf-8",
+                })
+                return
+            flags = getattr(self.server, "flags", None) or RuntimeFeatureFlags()
+            vision_runner = getattr(self.server, "vision_runner", None)
+            wired = build_qqbot_wired_runtime(
+                backend=backend,
+                flags=flags,
+                config_store=config_store,
+                vision_runner=vision_runner,
+            )
+            self.server.wired = wired
 
         env = getattr(self.server, "env", None) or {}
         scheduler = getattr(self.server, "post_ack_scheduler", None)
