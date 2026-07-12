@@ -10,18 +10,33 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: v1.10 Operator Config Console
+## Current Milestone: v1.11 Product Console
 
-**Goal:** Deliver an InkStatute-owned operator configuration console so operators can configure QQ/WeCom channels, providers (built-in vendors + custom OpenAI-compatible), built-in model catalogs, and vision/image-routing (dedicated vision model when the main model lacks vision) — without editing Hermes.
+**Goal:** Make the admin console a runnable, product-grade operations control plane — after configuring WeCom/QQBot/provider/model, operators can orchestrate channel host processes and use the channels, with full observability through reports, logs, contract event audit, and health/gate dashboards.
 
 **Target features:**
-- Channel config UI/API for QQBot and WeCom (enable flags, secret refs, dual-knob defaults OFF)
-- Provider config: built-in vendors + custom endpoints; built-in selectable model catalog
-- Vision routing: multimodal main vs dedicated vision model; inbound image turns decide vision→main mix
-- Config persistence with process-edge secret resolution (no secrets in git or contract log bodies)
-- README / operator docs aligned with the config surface
+- Runnable service entry points for admin-web-ui and admin-console-api (stdlib http.server, port binding, signal handling, startup scripts)
+- Process orchestration: console as control plane can start/stop/inspect WeCom/QQBot host processes; config save → orchestrate restart to apply
+- Observability — reports: session/task volume, completion rate, long-task success rate, feedback distribution aggregate stats
+- Observability — real-time logs: online viewing of WeCom/QQBot/adapter runtime logs with level filter and search
+- Observability — contract event audit: AgentTurn/FeedbackEvent stream view with trace_id tracking
+- Observability — health/gate dashboard: service health, gate pass rate, feature flag status, human gate status visualization (enhance existing /gates)
+- Auth — token management: RBAC token issue/revoke/expire management page
+- Auth — login session interface: reserved username/password login + session cookie interface, MVP token-only but extensible
+- Product polish: error pages, navigation, responsive layout, one-click startup script, .env.example completion
+
+**Deployment target:** Local/single-machine ops, prioritize usability. No TLS/reverse-proxy/production-stack requirement for this milestone.
+
+**Architecture constraint:** Keep stdlib http.server SSR, no React SPA / new DB / new queue (per AGENTS.md).
 
 **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
+
+## Previous: v1.10 Operator Config Console — SHIPPED
+
+**Shipped:** 2026-07-12
+**Status:** COMPLETE — 7 phases shipped (73–78.1), 20/20 requirements satisfied, audit passed. InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
+
+**Archive:** [v1.10-ROADMAP.md](milestones/v1.10-ROADMAP.md) | [v1.10-REQUIREMENTS.md](milestones/v1.10-REQUIREMENTS.md) | [v1.10-MILESTONE-AUDIT.md](milestones/v1.10-MILESTONE-AUDIT.md)
 
 ## Previous: v1.9 QQBot Host Composition — SHIPPED
 
@@ -236,8 +251,8 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v1.9 QQBot Host Composition (Phases 68–72) — thin QQBot webhook host + Protocol-path smoke + controlled live HUMAN GATE.
-- **Active milestone:** v1.10 Operator Config Console — defining requirements.
+- **Last shipped:** v1.10 Operator Config Console (Phases 73–78.1) — operator config for channels, providers/catalog, vision routing.
+- **Active milestone:** v1.11 Product Console — defining requirements.
 - **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
 - **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
 - **Doc updates:** Root README + `.env.example` describe usage and planned config console (2026-07-10).
@@ -263,4 +278,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-10 after Phase 74*
+*Last updated: 2026-07-12 — milestone v1.11 Product Console started*
