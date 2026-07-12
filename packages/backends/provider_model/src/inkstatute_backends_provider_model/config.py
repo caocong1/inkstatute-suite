@@ -27,6 +27,7 @@ class ProviderModelBackendConfig:
     api_key_ref: str | None = None
     api_base_url: str | None = None
     timeout: float = 30.0
+    supports_vision: bool | None = None
     metadata: JsonObject = field(default_factory=dict)
 
 

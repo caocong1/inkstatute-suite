@@ -105,6 +105,7 @@ class HermesBackendAdapter:
         run_id = self._new_run_id()
         backend_run_id = f"{self.config.backend_id}:{run_id}"
         raw_payload_ref = result.raw_payload_ref or _raw_payload_ref(req)
+        vision_decision = req.metadata.get("vision_decision")
         run_metadata = {
             "backend_id": self.config.backend_id,
             "backend_run_id": backend_run_id,
@@ -115,13 +116,20 @@ class HermesBackendAdapter:
             "artifact_refs": list(result.artifact_refs),
             "trace_refs": list(result.trace_refs),
             "runner_metadata": _sanitize_metadata(result.metadata),
+            **({"vision_decision": vision_decision} if vision_decision is not None else {}),
         }
+        result_obj = result.result or _default_result(req, status)
+        if vision_decision is not None:
+            result_obj = replace(
+                result_obj,
+                metadata={**result_obj.metadata, "vision_decision": vision_decision},
+            )
         run = Run(
             run_id=run_id,
             status=status,
             turn_id=req.turn.turn_id,
             solution_id=req.solution.solution_id,
-            result=result.result or _default_result(req, status),
+            result=result_obj,
             metadata=run_metadata,
         )
         self._runs[run_id] = run
@@ -235,6 +243,7 @@ class HermesBackendAdapter:
         backend_run_id = str(response.get("run_id") or response.get("id") or run_id)
         status_mapping = map_hermes_run_status(response.get("status", AsyncTaskState.QUEUED.value))
         raw_payload_ref = response.get("raw_payload_ref") or _raw_payload_ref(req)
+        vision_decision = req.metadata.get("vision_decision")
         run = Run(
             run_id=run_id,
             status=status_mapping.status,
@@ -248,6 +257,7 @@ class HermesBackendAdapter:
                 "raw_payload_ref": raw_payload_ref,
                 "request_content_sha256": _content_sha256(req.turn.content),
                 **status_mapping.metadata,
+                **({"vision_decision": vision_decision} if vision_decision is not None else {}),
             },
         )
         self._runs[run_id] = run

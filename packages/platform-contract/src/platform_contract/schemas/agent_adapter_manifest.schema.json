@@ -96,6 +96,9 @@
         },
         "session_memory_support": {
           "type": "boolean"
+        },
+        "supports_vision": {
+          "type": "boolean"
         }
       }
     },

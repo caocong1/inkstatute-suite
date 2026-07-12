@@ -23,7 +23,7 @@ class ContractCountFreezeTests(unittest.TestCase):
     """Assert contract surface counts remain frozen at the v1.5 baseline."""
 
     BACKEND_ADAPTER_METHOD_COUNT = 9
-    ADAPTER_CAPABILITY_SET_FIELD_COUNT = 14
+    ADAPTER_CAPABILITY_SET_FIELD_COUNT = 15
     CHANNEL_ADAPTER_METHOD_COUNT = 6
     ROUTER_PORT_METHOD_COUNT = 1
     SKILL_REGISTRY_PORT_METHOD_COUNT = 3

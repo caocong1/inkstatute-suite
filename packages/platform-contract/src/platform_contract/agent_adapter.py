@@ -31,6 +31,7 @@ class AdapterCapabilitySet:
     live_update_support: bool = False
     parallel_task_support: bool = False
     session_memory_support: bool = False
+    supports_vision: bool = False
 
 
 @dataclass(frozen=True, slots=True)

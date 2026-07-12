@@ -90,10 +90,10 @@ class ProviderModelManifestTests(unittest.TestCase):
         self.assertIs(selection.contract_compatible, True)
         self.assertIs(selection.live_acceptance_allowed, False)
 
-    def test_capabilities_has_14_fields(self) -> None:
+    def test_capabilities_has_15_fields(self) -> None:
         from dataclasses import fields
 
-        self.assertEqual(len(fields(AdapterCapabilitySet)), 14)
+        self.assertEqual(len(fields(AdapterCapabilitySet)), 15)
 
     def test_manifest_does_not_overclaim_unsupported_capabilities(self) -> None:
         capabilities = build_provider_model_manifest().capabilities

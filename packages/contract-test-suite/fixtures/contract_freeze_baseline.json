@@ -2,10 +2,10 @@
   "algorithm": "sha256",
   "files": {
     "packages/platform-contract/src/platform_contract/__init__.py": "197523934e073616c0adc69a860535d615d65c1f288670e5432c40946e2b482f",
-    "packages/platform-contract/src/platform_contract/agent_adapter.py": "73d798f03565365fa769c17152ad7484013b1c1db2d03849b6c7d1d554ae2f71",
+    "packages/platform-contract/src/platform_contract/agent_adapter.py": "e6c88fb0e2f5c6b059df8fc97f0994f92945be68ef793496824e6898e1054e0d",
     "packages/platform-contract/src/platform_contract/enums.py": "a52a74d24b32702a717d18298b720248583bb331da6db565ccfbf78fa0e43f6a",
     "packages/platform-contract/src/platform_contract/events.py": "3b31b2450acb787af63523e4ae5ffdafafa1385f882d50c9bc263bf3d08b6eb6",
-    "packages/platform-contract/src/platform_contract/schemas/agent_adapter_manifest.schema.json": "7791575e7fa9df0aa484cbdb01225c4fea8262bc29665b032ac07ac8920c5aba",
+    "packages/platform-contract/src/platform_contract/schemas/agent_adapter_manifest.schema.json": "f11307fbf5c19a6e2b79bd69c88f038d5efca73a389db99ddbffb130c6472bab",
     "packages/platform-contract/src/platform_contract/schemas/agent_result.schema.json": "45cd6d465698538ef00c57fad7adc024ec46fc55239e22d2f89c762fdf1217ce",
     "packages/platform-contract/src/platform_contract/schemas/agent_turn.schema.json": "79649b6263962392d2310644ea2c1e66c792fa2823452d1c1d91525cc348c685",
     "packages/platform-contract/src/platform_contract/schemas/approval.schema.json": "a34a276758f470ed3e1bf2f9ff75a2a0349be171512fc7eea6a5a371bc2a80d1",

@@ -27,6 +27,7 @@ from .schemas import (
 from .secrets import InvalidSecretRefError, normalize_config_secret_ref
 from .store import OperatorConfigStore, default_operator_config_path
 from .validate import OperatorConfigValidator, ValidationIssue, validate_document
+from .vision_resolver import VisionResolver, build_vision_resolver
 
 __all__ = [
     "BUILTIN_MODEL_CATALOG",
@@ -50,8 +51,10 @@ __all__ = [
     "WeComChannelDoc",
     "builtin_catalog_entry",
     "builtin_vendor_profile",
+    "build_vision_resolver",
     "default_operator_config_path",
     "normalize_config_secret_ref",
     "require_operator_config_writable",
     "validate_document",
+    "VisionResolver",
 ]

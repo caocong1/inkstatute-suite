@@ -383,9 +383,10 @@ class OpenAIClientRunner:
         self._api_key_resolver = api_key_resolver or _default_api_key_resolver
 
     async def invoke(self, req: RunRequest) -> ProviderModelExecResult:
+        messages = self._build_messages(req)
         request_payload: JsonObject = {
             "model": self.config.model_name,
-            "messages": [{"role": "user", "content": req.turn.content}],
+            "messages": messages,
             "timeout": self.config.timeout,
         }
 
@@ -403,7 +404,7 @@ class OpenAIClientRunner:
                 )
                 completion = await client.chat.completions.create(
                     model=self.config.model_name,
-                    messages=[{"role": "user", "content": req.turn.content}],
+                    messages=messages,
                 )
                 response = _completion_to_dict(completion)
         except Exception as exc:  # noqa: BLE001 - normalize all API errors
@@ -414,6 +415,41 @@ class OpenAIClientRunner:
             run_id=req.turn.turn_id,
             turn_id=req.turn.turn_id,
         )
+
+    def _build_messages(self, req: RunRequest) -> list[JsonObject]:
+        """Build OpenAI chat messages with optional image_url parts.
+
+        Text-only turns keep the legacy single-string content shape.  Image
+        turns are sent as a list of content parts; no raw image bytes are read.
+        """
+
+        attachments = getattr(req.turn, "attachments", None) or ()
+        image_attachments = [
+            attachment
+            for attachment in attachments
+            if attachment.kind == "image"
+            or (
+                attachment.mime_type
+                and str(attachment.mime_type).lower().startswith("image/")
+            )
+        ]
+        if not image_attachments:
+            return [{"role": "user", "content": req.turn.content or ""}]
+
+        content_parts: list[JsonObject] = []
+        if req.turn.content:
+            content_parts.append({"type": "text", "text": req.turn.content})
+        for attachment in image_attachments:
+            content_parts.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": attachment.uri,
+                        "detail": "auto",
+                    },
+                }
+            )
+        return [{"role": "user", "content": content_parts}]
 
     def _build_error_result(
         self,

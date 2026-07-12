@@ -28,11 +28,11 @@ class FakeTransport:
 
 
 class CodexCapabilityProbeTests(unittest.TestCase):
-    def test_probe_returns_14_field_capability_set(self) -> None:
+    def test_probe_returns_15_field_capability_set(self) -> None:
         report = CodexCapabilityProbe(FakeTransport()).probe()
 
         self.assertTrue(report.ok)
-        self.assertEqual(len(fields(report.capabilities)), 14)
+        self.assertEqual(len(fields(report.capabilities)), 15)
         self.assertIs(report.capabilities.no_channel_io, True)
         self.assertEqual(report.codex_version, "codex 1.0.0")
 

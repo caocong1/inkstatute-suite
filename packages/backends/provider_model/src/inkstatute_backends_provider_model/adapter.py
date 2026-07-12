@@ -119,6 +119,7 @@ class ProviderModelBackendAdapter:
         run_id = self._new_run_id()
         backend_run_id = f"{self.config.backend_id}:{run_id}"
         raw_payload_ref = result.raw_payload_ref or _raw_payload_ref(req)
+        vision_decision = req.metadata.get("vision_decision")
         run_metadata = {
             "backend_id": self.config.backend_id,
             "backend_run_id": backend_run_id,
@@ -128,8 +129,14 @@ class ProviderModelBackendAdapter:
             "provider_completion_id": result.completion_id,
             "artifact_refs": list(result.artifact_refs),
             "runner_metadata": _sanitize_metadata(result.metadata),
+            **({"vision_decision": vision_decision} if vision_decision is not None else {}),
         }
         agent_result = _sanitize_result(result.result) or _default_result(req, status)
+        if vision_decision is not None:
+            agent_result = replace(
+                agent_result,
+                metadata={**agent_result.metadata, "vision_decision": vision_decision},
+            )
         if result.artifact_refs:
             agent_result = replace(
                 agent_result,

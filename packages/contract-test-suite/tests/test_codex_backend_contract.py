@@ -64,10 +64,10 @@ class CodexBackendContractTests(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_codex_capabilities_field_count_matches_freeze_baseline(self) -> None:
-        """AdapterCapabilitySet must still have exactly 14 fields (SAFETY-02)."""
-        self.assertEqual(len(fields(AdapterCapabilitySet)), 14)
+        """AdapterCapabilitySet must still have exactly 15 fields (SAFETY-02)."""
+        self.assertEqual(len(fields(AdapterCapabilitySet)), 15)
         caps = codex_prototype_capabilities()
-        self.assertEqual(len(fields(caps)), 14)
+        self.assertEqual(len(fields(caps)), 15)
 
     def test_codex_adapter_exposes_exactly_9_backend_adapter_methods(self) -> None:
         """CodexBackendAdapter must expose exactly 9 BackendAdapter methods."""

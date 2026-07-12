@@ -28,6 +28,7 @@ def build_provider_model_manifest(
         bundle_id=None,
         capabilities=provider_model_prototype_capabilities(
             stream_event_support=stream_event_support,
+            supports_vision=bool(resolved.supports_vision),
         ),
         metadata={
             "default_lane": "oneshot",
@@ -43,8 +44,9 @@ def build_provider_model_manifest(
 def provider_model_prototype_capabilities(
     *,
     stream_event_support: bool = False,
+    supports_vision: bool = False,
 ) -> AdapterCapabilitySet:
-    """Return the reduced provider_model prototype capability set (14 fields)."""
+    """Return the reduced provider_model prototype capability set (15 fields)."""
 
     return AdapterCapabilitySet(
         hook_event_support=[],
@@ -61,6 +63,7 @@ def provider_model_prototype_capabilities(
         live_update_support=False,
         parallel_task_support=False,
         session_memory_support=True,
+        supports_vision=supports_vision,
     )
 
 

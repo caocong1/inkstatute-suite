@@ -25,7 +25,9 @@ def build_hermes_oneshot_manifest(config: HermesBackendConfig | None = None) -> 
         backend_version=resolved.backend_version,
         profile_name=resolved.profile_name,
         bundle_id=f"{resolved.profile_name}-profile-bundle",
-        capabilities=hermes_oneshot_capabilities(),
+        capabilities=hermes_oneshot_capabilities(
+            supports_vision=bool(resolved.supports_vision),
+        ),
         metadata={
             "default_lane": "oneshot",
             "ordinary_wecom_channel_owner": "inkstatute_wecom_service",
@@ -37,8 +39,10 @@ def build_hermes_oneshot_manifest(config: HermesBackendConfig | None = None) -> 
     )
 
 
-def hermes_oneshot_capabilities() -> AdapterCapabilitySet:
-    """Return the reduced default Hermes one-shot capability set."""
+def hermes_oneshot_capabilities(
+    supports_vision: bool = False,
+) -> AdapterCapabilitySet:
+    """Return the reduced default Hermes one-shot capability set (15 fields)."""
 
     return AdapterCapabilitySet(
         hook_event_support=[],
@@ -55,6 +59,7 @@ def hermes_oneshot_capabilities() -> AdapterCapabilitySet:
         live_update_support=False,
         parallel_task_support=False,
         session_memory_support=True,
+        supports_vision=supports_vision,
     )
 
 

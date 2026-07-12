@@ -69,10 +69,10 @@ class ProviderModelBackendContractTests(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_provider_model_capabilities_field_count_matches_freeze_baseline(self) -> None:
-        """AdapterCapabilitySet must still have exactly 14 fields (SAFETY-02)."""
-        self.assertEqual(len(fields(AdapterCapabilitySet)), 14)
+        """AdapterCapabilitySet must still have exactly 15 fields (SAFETY-02)."""
+        self.assertEqual(len(fields(AdapterCapabilitySet)), 15)
         caps = provider_model_prototype_capabilities()
-        self.assertEqual(len(fields(caps)), 14)
+        self.assertEqual(len(fields(caps)), 15)
 
     def test_provider_model_adapter_exposes_exactly_9_backend_adapter_methods(self) -> None:
         """ProviderModelBackendAdapter must expose exactly 9 BackendAdapter methods."""

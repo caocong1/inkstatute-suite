@@ -23,6 +23,7 @@ class HermesBackendConfig:
     oneshot_command: tuple[str, ...] = ()
     api_runs_enabled: bool = False
     api_base_url: str | None = None
+    supports_vision: bool | None = None
     metadata: JsonObject = field(default_factory=dict)
 
     @classmethod
