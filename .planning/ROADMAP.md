@@ -19,12 +19,12 @@
   - Archive: [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
 - ✅ **v1.9 QQBot Host Composition** - Phases 68-72 shipped 2026-07-10. Thin production webhook host, runtime registration, Protocol-path smoke hardening, controlled live HUMAN GATE. Audit passed (11/11 requirements).
   - Archive: [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
-- ⚠️ **v1.10 Operator Config Console** - Phases 73-78 (execution complete; audit gaps_found). InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
+- ⚠️ **v1.10 Operator Config Console** - Phases 73-78 shipped; Phase 78.1 gap closure (wire VisionRouter into turn runtime) planned. InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
   - Audit: [v1.10-MILESTONE-AUDIT.md](v1.10-MILESTONE-AUDIT.md)
 
 ## Current Milestone
 
-**v1.10 Operator Config Console** — Phases 73–78
+🚧 **v1.10 Operator Config Console** — Phases 73–78.1
 
 **Goal:** Deliver an InkStatute-owned operator configuration console so operators can configure QQ/WeCom channels, providers (built-in vendors + custom OpenAI-compatible), built-in model catalogs, and vision/image-routing (dedicated vision model when the main model lacks vision) — without editing Hermes.
 
@@ -42,6 +42,7 @@
 - [x] **Phase 76: Provider Registry + Model Catalog** - Built-in vendors, custom OpenAI-compatible providers, catalog selection, connection probe (completed 2026-07-11)
 - [x] **Phase 77: Vision Routing Runtime** - Vision policy + image-turn routing with fail-closed notices and output-boundary safety (completed 2026-07-11)
 - [x] **Phase 78: Console SSR, Docs & Gate Honesty** - Complete SSR config pages, operator docs, and `not_live_acceptance` honesty (completed 2026-07-12)
+- [ ] **Phase 78.1: Close gap — wire VisionRouter into turn runtime (VIS-02/03/04)** - Runtime `DefaultRunRuntime` calls `VisionRouter.decide()` via injected `vision_resolver`; `vision_then_main` path uses optional `vision_runner`; QQ/WeCom service wiring fixed (planned 2026-07-12)
 
 ## Phase Details
 
@@ -178,6 +179,7 @@ Plans:
 | 76. Provider Registry + Model Catalog | v1.10 | 4/4 | Complete    | 2026-07-11 |
 | 77. Vision Routing Runtime | v1.10 | 4/4 | Complete    | 2026-07-11 |
 | 78. Console SSR, Docs & Gate Honesty | v1.10 | 4/4 | Complete | 2026-07-12 |
+| 78.1 Close gap: wire VisionRouter into turn runtime | v1.10 | 0/3 | Planned | 2026-07-12 |
 | 68. Host Skeleton + Safety Baseline | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 69. Runtime Registration / Wiring | v1.9 | 3/3 | Complete | 2026-07-10 |
 | 70. Webhook Composition Path | v1.9 | 3/3 | Complete | 2026-07-10 |
@@ -272,4 +274,26 @@ Plans:
 v1.10 Future Requirements (deferred): CFG-F01..F03, PROV-F01..F03, VIS-F01..F02, HOST-F01..F03 — see [REQUIREMENTS.md](REQUIREMENTS.md). Promote via `$gsd-new-milestone` or `$gsd-review-backlog`.
 
 ---
-*Last updated: 2026-07-10 — Phase 73 Operator Config Foundation verified passed*
+*Last updated: 2026-07-12 — Phase 78.1 planned; 3 plans added*
+
+### Phase 78.1: Close gap: wire VisionRouter into turn runtime (VIS-02/03/04) (INSERTED)
+
+**Goal**: `VisionRouter.decide()` is invoked on every production turn and image-bearing turns route through `multimodal_main`, `vision_then_main`, or `fail_closed` with an InkStatute-owned notice.
+**Depends on**: Phases 75, 77, 78
+**Requirements**: VIS-02, VIS-03, VIS-04, CHAN-01, CHAN-02
+**Success Criteria** (what must be TRUE):
+
+  1. `DefaultRunRuntime.create_run()` accepts an injected `vision_resolver` and calls it before `backend.submit_run()`
+  2. `DefaultRunRuntime` supports an optional `vision_runner` backend for `vision_then_main` and fails closed when `vision_then_main` is chosen but no runner is configured
+  3. `fail_closed` returns a synthetic `Run` with an InkStatute-owned notice filtered through `DefaultAssistantOutputBoundary`; no provider or backend metadata leaks to ordinary users
+  4. `qqbot_service` and `wecom_service` wiring build `DefaultRunRuntime` with `vision_resolver` (and optional `vision_runner`) using `build_vision_resolver` from `operator-config`
+  5. `wecom-service` declares dependencies and exports `build_wecom_wired_runtime` so `wecom_service` can import `inkstatute_channels_wecom` without errors
+  6. Text-only turns never invoke the vision model; image-bearing `multimodal_main` turns pass `vision_decision` metadata to the backend
+
+**Plans**: 1/3 complete
+
+Plans:
+
+- [x] 78.1-01-PLAN.md — Wire `vision_resolver`/`vision_runner` into `DefaultRunRuntime` and fail-closed synthetic runs
+- [ ] 78.1-02-PLAN.md — Add `build_vision_resolver` in `operator-config`, backend `supports_vision` capabilities, and `OpenAIClientRunner` image attachment support
+- [ ] 78.1-03-PLAN.md — Update `qqbot-service` wiring/`http_server.py` and create `wecom-service` wiring + dependencies

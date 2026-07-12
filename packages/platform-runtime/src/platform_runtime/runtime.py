@@ -5,9 +5,10 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
-from typing import Any, AsyncIterator, Iterable, Mapping
+from typing import Any, AsyncIterator, Callable, Iterable, Mapping
 
-from platform_contract.enums import AgentResultStatus, AsyncTaskState, InterruptStatus, RunEventType
+from platform_contract.enums import AgentResultStatus, AsyncTaskState, ErrorCategory, InterruptStatus, ReplyType, RunEventType
+from platform_contract.events import AgentResult, ErrorInfo, JsonObject
 
 from .context_assembler import ContextAssembler, ContextAssemblyInput
 from .feature_flags import RuntimeFeatureFlags
@@ -17,6 +18,7 @@ from .output_boundary import BoundaryAction, DefaultAssistantOutputBoundary
 from .ports import AssistantOutputBoundary, ContractLogStore, IdFactory, RuntimeClock
 from .protocols import Approval, BackendAdapter, ChannelAdapter, Run, RunEvent, RunRequest
 from .session_resolver import PendingInterruptSnapshot, SessionScope
+from .vision_router import FAIL_CLOSED_NOTICE, VisionRoute, VisionRoutingDecision
 
 
 class RunRuntimeStateError(RuntimeError):
@@ -31,6 +33,8 @@ class DefaultRunRuntime:
         *,
         backend: BackendAdapter,
         channels: Iterable[ChannelAdapter] = (),
+        vision_resolver: Callable[[RunRequest], VisionRoutingDecision] | None = None,
+        vision_runner: BackendAdapter | None = None,
         feature_flags: RuntimeFeatureFlags | None = None,
         contract_log_store: ContractLogStore | None = None,
         output_boundary: AssistantOutputBoundary | None = None,
@@ -42,6 +46,8 @@ class DefaultRunRuntime:
     ) -> None:
         self.backend = backend
         self.channels = tuple(channels)
+        self.vision_resolver = vision_resolver
+        self.vision_runner = vision_runner
         self.feature_flags = feature_flags or RuntimeFeatureFlags()
         self.contract_log_store = contract_log_store
         self.output_boundary = output_boundary or DefaultAssistantOutputBoundary()
@@ -55,7 +61,31 @@ class DefaultRunRuntime:
     async def create_run(self, req: RunRequest) -> Run:
         self.feature_flags.require_enabled("run_runtime_enabled")
         self._require_contract_log_store_if_enabled()
-        backend_req = self._attach_context_bundle(req)
+        if self.vision_resolver is None:
+            return await self._create_run_with_backend(req)
+        decision = self.vision_resolver(req)
+        if decision.route == VisionRoute.FAIL_CLOSED:
+            return self._build_fail_closed_run(req, decision)
+        if decision.route == VisionRoute.VISION_THEN_MAIN:
+            if self.vision_runner is None:
+                return self._build_fail_closed_run(
+                    req,
+                    VisionRoutingDecision(
+                        route=VisionRoute.FAIL_CLOSED,
+                        notice=FAIL_CLOSED_NOTICE,
+                        reason="vision_runner_not_configured",
+                        metadata={"image_count": decision.metadata.get("image_count", 0), "reason": "vision_runner_not_configured"},
+                    ),
+                )
+            return await self._create_run_vision_then_main(req, decision)
+        return await self._create_run_with_backend(req, decision)
+
+    async def _create_run_with_backend(
+        self,
+        req: RunRequest,
+        decision: VisionRoutingDecision | None = None,
+    ) -> Run:
+        backend_req = self._attach_context_bundle(self._with_vision_decision(req, decision))
         handle = await self.backend.submit_run(backend_req)
         if self.feature_flags.contract_log_enabled:
             self._append_run_record(backend_req, handle.run_id, handle.status, handle.backend_run_id)
@@ -67,8 +97,138 @@ class DefaultRunRuntime:
                 metadata={"source": "runtime_create"},
             )
         run = await self.backend.get_run(handle.run_id)
-        self._record_clarification_interrupt_if_needed(req=req, run=run)
+        self._record_clarification_interrupt_if_needed(req=backend_req, run=run)
         return run
+
+    def _with_vision_decision(
+        self,
+        req: RunRequest,
+        decision: VisionRoutingDecision | None,
+    ) -> RunRequest:
+        if decision is None:
+            return req
+        return replace(
+            req,
+            metadata={
+                **req.metadata,
+                "vision_decision": self._vision_decision_metadata(decision),
+            },
+        )
+
+    def _vision_decision_metadata(
+        self,
+        decision: VisionRoutingDecision,
+        *,
+        vision_run_id: str | None = None,
+        vision_result_content_length: int | None = None,
+    ) -> JsonObject:
+        metadata = dict(decision.metadata)
+        vision_decision: JsonObject = {
+            "route": str(decision.route),
+            "reason": decision.reason,
+            "notice": decision.notice,
+            "metadata": metadata,
+        }
+        vision_provider_id = metadata.get("vision_provider_id")
+        if vision_provider_id:
+            vision_decision["vision_provider_id"] = str(vision_provider_id)
+        vision_model_id = metadata.get("vision_model_id")
+        if vision_model_id:
+            vision_decision["vision_model_id"] = str(vision_model_id)
+        if vision_run_id is not None:
+            vision_decision["vision_run_id"] = vision_run_id
+        if vision_result_content_length is not None:
+            vision_decision["vision_result_content_length"] = vision_result_content_length
+        return vision_decision
+
+    def _build_fail_closed_run(
+        self,
+        req: RunRequest,
+        decision: VisionRoutingDecision,
+        *,
+        vision_run_id: str | None = None,
+    ) -> Run:
+        notice = decision.notice or FAIL_CLOSED_NOTICE
+        boundary_decision = self.output_boundary.apply(
+            visibility_target="ordinary_user",
+            text=notice,
+        )
+        visible_text = boundary_decision.visible_text if boundary_decision.action != BoundaryAction.BLOCK else None
+        vision_decision = self._vision_decision_metadata(decision, vision_run_id=vision_run_id)
+        error = ErrorInfo(
+            category=ErrorCategory.CONTRACT_ERROR,
+            code="vision_fail_closed",
+            message=decision.reason,
+            stage="create_run",
+            retryable=False,
+            details={"vision_decision": vision_decision},
+        )
+        result = AgentResult(
+            result_id=self.id_factory.new_id("result"),
+            turn_id=req.turn.turn_id,
+            status=AgentResultStatus.FAILED,
+            reply_type=ReplyType.TEXT,
+            content=visible_text,
+            error=error,
+            metadata={
+                "vision_decision": vision_decision,
+                "output_boundary_action": _boundary_action_value(boundary_decision.action),
+                "output_boundary_reason": boundary_decision.reason,
+            },
+        )
+        return Run(
+            run_id=self.id_factory.new_id("run"),
+            status=AsyncTaskState.FAILED,
+            turn_id=req.turn.turn_id,
+            solution_id=req.solution.solution_id,
+            result=result,
+            metadata={
+                "vision_decision": vision_decision,
+                "source": "runtime_create_fail_closed",
+            },
+        )
+
+    async def _create_run_vision_then_main(self, req: RunRequest, decision: VisionRoutingDecision) -> Run:
+        vision_decision = self._vision_decision_metadata(decision)
+        vision_req = replace(req, metadata={**req.metadata, "vision_decision": vision_decision})
+        vision_handle = await self.vision_runner.submit_run(vision_req)
+        vision_run = await self.vision_runner.get_run(vision_handle.run_id)
+        if _status_value(vision_run.status) != AsyncTaskState.SUCCEEDED.value:
+            return self._build_fail_closed_run(
+                req,
+                VisionRoutingDecision(
+                    route=VisionRoute.FAIL_CLOSED,
+                    notice=FAIL_CLOSED_NOTICE,
+                    reason="vision_runner_failed",
+                    metadata={
+                        "image_count": decision.metadata.get("image_count", 0),
+                        "reason": "vision_runner_failed",
+                        "vision_run_id": vision_run.run_id,
+                    },
+                ),
+                vision_run_id=vision_run.run_id,
+            )
+        vision_text = ""
+        if vision_run.result and vision_run.result.content:
+            vision_text = vision_run.result.content
+        original_content = req.turn.content or ""
+        combined_content = f"{original_content}\n\n{vision_text}" if vision_text else original_content
+        new_turn = replace(req.turn, content=combined_content, attachments=[])
+        vision_decision_with_run = self._vision_decision_metadata(
+            decision,
+            vision_run_id=vision_run.run_id,
+            vision_result_content_length=len(vision_text),
+        )
+        new_req = replace(
+            req,
+            turn=new_turn,
+            metadata={
+                **req.metadata,
+                "vision_decision": vision_decision_with_run,
+                "vision_run_id": vision_run.run_id,
+            },
+        )
+        return await self._create_run_with_backend(new_req, decision=None)
 
     async def resume_interrupt(
         self,

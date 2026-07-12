@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.10
 milestone_name: Operator Config Console
-current_plan: 78-04
-status: gaps_found
-stopped_at: Milestone audit complete
-last_updated: "2026-07-12T05:55:00Z"
+current_plan: 2
+status: executing
+stopped_at: Phase 78 planning complete
+last_updated: "2026-07-12T06:08:33.545Z"
 last_activity: 2026-07-12
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
-  total_plans: 23
-  completed_plans: 23
-  percent: 100
+  total_plans: 26
+  completed_plans: 24
+  percent: 86
 ---
 
 # Project State
@@ -22,18 +22,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 78 — console-ssr-docs-gate-honesty
+**Current focus:** Phase 78.1 — close-gap-wire-visionrouter-into-turn-runtime-vis-02-03-04
 
 ## Current Position
 
-Phase: 78
-Current Plan: 78-04
-Total Plans in Phase: 4
-Plan: 4 of 4
-Status: Completed
+Phase: 78.1 (close-gap-wire-visionrouter-into-turn-runtime-vis-02-03-04) — EXECUTING
+Current Plan: 2
+Total Plans in Phase: 3
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-07-12
 
-Progress: [██████████] 100% (6/6 v1.10 phases)
+Progress: [████████░░] 86% (24/26 plans, 6/7 v1.10 phases)
 
 ### Deferred Items
 
