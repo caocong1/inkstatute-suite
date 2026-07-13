@@ -111,7 +111,7 @@ Output: A working `/reports` API endpoint, `/reports` web page, bounded scanner,
   <action>
     Create `services/conversation-read-view/src/conversation_read_view/reports_aggregator.py` with a `ReportsAggregator` class.
 
-    `__init__(self, contract_log_path, default_max_scan_lines=10000, default_lookback_seconds=86400, long_task_threshold_seconds=60.0, display_tz='UTC')` stores the path and defaults. Env overrides are `REPORTS_MAX_SCAN_LINES`, `REPORTS_SCAN_LOOKBACK_SECONDS`, `REPORTS_LONG_TASK_THRESHOLD_SECONDS`, and `INKSTATUTE_REPORT_DISPLAY_TZ`.
+    `__init__(self, contract_log_path, default_max_scan_lines=10000, default_lookback_seconds=86400, long_task_threshold_seconds=60.0, display_tz='UTC', env=None)` stores the path and defaults. Env overrides are read from `env` (or `os.environ` if `env` is None): `REPORTS_MAX_SCAN_LINES`, `REPORTS_SCAN_LOOKBACK_SECONDS`, `REPORTS_LONG_TASK_THRESHOLD_SECONDS`, and `INKSTATUTE_REPORT_DISPLAY_TZ`.
 
     `build(self, time_from, time_to, feedback_queue, tenant_filter=None, max_scan_lines=None)` returns a dict:
     - `sessions`: `{"count": unique conversation_id}` from `agent_turn` events in the window.
@@ -166,7 +166,7 @@ Output: A working `/reports` API endpoint, `/reports` web page, bounded scanner,
 
     Update `services/admin-console-api/src/admin_console_api/server.py`:
     - Import `ReportsAggregator` from `conversation_read_view`.
-    - In `create_server`, build `reports_aggregator = ReportsAggregator(contract_log_path)` and attach to `httpd.reports_aggregator`.
+    - In `create_server`, build `reports_aggregator = ReportsAggregator(contract_log_path, env=source)` and attach to `httpd.reports_aggregator`.
     - Update `AdminConsoleApiServer._dispatch` to pass `reports_aggregator=self.server.reports_aggregator` to `handle_admin_get`.
 
     Update `services/admin-console-api/src/admin_console_api/routes.py` to add `"/reports"` to `ROUTE_PREFIXES`.
@@ -205,7 +205,7 @@ Output: A working `/reports` API endpoint, `/reports` web page, bounded scanner,
     Update `services/admin-web-ui/src/admin_web_ui/dashboard.py`:
     - Add `("/reports", "Reports")` to `_page_template` `nav_items` and `_render_index` card list.
     - In `render_dashboard`, add a `section == "reports"` branch that calls a new `_render_reports_section(api_data, identity, boundary)`.
-    - `_render_reports_section` renders: a `<form method="GET" action="/reports">` with a `<select name="window">` for `today`, `7d`, `30d`, `custom`, and a `Refresh` submit button; metric cards for sessions, task completion rate, long-task success rate, feedback counts, and a gate summary; the `metadata.aggregated_at` timestamp and a note that values are UTC. All dynamic text is passed through `boundary.escape_value` or `html.escape`. `window` selection uses `metadata.window` from `api_data`.
+    - `_render_reports_section` renders: a `<form method="GET" action="/reports">` with a `<select name="window">` for `today`, `7d`, `30d`, `custom`, and a `Refresh` submit button; when `custom` is selected (or the query param is `custom`), optional `<input type="datetime-local" name="from">` and `<input name="to">` fields are shown and submitted. Metric cards show sessions, task completion rate, long-task success rate, feedback counts, and a gate summary. The `metadata.aggregated_at` timestamp and a note that values are UTC are displayed. All dynamic text is passed through `boundary.escape_value` or `html.escape`. `window` selection uses `metadata.window` from `api_data`.
 
     Update `services/admin-web-ui/src/admin_web_ui/server.py`:
     - Add `("/reports", "reports")` to `_SECTION_MAP`.
@@ -220,7 +220,7 @@ Output: A working `/reports` API endpoint, `/reports` web page, bounded scanner,
 
     Update `services/admin-web-ui/src/admin_web_ui/__main__.py`:
     - Import `ReportsAggregator`.
-    - Build `reports_aggregator = ReportsAggregator(contract_log_path)` and attach to `httpd.reports_aggregator`.
+    - Build `reports_aggregator = ReportsAggregator(contract_log_path, env=source)` and attach to `httpd.reports_aggregator`.
 
     Update `.env.example` to add `INKSTATUTE_REPORT_MAX_SCAN_LINES`, `INKSTATUTE_REPORT_SCAN_LOOKBACK_SECONDS`, `INKSTATUTE_REPORT_LONG_TASK_THRESHOLD_SECONDS`, and `INKSTATUTE_REPORT_DISPLAY_TZ` with inline comments and default values (commented out).
 
