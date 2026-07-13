@@ -17,11 +17,11 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Process Orchestration
 
-- [ ] **ORCH-01**: Operator can view a process status panel in the console showing WeCom host and QQBot host process state (running/stopped, PID, uptime, last exit code) in real time
-- [ ] **ORCH-02**: Operator can start, stop, and restart WeCom and QQBot host subprocesses from the console UI with graceful shutdown (SIGTERM → wait → SIGKILL escalation)
-- [ ] **ORCH-03**: WeCom service has a runnable HTTP host entry point (`http_server.py` + `__main__.py`) mirroring qqbot-service, so it can be orchestrated as a subprocess
-- [ ] **ORCH-04**: Saving channel config from the console orchestrates a restart of the affected channel host process (config-save → graceful restart → apply), consistent with existing `apply_semantics=restart_required`
-- [ ] **ORCH-05**: Console probes each channel host's `/health` endpoint via urllib and displays live/unreachable status; process registry state persists across console restarts (re-attach to running children)
+- [x] **ORCH-01**: Operator can view a process status panel in the console showing WeCom host and QQBot host process state (running/stopped, PID, uptime, last exit code) in real time
+- [x] **ORCH-02**: Operator can start, stop, and restart WeCom and QQBot host subprocesses from the console UI with graceful shutdown (SIGTERM → wait → SIGKILL escalation)
+- [x] **ORCH-03**: WeCom service has a runnable HTTP host entry point (`http_server.py` + `__main__.py`) mirroring qqbot-service, so it can be orchestrated as a subprocess
+- [x] **ORCH-04**: Saving channel config from the console orchestrates a restart of the affected channel host process (config-save → graceful restart → apply), consistent with existing `apply_semantics=restart_required`
+- [x] **ORCH-05**: Console probes each channel host's `/health` endpoint via urllib and displays live/unreachable status; process registry state persists across console restarts (re-attach to running children)
 
 ### Observability — Reports
 
@@ -65,25 +65,30 @@ Requirements for this milestone. Each maps to roadmap phases.
 Deferred beyond v1.11. Tracked but not in current roadmap.
 
 ### Config / Ops (carried from v1.10)
+
 - **CFG-F01**: Hot-reload operator config without process restart
 - **CFG-F02**: Config change audit trail (who/when/field diffs; never resolved secrets)
 - **CFG-F03**: Effective-config / dual-knob audit dashboard beyond MVP visibility
 
 ### Provider (carried from v1.10)
+
 - **PROV-F01**: Live `/models` refresh for custom endpoints with short cache + explicit allowlist
 - **PROV-F02**: LiteLLM-style budgets / virtual keys control plane
 - **PROV-F03**: Per-lawyer self-serve model switching
 
 ### Vision (carried from v1.10)
+
 - **VIS-F01**: Optional classical OCR enhancer alongside VLM (not sole vision path)
 - **VIS-F02**: User-visible "正在识别图片…" service notice polish as first-class product copy variants
 
 ### Host / Ops (carried from v1.9)
+
 - **HOST-F01**: Durable wakeup/idempotency stores for multi-instance hosts
 - **HOST-F02**: Async verify→enqueue→ACK queue under load
 - **HOST-F03**: Host health/readiness endpoints aligned with admin-console views
 
 ### Console (new from v1.11)
+
 - **CON-F01**: RBAC token management UI (issue/revoke/expire management page with denylist)
 - **CON-F02**: SSE-based real-time log streaming (replaces polling when CSP allows)
 - **CON-F03**: User credential store (replace env-based login with persisted user DB)

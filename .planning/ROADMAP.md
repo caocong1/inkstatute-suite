@@ -41,7 +41,7 @@
 ## Phases
 
 - [x] **Phase 79: Entry Points & Threading Foundation** - Runnable `__main__.py` entry points + ThreadingHTTPServer decision/audit (ENTRY-01, ENTRY-02, ENTRY-03)
-- [ ] **Phase 80: WeCom HTTP Host + Process Orchestration** - WeCom `http_server.py` + ProcessSupervisor control plane (ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05)
+- [x] **Phase 80: WeCom HTTP Host + Process Orchestration** - WeCom `http_server.py` + ProcessSupervisor control plane (ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05) (completed 2026-07-13)
 - [ ] **Phase 81: Reports Dashboard** - ReportsAggregator over existing read models (OBS-01, OBS-02, OBS-03)
 - [ ] **Phase 82: Log Viewing** - Byte-offset tail-follow log viewer with privacy scrubbing (OBS-04, OBS-05, OBS-06)
 - [ ] **Phase 83: Contract Event Audit** - Paginated audit trail + trace_id reconstruction (OBS-07, OBS-08)
@@ -186,7 +186,7 @@
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 79. Entry Points & Threading Foundation | v1.11 | 0/1 | Planned    |  |
-| 80. WeCom HTTP Host + Process Orchestration | v1.11 | 0/? | Not started | — |
+| 80. WeCom HTTP Host + Process Orchestration | v1.11 | 1/1 | Complete    | 2026-07-13 |
 | 81. Reports Dashboard | v1.11 | 0/? | Not started | — |
 | 82. Log Viewing | v1.11 | 0/? | Not started | — |
 | 83. Contract Event Audit | v1.11 | 0/? | Not started | — |
