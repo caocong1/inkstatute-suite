@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping
@@ -184,27 +185,32 @@ class OperatorConfigStore:
 
     def __init__(self, path: str | Path | None = None) -> None:
         self.path = Path(path) if path is not None else default_operator_config_path()
+        self._lock = threading.Lock()
 
     def load(self) -> OperatorConfigDocument:
         """Load and validate the document, or return defaults when missing.
 
         Fail-closed: hand-edited or corrupted store files that violate CFG-01/03
         raise ``OperatorConfigValidationError`` rather than returning as SoT.
+
+        Thread-safe: the entire read-parse-validate cycle is guarded by the
+        store instance lock.
         """
-        if not self.path.is_file():
-            return OperatorConfigDocument()
-        try:
-            raw = self.path.read_text(encoding="utf-8")
-            payload = json.loads(raw)
-        except (OSError, json.JSONDecodeError) as exc:
-            raise OperatorConfigStoreError(
-                f"failed to load operator config from {self.path.name}"
-            ) from exc
-        if not isinstance(payload, Mapping):
-            raise OperatorConfigStoreError("operator config root must be a JSON object")
-        document = document_from_payload(payload)
-        validate_document(document)
-        return document
+        with self._lock:
+            if not self.path.is_file():
+                return OperatorConfigDocument()
+            try:
+                raw = self.path.read_text(encoding="utf-8")
+                payload = json.loads(raw)
+            except (OSError, json.JSONDecodeError) as exc:
+                raise OperatorConfigStoreError(
+                    f"failed to load operator config from {self.path.name}"
+                ) from exc
+            if not isinstance(payload, Mapping):
+                raise OperatorConfigStoreError("operator config root must be a JSON object")
+            document = document_from_payload(payload)
+            validate_document(document)
+            return document
 
     def save(
         self,
@@ -216,11 +222,15 @@ class OperatorConfigStore:
 
         Order is mandatory: (1) require writable, (2) validate_document,
         (3) sibling ``.tmp`` + ``os.replace``. Never bypass validation.
+
+        Thread-safe: the entire read-mutate-write cycle is guarded by the
+        store instance lock.
         """
-        require_operator_config_writable(feature_flags)
-        validate_document(document)
-        payload = document_to_payload(document)
-        self._atomic_write(payload)
+        with self._lock:
+            require_operator_config_writable(feature_flags)
+            validate_document(document)
+            payload = document_to_payload(document)
+            self._atomic_write(payload)
 
     def _atomic_write(self, payload: Mapping[str, Any]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)

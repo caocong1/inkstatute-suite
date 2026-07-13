@@ -25,6 +25,7 @@ from rbac import RbacGuard, resolve_identity
 
 from .auth import check_auth_header, extract_auth_header, resolve_admin_token
 from .config_api import handle_config_get, handle_config_put
+from .feedback import ThreadSafeFeedbackQueue
 from .gates import handle_gates
 from .health import handle_health
 from .views import handle_feedback, handle_sessions, handle_tasks
@@ -133,7 +134,7 @@ def handle_admin_get(
     query: str | Mapping[str, str] | None,
     headers: Mapping[str, str] | None,
     read_model: Any,
-    feedback_queue: list[dict[str, Any]] | None,
+    feedback_queue: list[dict[str, Any]] | ThreadSafeFeedbackQueue | None,
     feature_flags: RuntimeFeatureFlags,
     env: Mapping[str, str] | None = None,
     rbac_secret: str | None = None,
@@ -182,7 +183,7 @@ def handle_admin_put(
     config_store: OperatorConfigStore | None = None,
     rbac_secret: str | None = None,
     read_model: Any = None,
-    feedback_queue: list[dict[str, Any]] | None = None,
+    feedback_queue: list[dict[str, Any]] | ThreadSafeFeedbackQueue | None = None,
 ) -> tuple[int, dict[str, Any]]:
     """Auth then mutate ``/config/*`` only; operational PUT → 405 after auth.
 

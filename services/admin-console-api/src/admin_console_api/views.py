@@ -16,6 +16,8 @@ from conversation_read_view.pagination import clamp_limit, slice_page
 from conversation_read_view.privacy import scrub_contract_payload
 from conversation_read_view.tenant_read_model import TenantScopedContractLogReadModel
 
+from .feedback import ThreadSafeFeedbackQueue
+
 ADMIN_API_MAX_LIMIT_ENV = "ADMIN_API_MAX_LIMIT"
 
 DEFAULT_MAX_LIMIT = 100
@@ -130,7 +132,7 @@ def handle_tasks(
 def handle_feedback(
     query: dict[str, str],
     read_model: Any,
-    feedback_queue: list[dict[str, Any]] | None,
+    feedback_queue: list[dict[str, Any]] | ThreadSafeFeedbackQueue | None,
     *,
     tenant_filter: Any = None,
 ) -> tuple[int, dict[str, Any]]:

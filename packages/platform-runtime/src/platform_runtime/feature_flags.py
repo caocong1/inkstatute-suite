@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, fields
+from typing import Mapping
 
 
 class RuntimeFeatureDisabledError(RuntimeError):
@@ -49,6 +51,23 @@ class RuntimeFeatureFlags:
             raise RuntimeFeatureDisabledError(f"unknown runtime feature flag: {flag_name}")
         if not getattr(self, flag_name):
             raise RuntimeFeatureDisabledError(f"runtime feature flag disabled: {flag_name}")
+
+    @classmethod
+    def from_env(cls, env: Mapping[str, str] | None = None) -> "RuntimeFeatureFlags":
+        """Build a flags instance from ``INKSTATUTE_<FIELD_NAME_UPPER>`` env vars.
+
+        Missing variables fall back to ``False``.  Truthy values are ``true``,
+        ``1``, ``yes``, and ``on`` (case-insensitive).
+        """
+        source: Mapping[str, str] = env if env is not None else os.environ
+        kwargs: dict[str, bool] = {}
+        for field in fields(cls):
+            raw = source.get(f"INKSTATUTE_{field.name.upper()}")
+            if raw is None:
+                continue
+            value = str(raw).strip().lower()
+            kwargs[field.name] = value in ("true", "1", "yes", "on")
+        return cls(**kwargs)
 
 
 __all__ = [

@@ -11,9 +11,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Service Entry Points
 
-- [ ] **ENTRY-01**: Operator can start admin-web-ui as a standalone HTTP server via `python -m admin_web_ui` (or entry script) with configurable host/port, signal-handling graceful shutdown, and feature-flag gate
-- [ ] **ENTRY-02**: Operator can start admin-console-api as a standalone HTTP server via `python -m admin_console_api` (or entry script) with configurable host/port, signal-handling graceful shutdown, and feature-flag gate
-- [ ] **ENTRY-03**: admin-web-ui and admin-console-api use ThreadingHTTPServer (not single-threaded) so blocking operations (log reads, report aggregation, subprocess waits) do not freeze the UI; thread-safety of shared mutable state is audited and guarded
+- [x] **ENTRY-01**: Operator can start admin-web-ui as a standalone HTTP server via `python -m admin_web_ui` (or entry script) with configurable host/port, signal-handling graceful shutdown, and feature-flag gate
+- [x] **ENTRY-02**: Operator can start admin-console-api as a standalone HTTP server via `python -m admin_console_api` (or entry script) with configurable host/port, signal-handling graceful shutdown, and feature-flag gate
+- [x] **ENTRY-03**: admin-web-ui and admin-console-api use ThreadingHTTPServer (not single-threaded) so blocking operations (log reads, report aggregation, subprocess waits) do not freeze the UI; thread-safety of shared mutable state is audited and guarded
 
 ### Process Orchestration
 

@@ -40,7 +40,7 @@
 
 ## Phases
 
-- [ ] **Phase 79: Entry Points & Threading Foundation** - Runnable `__main__.py` entry points + ThreadingHTTPServer decision/audit (ENTRY-01, ENTRY-02, ENTRY-03)
+- [x] **Phase 79: Entry Points & Threading Foundation** - Runnable `__main__.py` entry points + ThreadingHTTPServer decision/audit (ENTRY-01, ENTRY-02, ENTRY-03)
 - [ ] **Phase 80: WeCom HTTP Host + Process Orchestration** - WeCom `http_server.py` + ProcessSupervisor control plane (ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05)
 - [ ] **Phase 81: Reports Dashboard** - ReportsAggregator over existing read models (OBS-01, OBS-02, OBS-03)
 - [ ] **Phase 82: Log Viewing** - Byte-offset tail-follow log viewer with privacy scrubbing (OBS-04, OBS-05, OBS-06)
