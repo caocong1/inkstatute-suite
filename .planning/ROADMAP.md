@@ -63,7 +63,7 @@
   2. Both services bind `ThreadingHTTPServer` (not single-threaded `HTTPServer`) so blocking operations (log reads, report aggregation, subprocess waits) do not freeze the UI; a socket-level integration test boots each service on an ephemeral port and asserts concurrent requests do not serialize
   3. A threading-model decision artifact documents the ThreadingHTTPServer choice, and a thread-safety audit guards every shared mutable store (`OperatorConfigStore`, `feedback_queue`, `ContractLogReadModel`, process table) with per-store `threading.Lock` or copy-on-rebuild semantics — no unguarded read-modify-write cycle remains
 
-**Plans**: TBD (plan-phase will define)
+**Plans**: [79-PLAN.md](.planning/phases/79-entry-points-threading-foundation/79-PLAN.md)
 **UI hint**: no
 
 ### Phase 80: WeCom HTTP Host + Process Orchestration
@@ -185,7 +185,7 @@
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 79. Entry Points & Threading Foundation | v1.11 | 0/? | Not started | — |
+| 79. Entry Points & Threading Foundation | v1.11 | 0/1 | Planned    |  |
 | 80. WeCom HTTP Host + Process Orchestration | v1.11 | 0/? | Not started | — |
 | 81. Reports Dashboard | v1.11 | 0/? | Not started | — |
 | 82. Log Viewing | v1.11 | 0/? | Not started | — |
