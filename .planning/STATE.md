@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: Product Console
 status: planning
-last_updated: "2026-07-12T16:37:26.035Z"
-last_activity: 2026-07-12
+last_updated: "2026-07-13T00:50:00.000Z"
+last_activity: 2026-07-13
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 78.1 — close-gap-wire-visionrouter-into-turn-runtime-vis-02-03-04
+**Current focus:** Phase 79 — entry-points-and-threading-foundation (ENTRY-01, ENTRY-02, ENTRY-03)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 79 (Entry Points & Threading Foundation) — roadmap defined, plan-phase not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-07-12 — Milestone v1.11 started
+Status: Roadmap created for v1.11 (Phases 79–87); ready for plan-phase
+Last activity: 2026-07-13 — v1.11 Product Console roadmap created (27/27 requirements mapped to Phases 79–87)
 
 ### Deferred Items
 
@@ -80,10 +80,12 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 
 ### Roadmap Evolution
 
-- v1.10 roadmap created: Phases 73–78 (Operator Config Foundation → Admin Config API + RBAC → Channel Config Apply → Provider Registry + Model Catalog → Vision Routing Runtime → Console SSR, Docs & Gate Honesty)
-- ADM-02 (SSR UI) owned by Phase 78; domain phases 75–77 may ship incremental forms, Phase 78 verifies complete CSRF-protected SSR surface
-- After Phase 74, Phases 75 and 76 can run in parallel waves; Phase 77 waits on catalog `supports_vision`
-- Prior: v1.9 Phases 68–72 shipped; v1.8 Phases 58–67; Phase 57.1 TenantGuard gap closure; v1.5–v1.7 as archived
+- v1.11 roadmap created: Phases 79–87 (Entry Points & Threading → WeCom Host + Process Orchestration → Reports → Log Viewing → Contract Event Audit → Health/Gate Dashboard → Login Session Auth → Product Polish → Integration/Smoke/Gate Honesty)
+- 27/27 v1.11 requirements mapped to phases (3 ENTRY + 5 ORCH + 10 OBS + 4 AUTH + 5 POLISH); Phase 87 is cross-phase verification with no direct requirement mapping
+- Threading model decision (ThreadingHTTPServer) is the gating artifact for Phase 79 — must be decided and audited before any feature work (Phases 80–86 depend on it)
+- WeCom needs a new http_server.py mirroring qqbot-service before it can be orchestrated (ORCH-03, Phase 80)
+- Parallelism: after Phase 79, Phases 81/82/83/85 can run in parallel waves; Phase 80 waits for 79; Phase 84 waits for 79+80; Phase 86 waits for 85; Phase 87 waits for all
+- Prior: v1.10 Phases 73–78.1 shipped; v1.9 Phases 68–72; v1.8 Phases 58–67; Phase 57.1 TenantGuard gap closure; v1.5–v1.7 as archived
 
 ### Decisions
 

@@ -117,14 +117,55 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (filled by roadmap) | | |
+| ENTRY-01 | Phase 79 | mapped |
+| ENTRY-02 | Phase 79 | mapped |
+| ENTRY-03 | Phase 79 | mapped |
+| ORCH-01 | Phase 80 | mapped |
+| ORCH-02 | Phase 80 | mapped |
+| ORCH-03 | Phase 80 | mapped |
+| ORCH-04 | Phase 80 | mapped |
+| ORCH-05 | Phase 80 | mapped |
+| OBS-01 | Phase 81 | mapped |
+| OBS-02 | Phase 81 | mapped |
+| OBS-03 | Phase 81 | mapped |
+| OBS-04 | Phase 82 | mapped |
+| OBS-05 | Phase 82 | mapped |
+| OBS-06 | Phase 82 | mapped |
+| OBS-07 | Phase 83 | mapped |
+| OBS-08 | Phase 83 | mapped |
+| OBS-09 | Phase 84 | mapped |
+| OBS-10 | Phase 84 | mapped |
+| AUTH-01 | Phase 85 | mapped |
+| AUTH-02 | Phase 85 | mapped |
+| AUTH-03 | Phase 85 | mapped |
+| AUTH-04 | Phase 85 | mapped |
+| POLISH-01 | Phase 86 | mapped |
+| POLISH-02 | Phase 86 | mapped |
+| POLISH-03 | Phase 86 | mapped |
+| POLISH-04 | Phase 86 | mapped |
+| POLISH-05 | Phase 86 | mapped |
 
 **Coverage:**
 
-- v1.11 requirements: 25 total
-- Mapped to phases: 0/25 (pending roadmap)
-- Unmapped: 25
+- v1.11 requirements: 27 total (3 ENTRY + 5 ORCH + 10 OBS + 4 AUTH + 5 POLISH)
+- Mapped to phases: 27/27 (100%)
+- Unmapped: 0
+- Phase 87 (Integration, Smoke & Gate Honesty) is a cross-phase verification phase with no direct requirement mapping; it verifies all 27 requirements end-to-end.
+
+**Phase → Requirement map:**
+
+| Phase | Theme | Requirements |
+|-------|-------|--------------|
+| 79 | Entry Points & Threading Foundation | ENTRY-01, ENTRY-02, ENTRY-03 |
+| 80 | WeCom HTTP Host + Process Orchestration | ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05 |
+| 81 | Reports Dashboard | OBS-01, OBS-02, OBS-03 |
+| 82 | Log Viewing | OBS-04, OBS-05, OBS-06 |
+| 83 | Contract Event Audit | OBS-07, OBS-08 |
+| 84 | Health & Gate Dashboard Enhancement | OBS-09, OBS-10 |
+| 85 | Login Session Auth | AUTH-01, AUTH-02, AUTH-03, AUTH-04 |
+| 86 | Product Polish | POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05 |
+| 87 | Integration, Smoke & Gate Honesty | (cross-phase verification; no direct mapping) |
 
 ---
 *Requirements defined: 2026-07-12*
-*Last updated: 2026-07-12 — milestone v1.11 Product Console requirements defined*
+*Last updated: 2026-07-13 — traceability completed during v1.11 roadmap creation (27/27 requirements mapped to Phases 79–87)*
