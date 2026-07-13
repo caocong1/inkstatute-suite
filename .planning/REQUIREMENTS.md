@@ -1,95 +1,115 @@
-# Requirements: 墨律 InkStatute — v1.10 Operator Config Console
+# Requirements: 墨律 InkStatute — v1.11 Product Console
 
-**Defined:** 2026-07-10
+**Defined:** 2026-07-12
 **Core Value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-**Milestone Goal:** Deliver an InkStatute-owned operator configuration console so operators can configure QQ/WeCom channels, providers (built-in vendors + custom OpenAI-compatible), built-in model catalogs, and vision/image-routing (dedicated vision model when the main model lacks vision) — without editing Hermes.
+**Milestone Goal:** Make the admin console a runnable, product-grade operations control plane — after configuring WeCom/QQBot/provider/model, operators can orchestrate channel host processes and use the channels, with full observability through reports, logs, contract event audit, and health/gate dashboards.
 
-## v1.10 Requirements
+## v1.11 Requirements
 
 Requirements for this milestone. Each maps to roadmap phases.
 
-### Config Foundation
+### Service Entry Points
 
-- [x] **CFG-01**: Operator can persist InkStatute-owned operator config (channels, providers, catalog selection, vision policy) in a refs-only store — never raw secrets in the store or API bodies
-- [x] **CFG-02**: Operator config surface is gated by a default-OFF feature flag (`operator_config_enabled`); when OFF, mutate endpoints refuse writes
-- [x] **CFG-03**: Config schemas and validators reject Hermes filesystem/profile paths as config authority (InkStatute store only; no `~/.hermes` writes)
+- [ ] **ENTRY-01**: Operator can start admin-web-ui as a standalone HTTP server via `python -m admin_web_ui` (or entry script) with configurable host/port, signal-handling graceful shutdown, and feature-flag gate
+- [ ] **ENTRY-02**: Operator can start admin-console-api as a standalone HTTP server via `python -m admin_console_api` (or entry script) with configurable host/port, signal-handling graceful shutdown, and feature-flag gate
+- [ ] **ENTRY-03**: admin-web-ui and admin-console-api use ThreadingHTTPServer (not single-threaded) so blocking operations (log reads, report aggregation, subprocess waits) do not freeze the UI; thread-safety of shared mutable state is audited and guarded
 
-### Channel Config
+### Process Orchestration
 
-- [x] **CHAN-01**: Operator can configure QQBot channel settings (enable knobs, credential refs, callback-related refs) via admin config API/UI
-- [x] **CHAN-02**: Operator can configure WeCom channel settings (enable knobs, credential refs) via admin config API/UI
-- [x] **CHAN-03**: Operator can see dual-knob effective enablement (platform flag AND host enabled) for QQ (and equivalent WeCom flags) — UI must not collapse to a single bypass toggle
-- [x] **CHAN-04**: Credential fields accept secret refs only (`env:…` / `secret://…` shapes); GET responses never echo resolved secret values
+- [ ] **ORCH-01**: Operator can view a process status panel in the console showing WeCom host and QQBot host process state (running/stopped, PID, uptime, last exit code) in real time
+- [ ] **ORCH-02**: Operator can start, stop, and restart WeCom and QQBot host subprocesses from the console UI with graceful shutdown (SIGTERM → wait → SIGKILL escalation)
+- [ ] **ORCH-03**: WeCom service has a runnable HTTP host entry point (`http_server.py` + `__main__.py`) mirroring qqbot-service, so it can be orchestrated as a subprocess
+- [ ] **ORCH-04**: Saving channel config from the console orchestrates a restart of the affected channel host process (config-save → graceful restart → apply), consistent with existing `apply_semantics=restart_required`
+- [ ] **ORCH-05**: Console probes each channel host's `/health` endpoint via urllib and displays live/unreachable status; process registry state persists across console restarts (re-attach to running children)
 
-### Provider & Model Catalog
+### Observability — Reports
 
-- [x] **PROV-01**: Operator can select a built-in vendor provider profile (base URL + key ref conventions + catalog binding) without editing Hermes
-- [x] **PROV-02**: Operator can define a custom OpenAI-compatible provider (`api_base_url` + `api_key_ref` + explicit model allowlist)
-- [x] **PROV-03**: Operator can pick main model from a built-in selectable catalog that includes `supports_vision` metadata
-- [x] **PROV-04**: Operator can run a non-destructive connection probe for main (and vision, when configured) that fail-closes on missing refs and does not log response bodies/secrets
+- [ ] **OBS-01**: Operator can view a reports dashboard with aggregate statistics: session count, task completion rate, long-task success rate, and feedback distribution (up/down/none) over a selectable time range
+- [ ] **OBS-02**: Reports aggregate on-demand from existing data sources (ContractLogReadModel, feedback queue, gate summary) without introducing a new database or time-series store
+- [ ] **OBS-03**: Report aggregation uses bounded scanning (tail-read with limits, not full-file in-memory load) to avoid OOM on large event logs
 
-### Vision Routing
+### Observability — Log Viewing
 
-- [x] **VIS-01**: Operator can configure vision routing mode (`auto` | `always_preprocess` | `main_only`) plus optional dedicated vision provider/model
-- [x] **VIS-02**: On image-bearing turns, runtime routes: multimodal main if `supports_vision`; else vision→main mix when vision model configured; else fail closed with InkStatute-owned notice (never silent image drop)
-- [x] **VIS-03**: Text-only turns never invoke the vision model; contract/audit evidence stays reference-first (no raw image bytes in contract logs)
-- [x] **VIS-04**: Vision/provider error paths pass through the assistant output boundary (no provider stack traces or gateway meta to ordinary users)
+- [ ] **OBS-04**: Operator can view runtime logs (contract events, runtime audit, feedback, child-process stdout/stderr) in the console with level filtering and keyword search
+- [ ] **OBS-05**: Log viewing uses byte-offset tail-follow polling (seek + read-to-end + next_offset) so the browser can refresh without re-reading the full file; respects CSP (no EventSource/WebSocket, uses HTTP polling)
+- [ ] **OBS-06**: Log viewer passes every line through existing privacy scrubbing (scrub_contract_payload) so secrets and raw legal payloads never appear in the console
 
-### Admin Surface & AuthZ
+### Observability — Contract Event Audit
 
-- [x] **ADM-01**: Admin/operator roles can GET/PUT config resources; lawyer/viewer roles are denied mutate
-- [x] **ADM-02**: Admin Web UI exposes config pages (channels, providers/catalog, vision) as SSR forms with CSRF protection, extending the existing stdlib admin-web-ui (not a new SPA stack)
-- [x] **ADM-03**: Existing read-only admin views (sessions/tasks/feedback/health/gates) remain read-only; config writes use an explicit `/config/*` surface
+- [ ] **OBS-07**: Operator can browse AgentTurn and FeedbackEvent contract events in a paginated audit trail view with timestamp, event type, session_id, and trace_id columns
+- [ ] **OBS-08**: Operator can click a trace_id to see the full trace reconstruction (all events sharing that trace_id) using existing conversation-read-view trace reconstruction primitives
 
-### Docs & Honesty
+### Observability — Health & Gate Dashboard
 
-- [x] **DOC-01**: Operator docs (README / `.env.example` / runbook) document console fields ↔ env/ref keys, dual-knob, vision policy, and “do not edit Hermes for InkStatute providers”
-- [x] **DOC-02**: Config/smoke evidence never auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` honesty preserved)
+- [ ] **OBS-09**: Operator can view an enhanced health/gate dashboard showing service health (admin API, WeCom host, QQBot host), gate pass rate, feature flag states, and carried human gate status in one unified view
+- [ ] **OBS-10**: Health/gate dashboard preserves gate honesty — automated gate results and probe/smoke evidence never claim Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ live acceptance
+
+### Auth — Login Session
+
+- [ ] **AUTH-01**: Operator can log in to the console via username/password (env-based credentials for MVP) and receive a signed session cookie that authenticates subsequent requests
+- [ ] **AUTH-02**: Session cookie auth coexists with existing Bearer token auth — Bearer header takes priority (API path unchanged), cookie auth is fallback for browser sessions; both paths pass through the same RBAC guard pipeline
+- [ ] **AUTH-03**: Session cookies are HMAC-signed with RBAC_TOKEN_SECRET, have configurable TTL, and are invalidated on logout; session store interface is extensible (env-credential MVP, future cred store swappable)
+- [ ] **AUTH-04**: Login/logout flows are CSRF-protected (login CSRF prevention) and session cookies use HttpOnly + SameSite attributes
+
+### Product Polish
+
+- [ ] **POLISH-01**: Console has proper 404 and 500 error pages (SSR, escaped, with navigation back to dashboard) instead of raw stack traces or blank responses
+- [ ] **POLISH-02**: Console navigation is consistent across all pages — dashboard, config, observability, and auth pages share a common nav header with active-state indication
+- [ ] **POLISH-03**: Console layout is responsive and readable on common laptop/desktop widths (no mobile-first requirement, but no horizontal scroll on 1280px)
+- [ ] **POLISH-04**: A one-click startup script (`start-console.sh` or equivalent) launches admin-web-ui + admin-console-api with sensible defaults, env loading, and PID tracking
+- [ ] **POLISH-05**: `.env.example` documents all new environment variables (ports, flags, credentials, log paths, session TTL) with inline comments explaining each variable
 
 ## Future Requirements
 
-Deferred beyond v1.10. Tracked but not in current roadmap.
+Deferred beyond v1.11. Tracked but not in current roadmap.
 
-### Config / Ops
-
+### Config / Ops (carried from v1.10)
 - **CFG-F01**: Hot-reload operator config without process restart
 - **CFG-F02**: Config change audit trail (who/when/field diffs; never resolved secrets)
 - **CFG-F03**: Effective-config / dual-knob audit dashboard beyond MVP visibility
 
-### Provider
-
-- **PROV-F01**: Live `/models` refresh for custom endpoints with short cache + explicit allowlist (no auto-enable all)
+### Provider (carried from v1.10)
+- **PROV-F01**: Live `/models` refresh for custom endpoints with short cache + explicit allowlist
 - **PROV-F02**: LiteLLM-style budgets / virtual keys control plane
 - **PROV-F03**: Per-lawyer self-serve model switching
 
-### Vision
-
+### Vision (carried from v1.10)
 - **VIS-F01**: Optional classical OCR enhancer alongside VLM (not sole vision path)
-- **VIS-F02**: User-visible “正在识别图片…” service notice polish as first-class product copy variants
+- **VIS-F02**: User-visible "正在识别图片…" service notice polish as first-class product copy variants
 
 ### Host / Ops (carried from v1.9)
-
 - **HOST-F01**: Durable wakeup/idempotency stores for multi-instance hosts
 - **HOST-F02**: Async verify→enqueue→ACK queue under load
 - **HOST-F03**: Host health/readiness endpoints aligned with admin-console views
 
+### Console (new from v1.11)
+- **CON-F01**: RBAC token management UI (issue/revoke/expire management page with denylist)
+- **CON-F02**: SSE-based real-time log streaming (replaces polling when CSP allows)
+- **CON-F03**: User credential store (replace env-based login with persisted user DB)
+- **CON-F04**: Multi-user session management (active sessions list, force logout)
+- **CON-F05**: TLS/HTTPS support with reverse-proxy guidance for production deployment
+- **CON-F06**: Process auto-restart watchdog (supervisor-mode crash recovery)
+- **CON-F07**: Report export (CSV/JSON download of dashboard data)
+- **CON-F08**: Config diff viewer (before/after comparison on config save)
+
 ## Out of Scope
 
-Explicitly excluded for v1.10. Documented to prevent scope creep.
+Explicitly excluded for v1.11. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
+| Flask/FastAPI/Django or any external web framework | AGENTS.md: keep stdlib http.server SSR |
+| React/Vue/Vite SPA or any frontend framework | AGENTS.md: prefer stdlib SSR, no new SPA stack |
+| PostgreSQL/Redis/MongoDB or any external database | AGENTS.md: no new DB unless PRD requires; atomic JSON suffices |
+| WebSocket or SSE libraries for real-time push | CSP blocks EventSource; polling is sufficient for local ops |
+| psutil or external process management libraries | stdlib subprocess.Popen suffices for local orchestration |
+| celery/dramatiq/rq or any task queue | AGENTS.md: no new queue; synchronous orchestration is MVP |
+| Token management UI page (issue/revoke/expire dashboard) | Deferred to CON-F01; login session covers browser auth MVP |
+| TLS/HTTPS termination in the console itself | Local/single-machine deployment; reverse-proxy is future (CON-F05) |
+| Process auto-restart watchdog/supervisor | MVP is manual start/stop/restart; watchdog is future (CON-F06) |
+| Auto-claim live WeCom/QQ acceptance from console UI | Carried human gates; CI honesty (DOC-02 preserved) |
 | Edit Hermes `~/.hermes` / gateway / profile from this console | Breaks adapter boundary; Hermes is agent backend only |
-| Persist raw API keys / WeCom tokens in config store or API | Violates SAFE-02 / AGENTS.md secret rules |
-| Single enable toggle that bypasses QQ dual-knob | Undoes v1.9 accidental live-IO protections |
-| Silent drop of inbound images when main lacks vision | Legal risk — wrong answers without image context |
-| Always route every turn through vision model | Cost/latency on text-only traffic |
-| Rebuild Hermes router / skill registry / model gateway core | AGENTS.md / V2 PRD out of scope |
-| New DB, queue, or React SPA as hard requirement for MVP | Prefer atomic JSON + stdlib SSR; avoid new runtime deps |
-| Auto-claim live WeCom/QQ acceptance from config UI | Carried human gates; CI honesty |
-| Auto-synthesize/modify legal skills from feedback | Legal safety: human-reviewed `skill_candidate` only |
-| Delete `.planning/phases/08-lawyer-trial-acceptance/` | Carried human-gate artifacts must be preserved |
 
 ## Traceability
 
@@ -97,43 +117,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CFG-01 | Phase 73 | Complete |
-| CFG-02 | Phase 73 | Complete |
-| CFG-03 | Phase 73 | Complete |
-| CHAN-01 | Phase 75 | Complete |
-| CHAN-02 | Phase 75 | Complete |
-| CHAN-03 | Phase 75 | Complete |
-| CHAN-04 | Phase 75 | Complete |
-| PROV-01 | Phase 76 | Complete |
-| PROV-02 | Phase 76 | Complete |
-| PROV-03 | Phase 76 | Complete |
-| PROV-04 | Phase 76 | Complete |
-| VIS-01 | Phase 77 | Complete |
-| VIS-02 | Phase 77 | Complete |
-| VIS-03 | Phase 77 | Complete |
-| VIS-04 | Phase 77 | Complete |
-| ADM-01 | Phase 74 | Complete |
-| ADM-02 | Phase 78 | Complete |
-| ADM-03 | Phase 74 | Complete |
-| DOC-01 | Phase 78 | Complete |
-| DOC-02 | Phase 78 | Complete |
+| (filled by roadmap) | | |
 
 **Coverage:**
 
-- v1.10 requirements: 20 total
-- Mapped to phases: 20/20 ✓
-- Unmapped: 0
-
-**Phase mapping summary:**
-| Phase | Requirements |
-|-------|--------------|
-| 73 Operator Config Foundation | CFG-01, CFG-02, CFG-03 |
-| 74 Admin Config API + RBAC | ADM-01, ADM-03 |
-| 75 Channel Config Apply | CHAN-01, CHAN-02, CHAN-03, CHAN-04 |
-| 76 Provider Registry + Model Catalog | PROV-01, PROV-02, PROV-03, PROV-04 |
-| 77 Vision Routing Runtime | VIS-01, VIS-02, VIS-03, VIS-04 |
-| 78 Console SSR, Docs & Gate Honesty | ADM-02, DOC-01, DOC-02 |
+- v1.11 requirements: 25 total
+- Mapped to phases: 0/25 (pending roadmap)
+- Unmapped: 25
 
 ---
-*Requirements defined: 2026-07-10*
-*Last updated: 2026-07-10 after roadmap creation (Phases 73–78)*
+*Requirements defined: 2026-07-12*
+*Last updated: 2026-07-12 — milestone v1.11 Product Console requirements defined*
