@@ -21,7 +21,7 @@ This phase covers:
 
 1. The console renders a `/reports` page with a time-range selector (`today` / `7d` / `30d` / custom) and a refresh action.
 2. The page displays: unique session count, task completion rate, long-task success rate, feedback distribution (`up` / `down` / `none`), and gate summary.
-3. Aggregation reads from the contract JSONL file, pending feedback queue, and gate summary only; no new DB or time-series store is introduced.
+3. Aggregation reads from the contract JSONL event log, pending feedback queue, and gate summary only; no new DB or time-series store is introduced.
 4. Aggregation is bounded: it reverse-reads the JSONL tail with configurable line limits and early-exits once outside the requested window; a perf test with a 50k-event fixture asserts <1s response and bounded memory.
 5. No secret token or raw legal payload is rendered; all UI values pass through `html.escape`/`AdminUiBoundary.escape_value` and the API response passes through `scrub_contract_payload`.
 6. RBAC is enforced: `/reports` is added to `ROUTE_PREFIXES` and `PERMISSIONS_MATRIX` for `admin`, `operator`, `lawyer`, and `viewer` read access.
