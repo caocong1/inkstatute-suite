@@ -1,409 +1,314 @@
-# Architecture Research
+# Architecture Research: v1.11 Product Console
 
-**Domain:** Operator Config Console + vision routing on existing InkStatute platform
-**Milestone:** v1.10 Operator Config Console
-**Researched:** 2026-07-10
-**Confidence:** HIGH (sourced from ADR-0001, shipped ChannelAdapter/BackendAdapter/RunRuntime, admin-console-api read-only surface, channel `*_REF` configs, provider_model + model-gateway, QQ/WeCom attachment ref-only normalization, PROJECT.md v1.10 decisions)
+**Milestone:** v1.11 Product Console
+**Researched:** 2026-07-13
+**Confidence:** HIGH (sourced from shipped admin-web-ui/admin-console-api pure handlers, qqbot-service `http_server.py` BaseHTTPRequestHandler pattern, hermes-contract-layer JSONL writer + `INKSTATUTE_CONTRACT_LOG_PATH`, conversation-read-view `ContractLogReadModel`, rbac HMAC token + CSRF signed-token, `.env.example` reserved host/port vars, PROJECT.md v1.11 target features)
 
-## Verdict (roadmap-facing)
+## Current Architecture (key components)
 
-**Extend InkStatute-owned admin surfaces with a config authority layer.** Do **not** make Hermes `~/.hermes` (or any Hermes profile) the config source of truth. Channel enablement, provider/model catalog, and vision routing are platform concerns that feed hosts and backends through existing injection seams.
+The platform today is a set of **pure-function cores** wrapped by thin stdlib `http.server` handlers, with **no runnable service entry points** committed. Everything is stdlib-only (`dependencies = []`), persistence is atomic JSON/JSONL files, and there is no external DB/queue/web framework.
 
-| Decision | Choice | Why |
-|----------|--------|-----|
-| Config authority | **NEW** InkStatute operator-config package + store | README already: Hermes owns agent logic; InkStatute owns channel/provider ops config |
-| Admin mutations | **MODIFY** `admin-console-api` + `admin-web-ui` | Reuse auth/RBAC/flag gates; avoid a second operator HTTP surface |
-| Channel config | **MODIFY** host wiring + channel `*Config` loaders | Keep frozen secret-ref dataclasses; add store→config materialization beside `from_env` |
-| Provider/model catalog | **NEW** catalog + **MODIFY** provider_model / gateway wiring | Catalog is data; runners already take `api_key_ref` / `api_base_url` / `model_name` |
-| Vision routing | **NEW** vision-router at run-prep edge | Image turns already produce `AttachmentRef`; routing decides vision→main mix before backend submit |
-| Protocol freeze | **Unchanged** | ChannelAdapter stays 6 methods; BackendAdapter stays 9; no Hermes core rebuild |
-| Secrets | **Refs only** | Resolve at process edge (`resolve_secret_ref`); never persist raw tokens in store/API/logs |
-| Feature flags | **Default OFF** | New write/vision lanes join `RuntimeFeatureFlags`; dual-knob channel pattern preserved |
+| Component | What exists | Entry point? |
+|-----------|-------------|--------------|
+| `services/admin-web-ui/` | `handle_admin_web_ui_request()` pure core (server.py, 1437 lines); SSR pages via `dashboard.py`/`channels.py`/`providers.py`/`catalog.py`/`vision.py`; `AdminApiClient` proxies to admin-console-api in-process; RBAC + CSRF + CSP | **No** — no `__main__.py`, no `HTTPServer` binding |
+| `services/admin-console-api/` | `handle_admin_get`/`handle_admin_put` pure cores (api.py); views (sessions/tasks/feedback), health allowlist, gates via subprocess, config_api PUT; `_authenticate_admin` pipeline (flag → RBAC/static token → tenant scope) | **No** — no `__main__.py`, no server binding |
+| `services/qqbot-service/` | `QQBotWebhookServer(BaseHTTPRequestHandler)` in `http_server.py` (POST-only webhook); `build_qqbot_wired_runtime` dual-knob wiring; `webhook.handle_qqbot_webhook_request` pure core | **Library only** — handler class exists, no `serve_forever`/signal entry |
+| `services/wecom-service/` | `build_wecom_wired_runtime` wiring; ingress/session/delivery/output_policy pure modules; `runtime_audit.append_runtime_audit` JSONL writer | **No HTTP server at all** — library only (live bridge is a script) |
+| `services/conversation-read-view/` | `ContractLogReadModel.from_records()` builds derived conversation/task/trace indexes from JSONL; cursor pagination; privacy scrub; CSV/JSON export | Library (read-only) |
+| `services/hermes-contract-layer/` | `ContractEventWriter` append-only JSONL; `hook.record_contract_result`; `INKSTATUTE_CONTRACT_LOG_PATH` env | Library (writer) |
+| `services/feedback-service/` | `FeedbackQueueItem` normalization + classification; pending queue | Library |
+| `packages/operator-config/` | `OperatorConfigStore` atomic JSON; refs-only schemas; `apply_semantics=restart_required` metadata | Library (shipped v1.10) |
+| `packages/rbac/` | HMAC-SHA256 `issue_token`/`verify_token`; `PERMISSIONS_MATRIX`; `RbacGuard` | Library |
+| `packages/platform-runtime/` | `RuntimeFeatureFlags` (all default OFF); `DefaultRunRuntime` | Library |
+| `scripts/` | `inkstatute_wecom_live_bridge.py` (operator-run, signal handling, subprocess to Hermes); `start-hindsight.sh`; `run_v2_gates.py` | Operator scripts, not service entries |
 
-## Standard Architecture
+**Key existing patterns to preserve:**
+- Pure-function handler cores (`handle_*`) are testable without `BaseHTTPRequestHandler`; server binding is a thin wrapper.
+- Auth pipeline: feature-flag gate → `resolve_identity` (RBAC HMAC token OR static `ADMIN_API_TOKEN`) → `RbacGuard.check` → `TenantGuard`.
+- CSRF: signed nonce+HMAC tokens bound to identity+route (csrf.py), no cookies/sessions today.
+- Gates view already uses `subprocess.run` isolation (gates.py) — precedent for subprocess orchestration.
+- Secret refs only; `resolve_secret_ref` at process edge; health allowlist excludes secret fields.
 
-### System Overview
+## New Components
 
-v1.10 adds an **operator config plane** beside the existing **runtime plane**. Config writes never cross into Hermes filesystem; runtime hosts pull InkStatute config and inject adapters as today.
+### 1. Service Entry Points (`__main__.py`)
+- **Purpose:** Make admin-web-ui, admin-console-api, qqbot-service, and wecom-service runnable as `python -m <pkg>` with port binding, signal handling, graceful shutdown.
+- **Location:**
+  - `services/admin-web-ui/src/admin_web_ui/__main__.py` (NEW)
+  - `services/admin-console-api/src/admin_console_api/__main__.py` (NEW)
+  - `services/qqbot-service/src/qqbot_service/__main__.py` (NEW)
+  - `services/wecom-service/src/wecom_service/__main__.py` (NEW — also needs a thin `http_server.py` since none exists)
+- **Integrates with:** Existing pure `handle_*` cores; `RuntimeFeatureFlags`; `OperatorConfigStore`; `rbac` secret; env vars already reserved in `.env.example` (`ADMIN_WEB_UI_HOST/PORT`, `ADMIN_CONSOLE_API_URL`).
+- **Data flow:** `python -m admin_web_ui` → resolve env (host/port/secret/flags) → build `ThreadingHTTPServer` with a `BaseHTTPRequestHandler` subclass that delegates to `handle_admin_web_ui_request` → `serve_forever` → `signal.SIGTERM`/`SIGINT` → `shutdown()` + `server_close()`.
+- **Design:** Each `__main__.py` is a thin adapter — no business logic. It reads env, constructs the same deps the tests inject (read_model from contract log path, feedback_queue, config_store, feature_flags), and binds the handler. A shared `services/_service_runtime.py` helper (or per-service `runtime.py`) can factor out signal handling + `ThreadingHTTPServer` wiring to avoid duplication. wecom-service needs a new `http_server.py` mirroring qqbot-service's pattern (POST callback + GET health).
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                         Operator Plane (v1.10)                               │
-│  ┌────────────────────┐    ┌─────────────────────┐    ┌──────────────────┐  │
-│  │ admin-web-ui       │───▶│ admin-console-api   │───▶│ operator-config  │  │
-│  │ [MODIFY] config UI │    │ [MODIFY] R/W routes │    │ [NEW] schemas +  │  │
-│  │ channels/providers │    │ RBAC + allowlist    │    │ store (refs only)│  │
-│  │ models / vision    │    │ flag-gated writes   │    │                  │  │
-│  └────────────────────┘    └──────────┬──────────┘    └────────┬─────────┘  │
-│                                       │                        │            │
-│                                       │ read/apply             │            │
-├───────────────────────────────────────┼────────────────────────┼────────────┤
-│                         Runtime Plane (existing + hooks)                     │
-│  ┌────────────────────┐    ┌──────────▼──────────┐    ┌────────▼─────────┐  │
-│  │ wecom-service      │    │ ConfigLoader /      │    │ Built-in model   │  │
-│  │ qqbot-service      │◀───│ Host wiring         │◀───│ catalog (static) │  │
-│  │ [MODIFY] load cfg  │    │ flag→config dual    │    │ + custom providers│ │
-│  └─────────┬──────────┘    │ knob preserved      │    └──────────────────┘  │
-│            │               └──────────┬──────────┘                          │
-│            ▼                          ▼                                     │
-│  ┌──────────────────┐      ┌─────────────────────┐                          │
-│  │ ChannelAdapter   │      │ VisionRouter [NEW]  │                          │
-│  │ (6 methods FROZEN)│     │ image-turn →        │                          │
-│  │ normalize →      │─────▶│ vision model? →     │──▶ RunRequest prep       │
-│  │ AttachmentRef    │      │ main model mix      │                          │
-│  └──────────────────┘      └──────────┬──────────┘                          │
-│                                       ▼                                     │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │ DefaultRunRuntime ──▶ BackendAdapter (Hermes | provider_model | …)   │   │
-│  │                    ──▶ ModelProviderGateway (optional composite)     │   │
-│  │ Hermes = agent logic ONLY — not config authority                     │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│  Secret resolution: process edge only (env / secret:// → values)            │
-│  Contract logs: refs / hashes — never raw keys or image bytes               │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
+### 2. Process Orchestrator (`ProcessSupervisor`)
+- **Purpose:** Let the console act as a control plane that starts/stops/inspects WeCom and QQBot host processes, and restarts them after config save (apply_semantics=restart_required).
+- **Location:** `services/admin-console-api/src/admin_console_api/orchestrator.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/processes.py` (NEW SSR page).
+- **Integrates with:** `subprocess.Popen` (stdlib); `OperatorConfigStore` (for channel enablement + restart signals); admin-console-api new `/processes` routes; admin-web-ui new `/processes` page.
+- **Data flow:**
+  ```
+  Operator (web-ui /processes) → POST /processes/{channel}/start
+    → admin-console-api orchestrator.start(channel)
+    → subprocess.Popen([python, -m, qqbot_service, ...], env=..., stdout=log_file, stderr=log_file)
+    → record ProcessRecord(pid, channel, status, started_at, log_path) in an in-memory + JSONL state file
+  Health check: GET http://127.0.0.1:{port}/health on the child → map to running/degraded/stopped
+  Stop: proc.terminate() (SIGTERM) → wait(timeout) → proc.kill() if needed
+  Config save → PUT /config/channels → orchestrator.restart(channel) (stop then start)
+  ```
+- **Design:** `ProcessSupervisor` is a stdlib-only class holding `dict[channel, Popen]`. State persists to a small JSONL (`INKSTATUTE_PROCESS_STATE_PATH`, default under runtime dir) so a restarted console can re-attach (probe pid liveness via `poll()`). Health checks reuse each child's `/health` endpoint (the new `__main__.py` entries expose it). Graceful shutdown of the console itself terminates all children. **No new queue/DB** — Popen + JSONL state is sufficient for single-machine ops.
 
-### Component Responsibilities
+### 3. Log Viewer (`LogReader`)
+- **Purpose:** Online viewing of WeCom/QQBot/adapter runtime logs with level filter and search; tail-follow pattern.
+- **Location:** `services/admin-console-api/src/admin_console_api/logs.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/logs.py` (NEW SSR page).
+- **Integrates with:** Runtime JSONL files written by `ContractEventWriter` (`INKSTATUTE_CONTRACT_LOG_PATH` → events.jsonl), `append_runtime_audit` (runtime-audit.jsonl), feedback.jsonl, and the new `__main__.py` stdout/stderr log files (one per child process, path from `ProcessSupervisor`).
+- **Data flow:**
+  ```
+  GET /logs/{source}?level=ERROR&seek=12345&q=keyword
+    → LogReader.read(source, offset, level_filter, search)
+    → open(log_path, "r"), seek(offset), read lines forward, parse JSONL, filter by level/search
+    → return {lines: [...], next_offset: <byte_pos>, eof: bool}
+  Tail-follow: client polls with last next_offset; server reads from byte offset onward
+  ```
+- **Design:** `LogReader` is a pure stdlib class (`open`/`seek`/`readline`). Sources are mapped by name → file path via a `LOG_SOURCES` registry (contract_events, runtime_audit, feedback, wecom_stdout, qqbot_stdout, etc.). Paths resolve from env (`INKSTATUTE_CONTRACT_LOG_PATH`, `INKSTATUTE_RUNTIME_DIR`, `ProcessSupervisor` log paths). **Privacy:** every line passes through `scrub_contract_payload` (already in conversation-read-view) before rendering — never raw legal payload or secrets. Level filter parses `level` field in JSONL or falls back to stderr text grep for non-JSON stdout logs.
 
-| Component | Responsibility | Status | Location |
-|-----------|----------------|--------|----------|
-| Operator config schemas | Channel / provider / model / vision documents; secret-ref fields; validation | **NEW** | `packages/operator-config/` (or equivalent) |
-| Config store | Persist operator documents outside git; version/etag; no raw secrets | **NEW** | under operator-config (file/JSONL first; DB only if plan requires) |
-| Built-in model catalog | Vendor→selectable models + capability flags (`supports_vision`, etc.) | **NEW** | catalog data in operator-config or `packages/model-catalog/` |
-| Config apply / loader | Materialize store → `WeComChannelConfig` / `QQBotChannelConfig` / `ProviderModelBackendConfig` | **NEW** | operator-config + host wiring |
-| Vision router | Given inbound attachments + main/vision model caps, decide vision→main mix | **NEW** | `packages/vision-router/` or operator-config submodule used by hosts/runtime |
-| Admin Console API write routes | Authenticated mutate/get for config resources; field allowlist | **MODIFY** | `services/admin-console-api/` |
-| Admin Web UI config pages | Operator forms for channels, providers, models, vision | **MODIFY** | `services/admin-web-ui/` |
-| RBAC matrix | Annotate new `/config/*` (or similar) prefixes; admin/operator write | **MODIFY** | `packages/rbac/` |
-| Feature flags | `operator_config_enabled`, `vision_routing_enabled` (names TBD) default `False` | **MODIFY** | `packages/platform-runtime/.../feature_flags.py` |
-| QQ/WeCom host wiring | Load operator config (or env fallback); keep dual-knob + secret resolve | **MODIFY** | `services/qqbot-service/`, `services/wecom-service/` |
-| Channel configs | Remain frozen secret-ref dataclasses; optional `from_operator_doc` | **MODIFY** | `packages/channels/{qqbot,wecom}/.../config.py` |
-| provider_model | Construct runners from catalog selection + custom endpoint docs | **MODIFY** | `packages/backends/provider_model/` |
-| ModelProviderGateway | Optional: select/fallback among catalog-backed sub-adapters | **REUSE/light MODIFY** | `packages/model-gateway/` |
-| Channel normalize | Already emits image `AttachmentRef` (ref-only) | **REUSE** | wecom normalization, qqbot normalize |
-| Hermes backend | Agent execution only; do not read/write `~/.hermes` for ops config | **REUSE** | `packages/backends/hermes/` |
-| ChannelAdapter / BackendAdapter Protocols | Unchanged method counts | **FROZEN** | `packages/platform-runtime/.../protocols.py` |
-| platform-contract event schemas | Prefer no freeze break; vision metadata in run metadata / industry_context if needed | **FROZEN preference** | `packages/platform-contract/` |
+### 4. Reports Aggregator (`ReportsAggregator`)
+- **Purpose:** Session/task volume, completion rate, long-task success rate, feedback distribution aggregate stats.
+- **Location:** `services/admin-console-api/src/admin_console_api/reports.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/reports.py` (NEW SSR page).
+- **Integrates with:** `ContractLogReadModel` (conversation-read-view) — already builds conversation/task/trace indexes from contract events; `feedback_queue` (feedback-service); `run_gate_summary` (gates.py subprocess); `RuntimeFeatureFlags` + health.
+- **Data flow:**
+  ```
+  GET /reports?from=...&to=...
+    → ReportsAggregator.build(read_model, feedback_queue, gate_summary, time_range)
+    → read_model = ContractLogReadModel.from_records(load_records_from_jsonl(contract_log_path))
+    → count conversations, tasks by status, completion_rate = completed/total
+    → long_task_success = tasks with duration > threshold and status=completed
+    → feedback distribution = classify feedback_queue items by classification.category
+    → return {sessions: {total, ...}, tasks: {total, completed, completion_rate, long_task_success_rate}, feedback: {by_category, total}, gates: {passed, failed, rate}}
+  ```
+- **Design:** Pure function over the existing `ContractLogReadModel` + `feedback_queue` — **no new data source**. The read model already derives task status/duration; the aggregator just counts. Time-range filter reuses the existing `_ALLOWED_SESSION_FILTERS` pattern. This is read-only and routes through the same auth/allowlist pipeline.
 
-## Recommended Project Structure
+### 5. Contract Event Audit View (`AuditView`)
+- **Purpose:** AgentTurn/FeedbackEvent stream view with trace_id tracking (enhances existing sessions/tasks views).
+- **Location:** `services/admin-console-api/src/admin_console_api/audit.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/audit.py` (NEW SSR page).
+- **Integrates with:** `ContractLogReadModel._trace_events` (already stored but not exposed as a stream); `load_records_from_jsonl`; privacy scrub.
+- **Data flow:** `GET /audit?trace_id=...` → filter records by trace_id → render chronological AgentTurn + FeedbackEvent stream with trace_id linking. Reuses `scrub_contract_payload` per line.
+- **Design:** Thin read-only view over existing read-model internals; no new writer.
 
-```
-packages/
-├── operator-config/                 # NEW — schemas, store, loader, validation
-│   ├── src/inkstatute_operator_config/
-│   │   ├── schemas.py               # ChannelDoc, ProviderDoc, ModelRef, VisionRoutingDoc
-│   │   ├── catalog.py               # built-in vendor/model catalog
-│   │   ├── store.py                 # persistence (refs only)
-│   │   ├── loader.py                # doc → *ChannelConfig / ProviderModelBackendConfig
-│   │   ├── secrets.py               # re-export / wrap resolve_secret_ref policy
-│   │   └── validate.py
-│   └── tests/
-├── vision-router/                   # NEW — or submodule of operator-config if kept small
-│   ├── src/inkstatute_vision_router/
-│   │   ├── router.py                # decide(main_caps, vision_model, attachments) → plan
-│   │   └── plans.py                 # VisionPlan: passthrough | describe_then_main | reject
-│   └── tests/
-├── backends/provider_model/         # MODIFY — wire catalog-selected configs
-├── model-gateway/                   # REUSE — composite backend; not the catalog UI
-├── channels/qqbot|wecom/            # MODIFY — from_operator_doc beside from_env
-├── platform-runtime/                # MODIFY — new default-OFF flags only
-├── rbac/                            # MODIFY — new route permissions
-services/
-├── admin-console-api/               # MODIFY — GET/PUT config routes + allowlist
-├── admin-web-ui/                    # MODIFY — config pages (still CSP / html.escape)
-├── qqbot-service/                   # MODIFY — ConfigLoader in wiring
-└── wecom-service/                   # MODIFY — ConfigLoader in wiring
-```
+### 6. Session Auth (`SessionStore` + login route)
+- **Purpose:** Reserved username/password login + session cookie interface; MVP token-only but extensible.
+- **Location:** `services/admin-web-ui/src/admin_web_ui/sessions.py` (NEW — login page + cookie issue/verify); `packages/rbac/src/rbac/session.py` (NEW — signed session cookie helper, mirrors csrf.py HMAC pattern).
+- **Integrates with:** Existing `_authenticate_admin` pipeline in both admin-web-ui server.py and admin-console-api api.py; `rbac.issue_token` (a session can wrap an RBAC token); `RbacGuard`.
+- **Data flow:**
+  ```
+  GET /login → render login form (username/password)
+  POST /login → verify credentials (MVP: single operator from env ADMIN_LOGIN_USER/ADMIN_LOGIN_PASS_HASH)
+    → issue signed session cookie: Set-Cookie: inkstatute_session=<nonce>.<hmac>
+    → cookie payload references an RBAC token (role=ADMIN/OPERATOR) issued server-side
+  Subsequent requests: handler reads Cookie header → SessionStore.verify(cookie) → resolve_identity(token)
+    → same RbacGuard pipeline as Bearer token
+  Logout: clear cookie
+  ```
+- **Coexistence with token auth:** The auth pipeline gains an **ordered fallback**: (1) `Authorization: Bearer` header → `resolve_identity` (existing API/programmatic path, unchanged); (2) if no bearer header, check `Cookie: inkstatute_session=` → `SessionStore.verify` → unwrap RBAC token → `resolve_identity`. Both paths produce the same `Identity` and feed the same `RbacGuard`. The admin-console-api (JSON API) stays bearer-only; the admin-web-ui (browser) accepts cookie OR bearer. This keeps API clients unchanged while enabling browser sessions.
+- **Design:** Session cookie is HMAC-signed (same stdlib pattern as csrf.py and rbac/token.py — no new crypto). MVP credential store is env vars (`ADMIN_LOGIN_USER`, `ADMIN_LOGIN_PASS_HASH` via `hashlib.pbkdf2_hmac`). The username/password DB is explicitly deferred — the interface (`SessionStore.issue`/`verify`, login route, cookie parsing) lands now so a real cred store can slot in later without handler changes. `HttpOnly`, `SameSite=Strict`, `Secure` (when not localhost) cookie attributes.
 
-### Structure Rationale
+### 7. Token Management UI
+- **Purpose:** RBAC token issue/revoke/expire management page.
+- **Location:** `services/admin-console-api/src/admin_console_api/tokens.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/tokens.py` (NEW SSR page).
+- **Integrates with:** `rbac.issue_token`/`verify_token`; `RBAC_TOKEN_SECRET`; new `/tokens` routes; `PERMISSIONS_MATRIX` (admin-only).
+- **Data flow:** `POST /tokens/issue {role, tenant_id, ttl}` → `issue_token(secret, ...)` → return token once (not stored). `GET /tokens` → list active tokens (MVP: stateless — tokens aren't persisted; list shows issue metadata if a token registry JSONL is added, or just the issue form + verify helper). Revoke = short TTL + rotation of `RBAC_TOKEN_SECRET` (documented).
+- **Design:** Issue is a pure call to existing `rbac.issue_token`. A lightweight token registry JSONL (`INKSTATUTE_TOKEN_REGISTRY_PATH`) can record issued-token metadata (role, tenant, iat, exp — never the token itself) for the list view; revocation MVP is TTL + secret rotation.
 
-- **`operator-config` package:** Keeps schemas/store out of HTTP services so hosts, smoke, and API share one authority; mirrors how channel logic lives in packages and hosts only compose.
-- **`vision-router` separate (or thin submodule):** Vision decision is run-prep logic, not admin CRUD; testable without HTTP.
-- **Modify admin services, don’t fork a new console:** Auth, RBAC scan (`ROUTE_PREFIXES` ↔ `PERMISSIONS_MATRIX`), health allowlist, and flags already exist.
-- **Do not put catalog inside Hermes or `~/.hermes`:** Aligns with README + AGENTS.md ownership boundary.
-- **Do not invent a new queue/DB** unless a phase plan requires it — file/JSON store is enough for operator config MVP.
+## Modified Components
 
-## Architectural Patterns
+### `services/admin-web-ui/src/admin_web_ui/server.py`
+- **Change:** Extend `_SECTION_MAP` with new routes (`/processes`, `/logs`, `/reports`, `/audit`, `/tokens`, `/login`, `/logout`); extend `_POST_ROUTES` for `/login`, `/processes/*/start|stop`, `/tokens/issue`; add Cookie parsing to `_extract_auth_header` path (ordered bearer-then-cookie); thread `ProcessSupervisor` + `LogReader` + `ReportsAggregator` deps through `handle_admin_web_ui_request` kwargs.
+- **Why:** New pages need routing + auth; cookie auth must coexist with bearer without breaking API proxying.
 
-### Pattern 1: Config Authority Outside Hermes
+### `services/admin-console-api/src/admin_console_api/api.py`
+- **Change:** Add route dispatch in `handle_admin_get` for `/processes`, `/logs`, `/reports`, `/audit`, `/tokens`; extend `_authenticate_admin` to accept an optional session-cookie resolver (for the case where admin-console-api is hit directly by a browser via cookie); thread new deps (`ProcessSupervisor`, `LogReader`, `ReportsAggregator`) through handler kwargs.
+- **Why:** Control-plane + observability data must flow through the same auth/allowlist/RBAC pipeline; no second auth stack.
 
-**What:** InkStatute persists operator documents (channels, providers, models, vision). Hermes remains an injected `BackendAdapter` for agent turns.
-**When to use:** Always for v1.10 ops configuration.
-**Trade-offs:** Operators configure two planes (InkStatute ops vs Hermes agent internals) — intentional; avoids coupling product config to Hermes upgrades.
+### `packages/rbac/src/rbac/matrix.py`
+- **Change:** Add `/processes` (ADMIN/OPERATOR), `/logs` (ADMIN/OPERATOR), `/reports` (ADMIN/OPERATOR/LAWYER/VIEWER read), `/audit` (ADMIN/OPERATOR/LAWYER), `/tokens` (ADMIN) to `PERMISSIONS_MATRIX`. Update `scripts/scan_rbac_annotations.py` expectations.
+- **Why:** New routes need explicit role permissions; CI scan enforces every dispatched prefix has a matrix entry.
 
-**Example:**
-```python
-# Host wiring — load InkStatute config, never Path.home() / ".hermes"
-docs = config_store.load()
-qq_cfg = QQBotChannelConfig.from_operator_doc(docs.channels["qqbot"])
-# enabled = flags.qqbot_channel_enabled AND doc.enabled  (dual-knob)
-adapter = QQBotChannelAdapter(qq_cfg, ...)
-runtime = DefaultRunRuntime(backend=hermes_adapter, channels=(adapter,), feature_flags=flags)
-```
+### `packages/platform-runtime/src/platform_runtime/feature_flags.py`
+- **Change:** Add `process_orchestration_enabled: bool = False`, `log_viewing_enabled: bool = False`, `session_auth_enabled: bool = False` (all default OFF).
+- **Why:** New lanes follow the existing default-OFF + `require_enabled` gate pattern; console features must be explicitly opt-in.
 
-### Pattern 2: Secret-Ref Documents + Process-Edge Resolution
+### `services/wecom-service/src/wecom_service/`
+- **Change:** Add `http_server.py` (NEW, mirrors qqbot-service: `WeComWebhookServer(BaseHTTPRequestHandler)` + `read_request_body_once` + GET `/health`); add `__main__.py` (NEW).
+- **Why:** wecom-service has no HTTP server today (only the operator script bridge); to be orchestratable it needs a runnable webhook host entry like qqbot-service.
 
-**What:** Stored/API fields are `*_ref` / `env:VAR` / `secret://…` only. Hosts call `resolve_secret_ref(ref, env)` at the edge (same SAFE-02 pattern as qqbot-service).
-**When to use:** Every credential field (WeCom token/AES, QQ app secrets, provider API keys).
-**Trade-offs:** Operators must plant value env vars separately; UI never displays raw secrets (show configured=true / last-4 optional later — not MVP).
+### `services/qqbot-service/src/qqbot_service/`
+- **Change:** Add `__main__.py` (NEW) binding `QQBotWebhookServer` to `ThreadingHTTPServer` with env host/port + signal handling + GET `/health` on the same handler.
+- **Why:** Handler class exists but is not runnable; orchestrator needs a `python -m qqbot_service` target with a health endpoint.
 
-**Example:**
-```python
-@dataclass(frozen=True, slots=True)
-class ProviderDoc:
-    provider_id: str
-    kind: str  # "builtin_openai" | "custom_openai_compatible" | ...
-    api_base_url: str | None
-    api_key_ref: str | None  # NEVER raw key
-    enabled: bool = False
-```
+### `.env.example`
+- **Change:** Uncomment/complete `ADMIN_WEB_UI_HOST/PORT`, add `ADMIN_CONSOLE_API_HOST/PORT`, `INKSTATUTE_CONTRACT_LOG_PATH`, `INKSTATUTE_RUNTIME_DIR`, `INKSTATUTE_PROCESS_STATE_PATH`, `ADMIN_LOGIN_USER`, `ADMIN_LOGIN_PASS_HASH`, `LOG_VIEWING_ENABLED`, `PROCESS_ORCHESTRATION_ENABLED`, `SESSION_AUTH_ENABLED`.
+- **Why:** One-click startup requires all env vars documented; PROJECT.md lists `.env.example` completion as product polish.
 
-### Pattern 3: Dual-Knob Channel Enablement (Preserved)
-
-**What:** Platform `RuntimeFeatureFlags.*_channel_enabled` AND channel/doc `enabled` must both be true; adapters still do not import feature flags.
-**When to use:** QQBot and WeCom live IO.
-**Trade-offs:** Two places to flip — prevents accidental live IO from UI alone or flag alone.
-
-### Pattern 4: Vision Routing at Run-Prep (Not Inside ChannelAdapter)
-
-**What:** Channels keep normalizing images to `AttachmentRef`. A vision router inspects message_type/attachments + model capability flags and produces a `VisionPlan` attached to run metadata / backend request prep.
-**When to use:** Inbound image (or multimodal) turns when main model may lack vision.
-**Trade-offs:** Extra hop for dedicated vision models (describe/caption → main); multimodal mains skip the hop.
-
-**Example:**
-```python
-plan = vision_router.plan(
-    attachments=turn.attachments,
-    main_model=catalog.get(docs.vision.main_model_id),
-    vision_model=catalog.get(docs.vision.vision_model_id),  # may be None
-)
-# plan.mode: "main_direct" | "vision_then_main" | "reject_unsupported"
-# Bytes stay behind media refs; vision call resolves media at process edge only
-```
-
-### Pattern 5: Catalog as Data, Gateway as Composite Runtime
-
-**What:** Built-in model catalog is static selectable data (vendor, model id, caps). `ModelProviderGateway` remains a composite `BackendAdapter` (rate limit / circuit / fallback) — not the operator catalog UI.
-**When to use:** Provider/model selection in console; gateway only when `model_gateway_enabled`.
-**Trade-offs:** Clear separation avoids stuffing CRUD into gateway config dataclasses.
+### `scripts/`
+- **Change:** Add `start-console.sh` (NEW one-click startup: launches admin-console-api + admin-web-ui as background processes, prints URLs). Optionally `stop-console.sh`.
+- **Why:** PROJECT.md target: "one-click startup script".
 
 ## Data Flow
 
-### Config Load / Apply Flow
-
+### Runnable Console Startup
 ```
-Operator (admin-web-ui)
-    ↓ PUT /config/channels|providers|models|vision  (RBAC + flag)
-admin-console-api
-    ↓ validate (refs-only, schema)
-operator-config store  (persist document, no raw secrets)
-    ↓
-Host startup / hot-reload hook (phase-defined)
-    ↓ loader.materialize(doc) → *ChannelConfig / ProviderModelBackendConfig
-    ↓ resolve_secret_ref at process edge
-ChannelAdapter / BackendAdapter / VisionRouter injected into DefaultRunRuntime
-```
-
-### Image-Turn Vision Routing Flow
-
-```
-Channel webhook (WeCom | QQ)
-    ↓ verify_and_ack → normalize_inbound
-Normalized turn + AttachmentRef[]  (qqbot-media:// or wecom media ref — no bytes in contract log)
-    ↓ ingress / session → create_run prep
-VisionRouter.plan(main_caps, vision_model, attachments)
-    ├─ main supports_vision → attach image refs to main RunRequest (main_direct)
-    ├─ main lacks vision + vision_model set → vision describe/OCR → text context → main (vision_then_main)
-    └─ neither → fail-closed / user-safe notice (reject_unsupported) — no Hermes meta leak
-    ↓
-BackendAdapter.submit_run (Hermes | provider_model | gateway)
-    ↓
-output_boundary → ChannelAdapter.deliver
+./scripts/start-console.sh
+  → source .env
+  → python -m admin_console_api (port 8081) &
+  → python -m admin_web_ui    (port 8080) &
+  → prints http://127.0.0.1:8080
+Each __main__.py:
+  → resolve env (host/port/secret/flags/config_path/contract_log_path)
+  → build deps: OperatorConfigStore, ContractLogReadModel.from_records(...), feedback_queue, RuntimeFeatureFlags, ProcessSupervisor
+  → ThreadingHTTPServer((host, port), Handler) with server.deps = deps
+  → signal.signal(SIGTERM, lambda: server.shutdown())
+  → server.serve_forever()
 ```
 
-### Key Data Flows
+### Process Orchestration Flow
+```
+Operator browser → POST /processes/qqbot/start (CSRF + RBAC ADMIN/OPERATOR)
+  → admin-web-ui proxies to admin-console-api
+  → orchestrator.start("qqbot")
+    → resolve channel config (OperatorConfigStore + flags dual-knob)
+    → subprocess.Popen([sys.executable, "-m", "qqbot_service"],
+                       env=filtered_env_with_secrets, stdout=log_file, stderr=log_file)
+    → ProcessRecord(pid, channel, "running", started_at, log_path) → append to state JSONL
+  → return 200 {pid, status, log_path}
+Health poll (client-side JS or server-side on GET /processes):
+  → orchestrator.health("qqbot") → requests.get("http://127.0.0.1:{port}/health") via urllib
+  → map to running/degraded/stopped
+Config save → restart:
+  → PUT /config/channels succeeds → orchestrator.restart(channel) → stop() then start()
+```
 
-1. **Channel config apply:** Store doc → dual-knob AND → `QQBotChannelConfig` / `WeComChannelConfig` → host wiring strips live transports when OFF.
-2. **Provider/model select:** Catalog entry or custom OpenAI-compatible doc → `ProviderModelBackendConfig(model_name, api_base_url, api_key_ref)` → runner.
-3. **Vision mix:** Attachment refs + capability flags → `VisionPlan` → optional vision provider call → main agent turn with text/context only or multimodal payload.
-4. **Health/admin read:** Continue field allowlist — expose `secret_refs_configured` booleans, never ref target values or `api_key`.
+### Log Viewing Flow
+```
+GET /logs/contract_events?seek=0&level=ERROR&q=turn_123
+  → admin-console-api logs.handle_logs(source, seek, level, q)
+  → LogReader.read(LOG_SOURCES["contract_events"], seek, level, q)
+    → path = env INKSTATUTE_CONTRACT_LOG_PATH
+    → open(path), seek(seek), readline loop
+    → json.loads each line, scrub_contract_payload(line)
+    → filter: level match, q substring (on scrubbed text)
+  → return {lines, next_offset, eof}
+Browser polls with next_offset for tail-follow.
+Privacy: scrub_contract_payload on every line; health allowlist excludes secret fields.
+```
 
-## New vs Modified (explicit)
+### Reports Aggregation Flow
+```
+GET /reports?from=2026-07-01&to=2026-07-13
+  → ReportsAggregator.build(read_model, feedback_queue, gate_summary, time_range)
+    → read_model.conversations (filtered by time) → session count
+    → read_model.tasks → total, completed, completion_rate
+    → long_task_success_rate = tasks[duration > LONG_TASK_THRESHOLD & status=completed] / tasks[duration > LONG_TASK_THRESHOLD]
+    → feedback_queue items → group by classification.category → distribution
+    → gate_summary (subprocess run_v2_gates.py --json-summary) → passed/failed/rate
+  → return aggregated dict → SSR reports page
+No new persistence — pure read over existing JSONL + in-memory queue.
+```
 
-### NEW
+### Session Auth Coexistence Flow
+```
+Browser request → admin-web-ui handler
+  → _extract_auth_header(headers) → Bearer? 
+    YES → resolve_identity(bearer) [existing API path, unchanged]
+    NO  → parse Cookie: inkstatute_session=<nonce>.<sig>
+      → SessionStore.verify(cookie, rbac_secret) → unwrap inner RBAC token
+      → resolve_identity(inner_token) [same Identity/RbacGuard pipeline]
+  → RbacGuard.check(identity.role, route)
+API client request → admin-console-api
+  → Bearer only (cookies not required for JSON API; optionally accepted)
+```
 
-| Piece | Why new |
-|-------|---------|
-| Operator config schemas + store + loader | No config authority package exists; admin API is read-only today |
-| Built-in model catalog data | provider_model has single `model_name`; no selectable vendor catalog |
-| Vision router | No component decides vision→main mix; channels only produce refs |
-| Admin config write routes + UI pages | Current routes: sessions/tasks/feedback/health/gates only |
-| Feature flags for config write / vision routing | All existing flags default OFF; new lanes need the same gate |
+## Suggested Build Order
 
-### MODIFIED
+1. **Service entry points (`__main__.py` + wecom `http_server.py`) — no orchestration yet**
+   - Why first: every later feature (orchestration, log viewing, health dashboard) depends on runnable services with `/health` endpoints. Also the lowest-risk change (thin wrappers over existing pure cores).
+   - Deliver: `python -m admin_web_ui`, `python -m admin_console_api`, `python -m qqbot_service`, `python -m wecom_service` all bind ports + handle SIGTERM. Add `start-console.sh`.
+   - Depends on: nothing new (uses existing pure handlers + env).
 
-| Piece | Change |
-|-------|--------|
-| `admin-console-api` | Add config GET/PUT (or PATCH); extend `ROUTE_PREFIXES`; keep allowlist |
-| `admin-web-ui` | Config navigation + forms; still SSR + CSP |
-| `packages/rbac` | Matrix entries for config routes (admin/operator write; deny lawyer/viewer mutate) |
-| `RuntimeFeatureFlags` | Add default-OFF flags |
-| `qqbot-service` / `wecom-service` wiring | Prefer operator-config loader with env `from_env` fallback |
-| Channel `config.py` | Optional `from_operator_doc`; keep `from_env` |
-| `provider_model` construction sites | Build config from catalog/custom docs |
-| `model-gateway` (light) | Optional sub-adapter map from catalog-enabled providers |
-| READMEs / `.env.example` | Document console + refs (already partially noted) |
+2. **Feature flags + RBAC matrix + `.env.example` completion**
+   - Why: new routes need default-OFF gates and matrix entries before handlers dispatch; CI scan enforces matrix coverage.
+   - Depends on: #1 (routes exist to protect).
 
-### UNCHANGED (do not touch unless a phase explicitly requires)
+3. **Health/gate dashboard enhancement + Reports aggregator**
+   - Why: pure read-only over existing `ContractLogReadModel` + `feedback_queue` + `run_gate_summary`; no subprocess management risk; proves the observability data path.
+   - Depends on: #2 (flags/matrix).
 
-| Piece | Reason |
-|-------|--------|
-| ChannelAdapter 6 / BackendAdapter 9 Protocols | Freeze + gate coverage |
-| Hermes core / `~/.hermes` as config store | Ownership boundary |
-| platform-contract five event schemas (prefer) | Avoid freeze break; put vision plan in metadata |
-| Contract-log raw payload policy | Keep `raw_payload_ref` / attachment refs |
-| Rebuilding model-gateway as “the console” | Wrong layer |
+4. **Contract event audit view (trace_id stream)**
+   - Why: thin read-only over existing `_trace_events`; complements reports; no new infra.
+   - Depends on: #2.
 
-## Scaling Considerations
+5. **Log viewer (`LogReader` + `/logs` routes + SSR page)**
+   - Why: introduces file-read + scrub pattern; needed before orchestration (operators watch logs of processes they start). Privacy scrub is the main risk.
+   - Depends on: #2.
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| Single-operator / one firm | File or JSONL config store beside runtime; reload on write or process restart |
-| Multi-operator same deploy | Add etag/optimistic concurrency on PUT; RBAC already splits roles |
-| Multi-tenant | Reuse `multi_tenant_enabled` + TenantGuard; scope config docs by tenant_id when that flag is on — not required to unblock single-tenant MVP |
+6. **Process orchestrator (`ProcessSupervisor` + `/processes` routes + SSR page)**
+   - Why: highest-complexity new component (subprocess lifecycle, health probes, restart-on-config-save). Needs runnable services (#1) + log viewing (#5) to be useful and debuggable.
+   - Depends on: #1, #5.
 
-### Scaling Priorities
+7. **Token management UI (`/tokens` issue/verify)**
+   - Why: wraps existing `rbac.issue_token`; lower risk; admin-only.
+   - Depends on: #2.
 
-1. **First bottleneck:** Accidental secret persistence in store/API responses — prevent with schema validators + allowlist tests before scale.
-2. **Second bottleneck:** Vision media fetch latency — keep refs until process edge; bound vision call timeouts; don’t block webhook ACK (ACK-first already in QQ host).
+8. **Session auth (`SessionStore` + `/login` + cookie coexistence)**
+   - Why last among auth: it's the interface-reserving layer; MVP is token-only so session login is polish, not a blocker. Putting it last avoids destabilizing the auth pipeline early. The cookie/bearer coexistence change to `_authenticate_admin` touches both admin services and needs careful test evolution.
+   - Depends on: #2, #7 (token issue reused for session inner token).
 
-## Anti-Patterns
+9. **Product polish: error pages, navigation, responsive layout, one-click script finalization**
+   - Why: depends on all pages existing; pure SSR/CSS work.
+   - Depends on: #1–#8.
 
-### Anti-Pattern 1: Hermes `~/.hermes` as Operator Config Authority
+**Parallelism:** After #2, items #3, #4, #5, #7 can proceed in parallel waves (all read-only, independent routes). #6 (orchestrator) waits for #1 + #5. #8 waits for #7.
 
-**What people do:** Point the console at Hermes config files or write model/channel settings into the lawfirm profile.
-**Why it's wrong:** Violates InkStatute channel ownership; couples ops UI to Hermes layout; secrets/logs risk; README forbids it.
-**Do this instead:** InkStatute operator-config store; Hermes adapter only executes agent turns.
-
-### Anti-Pattern 2: Storing Raw API Keys in Config Documents
-
-**What people do:** PUT `{"api_key": "sk-..."}` into the store for “simpler DX.”
-**Why it's wrong:** Breaks AGENTS.md / SAFE-02; leaks via backups, contract logs, health dumps.
-**Do this instead:** `api_key_ref` only; resolve at process edge.
-
-### Anti-Pattern 3: Teaching ChannelAdapter a 7th Method for Vision
-
-**What people do:** Add `route_vision` onto ChannelAdapter.
-**Why it's wrong:** Unfreezes Protocol; every channel pays tax; vision is backend/model concern.
-**Do this instead:** Normalize to attachments; vision-router at run-prep.
-
-### Anti-Pattern 4: Bypassing Dual-Knob via UI “Enable Channel”
-
-**What people do:** UI sets `enabled=True` and host ignores `RuntimeFeatureFlags`.
-**Why it's wrong:** Accidental live IO; desync already documented as a pitfall for QQ.
-**Do this instead:** AND of platform flag and config doc; document both in operator README.
-
-### Anti-Pattern 5: New Mega Config Microservice
-
-**What people do:** Spin `services/config-service` with its own auth stack.
-**Why it's wrong:** Duplicates admin auth/RBAC/flags; AGENTS.md says no new service unless plan requires.
-**Do this instead:** Package for schemas/store + mutate through admin-console-api.
-
-### Anti-Pattern 6: Putting Image Bytes in Contract Logs or Run Metadata
-
-**What people do:** Base64 images into AgentTurn for “easier vision.”
-**Why it's wrong:** Privacy / legal payload rules; log bloat.
-**Do this instead:** Keep `AttachmentRef`; resolve media only inside vision/main call path.
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| WeCom callback / send API | Existing wecom-service + ChannelAdapter | Config supplies refs + enable; not protocol rewrite |
-| QQ OpenAPI | Existing qqbot-service composition | Same; dual-knob + SAFE-02 refs |
-| OpenAI-compatible providers | provider_model runners (`api_base_url` + `api_key_ref`) | Custom endpoints = first-class ProviderDoc |
-| Built-in vendors (OpenAI/Anthropic/Ollama/…) | Catalog ids → known base URL defaults + runner kind | Keys still refs |
-| Hermes agent backend | BackendAdapter only | Probe `/v1/models` may inform display; not write-back to Hermes |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| admin-web-ui ↔ admin-console-api | In-process proxy / HTTP GET+PUT | Writes flag-gated; RBAC annotated |
-| admin-console-api ↔ operator-config | Direct package calls | No raw secrets in responses |
-| operator-config ↔ host wiring | Loader at startup / reload | Env `from_env` remains fallback |
-| ChannelAdapter ↔ VisionRouter | Normalized turn / attachments in | Router must not import wecom↔qqbot |
-| VisionRouter ↔ provider_model / gateway | VisionPlan + resolved media at edge | Prefer provider_model for dedicated vision call |
-| RunRuntime ↔ BackendAdapter | Existing submit/stream | Vision prep happens before submit |
-| Health / gates views ↔ config | Allowlisted booleans only | Exclude secret ref names/values per existing health policy |
-
-## Suggested Build Order (phases starting at 73)
-
-Dependency-respecting order for roadmap authors:
-
-1. **Phase 73 — Operator config foundation**  
-   Schemas (channel/provider/model/vision docs), refs-only validation, store, default-OFF flags, gate coverage for new package.  
-   *Unblocks everything; no UI yet.*
-
-2. **Phase 74 — Admin config API (read/write) + RBAC**  
-   Extend `admin-console-api` with config routes; matrix + allowlist tests; still no Hermes coupling.  
-   *Depends on 73.*
-
-3. **Phase 75 — Channel config apply path**  
-   Loader → WeCom/QQ `*Config`; modify host wiring (env fallback); dual-knob preserved; UI channel page.  
-   *Depends on 73–74; proves end-to-end ops→runtime without models.*
-
-4. **Phase 76 — Provider + built-in model catalog**  
-   Catalog data; custom OpenAI-compatible providers; wire `ProviderModelBackendConfig` / optional gateway sub-adapters; UI.  
-   *Depends on 73–74; can parallelize UI with 75 after API exists.*
-
-5. **Phase 77 — Vision routing**  
-   VisionRouter + capability flags on catalog; image-turn plan; provider_model (or gateway) vision hop; fail-closed UX; tests with AttachmentRef fixtures (no bytes in logs).  
-   *Depends on 76 (catalog caps) and benefits from 75 (real inbound image normalization already shipped).*
-
-6. **Phase 78 — Admin Web UI polish + operator docs**  
-   Remaining console pages, README/`.env.example` alignment, smoke/dry-run evidence that config load + vision plan appear in sanitized form.  
-   *Depends on 74–77.*
-
-**Parallelism note:** After Phase 74, channel apply (75) and provider catalog (76) can proceed in parallel waves; vision (77) waits on catalog capabilities.
-
-**Explicit non-goals in this order:** live WeCom UAT / lawyer trial / QQ `--live` acceptance (carried human gates); Hermes profile editing; unfreezing Protocols.
+**Explicit non-goals:** live WeCom UAT / lawyer trial / QQ `--live` acceptance (carried human gates); TLS/reverse-proxy; external DB/queue; React SPA; unfreezing ChannelAdapter/BackendAdapter Protocols; Hermes profile editing from console; hot-reload (restart-to-apply remains MVP per v1.10 decision).
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Layering / ownership | HIGH | ADR-0001 + PROJECT.md + README Hermes boundary |
-| Admin mutate-via-existing API | HIGH | Read-only today; RBAC/route scan pattern is clear |
-| Secret-ref preservation | HIGH | QQ host SAFE-02 + channel configs already ref-only |
-| Vision at run-prep | HIGH | AttachmentRef already on QQ/WeCom normalize paths |
-| Catalog vs model-gateway split | HIGH | Gateway is composite BackendAdapter, not CRUD |
-| Hot-reload vs restart | MEDIUM | Phase plan should pick one; architecture allows either |
-| Exact package names | MEDIUM | `operator-config` / `vision-router` are recommendations |
-
-## Gaps to Address in Phase Research
-
-- Hot-reload semantics (in-process reload vs restart-required) for hosts already holding adapters.
-- Whether vision describe uses a short provider_model call vs a future dedicated tool — recommend provider_model first.
-- Whether `AdapterCapabilitySet` gains `supports_vision` (contract change) vs catalog-only capability flags (prefer catalog-only to avoid contract freeze).
-- Multi-tenant scoped config: defer unless `multi_tenant_enabled` promotion is in-scope.
+| `__main__.py` entry pattern | HIGH | qqbot-service `http_server.py` already shows BaseHTTPRequestHandler + ThreadingHTTPServer pattern; pure cores are handler-agnostic |
+| Process orchestration via subprocess.Popen | HIGH | gates.py already uses subprocess.run; stdlib Popen + poll + terminate is well-trodden; single-machine scope |
+| Log viewing via file seek + scrub | HIGH | JSONL writers + `INKSTATUTE_CONTRACT_LOG_PATH` exist; `scrub_contract_payload` exists; tail-follow is seek+readline |
+| Reports from existing read model | HIGH | `ContractLogReadModel` already derives conversations/tasks/trace; feedback_queue already classified |
+| Session cookie coexistence | HIGH | csrf.py + rbac/token.py establish the HMAC-signed-token stdlib pattern; ordered bearer-then-cookie fallback is additive |
+| wecom-service HTTP server | HIGH | qqbot-service http_server.py is the template; wecom wiring already composes adapter |
+| Exact route names / flag names | MEDIUM | `/processes`, `/logs`, `/reports`, `/audit`, `/tokens` are recommendations; phase plans may adjust |
+| Token registry persistence | MEDIUM | MVP may be stateless (issue + verify) with secret-rotation revocation; JSONL registry is optional |
 
 ## Sources
 
-- `.planning/PROJECT.md` — v1.10 goal, secret-ref + vision decisions (2026-07-10)
-- `docs/architecture/adr/ADR-0001-platform-layering.md` — ChannelAdapter / BackendAdapter / RunRuntime
-- `services/admin-console-api/README.md` — read-only API, allowlist, `admin_api_enabled`
-- `services/admin-web-ui/README.md` — SSR dashboard, proxies GET only today
-- `packages/platform-runtime/README.md` + `feature_flags.py` — embeddable runtime, default-OFF flags
-- `packages/channels/{qqbot,wecom}/.../config.py` — frozen secret-ref channel configs + `from_env`
-- `services/qqbot-service/README.md` — SAFE-02 resolve_secret_ref, dual-knob wiring
-- `packages/backends/provider_model/.../config.py` — `api_key_ref` / `api_base_url` / `model_name`
-- `packages/model-gateway/` — composite BackendAdapter (rate limit / circuit / fallback), not catalog UI
-- `AGENTS.md` — InkStatute owns channel boundary; Hermes is agent backend; no secrets in git
-- Root `README.md` — admin is read-only ops board; provider_model without editing Hermes
+- `.planning/PROJECT.md` — v1.11 target features, deployment target, architecture constraint
+- `services/admin-web-ui/src/admin_web_ui/server.py` — `handle_admin_web_ui_request` pure core, `_SECTION_MAP`, `_POST_ROUTES`, auth pipeline, CSRF pattern
+- `services/admin-web-ui/src/admin_web_ui/api_client.py` — in-process proxy to admin-console-api
+- `services/admin-web-ui/src/admin_web_ui/csrf.py` — signed nonce+HMAC token pattern (reusable for sessions)
+- `services/admin-console-api/src/admin_console_api/api.py` — `handle_admin_get`/`handle_admin_put`, `_authenticate_admin` pipeline
+- `services/admin-console-api/src/admin_console_api/auth.py` — static token + bearer extraction
+- `services/admin-console-api/src/admin_console_api/health.py` — positive allowlist pattern
+- `services/admin-console-api/src/admin_console_api/gates.py` — subprocess.run isolation precedent
+- `services/admin-console-api/src/admin_console_api/views.py` — `ContractLogReadModel` + `scrub_contract_payload` usage
+- `services/qqbot-service/src/qqbot_service/http_server.py` — `QQBotWebhookServer(BaseHTTPRequestHandler)` template
+- `services/qqbot-service/src/qqbot_service/wiring.py` — dual-knob wired runtime composition
+- `services/wecom-service/src/wecom_service/wiring.py` — WeCom wired runtime (no HTTP server today)
+- `services/wecom-service/src/wecom_service/runtime_audit.py` — JSONL audit writer pattern
+- `services/hermes-contract-layer/src/hermes_contract_layer/hook.py` — `INKSTATUTE_CONTRACT_LOG_PATH` env
+- `services/hermes-contract-layer/src/hermes_contract_layer/writer.py` — append-only JSONL `ContractEventWriter`
+- `services/conversation-read-view/src/conversation_read_view/read_model.py` — `ContractLogReadModel.from_records` derived indexes
+- `services/feedback-service/src/feedback_service/queue.py` — `FeedbackQueueItem` + classification
+- `packages/rbac/src/rbac/token.py` — HMAC-SHA256 `issue_token`/`verify_token`
+- `packages/rbac/src/rbac/matrix.py` — `PERMISSIONS_MATRIX` (single source of truth)
+- `packages/platform-runtime/src/platform_runtime/feature_flags.py` — default-OFF flag pattern
+- `.env.example` — reserved `ADMIN_WEB_UI_HOST/PORT`, `ADMIN_CONSOLE_API_URL`, `RBAC_TOKEN_SECRET`
+- `scripts/inkstatute_wecom_live_bridge.py` — operator script with signal handling + subprocess to Hermes (precedent)
+- `AGENTS.md` — stdlib-only, no new service/DB/queue unless plan requires, no secrets in git
 
 ---
-*Architecture research for: v1.10 Operator Config Console + vision routing*
-*Researched: 2026-07-10*
+*Architecture research for: v1.11 Product Console — runnable entry points, process orchestration, observability, auth, polish*
+*Researched: 2026-07-13*

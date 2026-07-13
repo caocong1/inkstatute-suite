@@ -1,388 +1,243 @@
-# Pitfalls Research
+# Pitfalls Research: v1.11 Product Console
 
-**Domain:** Adding a writable Operator Config Console + provider catalogs + vision/main hybrid routing to InkStatute (channel+adapter platform with existing default-OFF flags, secret refs, read-only admin UI, QQ dual-knob, WeCom output boundary, Hermes as separate agent backend)
-**Researched:** 2026-07-10
+**Domain:** Adding runnable service entry points, process orchestration, observability (reports/logs/audit/health), auth (token management + login session interface), and product polish to the existing InkStatute admin console — a stdlib `http.server` SSR system with atomic JSON file storage, no DB, no JS frameworks, default-OFF feature flags, and a static-token + HMAC-CSRF auth model.
+**Researched:** 2026-07-13
 **Confidence:** HIGH
 
-This research covers common mistakes when **adding writable operator configuration and vision routing on top of an already-shipped platform** — not greenfield admin UIs. InkStatute already has: `admin-console-api` / `admin-web-ui` (strictly read-only, field allowlist), `RuntimeFeatureFlags` (all default OFF), QQ dual-knob (`RuntimeFeatureFlags.qqbot_channel_enabled` AND `QQBotHostConfig.enabled`), process-edge `*_REF` / `secret://` resolution, WeCom output boundary, and Hermes as an agent backend that must **not** be configured from this project. Phases continue from **73**.
+This research covers common mistakes when **adding these features on top of the already-shipped v1.10 admin console** — not greenfield. The existing system has: `AdminWebUiServer` (a bare `BaseHTTPRequestHandler` with **no** `__main__.py`, no `HTTPServer` instantiation, no signal handling, no port binding — tests dispatch directly to `handle_admin_web_ui_request`/`_dispatch`), `admin-console-api` (static `ADMIN_API_TOKEN` Bearer auth via `hmac.compare_digest`), `OperatorConfigStore` (atomic `.tmp` + `os.replace` JSON writes), `ContractLogReadModel` (loads the **entire** JSONL into memory via `read_text().splitlines()` then sorts and indexes in-process), `csrf.py` (HMAC-signed tokens bound to identity+route, **no cookies, no nonce state, no sessions**), and a CSP of `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'`. Phases continue from **79**.
 
-Suggested phase themes (roadmap may renumber): **73 SAFETY** (config schema + secret-ref contract + flag defaults), **74 CHANNEL-CFG** (QQ/WeCom writable config without dual-knob collapse), **75 PROVIDER-CFG** (vendor + custom OpenAI-compatible catalogs), **76 MODEL-CATALOG** (built-in selectable models + capability metadata), **77 VISION-ROUTE** (auto/always/never hybrid), **78 PERSIST-AUDIT** (persistence, process-edge resolve, audit log), **79 DOCS-GATES** (operator docs + smoke honesty + carried human gates).
-
----
-
-## Critical Pitfalls
-
-### Pitfall 1: Configuring Hermes from the InkStatute console
-
-**What goes wrong:**
-The config console writes Hermes profile fields, `~/.hermes` paths, gateway adapters, model lists, or WeCom/QQ credentials into Hermes runtime. Operators “fix” channel/provider settings by editing the agent backend. Hermes gateway/meta notices re-enter the user path; InkStatute stops owning channel ingress/egress; AGENTS.md / V2 PRD boundary collapses.
-
-**Why it happens:**
-Hermes is the first production agent backend and historically owned channels. Operators and implementers conflate “configure the lawyer bot” with “configure Hermes.” Existing Hermes WeCom/QQ connections look like the natural place to put new knobs.
-
-**How to avoid:**
-- Hard rule: console mutates **InkStatute-owned** config only (channel hosts, provider_model / model-gateway lanes, vision routing). Never write Hermes core, gateway, profile secrets, or `~/.hermes`.
-- Persist config under InkStatute services/packages; resolve secrets at InkStatute process edge.
-- Document explicitly: Hermes remains agent logic only; channel + provider UI is InkStatute-owned.
-- Gate tests: no Hermes filesystem/profile write APIs; no import of Hermes config writers from the console package.
-
-**Warning signs:**
-- API fields named `hermes_*`, `profile_path`, `gateway_*` in writable schemas.
-- README says “edit Hermes model” or points operators at `~/.hermes`.
-- Enabling QQ/WeCom in the console also toggles Hermes gateway adapters.
-
-**Phase to address:**
-Phase 73 SAFETY + Phase 74 CHANNEL-CFG — schema allowlist and boundary tests first.
+Suggested phase themes (roadmap may renumber): **79 ENTRY-RUN** (runnable entry points, port binding, signal handling, startup scripts), **80 ORCHESTRATION** (start/stop/inspect channel host processes, config-save→restart), **81 REPORTS** (session/task volume, completion/long-task rates, feedback distribution from JSONL), **82 LOG-VIEW** (real-time runtime log viewing with level filter/search), **83 AUDIT-EVENTS** (AgentTurn/FeedbackEvent stream view with trace_id tracking), **84 HEALTH-GATE-DASH** (service health, gate pass rate, flag/human-gate status), **85 AUTH-TOKEN** (RBAC token issue/revoke/expire management), **86 AUTH-SESSION** (reserved login + session cookie interface, MVP token-only), **87 POLISH** (error pages, nav, responsive, one-click startup, .env.example).
 
 ---
 
-### Pitfall 2: Planting raw secrets in writable config objects or API responses
+## Process Orchestration Pitfalls
 
-**What goes wrong:**
-UI/API accepts or echoes API keys, WeCom tokens, QQ BotSecrets, or provider keys as plaintext fields. Values land in config JSON, contract logs, admin responses, browser localStorage, or git. Breaks SAFE-02 / AGENTS.md and the existing health allowlist that already excludes secret refs and `api_base_url` from read views.
+### Pitfall 1: Blocking the single-threaded request handler with subprocess waits
 
-**Why it happens:**
-Writable UIs default to “value in, value out.” Smoke `--live` already uses value env vars; developers copy that shape into production config. Read-only admin never needed write-path redaction discipline.
+- **What goes wrong:** `AdminWebUiServer` extends `BaseHTTPRequestHandler`, which is **single-threaded** by default — one request at a time. A "stop process" handler that calls `proc.wait(timeout=...)` or `proc.poll()` in a loop, or a "start" handler that waits for port-readiness, freezes the **entire** admin UI for every concurrent user. Operators hit the console during a stuck stop and conclude the console is dead, then kill the console itself — orphaning the channel host.
+- **Warning sign:** `do_POST` handler calls `subprocess.Popen.wait(...)` or `time.sleep` inside the request dispatch path; `handle_admin_web_ui_request` takes >1s on orchestration routes; no `ThreadingHTTPServer` in the entry point.
+- **Prevention:** Make orchestration handlers **non-blocking**: issue `Popen` with `start_new_session=True`, record the handle in a process table, and return immediately with a "starting/stopping" status. Poll status on a **separate** GET (`/processes/<name>/status`) with short timeouts. If blocking is unavoidable for a specific step (e.g. confirm port freed), cap the wait at ≤2s and return partial status rather than holding the connection. Decide threading model in **Phase 79** before any orchestration handler is written in **Phase 80**.
+- **Phase:** 79 ENTRY-RUN (threading decision) → 80 ORCHESTRATION (non-blocking handlers).
 
-**How to avoid:**
-- Config schema stores **refs only** (`secret://…`, `env:VAR`, or named `*_REF`). Values resolve once at process edge (same pattern as `QQBotHostConfig` + `resolve_secret_ref`).
-- GET responses return ref shapes / “configured: true|false”, never secret values. Mask on write-ack.
-- Reject payloads that look like raw tokens in `*_REF` fields (fail closed).
-- Ban-list tests: no `Authorization`, BotSecret, corp secret, or key material in config persistence, audit events, or evidence JSON.
+### Pitfall 2: Zombie processes and leaked process handles
 
-**Warning signs:**
-- Form fields labeled “API Key” without “reference” wording.
-- Config dump includes `sk-…`, AES keys, or BotSecret hex.
-- `.env.example` and console schema diverge (one refs, one values).
+- **What goes wrong:** The console starts WeCom/QQBot host processes via `Popen` but never reaps them. On stop, the handler calls `proc.terminate()` and forgets the handle; the child becomes a zombie until the console exits. On console crash/restart, the process table (in-memory) is lost and the channel hosts keep running **orphaned** — a second "start" then fails with a port conflict, and the operator cannot tell which console owns which process.
+- **Warning sign:** Process table is a plain `dict` on the server object with no PID-file or on-disk record; no `proc.wait()` after `terminate()`; no reaper on console startup; "start" returns "port in use" after a crash.
+- **Prevention:** Write a PID file per managed process (e.g. `run/<service>.pid`) at start; on console startup, reconcile the PID file against live PIDs (`os.kill(pid, 0)`) and either adopt or clean up stale entries. After `terminate()`, always `wait()` (with a `kill` escalation timeout) to reap. Persist process metadata (name, pid, started_at, status) in an atomic JSON file so a restarted console can re-adopt. Add a regression test: start→crash-console→restart-console→verify adoption, and start→stop→verify no zombie via `psutil`-free `os.waitpid`.
+- **Phase:** 80 ORCHESTRATION.
 
-**Phase to address:**
-Phase 73 SAFETY + Phase 78 PERSIST-AUDIT.
+### Pitfall 3: Signal handling that orphans channel hosts on console shutdown
 
----
+- **What goes wrong:** The new `__main__.py` installs a SIGINT/SIGTERM handler that calls `httpd.shutdown()` but never terminates managed child processes. Ctrl-C on the console leaves WeCom/QQBot hosts running with no parent. Conversely, a handler that `SIGKILL`s children immediately drops in-flight WeCom ACKs and corrupts half-written JSONL event logs.
+- **Warning sign:** `signal.signal(signal.SIGINT, ...)` handler only calls `server.shutdown()`; no `proc.terminate()` loop; no graceful drain; children survive `kill -INT` on the console PID.
+- **Prevention:** Install a shutdown sequence in `__main__.py`: (1) stop accepting new HTTP connections (`httpd.shutdown()`), (2) for each managed process send `SIGTERM`, (3) wait up to N seconds for graceful exit, (4) `SIGKILL` survivors, (5) reap all. Use `start_new_session=True` at `Popen` so children get their own process group and can be signaled as a group. Test by sending SIGINT to the console and asserting no managed PID survives.
+- **Phase:** 79 ENTRY-RUN (signal skeleton) → 80 ORCHESTRATION (child drain).
 
-### Pitfall 3: Collapsing QQ dual-knob into a single UI toggle
+### Pitfall 4: Port conflicts and race conditions on rapid start/stop
 
-**What goes wrong:**
-Console exposes one “Enable QQBot” switch that sets only `RuntimeFeatureFlags.qqbot_channel_enabled` **or** only `QQBotHostConfig.enabled`. Live injection stays stripped; ACK returns refuse; operators believe the channel is on. Or the UI sets both True while skipping transport/token injection, leaving `_live_io_ready()` false.
+- **What goes wrong:** Operator clicks "stop" then immediately "start" before the OS has released the port (TIME_WAIT). The new `Popen` fails with `EADDRINUSE`; the console reports "started" (because `Popen` returned a handle) but the child exits instantly — the process table shows "running" for a dead process. Or two concurrent "start" clicks (browser double-submit) spawn two hosts on the same port.
+- **Warning sign:** Process table status derived only from "did Popen return" rather than "is the port listening / is the PID alive"; no idempotency guard on start; no `SO_REUSEADDR` on channel host sockets.
+- **Prevention:** Status must be derived from **liveness** (`os.kill(pid, 0)`) + **readiness** (port check), not from the Popen return. Gate start/stop behind a per-process lock and an idempotency token (reuse the existing CSRF token binding to the route). After "stop", poll for port-free before allowing "start". Set `SO_REUSEADDR` on channel host listeners. Add a test: double-submit start → only one process; stop→immediate-start → waits for port release or returns "cooling down".
+- **Phase:** 80 ORCHESTRATION.
 
-**Why it happens:**
-Dual-knob AND semantics are easy to oversimplify in UX. v1.9 already documented the pitfall; a writable UI reintroduces it by “making enablement simple.”
+### Pitfall 5: Config-save → orchestrate-restart race that applies half-written config
 
-**How to avoid:**
-- Model enablement as two explicit knobs (platform flag + host config), both default OFF, AND-gated in wiring — do not invent a third shadow flag that bypasses either.
-- UI copy must state: both must be ON; smoke `--live` value env ≠ host `*_REF` enablement.
-- Regression tests from Phase 69: flag-alone / host-alone / both-on with and without transports.
-
-**Warning signs:**
-- Single boolean `qqbot_enabled` in the writable schema with no dual mapping.
-- Health shows `fixture_only=True` after “enable” in UI.
-- Docs claim console enablement replaces dual-knob.
-
-**Phase to address:**
-Phase 74 CHANNEL-CFG.
+- **What goes wrong:** Operator saves channel config; the console triggers a restart of the WeCom host; the host re-reads config **before** the atomic `os.replace` has completed, or reads the `.tmp` file. Or the restart fires while `OperatorConfigStore.save` is mid-validation, so the host starts with the **old** config and the operator sees no change.
+- **Warning sign:** Restart handler invoked synchronously inside the config-save POST before `save()` returns; restart reads config path directly instead of via `store.load()`; no ordering guarantee between persist-confirm and restart-trigger.
+- **Prevention:** Strict ordering: (1) `store.save()` must return success (atomic write committed), (2) **then** enqueue restart. Never read the `.tmp` sibling. The restart handler should call `store.load()` (the committed document) and pass it to the child, or have the child call `load()` itself at startup. Add a test: save+restart under concurrency → child always sees the post-save document.
+- **Phase:** 80 ORCHESTRATION (must coordinate with the existing Phase 75 channel-config apply path).
 
 ---
 
-### Pitfall 4: Mutating the read-only admin console in place
+## Log Viewing Pitfalls
 
-**What goes wrong:**
-Teams add POST/PUT to `admin-console-api` or flip `metadata.read_only` false on existing session/task/feedback views. Field allowlists weaken; RBAC/TenantGuard assumptions break; “ops read views” and “config writes” share one blast radius. Existing `test_read_only.py` (no post/put/delete handlers) becomes a silent casualty.
+### Pitfall 6: Loading entire log files into memory on each HTTP request
 
-**Why it happens:**
-Admin Web UI already exists; extending it feels cheaper than a separate config surface. M2/M3 treated admin as read-only by design — that constraint is easy to forget under milestone pressure.
+- **What goes wrong:** The existing `load_records_from_jsonl` / `load_event_stream` pattern reads the **whole** file via `read_text().splitlines()` into a `list`. A log-view handler that reuses this pattern on a multi-hundred-MB runtime log (WeCom/QQBot hosts log heavily) will balloon the console's RSS to gigabytes and OOM on the first "view logs" click. Re-running it on every poll request multiplies the damage.
+- **Warning sign:** Log-view handler calls `Path(...).read_text()` or `readlines()`; no byte/line cap; no streaming generator; memory grows monotonically with log size in tests.
+- **Prevention:** Stream logs with a **tail-style** reader: `seek` to an offset (or last N bytes), read forward line-by-line via a buffered iterator, cap returned lines (e.g. 500–2000). For search, stream and filter in a single pass — never materialize the full file. Add a test with a synthetic 100MB log asserting bounded memory (cap returned bytes) and sub-second response. Do **not** reuse `load_event_stream` for runtime log viewing — it is schema-validated contract JSONL, not raw runtime logs.
+- **Phase:** 82 LOG-VIEW.
 
-**How to avoid:**
-- Prefer a **separate** config API/service (or clearly versioned `/config` write surface) with its own flag (default OFF), authz, and audit trail.
-- Keep existing admin GET views read-only and allowlisted; do not reuse their serializers for secret-bearing config.
-- If sharing the admin-web-ui shell, isolate write routes behind a distinct flag and backend enforcement (UI hide ≠ authz).
+### Pitfall 7: Blocking I/O on log reads starving the single-threaded server
 
-**Warning signs:**
-- `handle_admin_post` appears next to `handle_admin_get`.
-- Config endpoints return the same envelopes as `/sessions` without write audit fields.
-- Flag freeze tests break because write paths piggyback `admin_api_enabled` alone.
+- **What goes wrong:** Reading a large log file synchronously in `do_GET` blocks the only request thread. While the operator's browser waits for `/logs`, no other page loads — health dashboard, config, reports all hang. If the log is on a slow disk or NFS mount, the block is seconds.
+- **Warning sign:** Log-view route handled in the same synchronous `_dispatch` path with no timeout; `read()` call with no size limit; no `ThreadingHTTPServer`.
+- **Prevention:** Either (a) move to `ThreadingHTTPServer` in Phase 79 so log reads don't block other requests, **and** audit all shared mutable state (process table, config store) for thread safety, or (b) keep single-threaded but cap log read to a bounded tail with a hard byte limit and a `select`/non-blocking read timeout. Prefer (a) but treat it as a Phase 79 architectural decision with a thread-safety audit artifact.
+- **Phase:** 79 ENTRY-RUN (threading decision) → 82 LOG-VIEW (bounded reads).
 
-**Phase to address:**
-Phase 73 SAFETY (surface split) before any write handlers.
+### Pitfall 8: Log rotation breaking the live-tail offset cursor
 
----
+- **What goes wrong:** The log viewer tracks a read offset (byte position) for live-tail polling. When the host process rotates its log (`RotatingFileHandler` renames `app.log` → `app.log.1` and starts a new `app.log`), the stored offset now points past EOF of the new (smaller) file. The viewer either errors, silently stops updating, or re-streams the whole new file from zero on every poll.
+- **Warning sign:** Live-tail uses a raw byte offset with no inode/dev check; no handling of "offset > file size"; rotation causes a full re-read or a 500.
+- **Prevention:** Detect rotation by comparing file size + mtime (or inode) against the last-seen values; when the file shrinks or inode changes, reset the cursor to 0 and signal "log rotated" to the UI. Cap each poll's delta. If runtime logs don't yet rotate, add `RotatingFileHandler` to channel host logging in Phase 80/82 and test the viewer against an actively-rotating log.
+- **Phase:** 82 LOG-VIEW (coordinate with host logging config from 80 ORCHESTRATION).
 
-### Pitfall 5: Logging or persisting raw legal image payloads on vision turns
+### Pitfall 9: Leaking secrets and raw legal payloads into the log viewer
 
-**What goes wrong:**
-Inbound WeCom/QQ images (contracts, IDs, case materials) are base64-logged, written into contract events, stored in config audit, or forwarded to providers with full retention. Violates `raw_payload_ref` privacy baseline and legal work-product expectations. Vision “debug” dumps become the highest-risk leak surface in the product.
-
-**Why it happens:**
-Multimodal debugging wants the bytes. Provider SDKs accept `image_url` / base64 inline. Teams treat images like text prompts and forget AGENTS.md: prefer refs; never commit/store raw legal payloads by default.
-
-**How to avoid:**
-- Ingress stores media as refs (`raw_payload_ref` / object-store keys); vision runner resolves bytes ephemerally at process edge.
-- Contract/audit events record: media ref, content-type, size hash, provider/model id, routing decision — **not** image bytes or OCR full text by default.
-- Provider calls: prefer zero-retention / non-training endpoints where policy requires; never commit fixtures with real client scans.
-- Privacy gate tests: vision path fixtures must fail if raw base64 or `data:image` appears in JSONL/evidence.
-
-**Warning signs:**
-- Vision request builders concatenate base64 into logged dicts.
-- Evidence JSON grows megabytes on image turns.
-- “Temporary” debug flag dumps images to `/tmp` inside the repo tree.
-
-**Phase to address:**
-Phase 77 VISION-ROUTE + Phase 78 PERSIST-AUDIT.
+- **What goes wrong:** Runtime logs from WeCom/QQBot hosts may contain callback tokens, BotSecrets, message payloads, or legal text that AGENTS.md forbids from reaching operator screens. A naive log viewer renders raw log lines verbatim into HTML — the admin boundary (`AdminUiBoundary`) only applies to assistant output, not to log lines. Even with `html.escape`, the secret is still **displayed**.
+- **Warning sign:** Log-view template calls `html.escape(line)` but no redaction filter; no ban-list test for tokens/secrets in log-view output; viewer shows `Authorization: Bearer ...` or `sk-...` in lines.
+- **Prevention:** Add a redaction filter **before** escape: mask patterns matching `Bearer ...`, `sk-...`, `BotSecret`, AES keys, `secret://...` refs, and any `*_REF` resolution. Apply the same ban-list discipline as the config secret-ref rule (Phase 73). Test: inject a synthetic secret into a log line → viewer output shows `[REDACTED]`.
+- **Phase:** 82 LOG-VIEW (must inherit the Phase 73 SAFE secret-ref discipline).
 
 ---
 
-### Pitfall 6: Wrong or missing vision capability metadata → silent mis-route
+## Report Pitfalls
 
-**What goes wrong:**
-Catalog marks a text-only model (e.g. GLM-class) as vision-capable, or leaves capability unknown. `INKSTATUTE_VISION_ROUTING=auto` either skips the vision model (images ignored / errors) or always double-calls vision+main (cost/latency + inconsistent answers). Custom OpenAI-compatible endpoints inherit “supports vision” from the vendor template incorrectly.
+### Pitfall 10: Rebuilding the full in-memory read model on every report request
 
-**Why it happens:**
-OpenAI-compatible APIs look identical for chat and vision until runtime. Catalogs copy marketing names without a capability probe. `.env.example` documents `auto|always|never` but code treats unknown as “assume multimodal.”
+- **What goes wrong:** `ContractLogReadModel.from_records` loads, sorts, and fully indexes **all** JSONL records in memory. A reports handler that constructs a fresh read model per HTTP request will, on a large event log, take seconds and consume hundreds of MB per request — and under `ThreadingHTTPServer`, multiple concurrent report requests multiply memory. The console becomes unresponsive exactly when operators need reports most.
+- **Warning sign:** Report handler calls `load_records_from_jsonl(...)` then `from_records(...)` inline per request; no caching; no incremental aggregation; tests only use tiny fixtures so the cost is invisible.
+- **Prevention:** Build the read model **once** at console startup (or on a refresh cadence) and reuse it for report queries. For large logs, compute aggregates with a **single streaming pass** over the JSONL (counters by event type / status / day) rather than building the full conversation/task index. Cache the aggregate result with an mtime-based invalidation on the JSONL file. Add a perf test with a 50k-event fixture asserting <1s report response and bounded memory.
+- **Phase:** 81 REPORTS.
 
-**How to avoid:**
-- Model catalog entries require explicit `supports_vision: true|false` (no silent default true).
-- `auto`: if inbound has image AND main `supports_vision=false` → vision then main; if main true → main only; if capability unknown → fail closed or force explicit operator choice.
-- Probe/custom endpoint registration must set capability from operator declaration + optional non-mutating probe — never infer solely from URL path.
-- Fixture matrix: text-only main + image inbound; multimodal main + image; no-image turn (must not call vision).
+### Pitfall 11: Stale report data after config changes or process restarts
 
-**Warning signs:**
-- Catalog rows without capability fields.
-- Production traces show vision calls on every turn including pure text.
-- Operator sets vision model empty but routing=`auto` and images “disappear” without error.
+- **What goes wrong:** The read model is built at startup and never refreshed. After the operator restarts a channel host (which writes new events) or saves new config, the reports page shows zero new sessions because the in-memory model is frozen. Operators trust stale "completion rate: 100%" dashboards and miss failures.
+- **Warning sign:** Read model constructed in `__main__` once and stored on `server.read_model` with no refresh path; no "last refreshed at" timestamp on the reports page; reports don't change after a known event was written.
+- **Prevention:** Add a "last built at" timestamp to the reports page. Provide an explicit "refresh" action (POST with CSRF) that rebuilds the aggregate, and/or mtime-based auto-invalidation. Never auto-close a human gate based on a stale aggregate. Document staleness in the UI ("data through <timestamp>").
+- **Phase:** 81 REPORTS.
 
-**Phase to address:**
-Phase 76 MODEL-CATALOG + Phase 77 VISION-ROUTE.
+### Pitfall 12: Timezone inconsistency in time-range report filters
 
----
+- **What goes wrong:** Contract events store `occurred_at` as ISO strings (often UTC with `Z`). Report filters from the UI send local-time strings. Aggregation by day buckets events into the wrong day; "today's session count" is off by 8 hours; operators compare against their wall clock and lose trust. The existing `_parse_time_filter` in `views.py` does naive string parsing.
+- **Warning sign:** Report bucketing slices on the raw `occurred_at` string without tz normalization; UI sends naive local time; no `datetime.fromisoformat` tz handling; tests use fixed UTC strings and never cross a day boundary in local time.
+- **Prevention:** Normalize all `occurred_at` to aware UTC at parse time; convert to a configured display tz (default UTC, env-overridable) only at render. Bucket by the display tz explicitly. Add a test that crosses midnight in a non-UTC tz and asserts correct day buckets.
+- **Phase:** 81 REPORTS.
 
-### Pitfall 7: Vision→main handoff leaks provider/gateway meta past the output boundary
+### Pitfall 13: Report aggregation scanning unbounded JSONL without a time window
 
-**What goes wrong:**
-Vision stage errors (“rate limit”, “model xyz unavailable”, provider stack traces) or intermediate captions are delivered raw to WeCom/QQ. Hermes/gateway-style notices reappear via a new path. Legal conclusions get mixed with routing debug. Dual-model turns bypass the assistant output boundary because they are “not Hermes.”
-
-**Why it happens:**
-Output boundary was built for Hermes meta/gateway/update/command. New provider_model / vision paths feel “already InkStatute-owned” so filtering is skipped. Error strings from SDKs are user-facing by accident.
-
-**How to avoid:**
-- Every channel deliver path (WeCom + QQ host) runs the same output policy on vision errors, provider failures, and intermediate vision text.
-- User-visible failures use InkStatute service copy only; provider/model ids stay in operator logs/refs.
-- Do not stream raw vision captions to users unless product policy explicitly allows sanitized summaries.
-- Contract tests: vision failure fixtures must assert boundary `rewrite|block`, not `allow` of provider text.
-
-**Warning signs:**
-- User messages contain `openai`, `ollama`, `404 model`, or API base URLs.
-- Vision errors skip `boundary_action` in smoke/Protocol evidence.
-- Separate “vision deliver” helper that does not call output policy.
-
-**Phase to address:**
-Phase 77 VISION-ROUTE (wire through existing boundary; do not fork a second egress).
+- **What goes wrong:** A "completion rate" report with no time filter scans the entire event log from the beginning of time. As the log grows over months, every report request re-reads years of events. There is no index (no DB allowed), so the only lever is bounding the scan.
+- **Warning sign:** Report handler accepts no `from`/`to` params and scans all records; default time range is "all"; no early-exit when streaming past the requested window.
+- **Prevention:** Default reports to a bounded window (e.g. last 7 days) with explicit wider ranges opt-in. When streaming, sort events by timestamp (JSONL is append-ordered, so reverse-iterate from EOF for recent windows) and early-exit once outside the window. Document that unbounded "all time" reports are intentionally slow on large logs.
+- **Phase:** 81 REPORTS.
 
 ---
 
-### Pitfall 8: Auto-claiming live acceptance from config-console smoke
+## Auth Pitfalls
 
-**What goes wrong:**
-CI or autonomous phase complete marks WeCom UAT, lawyer trial, or QQ `--live` acceptance done because the config UI saved settings and a dry-run passed. `not_live_acceptance=true` discipline from v1.9 is lost. Carried human gates are closed without operator judgment.
+### Pitfall 14: Token leakage in orchestration/audit logs and error responses
 
-**Why it happens:**
-Writable config feels like “production readiness.” Prior milestones already fought this for QQ smoke; a new console reopens the claim path.
+- **What goes wrong:** Today `log_message` is suppressed (`pass`) and `csrf.py` documents "no tokens logged." New orchestration logging (process start commands, audit trails) and new auth endpoints (token issue/revoke) reintroduce `print()` or `logging` calls that write the `ADMIN_API_TOKEN`, RBAC secrets, or newly-issued tokens to stdout/log files — which the log viewer (Phase 82) then **displays to operators**. A token-revoke error response echoing the token value is the same leak.
+- **Warning sign:** Orchestration code logs `Popen` args that include `--admin-api-token=...`; auth handlers log `Authorization` headers; error responses include the rejected token value; new `logging` calls without a redaction filter.
+- **Prevention:** Extend the existing "no tokens logged" invariant to all new code: never log `Authorization`, `ADMIN_API_TOKEN`, RBAC secrets, or issued token values. Pass secrets to children via env vars (not argv, which is visible via `ps`). Error responses return a generic "invalid token" never the value. Add a grep-based gate test: no `token`/`secret`/`bearer` literals reach any log file under tests.
+- **Phase:** 80 ORCHESTRATION + 85 AUTH-TOKEN + 82 LOG-VIEW (redaction is defense-in-depth).
 
-**How to avoid:**
-- Config smoke/dry-run always stamps non-acceptance; never flip carried Phase 5 / Phase 8 / QQ live gates from console evidence.
-- Separate “config schema valid” from “live channel/provider accepted.”
-- Runbook: enabling knobs in UI ≠ live OpenAPI/WeCom UAT.
+### Pitfall 15: Session fixation and weak session IDs from stdlib
 
-**Warning signs:**
-- SUMMARY/VERIFICATION cites console screenshot as live acceptance.
-- Evidence sets `not_live_acceptance=false`.
-- ROADMAP checks off human gates in the same phase as config CRUD.
+- **What goes wrong:** The login session interface (Phase 86) introduces cookies. Using `random` (not `secrets`) for session IDs, or reusing a session ID across pre/post-login, enables session fixation. `BaseHTTPRequestHandler` has no built-in session framework, so a hand-rolled session store in an atomic JSON file is the only option — and a predictable ID makes it guessable.
+- **Warning sign:** Session ID generated with `random.random()` or `uuid.uuid1()` (MAC-based); login reuses the pre-login session cookie; session store is a JSON file with no expiry sweep; no `HttpOnly`/`SameSite` on the cookie.
+- **Prevention:** Generate session IDs with `secrets.token_urlsafe(32)`. On successful login, **rotate** the session ID (issue a fresh one, invalidate the old). Set cookies with `HttpOnly; SameSite=Strict; Path=/` (no `Secure` since milestone is local HTTP, but document the TLS requirement for any non-local deploy). Store sessions in an atomic JSON file with `expires_at`; sweep expired sessions on each load. Add a fixation test: pre-login cookie is invalid after login.
+- **Phase:** 86 AUTH-SESSION.
 
-**Phase to address:**
-Phase 79 DOCS-GATES (and every phase’s verification wording).
+### Pitfall 16: CSRF gap on new session/login endpoints
 
----
+- **What goes wrong:** The existing `csrf.py` protects Phase 76 POST routes (`/config/*`) with HMAC tokens bound to identity+route. New endpoints (login, token issue/revoke, process start/stop, log refresh) added without wiring through `issue_csrf_token`/`validate_csrf_token` are CSRF-open. The login endpoint itself is a chicken-and-egg: you can't have a CSRF token before you're authenticated, so teams either skip CSRF on login (login CSRF) or issue a token on the GET login page.
+- **Warning sign:** New POST routes not added to `_POST_ROUTES` with CSRF validation; login POST has no CSRF check; token-revoke POST reuses a token scoped to a different route; `validate_csrf_token` not called before mutation.
+- **Prevention:** Add every new state-changing route to `_POST_ROUTES` and wire CSRF validation. For login: issue a CSRF token on the GET `/login` page (bound to route `/login` and an anonymous role), validate it on POST `/login`. After login, rotate both the session cookie and the CSRF token (bind the new token to the authenticated identity). For orchestration routes, bind the token to the exact route (`/processes/<name>/start`). Add a test: POST without/with-wrong-route CSRF token → 403.
+- **Phase:** 86 AUTH-SESSION (login CSRF) + 80 ORCHESTRATION (orchestration CSRF) + 85 AUTH-TOKEN.
 
-### Pitfall 9: Rebuilding Hermes model gateway / treating provider catalog as Hermes config
+### Pitfall 17: Privilege escalation via dual auth paths with unequal guard enforcement
 
-**What goes wrong:**
-Milestone scope expands into forking Hermes model gateway, skill registry, or MCP registry “so the console can manage models.” Provider catalog becomes a second source of truth that fights Hermes lawfirm runtime. Violates AGENTS.md: do not rebuild Hermes core systems unless a phase explicitly changes scope.
+- **What goes wrong:** The system gains two auth paths: (1) existing static Bearer token → `rbac.verify_token` → `Identity` → `RbacGuard.check`, and (2) new session cookie → `Identity`. If a route checks **only** the token path or **only** the session path, a lawyer/viewer with a session can reach an operator-only route that was previously token-guarded, or vice versa. The existing `RbacGuard` is applied in `handle_admin_web_ui_request`; a new code path that bypasses that function (e.g. a login handler rendered directly) skips the guard.
+- **Warning sign:** New handlers resolve `Identity` from the cookie but skip `RbacGuard.check`; some routes check token, others check session, with no unified middleware; token-management UI lets a viewer revoke an operator's token.
+- **Prevention:** Unify auth resolution into a single function that returns `Identity | None` from **either** a Bearer token **or** a session cookie, then run **every** route through the existing `RbacGuard.check(role, endpoint)` — no route bypasses it. Token issue/revoke is operator-only (`Role.OPERATOR`); add a guard test per role per new route. Document that the MVP session interface is token-only (no password backend) but the `Identity`→`RbacGuard` path must still be wired so adding passwords later doesn't reopen authz.
+- **Phase:** 85 AUTH-TOKEN + 86 AUTH-SESSION.
 
-**Why it happens:**
-v1.7 already has `model_gateway` / `hybrid_routing` flags and provider_model multi-provider runners. Implementers either ignore them and rebuild, or wire the console straight into Hermes internals for “one model list.”
+### Pitfall 18: Session store race on concurrent requests with ThreadingHTTPServer
 
-**How to avoid:**
-- Console configures **InkStatute** provider_model / model-gateway **lanes** and catalogs; Hermes mode continues to use existing adapter bootstrap — not Hermes file edits.
-- Reuse `ProviderModelBackendConfig.api_key_ref` patterns; do not invent parallel secret fields inside Hermes profiles.
-- Scope check in Phase 73: no new Hermes core packages; no writes under Hermes profile bundles from console code.
-
-**Warning signs:**
-- PRs touch Hermes upstream trees or copy gateway routers into `services/`.
-- Single “models” table claimed to drive both Hermes and provider_model without an adapter boundary.
-- Flag `model_gateway_enabled` flipped default True to “make the console work.”
-
-**Phase to address:**
-Phase 73 SAFETY + Phase 75 PROVIDER-CFG.
+- **What goes wrong:** If Phase 79 adopts `ThreadingHTTPServer`, concurrent requests both load the session JSON, mutate (e.g. update `last_seen`), and `os.replace` — last writer wins, losing the other request's session update. The atomic `os.replace` protects the **file write** but not the **read-modify-write cycle**. The same race applies to the token-management store and the process table.
+- **Warning sign:** Session/token store uses `load()` → mutate → `save()` with no lock; `ThreadingHTTPServer` enabled; intermittent "session dropped" or "token I just revoked still works" under load.
+- **Prevention:** Wrap all read-modify-write cycles on shared JSON stores in a `threading.Lock` (one per store). The `OperatorConfigStore.save` already does atomic write but the **load→mutate→save** in config handlers must also hold the lock. If staying single-threaded, document that ThreadingHTTPServer is **not** safe with these stores without locks. Add a concurrency test: N threads revoke/issue tokens → no lost updates.
+- **Phase:** 79 ENTRY-RUN (decide threading + mandate locks) → 85/86 (apply locks to new stores).
 
 ---
 
-### Pitfall 10: Writable config bypasses default-OFF flags / backend enforcement
+## Integration Pitfalls
 
-**What goes wrong:**
-Saving `enabled=true` in config immediately opens live IO even when `RuntimeFeatureFlags` are False, or the Web UI hides controls but write APIs accept unauthenticated/flag-off mutations. Mirrors the classic “frontend flag only” failure mode.
+### Pitfall 19: Entry point not covered by existing tests (which bypass the socket)
 
-**Why it happens:**
-Config persistence is treated as source of truth above feature flags. Dual systems (flags vs stored config) race; the write path forgets `require_enabled`.
+- **What goes wrong:** Every existing test dispatches directly to `handle_admin_web_ui_request` or `_dispatch` — no test ever binds a socket, calls `serve_forever`, or exercises `__main__.py`. The new entry point (port binding, signal handling, `HTTPServer` wiring, attribute setup on `server.*`) ships with zero test coverage. A typo in `__main__.py` (wrong attribute name, missing `handle_admin_put`) passes all existing tests and fails only at runtime.
+- **Warning sign:** `__main__.py` has no tests; `conftest` has no fixture that boots the real `HTTPServer` on an ephemeral port; CI runs only the direct-dispatch tests.
+- **Prevention:** Add an entry-point integration test that boots `HTTPServer(("127.0.0.1", 0), AdminWebUiServer)` on an ephemeral port, sets all `server.*` attributes, sends a real HTTP request via `urllib.request`, and asserts a 200. Test signal handling by sending SIGINT to the thread. Keep the direct-dispatch tests for unit speed, but add at least one socket-level smoke test per service.
+- **Phase:** 79 ENTRY-RUN.
 
-**How to avoid:**
-- New console flag(s) default False; write and read-config routes call `require_enabled`.
-- Channel/provider activation remains fail-closed: stored config AND runtime flags AND secret resolution success.
-- Authz on server: static token / RBAC — never “UI disabled ⇒ secure.”
-- Tests: flag off → 403/disabled even with valid config body; flag on + config off → still fail closed for live IO.
+### Pitfall 20: ThreadingHTTPServer introducing concurrency on non-thread-safe shared state
 
-**Warning signs:**
-- Config service starts with writes enabled whenever `ADMIN_API_TOKEN` is set.
-- No `operator_config_enabled` (or equivalent) in `RuntimeFeatureFlags`.
-- Browser can PUT config while API flag is off.
+- **What goes wrong:** Switching to `ThreadingHTTPServer` (tempting for non-blocking logs/orchestration) makes every handler run in its own thread. The `OperatorConfigStore`, the in-memory `feedback_queue` list, the new process table, and the `ContractLogReadModel` are all shared mutable state with no locks. Concurrent config saves corrupt the JSON; concurrent reads of a model being rebuilt hit a half-mutated dict.
+- **Warning sign:** `ThreadingHTTPServer` used with no `threading.Lock` around stores; `feedback_queue.append` from multiple threads; read model rebuilt in-place while another thread iterates.
+- **Prevention:** Treat the threading decision as the **first** artifact of Phase 79 with an explicit thread-safety audit of every `server.*` attribute. Either (a) stay single-threaded and make all potentially-slow handlers non-blocking via bounded work + fast returns, or (b) go threaded and add locks per shared store + make the read model copy-on-rebuild (swap an immutable reference under a lock). Do not mix: a half-threaded server is the worst case.
+- **Phase:** 79 ENTRY-RUN.
 
-**Phase to address:**
-Phase 73 SAFETY + Phase 74/75 write routes.
+### Pitfall 21: CSP / no-JS constraint breaking real-time log and audit views
 
----
+- **What goes wrong:** "Real-time logs" and "audit event stream" tempt implementers toward Server-Sent Events (`EventSource`) or WebSockets — both blocked by `default-src 'self'; script-src 'self'` (SSE is allowed by CSP, but `EventSource` requires JS, and the project is SSR with no JS frameworks). A meta-refresh polling hack (`<meta http-equiv="refresh">`) is CSP-legal but hammers the server on a single-threaded handler.
+- **Warning sign:** Audit stream page adds `<script>` for `EventSource`; or relies on `meta refresh` with a 1s interval against a single-threaded server; inline `<script>` violates `script-src 'self'`.
+- **Prevention:** Stay SSR: render a bounded snapshot of recent log/audit lines server-side, and use a **manual** "refresh" button (POST with CSRF) or a long-ish `meta refresh` (≥5s) only if threaded. No inline JS, no `EventSource`, no WebSocket. Document that "real-time" means "pollable snapshot," not push. The CSP stays exactly as-is.
+- **Phase:** 82 LOG-VIEW + 83 AUDIT-EVENTS.
 
-## Technical Debt Patterns
+### Pitfall 22: Reusing the 64KB POST body cap for new endpoints that need different limits
 
-Shortcuts that seem reasonable but create long-term problems.
+- **What goes wrong:** `do_POST` enforces `MAX_CHANNELS_POST_BYTES = 64 * 1024` on **every** POST. New endpoints with different needs break: a token-issue form is fine, but a log-search with a long query string, or a report config with many filters, may exceed 64KB and get a 413. Conversely, raising the global cap to accommodate one endpoint weakens the DoS protection on config routes.
+- **Warning sign:** New POST route silently 413s on real input; or the global cap is raised to 1MB for all routes; per-route limits don't exist.
+- **Prevention:** Make the body cap **per-route** (a `{route: max_bytes}` map) with the existing 64KB as the config-route default and explicit limits for new routes. Keep a hard global ceiling. Add a test per new route at its intended limit.
+- **Phase:** 79 ENTRY-RUN (per-route cap framework) → each feature phase sets its route's limit.
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| Extend read-only admin with POST | Fast UI reuse | Breaks read-only contract, allowlist, audit story | Never for secret-bearing config |
-| Single “enable channel” boolean | Simpler UX | Dual-knob desync, false “live” belief | Never for QQ; WeCom must keep fail-closed parity |
-| Store API keys in config JSON “for MVP” | Faster demo | Secret sprawl, git/log leaks | Never — refs only from day one |
-| Infer vision support from model name | Less catalog work | Silent mis-route, legal image mishandling | Never — explicit capability field |
-| Log base64 images “temporarily” | Easier debug | Legal privacy incident | Never in contract logs / evidence |
-| Wire console to Hermes `~/.hermes` | Familiar ops path | Destroys channel ownership boundary | Never |
-| Share smoke value-env with host `*_REF` | One credential story | Operators plant values in REF fields | Never — document two lanes |
-| Default new flags to True so UI “works” | Demo green | Accidental live IO | Never |
+### Pitfall 23: Breaking the existing read-only / flag-default-OFF / no-new-DB invariants
 
-## Integration Gotchas
+- **What goes wrong:** Adding process orchestration, sessions, and token management tempts an in-memory DB, a `threading.Event` queue, or a new persistent store outside the atomic-JSON pattern. Or the new features ship with flags defaulting ON, breaking the "all flags default OFF" invariant and the v1.10 `test_read_only.py` expectations. AGENTS.md forbids new DB/queue unless the PRD requires.
+- **Warning sign:** New `sqlite3`, `queue.Queue`-as-broker, or `multiprocessing.Manager` imports; new feature flags defaulting to `True`; `test_read_only.py` modified to allow POSTs on previously-GET-only routes; a new long-running daemon process beyond the channel hosts.
+- **Prevention:** Keep all new state in atomic JSON files (`os.replace`) or in-process `threading` primitives. Every new feature flag defaults to `False`. Do **not** mutate existing read-only views or their tests — add new routes alongside. Run the existing flag-default-OFF gate test and the read-only test as part of every new phase's verification. No `sqlite3`, no `redis`, no `multiprocessing.Manager`.
+- **Phase:** Every phase — enforced at 79 ENTRY-RUN via a "no new DB/queue, flags OFF" checklist item.
 
-Common mistakes when connecting to external services.
+### Pitfall 24: Over-engineering process orchestration for local single-machine use
 
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| QQBot host | UI enable ≠ dual-knob + transport injection | Map both knobs; inject transports only when live IO intended; keep `*_REF` |
-| WeCom service | Console writes Hermes WeCom gateway creds | Write InkStatute wecom-service refs only; output boundary stays on egress |
-| Provider OpenAI-compatible | Assume `/v1` means vision + tools identical | Explicit capability + probe; normalize errors before user delivery |
-| Vision provider | Send client scans with training-on retention | Prefer policy-approved endpoints; ref-first; no raw bytes in logs |
-| Hermes agent backend | Console “syncs” model/provider into Hermes | Do not configure Hermes from this project; adapter consumes InkStatute run inputs only |
-| Admin token auth | Reuse `ADMIN_API_TOKEN` without write-scope separation | Separate flag + tighter authz/audit for mutations |
-| Model gateway (v1.7) | Rebuild gateway instead of configuring existing lane | Configure behind `model_gateway_enabled` default OFF; no Hermes fork |
-| Smoke `--live` | Treat successful live leaf send as host+console acceptance | Keep `not_live_acceptance=true`; human archival only |
-
-## Performance Traps
-
-Patterns that work at small scale but fail as usage grows.
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| Vision+main on every text turn | 2× latency/cost | Gate vision on inbound image + routing mode | First busy lawyer day |
-| Inline base64 in hot path logs | Disk/CPU spikes, PII risk | Ref-only logging | Dozens of image messages |
-| Catalog fetch on every request | UI/API latency | Cache catalog; version stamp | Multi-operator editing |
-| Unbounded custom provider list | Slow validation, confused routing | Cap + validation + health probe | Tens of custom endpoints |
-| Synchronous vision then main without timeout budget | Channel ACK/reply timeouts | Per-stage timeouts; fail closed with service notice | Large scans / slow vision APIs |
-
-## Security Mistakes
-
-Domain-specific security issues beyond general web security.
-
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Secrets in writable config / GET bodies | Credential theft, git commit | Refs only; allowlist; mask; ban-list tests |
-| UI-only disable of config writes | Unauthorized channel/provider enable | Backend `require_enabled` + authz |
-| Image bytes in contract JSONL | Legal privilege / privacy breach | `raw_payload_ref`; privacy gates |
-| Custom provider URL without SSRF controls | Internal network pivot | Allowlist schemes/hosts; block link-local/metadata IPs |
-| Config audit without actor identity | No forensics after bad enable | Audit who/when/what-ref (never what-secret) |
-| Mixing smoke value env into production REF fields | Secrets in wrong store | Schema validation of ref shapes |
-| Weakening health allowlist to “show config” | Leak refs/paths/base URLs | Keep allowlist; separate operator config view with redaction |
-
-## UX Pitfalls
-
-Common user experience mistakes in this domain.
-
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| One Enable toggle for QQ | Operators think live works; it doesn’t | Show dual-knob status + “live IO ready” explicitly |
-| “API Key” free-text without ref hint | Secrets pasted into config | Label as secret reference; link to `.env.example` / runbook |
-| Vision routing jargon only | Mis-set `auto/always/never` | Short examples: text-only main + image → vision then main |
-| Error text from providers to lawyers | Confusing / non-legal UX; possible meta leak | InkStatute service notices only |
-| Catalog of 100 models unsorted | Wrong model selected | Built-in curated catalog + capability badges (vision yes/no) |
-| Saving config implies “accepted live” | False confidence | Banner: dry-run/config ≠ live UAT / human gates |
-
-## "Looks Done But Isn't" Checklist
-
-Things that appear complete but are missing critical pieces.
-
-- [ ] **Secret refs:** Writable schema rejects raw secrets; GET never returns values — verify ban-list tests green
-- [ ] **Dual-knob:** QQ enable in UI maps to **both** flag and host config; transports injected only when intended — verify Phase-69-style matrix
-- [ ] **Hermes boundary:** No console code writes Hermes profile/gateway — verify import/allowlist gate
-- [ ] **Read-only admin preserved:** Existing `/sessions|/tasks|/feedback` still `read_only: true` with no POST — verify `test_read_only.py`
-- [ ] **Vision capability:** Every catalog model has explicit `supports_vision` — verify unknown ≠ multimodal
-- [ ] **Vision privacy:** Image turns log refs only — verify privacy scan on vision fixtures
-- [ ] **Output boundary:** Vision/provider errors rewritten/blocked on WeCom and QQ deliver — verify boundary fixtures
-- [ ] **Flags default OFF:** New console/provider/vision flags False — verify feature_flags introspection test
-- [ ] **Live honesty:** Evidence/docs still `not_live_acceptance`; carried human gates untouched — verify Phase 79 wording
-- [ ] **Docs parity:** README + `.env.example` + runbook match console fields (refs vs smoke values)
-
-## Recovery Strategies
-
-When pitfalls occur despite prevention, how to recover.
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Raw secrets in config store | HIGH | Rotate all exposed keys; scrub store/logs; force ref-only migration; audit git history |
-| Hermes configured from console | HIGH | Revert Hermes writes; restore InkStatute-owned channel path; reaffirm output boundary; delete console→Hermes APIs |
-| Dual-knob collapse | MEDIUM | Restore AND mapping; add UI status for both knobs; regression tests |
-| Image bytes in contract logs | HIGH | Purge/redact logs; rotate storage; tighten privacy gate; notify per legal policy |
-| Mis-routed vision | MEDIUM | Fix catalog capabilities; set routing fail-closed; replay fixtures |
-| Live acceptance auto-claimed | LOW–MEDIUM | Reopen human gates in STATE/ROADMAP; stamp evidence non-acceptance; do not delete Phase 08 artifacts |
-| Admin read-only broken | MEDIUM | Split write surface; restore GET-only handlers; re-freeze allowlist tests |
-
-## Pitfall-to-Phase Mapping
-
-How roadmap phases should address these pitfalls. Phases continue from 73.
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Hermes configured from console | 73 SAFETY, 74 CHANNEL-CFG | No Hermes write APIs; boundary/import tests |
-| Raw secrets in config/API | 73 SAFETY, 78 PERSIST-AUDIT | Ref-shape validation + ban-list on GET/persist/audit |
-| QQ dual-knob collapse | 74 CHANNEL-CFG | Flag-alone / host-alone / both-on matrix |
-| Mutating read-only admin in place | 73 SAFETY | `test_read_only.py` still green; separate write surface |
-| Raw legal image persistence | 77 VISION-ROUTE, 78 PERSIST-AUDIT | Privacy scan on vision fixtures/evidence |
-| Wrong vision capability / mis-route | 76 MODEL-CATALOG, 77 VISION-ROUTE | Explicit capability + auto/always/never fixture matrix |
-| Vision errors bypass output boundary | 77 VISION-ROUTE | Boundary fixtures on vision/provider failures |
-| Auto-claim live acceptance | 79 DOCS-GATES | `not_live_acceptance`; carried gates unchanged |
-| Rebuild Hermes gateway / wrong catalog authority | 73 SAFETY, 75 PROVIDER-CFG | Scope gate; reuse provider_model/model-gateway lanes |
-| Config writes bypass default-OFF | 73 SAFETY, 74–75 | `require_enabled` on write routes; flags default False |
-| Custom endpoint SSRF / capability lie | 75 PROVIDER-CFG, 76 MODEL-CATALOG | URL allowlist + declared capability |
-| Smoke value-env vs host REF confusion | 74 CHANNEL-CFG, 79 DOCS-GATES | Docs + schema reject values in REF fields |
-| Vision+main cost on text turns | 77 VISION-ROUTE | No vision call without inbound image (unless `always`) |
-| Provider meta in lawyer-facing text | 77 VISION-ROUTE | Output policy on all provider paths |
-
-## Sources
-
-- Repo: `.planning/PROJECT.md` (v1.10 goals, secret-ref + vision decisions, Hermes-not-configured)
-- Repo: `AGENTS.md` (no Hermes rebuild; no secrets in git; output boundary; `raw_payload_ref`)
-- Repo: `runbook/SMOKE_TEST_RUNBOOK.md` (dual-knob, `*_REF` vs smoke value env, `not_live_acceptance`)
-- Repo: `.env.example` (provider/vision routing knobs; InkStatute path — not Hermes)
-- Repo: `services/admin-console-api` read-only contract + field allowlist (`test_read_only.py`, README)
-- Repo: `packages/backends/provider_model/.../config.py` (`api_key_ref` not raw key)
-- Repo: `packages/platform-runtime/.../feature_flags.py` (all default OFF, including `model_gateway_enabled` / `hybrid_routing_enabled`)
-- ConfigCat: feature-flag mistakes — frontend-only flags; secrets in flags ([configcat.com/blog/feature-flag-best-practices](https://configcat.com/blog/feature-flag-best-practices/)) — MEDIUM
-- Multi-provider routing: dialect/schema breakage on fallback; capability-specific vision differences ([tianpan.co JSON-mode fallback](https://tianpan.co/blog/2026-04-27-json-mode-dialect-fallback-router-breakage), LiteLLM/multi-provider guides) — MEDIUM
-- Legal/vision privacy: raw document images to cloud LLMs; ZDR and logging risks ([vaquill.ai legal AI data path](https://www.vaquill.ai/blog/where-your-legal-ai-data-actually-goes), GDPR document-processing patterns) — MEDIUM
-- Secret-ref operator patterns: plaintext in CR/config specs vs `secretKeyRef` (OpenFeature / Superset operator security docs) — MEDIUM
-
-**Confidence notes:** InkStatute-specific pitfalls (Hermes boundary, dual-knob, read-only admin, live-acceptance honesty) are HIGH confidence from repo evidence. Generic multi-provider dialect and legal-image residency claims are MEDIUM (ecosystem sources; validate per chosen providers in Phase 75–77).
+- **What goes wrong:** The milestone is explicitly "local/single-machine ops, prioritize usability." Implementers build a general-purpose process supervisor with retry policies, health-check probes, rolling restarts, and a dependency graph — none of which a single operator on one machine needs. This balloons scope, adds concurrency complexity (violating Pitfall 20), and delays the usable one-click startup script that is the actual deliverable.
+- **Warning sign:** Orchestration module has >300 lines before a single start/stop works; retry/backoff classes; dependency ordering engine; "cluster" terminology in docs.
+- **Prevention:** Scope orchestration to: start one named process, stop one named process, show status (alive + port), and "apply config → restart." No retries, no rolling, no clustering. The one-click startup script (`scripts/start_inkstatute.sh`) is the primary deliverable; the web orchestration is a convenience on top. Keep the process table a flat dict. If a feature needs >1 screen of design, it's over-engineered for this milestone.
+- **Phase:** 80 ORCHESTRATION + 87 POLISH.
 
 ---
-*Pitfalls research for: InkStatute v1.10 Operator Config Console + vision routing*
-*Researched: 2026-07-10*
+
+## Security Pitfalls
+
+### Pitfall 25: Passing secrets to child processes via argv (visible in `ps`)
+
+- **What goes wrong:** Orchestration starts channel hosts with `Popen(["python", "-m", "wecom_service", "--admin-api-token", TOKEN, ...])`. On a shared machine, any user running `ps aux` sees the token. This is a regression of the Phase 73 secret-ref discipline: secrets resolve at the process edge but then leak into the child's argv.
+- **Warning sign:** `Popen` args include `--token`, `--secret`, `--api-key` values (not env); child reads config from argv; `ps` shows secret values in tests.
+- **Prevention:** Pass all secrets to children via **environment variables** (`Popen(..., env={**os.environ, "ADMIN_API_TOKEN": token, ...})`), never argv. Children resolve `*_REF` / `env:VAR` at their own edge (existing pattern). Add a test that inspects the spawned child's `/proc/<pid>/cmdline` (or mocks `Popen` and asserts env, not argv).
+- **Phase:** 80 ORCHESTRATION.
+
+### Pitfall 26: Open redirect / path traversal in log and report file selection
+
+- **What goes wrong:** A log-view route like `/logs/<service>` or a report route like `/reports/<file>` that maps the path segment directly to a filesystem path allows `../../etc/passwd` or `../../.env`. `html.escape` doesn't help — the file content is read, not reflected as HTML. Even with a base dir, symlinks inside the log dir can escape.
+- **Warning sign:** `Path(log_dir) / service` with no sanitization; no `resolve()` + prefix check; service name taken raw from URL; no allowlist of valid service names.
+- **Prevention:** Validate the service/file name against a **fixed allowlist** (`{"wecom", "qqbot", "adapter", "admin"}`). Resolve the full path and assert it starts with the canonical base dir (`Path(base).resolve()`). Reject paths containing `..`, absolute paths, or symlinks. Add a traversal test: `/logs/../../etc/passwd` → 404/400.
+- **Phase:** 82 LOG-VIEW + 81 REPORTS.
+
+### Pitfall 27: Login endpoint enabling timing / enumeration attacks
+
+- **What goes wrong:** The reserved login interface compares a submitted token/password with `==` (not `hmac.compare_digest`) or returns different errors for "user not found" vs "wrong password," enabling username enumeration and token timing attacks. The existing `check_auth_header` correctly uses `compare_digest`, but a new login handler may not.
+- **Warning sign:** Login handler uses `==` for token/password compare; distinct error messages per failure reason; response time differs for valid vs invalid usernames.
+- **Prevention:** Always use `hmac.compare_digest` for any secret comparison (extend the existing `auth.py` pattern). Return a single generic "invalid credentials" for all failure modes. Constant-time the response regardless of which check failed. Add a timing test (statistical, or assert `compare_digest` is used via code inspection).
+- **Phase:** 86 AUTH-SESSION.
+
+### Pitfall 28: Carried human gates auto-closed by health/gate dashboard "green" display
+
+- **What goes wrong:** The enhanced `/gates` dashboard (Phase 84) visualizes gate status. If a human gate (Phase 5 live WeCom UAT, Phase 8 lawyer trial, QQ `--live` acceptance) is rendered as a green checkmark because the underlying check returns "passed" for fixture evidence, operators and auditors mistakenly believe the human gate is closed — violating the carried-gate invariant in PROJECT.md and AGENTS.md.
+- **Warning sign:** Gate dashboard shows green for Phase 5/8/QQ-live; `not_live_acceptance` honesty label from Phase 78 is dropped or hidden; human-gate rows look identical to auto-gate rows.
+- **Prevention:** Render human gates with a **distinct** visual state (e.g. "HUMAN GATE — carried, not auto-closed") that cannot turn green from fixture evidence. Preserve the Phase 78 `not_live_acceptance` honesty label. Add a test: human-gate rows never render as "passed" regardless of fixture state. Never add a "mark human gate passed" button.
+- **Phase:** 84 HEALTH-GATE-DASH.
+
+### Pitfall 29: XSS via unescaped log/search/report content rendered as HTML
+
+- **What goes wrong:** New render surfaces (log lines, search results, report tables, audit event payloads) are larger and more dynamic than the existing config pages. A log line containing `<script>alert(1)</script>` from a malicious inbound message, or an audit event with a user-controlled `trace_id`, reaches the template. `AdminUiBoundary.escape_value` exists but only if **called** — a forgotten escape on one field is XSS. CSP `script-src 'self'` mitigates inline script but `unsafe-inline` on `style-src` and attribute injection still allow exfiltration via CSS.
+- **Warning sign:** Template interpolates a value without `html.escape`/`escape_value`; report tables render raw event payloads; no template-level auto-escape (stdlib has none).
+- **Prevention:** Mandate that **every** value interpolated into HTML passes through `html.escape` or `AdminUiBoundary.escape_value` — no exceptions. Add a grep/AST gate test: no f-string or `.format` producing HTML with an unescaped variable. Add a reflected-XSS test per new route: inject `<script>` into every user-controlled field → output is escaped. Consider a tiny `render_value(v) -> html.escape(str(v))` helper used everywhere to prevent the "forgot to escape" class.
+- **Phase:** Every rendering phase (81 REPORTS, 82 LOG-VIEW, 83 AUDIT-EVENTS, 84 HEALTH-GATE-DASH, 87 POLISH).
+
+### Pitfall 30: Token management UI enabling self-revocation or last-admin lockout
+
+- **What goes wrong:** The RBAC token management page (Phase 85) lets an operator revoke tokens. If an operator revokes their own token (or the only admin token), they're locked out with no recovery path on a local single-machine deploy. Or a viewer can revoke an operator's token (Pitfall 17). There's no DB to reset — the token is an env var, but a UI-issued token may be in a JSON store with no bootstrap override.
+- **Warning sign:** No "cannot revoke own active token" guard; no env-var bootstrap token that always works; revocation list checked before env-token check; no confirmation step.
+- **Prevention:** Prevent self-revocation (an operator cannot revoke the token they authenticated with). Always honor the `ADMIN_API_TOKEN` env var as a bootstrap override (cannot be revoked via UI), so a locked-out operator can restart with the env token. Require a CSRF'd confirmation for revoke. Add a test: revoke-own → 400; env token still works after all UI tokens revoked.
+- **Phase:** 85 AUTH-TOKEN.
