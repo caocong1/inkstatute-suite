@@ -244,9 +244,15 @@ async def handle_wecom_webhook_request(
         return 404, b'{"error":"not_found"}', dict(_JSON_HEADERS)
 
     when = received_at or _utc_now()
-    payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
-    if not isinstance(payload, dict):
-        payload = {}
+    payload: dict[str, Any] = {}
+    if body_bytes:
+        try:
+            parsed = json.loads(body_bytes.decode("utf-8"))
+            if not isinstance(parsed, dict):
+                parsed = {}
+            payload = parsed
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return 400, b'{"error":"invalid_json"}', dict(_JSON_HEADERS)
     key = idempotency_key or wecom_idempotency_key(payload)
     raw = build_raw_inbound_from_http(
         headers or {},

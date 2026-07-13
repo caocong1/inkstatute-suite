@@ -23,8 +23,9 @@ from pathlib import Path
 from typing import Any, Mapping
 
 # Add repo source roots so the host can run before package installation.
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-_SERVICE_ROOT = Path(__file__).resolve().parents[2]
+# parents[4] is the repository root for services/<service>/src/<module>/__main__.py.
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_SERVICE_ROOT = Path(__file__).resolve().parents[2] / "src"
 for _root in (
     _REPO_ROOT,
     _SERVICE_ROOT,
