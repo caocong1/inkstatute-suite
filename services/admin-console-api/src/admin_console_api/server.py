@@ -18,6 +18,7 @@ from platform_runtime.feature_flags import RuntimeFeatureFlags
 
 from .api import handle_admin_get, handle_admin_put
 from .feedback import ThreadSafeFeedbackQueue
+from .process_supervisor import ProcessSupervisor
 
 MAX_BODY_BYTES = 1_048_576  # 1 MiB fail-closed ceiling
 
@@ -98,6 +99,7 @@ class AdminConsoleApiServer(BaseHTTPRequestHandler):
                     self.server.env,
                     self.server.rbac_secret,
                     config_store=self.server.config_store,
+                    process_supervisor=self.server.process_supervisor,
                 )
             else:  # PUT
                 try:
@@ -116,6 +118,7 @@ class AdminConsoleApiServer(BaseHTTPRequestHandler):
                     self.server.env,
                     config_store=self.server.config_store,
                     rbac_secret=self.server.rbac_secret,
+                    process_supervisor=self.server.process_supervisor,
                 )
         except Exception as exc:
             traceback.print_exc(file=sys.stderr)
@@ -180,6 +183,9 @@ def create_server(
     feedback_path = source.get("INKSTATUTE_FEEDBACK_QUEUE_PATH") or None
     feedback_queue = _build_feedback_queue(feedback_path)
 
+    process_supervisor = ProcessSupervisor(env=source, config_store=config_store)
+    process_supervisor.reconcile_on_startup()
+
     httpd = ThreadingHTTPServer((host, port), AdminConsoleApiServer)
     httpd.feature_flags = feature_flags
     httpd.env = dict(source)
@@ -187,8 +193,17 @@ def create_server(
     httpd.read_model = read_model
     httpd.feedback_queue = feedback_queue
     httpd.config_store = config_store
+    httpd.process_supervisor = process_supervisor
     httpd.handle_admin_get = handle_admin_get
     httpd.handle_admin_put = handle_admin_put
+
+    _original_shutdown = httpd.shutdown
+
+    def _shutdown() -> None:
+        process_supervisor.shutdown_all()
+        _original_shutdown()
+
+    httpd.shutdown = _shutdown  # type: ignore[assignment]
     return httpd
 
 

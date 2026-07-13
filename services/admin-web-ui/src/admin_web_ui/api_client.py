@@ -37,6 +37,7 @@ class AdminApiClient:
         rbac_secret: str | None = None,
         auth_header: str | None = None,
         config_store: Any = None,
+        process_supervisor: Any = None,
     ) -> tuple[int, dict[str, Any]]:
         """Proxy a GET request to ``handle_admin_get``.
 
@@ -58,6 +59,8 @@ class AdminApiClient:
         }
         if config_store is not None:
             kwargs["config_store"] = config_store
+        if process_supervisor is not None:
+            kwargs["process_supervisor"] = process_supervisor
         return handle_admin_get(**kwargs)
 
     def proxy_put(
@@ -72,6 +75,7 @@ class AdminApiClient:
         env: Mapping[str, str] | None = None,
         rbac_secret: str | None = None,
         auth_header: str | None = None,
+        process_supervisor: Any = None,
     ) -> tuple[int, dict[str, Any]]:
         """Proxy a PUT request to ``handle_admin_put`` (config mutate only).
 
@@ -81,15 +85,18 @@ class AdminApiClient:
         headers: dict[str, str] = {}
         if auth_header is not None:
             headers["Authorization"] = auth_header
-        return handle_admin_put(
-            path,
-            body,
-            headers,
-            feature_flags,
-            env,
-            config_store=config_store,
-            rbac_secret=rbac_secret,
-        )
+        kwargs: dict[str, Any] = {
+            "path": path,
+            "body": body,
+            "headers": headers,
+            "feature_flags": feature_flags,
+            "env": env,
+            "config_store": config_store,
+            "rbac_secret": rbac_secret,
+        }
+        if process_supervisor is not None:
+            kwargs["process_supervisor"] = process_supervisor
+        return handle_admin_put(**kwargs)
 
 
 __all__ = ["AdminApiClient", "HandleAdminGet", "HandleAdminPut"]

@@ -72,6 +72,8 @@ def handle_config_put(
     body: Any,
     store: OperatorConfigStore,
     feature_flags: RuntimeFeatureFlags,
+    *,
+    process_supervisor: Any = None,
 ) -> tuple[int, dict[str, Any]]:
     """Replace one config section and persist via OperatorConfigStore.save."""
     section = _parse_section(path)
@@ -117,6 +119,12 @@ def handle_config_put(
         return 400, _error("invalid_config", str(exc))
     except OperatorConfigStoreError as exc:
         return 500, _error("config_store_error", _safe_store_message(exc))
+
+    # Restart channel hosts whose configs changed (Phase 80).
+    if section == "channels" and process_supervisor is not None:
+        old_channels = document_to_payload(current).get("channels", {})
+        new_channels = document_to_payload(updated).get("channels", {})
+        process_supervisor.restart_for_channels(old_channels, new_channels)
 
     saved = document_to_payload(updated)
     metadata = _config_metadata(feature_flags, section=section)

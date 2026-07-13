@@ -51,6 +51,10 @@ from .channels import (
 )
 from .csrf import issue_csrf_token, validate_csrf_token
 from .dashboard import render_dashboard
+from .processes import (
+    parse_processes_form,
+    render_processes_page,
+)
 from .providers import (
     ERROR_FLAG_OFF as PROVIDERS_ERROR_FLAG_OFF,
     ERROR_FORBIDDEN as PROVIDERS_ERROR_FORBIDDEN,
@@ -84,6 +88,7 @@ _SECTION_MAP = {
     "/feedback": "feedback",
     "/health": "health",
     "/gates": "gates",
+    "/processes": "processes",
     "/config/channels": "channels",
     "/config/providers": "providers",
     "/config/providers/probe": "providers_probe",
@@ -96,6 +101,7 @@ _PROVIDERS_PATH = "/config/providers"
 _PROBE_PATH = "/config/providers/probe"
 _CATALOG_PATH = "/config/catalog"
 _VISION_PATH = "/config/vision"
+_PROCESSES_PATH = "/processes"
 
 # Routes that accept POST (all other routes remain GET-only).
 _POST_ROUTES = frozenset({
@@ -104,6 +110,7 @@ _POST_ROUTES = frozenset({
     _PROBE_PATH,
     _CATALOG_PATH,
     _VISION_PATH,
+    _PROCESSES_PATH,
 })
 
 
@@ -162,6 +169,8 @@ def _guard_path(route_path: str) -> str:
         return "/sessions"
     if route_path == _CHANNELS_PATH or route_path.startswith("/config/"):
         return "/config"
+    if route_path == _PROCESSES_PATH or route_path.startswith("/processes/"):
+        return "/config"
     return route_path
 
 
@@ -180,6 +189,7 @@ def handle_admin_web_ui_request(
     handle_admin_put: HandleAdminPut | None = None,
     config_store: Any = None,
     handle_config_probe: Any = None,
+    process_supervisor: Any = None,
 ) -> tuple[int, str, dict[str, str]]:
     """Handle a single admin web UI request (GET, or POST on ``/config/channels``).
 
@@ -395,6 +405,27 @@ def handle_admin_web_ui_request(
             response_headers=response_headers,
         )
 
+    # Step 4 — process orchestration
+    if route_path == _PROCESSES_PATH:
+        return _handle_processes(
+            http_method=http_method,
+            body=body,
+            identity=identity,
+            auth_header=auth_header,
+            feature_flags=feature_flags,
+            handle_admin_get=handle_admin_get,
+            handle_admin_put=handle_admin_put,
+            config_store=config_store,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            env=env,
+            rbac_secret=secret,
+            process_supervisor=process_supervisor,
+            client=client,
+            boundary=boundary,
+            response_headers=response_headers,
+        )
+
     # Step 4 — proxy operational GET to admin-console-api
     api_path = "/sessions" if route_path == "/" else route_path
     status, api_data = client.proxy(
@@ -408,6 +439,7 @@ def handle_admin_web_ui_request(
         rbac_secret=secret,
         auth_header=auth_header,
         config_store=config_store,
+        process_supervisor=process_supervisor,
     )
 
     # Step 5 — render dashboard
@@ -1349,6 +1381,135 @@ def _handle_vision(
     return status, html_body, response_headers
 
 
+def _handle_processes(
+    *,
+    http_method: str,
+    body: bytes | str | None,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    handle_admin_get: HandleAdminGet,
+    handle_admin_put: HandleAdminPut | None,
+    config_store: Any,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    process_supervisor: Any,
+    client: AdminApiClient,
+    boundary: AdminUiBoundary,
+    response_headers: dict[str, str],
+) -> tuple[int, str, dict[str, str]]:
+    """GET renders process status; POST validates CSRF and proxies action PUT."""
+    save_token = issue_csrf_token(identity, _PROCESSES_PATH, signing_key=rbac_secret)
+
+    if http_method == "POST":
+        if handle_admin_put is None:
+            html_body = render_processes_page(
+                {"error": {"code": "misconfigured", "message": "handle_admin_put not set"}},
+                identity=identity,
+                csrf_token=save_token,
+                error_message="Process control is not configured",
+            )
+            return 500, html_body, response_headers
+
+        valid, form_map = _validate_post_csrf(
+            body, identity, _PROCESSES_PATH, rbac_secret=rbac_secret
+        )
+        if not valid:
+            html_body = render_processes_page(
+                {"error": {"code": "forbidden", "message": "CSRF token invalid"}},
+                identity=identity,
+                csrf_token=save_token,
+                error_message="Invalid or missing CSRF token",
+            )
+            return 403, html_body, response_headers
+
+        assert form_map is not None
+        try:
+            name, action = parse_processes_form(form_map)
+        except ValueError as exc:
+            html_body = render_processes_page(
+                {"error": {"code": "invalid_request", "message": str(exc)}},
+                identity=identity,
+                csrf_token=save_token,
+                error_message=str(exc),
+            )
+            return 400, html_body, response_headers
+
+        put_status, put_data = client.proxy_put(
+            handle_admin_put,
+            f"/processes/{name}/{action}",
+            {},
+            identity,
+            feature_flags=feature_flags,
+            config_store=config_store,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+            process_supervisor=process_supervisor,
+        )
+
+        get_status, get_data = client.proxy(
+            handle_admin_get,
+            _PROCESSES_PATH,
+            identity,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            feature_flags=feature_flags,
+            env=env,
+            rbac_secret=rbac_secret,
+            auth_header=auth_header,
+            config_store=config_store,
+            process_supervisor=process_supervisor,
+        )
+        display = get_data if get_status == 200 else put_data
+
+        if put_status == 200:
+            html_body = render_processes_page(
+                display,
+                identity=identity,
+                boundary=boundary,
+                csrf_token=save_token,
+                flash=f"Action '{action}' sent for {name}.",
+                flash_kind="success",
+            )
+            return 200, html_body, response_headers
+
+        error = put_data.get("error") if isinstance(put_data, dict) else None
+        err_msg = error.get("message") if isinstance(error, dict) else "Process action failed"
+        html_body = render_processes_page(
+            display,
+            identity=identity,
+            boundary=boundary,
+            csrf_token=save_token,
+            error_message=str(err_msg),
+        )
+        return put_status, html_body, response_headers
+
+    # GET
+    status, api_data = client.proxy(
+        handle_admin_get,
+        _PROCESSES_PATH,
+        identity,
+        read_model=read_model,
+        feedback_queue=feedback_queue,
+        feature_flags=feature_flags,
+        env=env,
+        rbac_secret=rbac_secret,
+        auth_header=auth_header,
+        config_store=config_store,
+        process_supervisor=process_supervisor,
+    )
+    html_body = render_processes_page(
+        api_data,
+        identity=identity,
+        boundary=boundary,
+        csrf_token=save_token,
+    )
+    return status, html_body, response_headers
+
+
 def _extract_auth_header(headers: Mapping[str, str] | None) -> str | None:
     """Extract the Authorization header from request headers (case-insensitive)."""
     if headers is None:
@@ -1416,6 +1577,7 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
             handle_admin_put=getattr(self.server, "handle_admin_put", None),  # type: ignore[attr-defined]
             config_store=getattr(self.server, "config_store", None),  # type: ignore[attr-defined]
             handle_config_probe=getattr(self.server, "handle_config_probe", None),  # type: ignore[attr-defined]
+            process_supervisor=getattr(self.server, "process_supervisor", None),  # type: ignore[attr-defined]
         )
         encoded = html_body.encode("utf-8")
         self.send_response(status)

@@ -28,6 +28,7 @@ from .config_api import handle_config_get, handle_config_put
 from .feedback import ThreadSafeFeedbackQueue
 from .gates import handle_gates
 from .health import handle_health
+from .processes_api import handle_process_get, handle_process_put
 from .views import handle_feedback, handle_sessions, handle_tasks
 
 RBAC_TOKEN_SECRET_ENV = "RBAC_TOKEN_SECRET"
@@ -140,6 +141,7 @@ def handle_admin_get(
     rbac_secret: str | None = None,
     *,
     config_store: OperatorConfigStore | None = None,
+    process_supervisor: Any = None,
 ) -> tuple[int, dict[str, Any]]:
     """Gate on feature flag + auth, then route to view / config handlers.
 
@@ -166,6 +168,9 @@ def handle_admin_get(
     if route_path == "/gates":
         return handle_gates()
 
+    if route_path == "/processes" or route_path.startswith("/processes/"):
+        return handle_process_get(route_path, process_supervisor, feature_flags)
+
     if route_path == "/config" or route_path.startswith("/config/"):
         store = config_store if config_store is not None else OperatorConfigStore()
         return handle_config_get(route_path, store, feature_flags)
@@ -184,6 +189,7 @@ def handle_admin_put(
     rbac_secret: str | None = None,
     read_model: Any = None,
     feedback_queue: list[dict[str, Any]] | ThreadSafeFeedbackQueue | None = None,
+    process_supervisor: Any = None,
 ) -> tuple[int, dict[str, Any]]:
     """Auth then mutate ``/config/*`` only; operational PUT → 405 after auth.
 
@@ -214,12 +220,21 @@ def handle_admin_put(
 
     if route_path == "/config" or route_path.startswith("/config/"):
         store = config_store if config_store is not None else OperatorConfigStore()
-        return handle_config_put(route_path, body, store, feature_flags)
+        return handle_config_put(
+            route_path,
+            body,
+            store,
+            feature_flags,
+            process_supervisor=process_supervisor,
+        )
+
+    if route_path == "/processes" or route_path.startswith("/processes/"):
+        return handle_process_put(route_path, body, process_supervisor, feature_flags)
 
     return 405, {
         "error": {
             "code": "method_not_allowed",
-            "message": "PUT is only allowed on /config/*",
+            "message": "PUT is only allowed on /config/* or /processes/*",
         },
         "metadata": {
             "admin_api": True,

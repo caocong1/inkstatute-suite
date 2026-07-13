@@ -16,6 +16,9 @@ class ProcessRecord:
     pid: int | None = None
     started_at: str | None = None
     last_exit_code: int | None = None
+    host: str = "127.0.0.1"
+    port: int = 0
+    log_path: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

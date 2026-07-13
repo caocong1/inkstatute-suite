@@ -1,0 +1,380 @@
+"""Process orchestrator for WeCom and QQBot host processes.
+
+``ProcessSupervisor`` starts/stops/restarts ``python -m wecom_service`` and
+``python -m qqbot_service`` as subprocesses, health-probes them via ``GET
+/health``, and persists the process table so it can be reconciled after an
+admin-console-api restart.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import signal
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from collections.abc import Mapping
+from dataclasses import asdict, replace
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from .process_registry import ProcessRecord, ProcessRegistry
+
+__all__ = ["ProcessSupervisor"]
+
+_PROCESS_NAMES = {"wecom", "qqbot"}
+
+_ALLOWED_ACTIONS = {"start", "stop", "restart"}
+
+
+class ProcessSupervisor:
+    """Manages WeCom/QQBot host subprocesses and exposes their status."""
+
+    def __init__(
+        self,
+        env: Mapping[str, str] | None = None,
+        *,
+        config_store: Any = None,
+    ) -> None:
+        self._env = dict(env) if env is not None else dict(os.environ)
+        self._config_store = config_store
+        self._registry = ProcessRegistry()
+        self._procs: dict[str, subprocess.Popen] = {}
+        self._state_path = self._resolve_state_path()
+        self._log_dir = self._resolve_log_dir()
+
+    def _resolve_state_path(self) -> Path:
+        raw = self._env.get("INKSTATUTE_PROCESS_STATE_PATH")
+        if raw:
+            return Path(raw)
+        return Path.home() / ".inkstatute" / "process-state.json"
+
+    def _resolve_log_dir(self) -> Path:
+        raw = self._env.get("INKSTATUTE_PROCESS_LOG_DIR")
+        if raw:
+            return Path(raw)
+        return Path.home() / ".inkstatute" / "process-logs"
+
+    def _module_name(self, name: str) -> str:
+        return "wecom_service" if name == "wecom" else "qqbot_service"
+
+    def _port_env_name(self, name: str) -> str:
+        return "WECOM_HOST_PORT" if name == "wecom" else "QQBOT_HOST_PORT"
+
+    def _host_env_name(self, name: str) -> str:
+        return "WECOM_HOST_HOST" if name == "wecom" else "QQBOT_HOST_HOST"
+
+    def _channel_enabled_env_name(self, name: str) -> str:
+        return (
+            "INKSTATUTE_WECOM_CHANNEL_ENABLED"
+            if name == "wecom"
+            else "INKSTATUTE_QQBOT_CHANNEL_ENABLED"
+        )
+
+    def _is_pid_alive(self, pid: int | None) -> bool:
+        if pid is None or pid <= 0:
+            return False
+        try:
+            os.kill(pid, 0)
+        except OSError:
+            return False
+        return True
+
+    def _now(self) -> str:
+        return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _persist(self) -> None:
+        state = {record.name: asdict(record) for record in self._registry.list()}
+        self._state_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self._state_path, "w", encoding="utf-8") as fh:
+            json.dump(state, fh, ensure_ascii=False, sort_keys=True, indent=2)
+
+    def _ensure_log_dir(self) -> None:
+        self._log_dir.mkdir(parents=True, exist_ok=True)
+
+    def reconcile_on_startup(self) -> None:
+        """Reload persisted state and warn about unknown PIDs.
+
+        PIDs that are not alive are marked ``stopped``. PIDs that are alive but
+        were not launched by this supervisor instance are marked ``orphaned``;
+        the operator must explicitly restart them before the supervisor takes
+        ownership.
+        """
+        if not self._state_path.is_file():
+            return
+        try:
+            with open(self._state_path, "r", encoding="utf-8") as fh:
+                state = json.load(fh)
+        except (json.JSONDecodeError, OSError):
+            return
+
+        if not isinstance(state, dict):
+            return
+
+        for name, data in state.items():
+            if name not in _PROCESS_NAMES or not isinstance(data, dict):
+                continue
+            record = ProcessRecord(**data)
+            if record.pid is None:
+                record = replace(record, status="stopped")
+                self._registry.add(name, record)
+                continue
+            alive = self._is_pid_alive(record.pid)
+            record = replace(record, status="orphaned")
+            self._registry.add(name, record)
+            print(
+                f"warning: process {name} (pid={record.pid}) is not owned by this "
+                f"supervisor (alive={alive}); marked orphaned",
+                file=sys.stderr,
+            )
+        self._persist()
+
+    def start(self, name: str) -> ProcessRecord:
+        """Start a managed channel host subprocess."""
+        if name not in _PROCESS_NAMES:
+            raise ValueError(f"unknown process name: {name}")
+
+        existing = self._registry.get(name)
+        if existing is not None and existing.status in (
+            "running",
+            "starting",
+            "degraded",
+        ):
+            if self._is_pid_alive(existing.pid):
+                return self.status(name)
+
+        if name in self._procs:
+            proc = self._procs[name]
+            if proc.poll() is None:
+                return self.status(name)
+            del self._procs[name]
+
+        if existing is not None and self._is_pid_alive(existing.pid):
+            # Defensive: an orphaned or stale process is still alive; try to
+            # terminate it before we bind the port.
+            try:
+                os.kill(existing.pid, signal.SIGTERM)
+            except OSError:
+                pass
+            deadline = time.time() + 5
+            while self._is_pid_alive(existing.pid) and time.time() < deadline:
+                time.sleep(0.1)
+
+        self._ensure_log_dir()
+        log_path = self._log_dir / f"{name}-host.log"
+        pythonpath = self._env.get("PYTHONPATH", "")
+        if not pythonpath:
+            pythonpath = os.pathsep.join(
+                str(p)
+                for p in (
+                    Path(__file__).resolve().parents[3],
+                    Path(__file__).resolve().parents[3] / "services" / "wecom-service" / "src",
+                    Path(__file__).resolve().parents[3] / "services" / "qqbot-service" / "src",
+                    Path(__file__).resolve().parents[3] / "packages" / "platform-runtime" / "src",
+                    Path(__file__).resolve().parents[3] / "packages" / "platform-contract" / "src",
+                    Path(__file__).resolve().parents[3] / "packages" / "channel-core" / "src",
+                    Path(__file__).resolve().parents[3] / "packages" / "channels" / "wecom" / "src",
+                    Path(__file__).resolve().parents[3] / "packages" / "channels" / "qqbot" / "src",
+                    Path(__file__).resolve().parents[3] / "packages" / "operator-config" / "src",
+                )
+            )
+
+        child_env = dict(self._env)
+        if not child_env.get("PYTHONPATH"):
+            child_env["PYTHONPATH"] = pythonpath
+        child_env[self._channel_enabled_env_name(name)] = "true"
+        if name == "wecom":
+            child_env["INKSTATUTE_CHANNEL_WRAPPER_WECOM_ENABLED"] = "true"
+        child_env["INKSTATUTE_RUN_RUNTIME_ENABLED"] = "true"
+        host = self._env.get(self._host_env_name(name), "127.0.0.1")
+        port = int(self._env.get(self._port_env_name(name), "8082" if name == "wecom" else "8080"))
+        child_env[self._host_env_name(name)] = host
+        child_env[self._port_env_name(name)] = str(port)
+
+        log_file = open(log_path, "ab")
+        try:
+            proc = subprocess.Popen(
+                [sys.executable, "-m", self._module_name(name)],
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                env=child_env,
+                start_new_session=True,
+            )
+        except Exception:
+            log_file.close()
+            raise
+
+        self._procs[name] = proc
+        record = ProcessRecord(
+            name=name,
+            status="starting",
+            pid=proc.pid,
+            started_at=self._now(),
+            host=host,
+            port=port,
+            log_path=str(log_path),
+            metadata={},
+        )
+        self._registry.add(name, record)
+        self._persist()
+        return record
+
+    def stop(self, name: str, *, timeout: int = 5) -> ProcessRecord:
+        """Stop a managed channel host subprocess."""
+        if name not in _PROCESS_NAMES:
+            raise ValueError(f"unknown process name: {name}")
+
+        record = self._registry.get(name)
+        if record is None:
+            record = ProcessRecord(name=name, status="stopped")
+            self._registry.add(name, record)
+            return record
+
+        if name in self._procs:
+            proc = self._procs[name]
+            try:
+                proc.terminate()
+                proc.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+            exit_code = proc.poll()
+            del self._procs[name]
+            record = replace(
+                record,
+                status="stopped",
+                pid=None,
+                last_exit_code=exit_code,
+            )
+        elif record.pid is not None and self._is_pid_alive(record.pid):
+            try:
+                os.kill(record.pid, signal.SIGTERM)
+            except OSError:
+                pass
+            record = replace(
+                record,
+                status="stopped",
+                pid=None,
+                last_exit_code=None,
+            )
+        else:
+            record = replace(record, status="stopped", pid=None)
+
+        self._registry.replace(name, record)
+        self._persist()
+        return record
+
+    def restart(self, name: str, *, timeout: int = 5) -> ProcessRecord:
+        """Stop then start a managed channel host subprocess."""
+        self.stop(name, timeout=timeout)
+        return self.start(name)
+
+    def status(self, name: str) -> ProcessRecord:
+        """Return the current status for a process, probing /health when alive."""
+        if name not in _PROCESS_NAMES:
+            raise ValueError(f"unknown process name: {name}")
+
+        record = self._registry.get(name)
+        if record is None:
+            return ProcessRecord(name=name, status="stopped")
+
+        # If the process object already finished, capture exit code early.
+        if name in self._procs:
+            proc = self._procs[name]
+            exit_code = proc.poll()
+            if exit_code is not None:
+                del self._procs[name]
+                record = replace(
+                    record,
+                    status="stopped",
+                    pid=None,
+                    last_exit_code=exit_code,
+                )
+                self._registry.replace(name, record)
+                self._persist()
+                return record
+
+        if not self._is_pid_alive(record.pid):
+            record = replace(record, status="stopped", pid=None)
+            self._registry.replace(name, record)
+            self._persist()
+            return record
+
+        health_url = f"http://{record.host}:{record.port}/health"
+        try:
+            response = urllib.request.urlopen(health_url, timeout=2)
+            payload = response.read()
+            try:
+                health = json.loads(payload)
+            except json.JSONDecodeError:
+                health = {"ok": False, "raw": payload.decode("utf-8", "replace")}
+            status = "running" if health.get("ok") else "degraded"
+            record = replace(
+                record,
+                status=status,
+                metadata={
+                    **record.metadata,
+                    "health": health,
+                    "last_probe_at": self._now(),
+                },
+            )
+        except urllib.error.HTTPError as exc:
+            record = replace(
+                record,
+                status="degraded",
+                metadata={
+                    **record.metadata,
+                    "health": {"status_code": exc.code, "ok": False},
+                    "last_probe_at": self._now(),
+                },
+            )
+        except urllib.error.URLError as exc:
+            record = replace(
+                record,
+                status="degraded",
+                metadata={
+                    **record.metadata,
+                    "health": {"ok": False, "reason": str(exc.reason)},
+                    "last_probe_at": self._now(),
+                },
+            )
+
+        self._registry.replace(name, record)
+        self._persist()
+        return record
+
+    def status_all(self) -> list[ProcessRecord]:
+        """Return the status for all managed channel hosts."""
+        return [self.status(name) for name in sorted(_PROCESS_NAMES)]
+
+    def shutdown_all(self) -> None:
+        """Stop every managed process."""
+        for record in self._registry.list():
+            self.stop(record.name)
+
+    def restart_for_channels(
+        self,
+        old_channels: Mapping[str, Any],
+        new_channels: Mapping[str, Any],
+    ) -> list[ProcessRecord]:
+        """Restart the channel host for any channel whose config changed.
+
+        ``old_channels`` and ``new_channels`` are the ``channels`` section of
+        the operator config before and after the save. Only the WeCom and QQBot
+        hosts are considered.
+        """
+
+        def _dump(value: Any) -> str:
+            return json.dumps(value, sort_keys=True, default=str)
+
+        restarted: list[ProcessRecord] = []
+        for channel in ("wecom", "qqbot"):
+            old = old_channels.get(channel)
+            new = new_channels.get(channel)
+            if _dump(old) != _dump(new):
+                restarted.append(self.restart(channel))
+        return restarted

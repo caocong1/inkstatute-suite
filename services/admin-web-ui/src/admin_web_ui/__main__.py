@@ -15,6 +15,7 @@ try:
     from admin_console_api.api import handle_admin_get, handle_admin_put
     from admin_console_api.feedback import ThreadSafeFeedbackQueue
     from admin_console_api.probe import handle_config_probe
+    from admin_console_api.process_supervisor import ProcessSupervisor
     from admin_web_ui.server import AdminWebUiServer
     from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
     from feedback_service.queue import build_pending_feedback_queue, load_jsonl_records
@@ -32,6 +33,7 @@ except ImportError:
     from admin_console_api.api import handle_admin_get, handle_admin_put
     from admin_console_api.feedback import ThreadSafeFeedbackQueue
     from admin_console_api.probe import handle_config_probe
+    from admin_console_api.process_supervisor import ProcessSupervisor
     from admin_web_ui.server import AdminWebUiServer
     from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
     from feedback_service.queue import build_pending_feedback_queue, load_jsonl_records
@@ -81,6 +83,9 @@ def create_server(env: dict[str, str] | None = None) -> ThreadingHTTPServer:
     feedback_path = source.get("INKSTATUTE_FEEDBACK_QUEUE_PATH") or None
     feedback_queue = _build_feedback_queue(feedback_path)
 
+    process_supervisor = ProcessSupervisor(env=source, config_store=config_store)
+    process_supervisor.reconcile_on_startup()
+
     httpd = ThreadingHTTPServer((host, port), AdminWebUiServer)
     httpd.feature_flags = feature_flags
     httpd.env = dict(source)
@@ -88,9 +93,18 @@ def create_server(env: dict[str, str] | None = None) -> ThreadingHTTPServer:
     httpd.read_model = read_model
     httpd.feedback_queue = feedback_queue
     httpd.config_store = config_store
+    httpd.process_supervisor = process_supervisor
     httpd.handle_admin_get = handle_admin_get
     httpd.handle_admin_put = handle_admin_put
     httpd.handle_config_probe = handle_config_probe
+
+    _original_shutdown = httpd.shutdown
+
+    def _shutdown() -> None:
+        process_supervisor.shutdown_all()
+        _original_shutdown()
+
+    httpd.shutdown = _shutdown  # type: ignore[assignment]
     return httpd
 
 

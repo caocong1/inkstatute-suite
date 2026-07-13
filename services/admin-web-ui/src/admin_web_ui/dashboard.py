@@ -253,6 +253,11 @@ def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
         ("Health", "/health", "Monitor system health status"),
         ("Gates", "/gates", "View V2 gate status"),
         (
+            "Process Orchestration",
+            "/processes",
+            "Start, stop, and restart WeCom and QQBot host processes",
+        ),
+        (
             "Channel Config",
             "/config/channels",
             "Configure QQ and WeCom enablement and credential refs",

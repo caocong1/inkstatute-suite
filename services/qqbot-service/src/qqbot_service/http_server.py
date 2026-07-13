@@ -7,6 +7,8 @@ Reads Content-Length body bytes once from ``rfile`` and delegates to
 from __future__ import annotations
 
 import asyncio
+import dataclasses
+import json
 import sys
 import threading
 from collections.abc import Callable, Mapping
@@ -136,26 +138,26 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
             })
             return
 
+        env = getattr(self.server, "env", None) or {}
         wired = getattr(self.server, "wired", None)
         if wired is None:
             backend = getattr(self.server, "backend", None)
-            config_store = getattr(self.server, "config_store", None)
-            if backend is None or config_store is None:
+            if backend is None:
                 self._write_response(503, b'{"error":"not_configured"}', {
                     "Content-Type": "application/json; charset=utf-8",
                 })
                 return
+            config_store = getattr(self.server, "config_store", None)
             flags = getattr(self.server, "flags", None) or RuntimeFeatureFlags()
             vision_runner = getattr(self.server, "vision_runner", None)
             wired = build_qqbot_wired_runtime(
                 backend=backend,
                 flags=flags,
                 config_store=config_store,
+                env=env,
                 vision_runner=vision_runner,
             )
             self.server.wired = wired
-
-        env = getattr(self.server, "env", None) or {}
         scheduler = getattr(self.server, "post_ack_scheduler", None)
         on_error = getattr(self.server, "on_post_ack_error", None)
         if scheduler is None:
@@ -193,7 +195,27 @@ class QQBotWebhookServer(BaseHTTPRequestHandler):
         self._write_response(status, resp_body, resp_headers)
 
     def do_GET(self) -> None:
-        self._write_response(405, b'{"error":"method_not_allowed"}', {
+        route = (self.path or "").split("?", 1)[0]
+        if route != "/health":
+            self._write_response(405, b'{"error":"method_not_allowed"}', {
+                "Content-Type": "application/json; charset=utf-8",
+            })
+            return
+
+        wired = getattr(self.server, "wired", None)
+        if wired is None:
+            self._write_response(503, b'{"error":"not_configured"}', {
+                "Content-Type": "application/json; charset=utf-8",
+            })
+            return
+
+        health = asyncio.run(wired.adapter.health())
+        body = json.dumps(
+            dataclasses.asdict(health),
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8")
+        self._write_response(200, body, {
             "Content-Type": "application/json; charset=utf-8",
         })
 

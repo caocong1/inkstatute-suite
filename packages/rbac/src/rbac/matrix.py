@@ -18,6 +18,7 @@ PERMISSIONS_MATRIX: dict[str, frozenset[Role]] = {
     "/gates": frozenset({Role.ADMIN}),
     "/skills-write": frozenset({Role.ADMIN}),
     "/config": frozenset({Role.ADMIN, Role.OPERATOR}),
+    "/processes": frozenset({Role.ADMIN, Role.OPERATOR}),
 }
 
 __all__ = ["PERMISSIONS_MATRIX"]
