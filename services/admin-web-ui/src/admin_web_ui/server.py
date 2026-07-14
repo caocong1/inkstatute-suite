@@ -29,6 +29,7 @@ from rbac import (
 )
 
 from .api_client import AdminApiClient, HandleAdminGet, HandleAdminPut
+from .audit import render_audit_page, render_trace_page
 from .boundary import AdminUiBoundary
 from .catalog import (
     ERROR_FLAG_OFF as CATALOG_ERROR_FLAG_OFF,
@@ -91,6 +92,7 @@ _SECTION_MAP = {
     "/gates": "gates",
     "/reports": "reports",
     "/logs": "logs",
+    "/audit": "audit",
     "/processes": "processes",
     "/config/channels": "channels",
     "/config/providers": "providers",
@@ -107,6 +109,7 @@ _VISION_PATH = "/config/vision"
 _PROCESSES_PATH = "/processes"
 _REPORTS_PATH = "/reports"
 _LOGS_PATH = "/logs"
+_AUDIT_PATH = "/audit"
 
 # Routes that accept POST (all other routes remain GET-only).
 _POST_ROUTES = frozenset({
@@ -178,6 +181,8 @@ def _guard_path(route_path: str) -> str:
         return "/config"
     if route_path == _LOGS_PATH or route_path.startswith("/logs/"):
         return "/logs"
+    if route_path == _AUDIT_PATH or route_path.startswith("/audit/"):
+        return "/audit"
     return route_path
 
 
@@ -233,6 +238,8 @@ def handle_admin_web_ui_request(
     # /logs/<source> subpaths map to the "logs" section.
     if section is None and (route_path == _LOGS_PATH or route_path.startswith("/logs/")):
         section = "logs"
+    if section is None and (route_path == _AUDIT_PATH or route_path.startswith("/audit/")):
+        section = "audit"
     if section is None:
         body_html = render_dashboard(
             "index",
@@ -451,6 +458,24 @@ def handle_admin_web_ui_request(
             env=env,
             rbac_secret=secret,
             log_reader=log_reader,
+            client=client,
+            boundary=boundary,
+            response_headers=response_headers,
+            path=path,
+        )
+
+    # Step 4 — contract event audit
+    if route_path == _AUDIT_PATH or route_path.startswith("/audit/"):
+        return _handle_audit(
+            http_method=http_method,
+            identity=identity,
+            auth_header=auth_header,
+            feature_flags=feature_flags,
+            handle_admin_get=handle_admin_get,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            env=env,
+            rbac_secret=secret,
             client=client,
             boundary=boundary,
             response_headers=response_headers,
@@ -1477,6 +1502,74 @@ def _handle_logs(
         boundary=boundary,
         query_params=parsed_query,
     )
+    return status, html_body, response_headers
+
+
+def _handle_audit(
+    *,
+    http_method: str,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    handle_admin_get: HandleAdminGet,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    client: AdminApiClient,
+    boundary: AdminUiBoundary,
+    response_headers: dict[str, str],
+    path: str,
+) -> tuple[int, str, dict[str, str]]:
+    """GET renders the audit trail page or trace reconstruction page; POST → 405."""
+    if http_method != "GET":
+        body_html = render_audit_page(
+            {"error": {"code": "method_not_allowed", "message": "POST is not allowed on /audit"}},
+            identity=identity,
+            boundary=boundary,
+        )
+        return 405, body_html, response_headers
+
+    # Parse query params from the request path for form state re-rendering.
+    raw_path, _, query_string = path.partition("?")
+    parsed_query: dict[str, str] = {}
+    if query_string:
+        for key, values in parse_qs(query_string, keep_blank_values=True).items():
+            parsed_query[key] = values[0] if values else ""
+
+    # Build the API path — preserve the /audit/<trace_id> segment and query string.
+    api_path = path
+
+    # Proxy to handle_admin_get.
+    status, api_data = client.proxy(
+        handle_admin_get,
+        api_path,
+        identity,
+        read_model=read_model,
+        feedback_queue=feedback_queue,
+        feature_flags=feature_flags,
+        env=env,
+        rbac_secret=rbac_secret,
+        auth_header=auth_header,
+    )
+
+    # Determine if this is a trace reconstruction request (/audit/<trace_id>).
+    rest = raw_path.removeprefix("/audit").strip("/")
+    if rest:
+        trace_id = rest.split("?")[0]
+        html_body = render_trace_page(
+            api_data,
+            identity=identity,
+            boundary=boundary,
+            trace_id=trace_id,
+        )
+    else:
+        html_body = render_audit_page(
+            api_data,
+            identity=identity,
+            boundary=boundary,
+            query_params=parsed_query,
+        )
     return status, html_body, response_headers
 
 

@@ -179,6 +179,7 @@ def _logs_page_template(title: str, body: str, identity: Identity | None = None)
         ("/gates", "Gates"),
         ("/reports", "Reports"),
         ("/logs", "Logs"),
+        ("/audit", "Audit Trail"),
         ("/config/channels", "Channel Config"),
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),

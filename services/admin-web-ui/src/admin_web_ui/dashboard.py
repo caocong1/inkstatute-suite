@@ -77,6 +77,7 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/gates", "Gates"),
         ("/reports", "Reports"),
         ("/logs", "Logs"),
+        ("/audit", "Audit Trail"),
         ("/config/channels", "Channel Config"),
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),
@@ -201,6 +202,7 @@ def render_dashboard(
         "gates": "Gate Status",
         "reports": "Reports Dashboard",
         "logs": "Log Viewer",
+        "audit": "Contract Event Audit",
     }
     title = title_map.get(section, "Admin Dashboard")
 
@@ -260,6 +262,7 @@ def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
         ("Gates", "/gates", "View V2 gate status"),
         ("Reports", "/reports", "View aggregate report statistics over a time range"),
         ("Log Viewer", "/logs", "View runtime logs with level filtering and keyword search"),
+        ("Contract Event Audit", "/audit", "Browse AgentTurn and FeedbackEvent contract events with trace reconstruction"),
         (
             "Process Orchestration",
             "/processes",
