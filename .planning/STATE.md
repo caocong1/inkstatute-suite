@@ -4,8 +4,8 @@ milestone: v1.11
 milestone_name: milestone
 status: executing
 stopped_at: Phase 79 planning complete
-last_updated: "2026-07-14T17:08:00.000Z"
-last_activity: 2026-07-14 -- Phase 86 Plan 01 executed (error pages + responsive CSS)
+last_updated: "2026-07-15T01:20:00.000Z"
+last_activity: 2026-07-15 -- Phase 86 Plan 02 executed (nav active-state + auth-aware Login/Logout + logs.py refactor)
 progress:
   total_phases: 9
   completed_phases: 3
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-07-10)
 ## Current Position
 
 Phase: 86 (product-polish) — EXECUTING
-Plan: 01 complete (86-01 SUMMARY committed); Plans 01-03 all complete
-Status: Phase 86 Plan 01 executed — error pages + responsive CSS
-Last activity: 2026-07-14 -- Phase 86 Plan 01 executed (404/500/413 error pages + CSS fix)
+Plan: 02 complete (86-02 SUMMARY committed); Plans 01-03 all complete
+Status: Phase 86 Plan 02 executed — nav active-state + auth-aware Login/Logout + logs.py refactor
+Last activity: 2026-07-15 -- Phase 86 Plan 02 executed (active_path, head_extras, auth-aware nav, _logs_page_template refactor)
 
 Phase: 80 (wecom-http-host-process-orchestration) — COMPLETED
 Plan: 1 of 1
