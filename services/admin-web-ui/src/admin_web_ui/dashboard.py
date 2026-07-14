@@ -76,6 +76,7 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/health", "Health"),
         ("/gates", "Gates"),
         ("/reports", "Reports"),
+        ("/logs", "Logs"),
         ("/config/channels", "Channel Config"),
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),
@@ -199,6 +200,7 @@ def render_dashboard(
         "health": "Health Monitoring",
         "gates": "Gate Status",
         "reports": "Reports Dashboard",
+        "logs": "Log Viewer",
     }
     title = title_map.get(section, "Admin Dashboard")
 
@@ -257,6 +259,7 @@ def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
         ("Health", "/health", "Monitor system health status"),
         ("Gates", "/gates", "View V2 gate status"),
         ("Reports", "/reports", "View aggregate report statistics over a time range"),
+        ("Log Viewer", "/logs", "View runtime logs with level filtering and keyword search"),
         (
             "Process Orchestration",
             "/processes",

@@ -51,6 +51,7 @@ from .channels import (
 )
 from .csrf import issue_csrf_token, validate_csrf_token
 from .dashboard import render_dashboard
+from .logs import render_logs_page
 from .processes import (
     parse_processes_form,
     render_processes_page,
@@ -89,6 +90,7 @@ _SECTION_MAP = {
     "/health": "health",
     "/gates": "gates",
     "/reports": "reports",
+    "/logs": "logs",
     "/processes": "processes",
     "/config/channels": "channels",
     "/config/providers": "providers",
@@ -104,6 +106,7 @@ _CATALOG_PATH = "/config/catalog"
 _VISION_PATH = "/config/vision"
 _PROCESSES_PATH = "/processes"
 _REPORTS_PATH = "/reports"
+_LOGS_PATH = "/logs"
 
 # Routes that accept POST (all other routes remain GET-only).
 _POST_ROUTES = frozenset({
@@ -173,6 +176,8 @@ def _guard_path(route_path: str) -> str:
         return "/config"
     if route_path == _PROCESSES_PATH or route_path.startswith("/processes/"):
         return "/config"
+    if route_path == _LOGS_PATH or route_path.startswith("/logs/"):
+        return "/logs"
     return route_path
 
 
@@ -193,6 +198,7 @@ def handle_admin_web_ui_request(
     handle_config_probe: Any = None,
     process_supervisor: Any = None,
     reports_aggregator: Any = None,
+    log_reader: Any = None,
 ) -> tuple[int, str, dict[str, str]]:
     """Handle a single admin web UI request (GET, or POST on ``/config/channels``).
 
@@ -224,6 +230,9 @@ def handle_admin_web_ui_request(
     # Step 2 — resolve route
     route_path = path.split("?")[0]
     section = _SECTION_MAP.get(route_path)
+    # /logs/<source> subpaths map to the "logs" section.
+    if section is None and (route_path == _LOGS_PATH or route_path.startswith("/logs/")):
+        section = "logs"
     if section is None:
         body_html = render_dashboard(
             "index",
@@ -427,6 +436,25 @@ def handle_admin_web_ui_request(
             client=client,
             boundary=boundary,
             response_headers=response_headers,
+        )
+
+    # Step 4 — log viewing
+    if route_path == _LOGS_PATH or route_path.startswith("/logs/"):
+        return _handle_logs(
+            http_method=http_method,
+            identity=identity,
+            auth_header=auth_header,
+            feature_flags=feature_flags,
+            handle_admin_get=handle_admin_get,
+            read_model=read_model,
+            feedback_queue=feedback_queue,
+            env=env,
+            rbac_secret=secret,
+            log_reader=log_reader,
+            client=client,
+            boundary=boundary,
+            response_headers=response_headers,
+            path=path,
         )
 
     # Step 4 — proxy operational GET to admin-console-api
@@ -1390,6 +1418,68 @@ def _handle_vision(
     return status, html_body, response_headers
 
 
+def _handle_logs(
+    *,
+    http_method: str,
+    identity: Identity,
+    auth_header: str | None,
+    feature_flags: RuntimeFeatureFlags,
+    handle_admin_get: HandleAdminGet,
+    read_model: Any,
+    feedback_queue: list[dict[str, Any]] | None,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    log_reader: Any,
+    client: AdminApiClient,
+    boundary: AdminUiBoundary,
+    response_headers: dict[str, str],
+    path: str,
+) -> tuple[int, str, dict[str, str]]:
+    """GET renders the log viewer page; POST is not allowed (405)."""
+    if http_method != "GET":
+        body_html = render_logs_page(
+            {"error": {"code": "method_not_allowed", "message": "POST is not allowed on /logs"}},
+            identity=identity,
+            boundary=boundary,
+        )
+        return 405, body_html, response_headers
+
+    # Parse query params from the request path for form state re-rendering.
+    raw_path, _, query_string = path.partition("?")
+    parsed_query: dict[str, str] = {}
+    if query_string:
+        for key, values in parse_qs(query_string, keep_blank_values=True).items():
+            parsed_query[key] = values[0] if values else ""
+
+    # Build the API path — preserve the /logs/<source> segment and query string.
+    # handle_admin_get extracts query params from the path via _split_path_query.
+    api_path = path  # full path with query string
+    if not raw_path.startswith("/logs"):
+        api_path = "/logs"
+
+    # Proxy to handle_admin_get with log_reader.
+    status, api_data = client.proxy(
+        handle_admin_get,
+        api_path,
+        identity,
+        read_model=read_model,
+        feedback_queue=feedback_queue,
+        feature_flags=feature_flags,
+        env=env,
+        rbac_secret=rbac_secret,
+        auth_header=auth_header,
+        log_reader=log_reader,
+    )
+
+    html_body = render_logs_page(
+        api_data,
+        identity=identity,
+        boundary=boundary,
+        query_params=parsed_query,
+    )
+    return status, html_body, response_headers
+
+
 def _handle_processes(
     *,
     http_method: str,
@@ -1588,6 +1678,7 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
             handle_config_probe=getattr(self.server, "handle_config_probe", None),  # type: ignore[attr-defined]
             process_supervisor=getattr(self.server, "process_supervisor", None),  # type: ignore[attr-defined]
             reports_aggregator=getattr(self.server, "reports_aggregator", None),  # type: ignore[attr-defined]
+            log_reader=getattr(self.server, "log_reader", None),  # type: ignore[attr-defined]
         )
         encoded = html_body.encode("utf-8")
         self.send_response(status)

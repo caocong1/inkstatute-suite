@@ -17,6 +17,7 @@ try:
     from admin_console_api.probe import handle_config_probe
     from admin_console_api.process_supervisor import ProcessSupervisor
     from admin_web_ui.server import AdminWebUiServer
+    from conversation_read_view.log_reader import LogReader
     from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
     from conversation_read_view.reports_aggregator import ReportsAggregator
     from feedback_service.queue import build_pending_feedback_queue, load_jsonl_records
@@ -36,6 +37,7 @@ except ImportError:
     from admin_console_api.probe import handle_config_probe
     from admin_console_api.process_supervisor import ProcessSupervisor
     from admin_web_ui.server import AdminWebUiServer
+    from conversation_read_view.log_reader import LogReader
     from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
     from conversation_read_view.reports_aggregator import ReportsAggregator
     from feedback_service.queue import build_pending_feedback_queue, load_jsonl_records
@@ -89,6 +91,8 @@ def create_server(env: dict[str, str] | None = None) -> ThreadingHTTPServer:
     process_supervisor = ProcessSupervisor(env=source, config_store=config_store)
     process_supervisor.reconcile_on_startup()
 
+    log_reader = LogReader(env=source, process_supervisor=process_supervisor)
+
     httpd = ThreadingHTTPServer((host, port), AdminWebUiServer)
     httpd.feature_flags = feature_flags
     httpd.env = dict(source)
@@ -98,6 +102,7 @@ def create_server(env: dict[str, str] | None = None) -> ThreadingHTTPServer:
     httpd.config_store = config_store
     httpd.process_supervisor = process_supervisor
     httpd.reports_aggregator = reports_aggregator
+    httpd.log_reader = log_reader
     httpd.handle_admin_get = handle_admin_get
     httpd.handle_admin_put = handle_admin_put
     httpd.handle_config_probe = handle_config_probe
