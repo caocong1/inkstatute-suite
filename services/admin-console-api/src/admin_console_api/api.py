@@ -28,6 +28,7 @@ from .config_api import handle_config_get, handle_config_put
 from .feedback import ThreadSafeFeedbackQueue
 from .gates import handle_gates
 from .health import handle_health
+from .logs import handle_logs
 from .processes_api import handle_process_get, handle_process_put
 from .reports import handle_reports
 from .views import handle_feedback, handle_sessions, handle_tasks
@@ -144,6 +145,7 @@ def handle_admin_get(
     config_store: OperatorConfigStore | None = None,
     process_supervisor: Any = None,
     reports_aggregator: Any = None,
+    log_reader: Any = None,
 ) -> tuple[int, dict[str, Any]]:
     """Gate on feature flag + auth, then route to view / config handlers.
 
@@ -181,6 +183,14 @@ def handle_admin_get(
             feature_flags,
             tenant_filter=tenant_filter,
             env=env,
+        )
+
+    if route_path == "/logs" or route_path.startswith("/logs/"):
+        return handle_logs(
+            route_path,
+            route_query,
+            log_reader=log_reader,
+            feature_flags=feature_flags,
         )
 
     if route_path == "/config" or route_path.startswith("/config/"):

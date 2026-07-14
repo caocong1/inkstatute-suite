@@ -101,6 +101,7 @@ class AdminConsoleApiServer(BaseHTTPRequestHandler):
                     config_store=self.server.config_store,
                     process_supervisor=self.server.process_supervisor,
                     reports_aggregator=getattr(self.server, "reports_aggregator", None),
+                    log_reader=getattr(self.server, "log_reader", None),
                 )
             else:  # PUT
                 try:
@@ -163,6 +164,7 @@ def create_server(
 
     from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
     from conversation_read_view.reports_aggregator import ReportsAggregator
+    from conversation_read_view.log_reader import LogReader
     from feedback_service.queue import build_pending_feedback_queue, load_jsonl_records
 
     source = env if env is not None else os.environ
@@ -189,6 +191,8 @@ def create_server(
     process_supervisor = ProcessSupervisor(env=source, config_store=config_store)
     process_supervisor.reconcile_on_startup()
 
+    log_reader = LogReader(env=source, process_supervisor=process_supervisor)
+
     httpd = ThreadingHTTPServer((host, port), AdminConsoleApiServer)
     httpd.feature_flags = feature_flags
     httpd.env = dict(source)
@@ -198,6 +202,7 @@ def create_server(
     httpd.config_store = config_store
     httpd.process_supervisor = process_supervisor
     httpd.reports_aggregator = reports_aggregator
+    httpd.log_reader = log_reader
     httpd.handle_admin_get = handle_admin_get
     httpd.handle_admin_put = handle_admin_put
 

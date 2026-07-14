@@ -16,6 +16,7 @@ ROUTE_PREFIXES: tuple[str, ...] = (
     "/gates",
     "/config",
     "/reports",
+    "/logs",
 )
 
 __all__ = ["ROUTE_PREFIXES"]
