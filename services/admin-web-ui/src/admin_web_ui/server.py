@@ -13,6 +13,8 @@ Request flow:
 from __future__ import annotations
 
 import os
+import sys
+import traceback
 from http.server import BaseHTTPRequestHandler
 from typing import Any, Mapping
 from urllib.parse import parse_qs
@@ -66,7 +68,7 @@ from .channels import (
     render_channels_page,
 )
 from .csrf import issue_csrf_token, validate_csrf_token
-from .dashboard import render_dashboard
+from .dashboard import render_dashboard, render_error_page
 from .logs import render_logs_page
 from .processes import (
     parse_processes_form,
@@ -287,9 +289,10 @@ def handle_admin_web_ui_request(
     if section is None and (route_path == _AUDIT_PATH or route_path.startswith("/audit/")):
         section = "audit"
     if section is None:
-        body_html = render_dashboard(
-            "index",
-            {"error": {"code": "not_found", "message": f"Unknown route: {route_path}"}},
+        body_html = render_error_page(
+            404,
+            "Not Found",
+            f"Unknown route: {route_path}",
             identity=None,
         )
         return 404, body_html, response_headers
@@ -1678,12 +1681,12 @@ def _handle_processes(
         assert form_map is not None
         try:
             name, action = parse_processes_form(form_map)
-        except ValueError as exc:
+        except ValueError as err:
             html_body = render_processes_page(
-                {"error": {"code": "invalid_request", "message": str(exc)}},
+                {"error": {"code": "invalid_request", "message": str(err)}},
                 identity=identity,
                 csrf_token=save_token,
-                error_message=str(exc),
+                error_message=str(err),
             )
             return 400, html_body, response_headers
 
@@ -1940,10 +1943,11 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
             length = 0
         if length < 0 or length > MAX_CHANNELS_POST_BYTES:
             # Reject oversized/negative Content-Length without allocating (WR-04).
-            body_html = (
-                "<!DOCTYPE html><html><body>"
-                "<p class=\"error\">Request body too large</p>"
-                "</body></html>"
+            body_html = render_error_page(
+                413,
+                "Request Too Large",
+                "The request body exceeds the maximum allowed size.",
+                identity=None,
             )
             encoded = body_html.encode("utf-8")
             self.send_response(413)
@@ -1957,25 +1961,41 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
         self._dispatch("POST", body=raw)
 
     def _dispatch(self, method: str, body: bytes | None) -> None:
-        status, html_body, headers = handle_admin_web_ui_request(
-            self.path,
-            dict(self.headers),
-            feature_flags=self.server.feature_flags,  # type: ignore[attr-defined]
-            handle_admin_get=self.server.handle_admin_get,  # type: ignore[attr-defined]
-            read_model=self.server.read_model,  # type: ignore[attr-defined]
-            feedback_queue=getattr(self.server, "feedback_queue", None),  # type: ignore[attr-defined]
-            env=getattr(self.server, "env", None),  # type: ignore[attr-defined]
-            rbac_secret=getattr(self.server, "rbac_secret", None),  # type: ignore[attr-defined]
-            method=method,
-            body=body,
-            handle_admin_put=getattr(self.server, "handle_admin_put", None),  # type: ignore[attr-defined]
-            config_store=getattr(self.server, "config_store", None),  # type: ignore[attr-defined]
-            handle_config_probe=getattr(self.server, "handle_config_probe", None),  # type: ignore[attr-defined]
-            process_supervisor=getattr(self.server, "process_supervisor", None),  # type: ignore[attr-defined]
-            reports_aggregator=getattr(self.server, "reports_aggregator", None),  # type: ignore[attr-defined]
-            log_reader=getattr(self.server, "log_reader", None),  # type: ignore[attr-defined]
-            session_store=getattr(self.server, "session_store", None),  # type: ignore[attr-defined]
-        )
+        try:
+            status, html_body, headers = handle_admin_web_ui_request(
+                self.path,
+                dict(self.headers),
+                feature_flags=self.server.feature_flags,  # type: ignore[attr-defined]
+                handle_admin_get=self.server.handle_admin_get,  # type: ignore[attr-defined]
+                read_model=self.server.read_model,  # type: ignore[attr-defined]
+                feedback_queue=getattr(self.server, "feedback_queue", None),  # type: ignore[attr-defined]
+                env=getattr(self.server, "env", None),  # type: ignore[attr-defined]
+                rbac_secret=getattr(self.server, "rbac_secret", None),  # type: ignore[attr-defined]
+                method=method,
+                body=body,
+                handle_admin_put=getattr(self.server, "handle_admin_put", None),  # type: ignore[attr-defined]
+                config_store=getattr(self.server, "config_store", None),  # type: ignore[attr-defined]
+                handle_config_probe=getattr(self.server, "handle_config_probe", None),  # type: ignore[attr-defined]
+                process_supervisor=getattr(self.server, "process_supervisor", None),  # type: ignore[attr-defined]
+                reports_aggregator=getattr(self.server, "reports_aggregator", None),  # type: ignore[attr-defined]
+                log_reader=getattr(self.server, "log_reader", None),  # type: ignore[attr-defined]
+                session_store=getattr(self.server, "session_store", None),  # type: ignore[attr-defined]
+            )
+        except Exception:
+            traceback.print_exc(file=sys.stderr)
+            html_body = render_error_page(
+                500,
+                "Internal Server Error",
+                "An unexpected error occurred. Check server logs.",
+                identity=None,
+            )
+            status = 500
+            headers = {
+                "Content-Type": "text/html; charset=utf-8",
+                "Content-Security-Policy": CSP_HEADER,
+                "X-Content-Type-Options": "nosniff",
+                "X-Frame-Options": "DENY",
+            }
         encoded = html_body.encode("utf-8")
         self.send_response(status)
         for key, value in headers.items():

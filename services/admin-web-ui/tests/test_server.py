@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from admin_console_api.api import handle_admin_get as real_handle_admin_get
+from admin_web_ui.dashboard import render_error_page
 from admin_web_ui.server import CSP_HEADER, handle_admin_web_ui_request
 from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
 from platform_runtime.feature_flags import RuntimeFeatureFlags
@@ -378,6 +379,97 @@ class TenantIsolationTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("fb-a", body)
         self.assertNotIn("fb-b", body)
+
+
+class TestErrorPages(unittest.TestCase):
+    """Verify dedicated 404/500/413 error pages (POLISH-01)."""
+
+    SECRET = "test-secret-key"
+
+    def setUp(self) -> None:
+        self.handle_admin_get = _make_fake_handle_admin_get()
+        self.read_model = None
+        self.feedback_queue: list[dict[str, Any]] = []
+
+    def test_404_dedicated_page(self) -> None:
+        """GET /nonexistent returns 404 with dedicated error page (nav + back link)."""
+        flags = RuntimeFeatureFlags(admin_web_ui_enabled=True, admin_api_enabled=True)
+        token = issue_token(self.SECRET, role=Role.ADMIN, tenant_id="tenant-1")
+        status, body, headers = handle_admin_web_ui_request(
+            "/nonexistent-route-xyz",
+            {"Authorization": f"Bearer {token}"},
+            feature_flags=flags,
+            handle_admin_get=self.handle_admin_get,
+            read_model=self.read_model,
+            feedback_queue=self.feedback_queue,
+            rbac_secret=self.SECRET,
+        )
+        self.assertEqual(status, 404)
+        self.assertIn("Error 404", body)
+        self.assertIn("Back to Dashboard", body)
+        self.assertNotIn("Traceback", body)
+
+    def test_500_on_uncaught_exception(self) -> None:
+        """render_error_page(500, ...) produces a dedicated 500 page."""
+        html_body = render_error_page(
+            500,
+            "Internal Server Error",
+            "An unexpected error occurred. Check server logs.",
+        )
+        self.assertIn("Internal Server Error", html_body)
+        self.assertIn("Error 500", html_body)
+        self.assertIn("Back to Dashboard", html_body)
+
+    def test_500_no_stack_trace_leak(self) -> None:
+        """500 response body must not contain Traceback or exception details."""
+        html_body = render_error_page(
+            500,
+            "Internal Server Error",
+            "An unexpected error occurred. Check server logs.",
+        )
+        self.assertNotIn("Traceback", html_body)
+        self.assertNotIn("traceback", html_body)
+
+    def test_500_try_except_exists_in_dispatch(self) -> None:
+        """Verify the try/except 500 catch-all exists in server.py source."""
+        server_src = Path(__file__).resolve().parents[1] / "src" / "admin_web_ui" / "server.py"
+        src = server_src.read_text(encoding="utf-8")
+        self.assertIn("traceback.print_exc", src)
+        self.assertIn("render_error_page", src)
+        self.assertIn("500", src)
+
+    def test_500_no_str_exc_in_html(self) -> None:
+        """Verify str(exc) is never used in HTML response context."""
+        server_src = Path(__file__).resolve().parents[1] / "src" / "admin_web_ui" / "server.py"
+        src = server_src.read_text(encoding="utf-8")
+        self.assertNotIn("str(exc)", src)
+
+    def test_413_uses_render_error_page(self) -> None:
+        """Verify the 413 handler uses render_error_page, not bare HTML."""
+        server_src = Path(__file__).resolve().parents[1] / "src" / "admin_web_ui" / "server.py"
+        src = server_src.read_text(encoding="utf-8")
+        # The bare HTML pattern must be gone.
+        self.assertNotIn("<!DOCTYPE html><html><body>", src)
+        # The 413 render_error_page call must be present.
+        self.assertIn("render_error_page", src)
+        self.assertIn("413", src)
+
+    def test_404_uses_render_error_page(self) -> None:
+        """Verify the 404 handler uses render_error_page."""
+        server_src = Path(__file__).resolve().parents[1] / "src" / "admin_web_ui" / "server.py"
+        src = server_src.read_text(encoding="utf-8")
+        # Count render_error_page occurrences (404, 500, 413 = at least 3).
+        count = src.count("render_error_page")
+        self.assertGreaterEqual(count, 3)
+
+    def test_500_response_includes_security_headers(self) -> None:
+        """Verify the 500 except block sets CSP, X-Content-Type-Options, X-Frame-Options."""
+        server_src = Path(__file__).resolve().parents[1] / "src" / "admin_web_ui" / "server.py"
+        src = server_src.read_text(encoding="utf-8")
+        # The 500 except block must include all three security headers.
+        self.assertIn("X-Content-Type-Options", src)
+        self.assertIn("X-Frame-Options", src)
+        self.assertIn("Content-Security-Policy", src)
 
 
 if __name__ == "__main__":
