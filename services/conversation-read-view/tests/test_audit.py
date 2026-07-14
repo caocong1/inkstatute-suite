@@ -294,7 +294,12 @@ class ListAuditEventsTests(unittest.TestCase):
             tenant_id="t2",
         )
         model = build_read_model(records)
-        items = model.list_audit_events(tenant_filter="t1")
+
+        class _MockFilter:
+            is_active = True
+            tenant_id = "t1"
+
+        items = model.list_audit_events(tenant_filter=_MockFilter())
         self.assertEqual(len(items), 1)
         _, _, item = items[0]
         self.assertEqual(item["event"]["tenant_id"], "t1")
@@ -367,7 +372,14 @@ class HandleAuditGetTests(unittest.TestCase):
             tenant_id="t2",
         )
         model = build_read_model(records)
-        status, body = handle_audit_get("/audit", {}, model, tenant_filter="t1")
+
+        class _MockFilter:
+            is_active = True
+            tenant_id = "t1"
+
+        status, body = handle_audit_get(
+            "/audit", {}, model, tenant_filter=_MockFilter()
+        )
         self.assertEqual(status, 200)
         self.assertEqual(len(body["items"]), 1)
         self.assertEqual(body["items"][0]["event"]["tenant_id"], "t1")

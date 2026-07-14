@@ -24,6 +24,7 @@ from platform_runtime.tenant_scope import (
 from rbac import RbacGuard, resolve_identity
 
 from .auth import check_auth_header, extract_auth_header, resolve_admin_token
+from .audit import handle_audit
 from .config_api import handle_config_get, handle_config_put
 from .feedback import ThreadSafeFeedbackQueue
 from .gates import handle_gates
@@ -191,6 +192,15 @@ def handle_admin_get(
             route_query,
             log_reader=log_reader,
             feature_flags=feature_flags,
+        )
+
+    if route_path == "/audit" or route_path.startswith("/audit/"):
+        return handle_audit(
+            route_path,
+            route_query,
+            read_model=read_model,
+            feature_flags=feature_flags,
+            tenant_filter=tenant_filter,
         )
 
     if route_path == "/config" or route_path.startswith("/config/"):

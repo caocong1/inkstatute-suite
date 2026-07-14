@@ -20,6 +20,7 @@ PERMISSIONS_MATRIX: dict[str, frozenset[Role]] = {
     "/config": frozenset({Role.ADMIN, Role.OPERATOR}),
     "/processes": frozenset({Role.ADMIN, Role.OPERATOR}),
     "/logs": frozenset({Role.ADMIN, Role.OPERATOR}),
+    "/audit": frozenset({Role.ADMIN, Role.OPERATOR}),
     "/reports": frozenset({Role.ADMIN, Role.OPERATOR, Role.LAWYER, Role.VIEWER}),
 }
 

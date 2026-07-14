@@ -314,9 +314,9 @@ class ContractLogReadModel:
                 continue
             if event_type is not None and record.event_key != event_type:
                 continue
-            if tenant_filter is not None:
+            if tenant_filter is not None and getattr(tenant_filter, "is_active", False):
                 record_tenant = record.event.get("tenant_id")
-                if record_tenant != tenant_filter:
+                if record_tenant != tenant_filter.tenant_id:
                     continue
             turn_id = _string(record.event.get("turn_id")) or ""
             conversation_id = _string(record.event.get("conversation_id")) or ""
