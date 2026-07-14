@@ -128,6 +128,21 @@ class ReportsDashboardTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("Refresh", body)
 
+    def test_reports_page_gate_pass_rate_with_gates(self) -> None:
+        """Gate Pass Rate metric should reflect gates_passed/gate_count (MEDIUM-1 fix)."""
+        with patch("admin_console_api.reports.run_gate_summary", return_value={
+            "passed": True,
+            "gates": [
+                {"name": "g1", "exit_code": 0},
+                {"name": "g2", "exit_code": 0},
+                {"name": "g3", "exit_code": 1},
+            ],
+        }):
+            status, body, _ = self._request()
+        self.assertEqual(status, 200)
+        # 2/3 = 66.7%
+        self.assertIn("66.7%", body)
+
     def test_reports_page_has_time_range_selector(self) -> None:
         with patch("admin_console_api.reports.run_gate_summary", return_value={
             "passed": True, "gates": [],

@@ -130,9 +130,16 @@ def handle_reports(
 
     # Merge gate summary (subprocess-isolated, never raises).
     gate_summary = run_gate_summary()
+    gate_list = gate_summary.get("gates", [])
+    gates_passed_count = sum(
+        1 for g in gate_list if isinstance(g, dict) and g.get("exit_code") == 0
+    )
+    gate_count = len(gate_list)
     gates_payload: dict[str, Any] = {
         "passed": gate_summary.get("passed", False),
-        "gate_count": len(gate_summary.get("gates", [])),
+        "gate_count": gate_count,
+        "gates_passed": gates_passed_count,
+        "gates_failed": gate_count - gates_passed_count,
     }
     if "error" in gate_summary:
         gates_payload["error"] = gate_summary["error"]
@@ -141,9 +148,11 @@ def handle_reports(
     aggregate["metadata"]["window"] = window
 
     # Scrub the final payload (T-81-06) — fail closed on forbidden keys.
+    # Re-attach metadata and gates after scrubbing (they contain no forbidden
+    # keys but scrub_contract_payload may strip nested event references).
     scrubbed = scrub_contract_payload(aggregate)
     scrubbed["metadata"] = aggregate["metadata"]
-    scrubbed["gates"] = gates_payload
+    scrubbed["gates"] = aggregate["gates"]
 
     return 200, scrubbed
 

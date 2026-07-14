@@ -402,7 +402,7 @@ def _render_reports_section(data: dict[str, Any], boundary: AdminUiBoundary) -> 
     form_html = (
         '    <form method="GET" action="/reports" class="card">\n'
         '      <div class="field"><label for="window">Time Range</label>'
-        f'<select id="window" name="window" onchange="this.form.submit()">\n'
+        f'<select id="window" name="window">\n'
         + "\n".join(options_html)
         + "      </select></div>\n"
         f'{from_inputs}{to_inputs}'
