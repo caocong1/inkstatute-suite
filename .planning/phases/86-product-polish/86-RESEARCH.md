@@ -435,22 +435,25 @@ set -a; source "$ENV_FILE"; set +a
 
 **If this table is empty:** All claims in this research were verified or cited — no user confirmation needed.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Login/Logout nav links be auth-state-aware?**
    - What we know: Currently both are always shown. Success criteria says "consistent navigation" but doesn't specify auth-awareness.
    - What's unclear: Whether "consistent" means "identical on every page" or "consistent but context-aware".
    - Recommendation: Make them auth-state-aware (show Login when anonymous, Logout when authenticated) — this is product-grade UX and the success criteria says "product-grade". This is a discretion decision per CONTEXT.md.
+   - RESOLVED: Yes — make auth-state-aware. Implemented in Plan 02 Task 1, action step 4 (conditional Login/Logout based on identity parameter).
 
 2. **Should the 413 oversized-body handler be updated to use _page_template?**
    - What we know: `server.py L1943-1954` renders a bare HTML string without nav or CSP.
    - What's unclear: Whether POLISH-01's "proper error pages" scope includes 413.
    - Recommendation: Yes — fix it for consistency. It's a 2-line change to use `render_error_page`.
+   - RESOLVED: Yes — update 413 handler to use render_error_page. Implemented in Plan 01 Task 2, action step 5 (replace bare HTML with render_error_page(413, ...)).
 
 3. **Should the startup script start channel host processes too?**
    - What we know: POLISH-04 says "launches admin-web-ui + admin-console-api". Channel hosts (WeCom/QQBot) are orchestrated via the console UI (ProcessSupervisor).
    - What's unclear: Whether the script should also start channel hosts.
    - Recommendation: No — the script launches only the console (UI + API). Channel hosts are started on-demand from the UI, which is the existing Phase 80 design. Document this in the script help text.
+   - RESOLVED: No — launch only UI + API. Implemented in Plan 03 Task 1, action step 2 (usage comment documents that channel hosts are started on-demand from the console UI, not by this script).
 
 ## Environment Availability
 

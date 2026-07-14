@@ -53,13 +53,14 @@ packages/operator-config/src
 | 86-01-01 | 01 | 1 | POLISH-01 | T-86-01 / V7 Error Handling | 404 page escaped, no stack trace | unit | `python -m unittest services.admin_web_ui.tests.test_server.TestErrorPages.test_404_dedicated_page -v` | ❌ W0 | ⬜ pending |
 | 86-01-02 | 01 | 1 | POLISH-01 | T-86-01 / V7 Error Handling | 500 page on uncaught exception, no stack trace leak | unit | `python -m unittest services.admin_web_ui.tests.test_server.TestErrorPages.test_500_on_uncaught_exception -v` | ❌ W0 | ⬜ pending |
 | 86-01-03 | 01 | 1 | POLISH-01 | T-86-01 / V7 Error Handling | 500 page does not contain str(exc) or traceback | unit | `python -m unittest services.admin_web_ui.tests.test_server.TestErrorPages.test_500_no_stack_trace_leak -v` | ❌ W0 | ⬜ pending |
-| 86-02-01 | 02 | 1 | POLISH-02 | — | Nav renders on all pages with active-state indication | unit | `python -m unittest services.admin_web_ui.tests.test_dashboard.TestNavActiveState.test_active_link_has_aria_current -v` | ❌ W0 | ⬜ pending |
-| 86-02-02 | 02 | 1 | POLISH-02 | — | Nav is consistent (same nav_items on every page) | unit | `python -m unittest services.admin_web_ui.tests.test_dashboard.TestNavActiveState.test_nav_consistent_across_pages -v` | ❌ W0 | ⬜ pending |
-| 86-02-03 | 02 | 1 | POLISH-03 | — | No horizontal scroll at 1280px (CSS audit) | unit | `python -m unittest services.admin_web_ui.tests.test_dashboard.TestResponsive.test_no_fixed_width_exceeds_1280 -v` | ❌ W0 | ⬜ pending |
+| 86-01-04 | 01 | 1 | POLISH-03 | — | No horizontal scroll at 1280px (CSS audit) | unit | `python -m unittest services.admin_web_ui.tests.test_dashboard.TestResponsive.test_no_fixed_width_exceeds_1280 -v` | ❌ W0 | ⬜ pending |
+| 86-02-01 | 02 | 2 | POLISH-02 | — | Nav renders on all pages with active-state indication | unit | `python -m unittest services.admin_web_ui.tests.test_dashboard.TestNavActiveState.test_active_link_has_aria_current -v` | ❌ W0 | ⬜ pending |
+| 86-02-02 | 02 | 2 | POLISH-02 | — | Nav is consistent (same nav_items on every page) | unit | `python -m unittest services.admin_web_ui.tests.test_dashboard.TestNavActiveState.test_nav_consistent_across_pages -v` | ❌ W0 | ⬜ pending |
+| 86-02-03 | 02 | 2 | POLISH-02 | — | _logs_page_template delegates to _page_template (no duplicate nav/CSS) | unit | `python -m unittest services.admin_web_ui.tests.test_dashboard.TestNavActiveState.test_head_extras_injected -v` | ❌ W0 | ⬜ pending |
 | 86-03-01 | 03 | 1 | POLISH-04 | — | start-console.sh launches both services with env loading | integration | `bash scripts/start-console.sh --dry-run` | ❌ W0 | ⬜ pending |
 | 86-03-02 | 03 | 1 | POLISH-04 | — | start-console.sh writes PID file | integration | `bash scripts/start-console.sh --dry-run && test -f .inkstatute/console-pids.json` | ❌ W0 | ⬜ pending |
-| 86-04-01 | 04 | 1 | POLISH-05 | — | .env.example documents ADMIN_USERNAME, ADMIN_PASSWORD, SESSION_TTL_SECONDS, ADMIN_WEB_UI_SECURE_COOKIE | unit | `python -m unittest services.admin_web_ui.tests.test_env_docs.test_auth_vars_documented -v` | ❌ W0 | ⬜ pending |
-| 86-04-02 | 04 | 1 | POLISH-05 | — | .env.example has inline comments for all new vars | unit | `python -m unittest services.admin_web_ui.tests.test_env_docs.test_inline_comments_present -v` | ❌ W0 | ⬜ pending |
+| 86-03-03 | 03 | 1 | POLISH-05 | — | .env.example documents ADMIN_USERNAME, ADMIN_PASSWORD, SESSION_TTL_SECONDS, ADMIN_WEB_UI_SECURE_COOKIE | unit | `python -m unittest services.admin_web_ui.tests.test_env_docs.test_auth_vars_documented -v` | ❌ W0 | ⬜ pending |
+| 86-03-04 | 03 | 1 | POLISH-05 | — | .env.example has inline comments for all new vars | unit | `python -m unittest services.admin_web_ui.tests.test_env_docs.test_inline_comments_present -v` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

@@ -163,11 +163,16 @@
   4. A one-click startup script (`start-console.sh` or equivalent) launches admin-web-ui + admin-console-api with sensible defaults, env loading, and PID tracking
   5. `.env.example` documents all new environment variables (ports, flags, credentials, log paths, session TTL) with inline comments explaining each variable
 
-**Plans**: 3 plans
-Plans:
+**Plans**: 3 plansPlans:
+**Wave 1**
+
 - [ ] 86-01-PLAN.md — Error pages (404/500/413) + responsive CSS fixes
-- [ ] 86-02-PLAN.md — Nav active-state indication + auth-state-aware Login/Logout
 - [ ] 86-03-PLAN.md — One-click startup script + .env.example auth var docs
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 86-02-PLAN.md — Nav active-state indication + auth-state-aware Login/Logout
+
 **UI hint**: yes
 
 ### Phase 87: Integration, Smoke & Gate Honesty
