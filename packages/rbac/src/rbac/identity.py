@@ -5,11 +5,18 @@
 ``check_auth_header`` static-token validation, returning a default admin
 identity on success — preserving the existing static-token behavior with no
 regression.
+
+When ``rbac_enabled=True`` and a Bearer header is absent or invalid, the
+function falls back to a session cookie (``session_cookie`` +
+``session_store``) via ``rbac.session.verify_session_cookie``.  The Bearer
+header always takes priority — the API path is unchanged when a valid
+Bearer token is present.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from .roles import Role
 from .token import RbacTokenError, verify_token
@@ -38,30 +45,52 @@ def resolve_identity(
     static_token: str | None = None,
     rbac_enabled: bool = False,
     now: int | None = None,
+    session_cookie: str | None = None,
+    session_store: Any = None,
 ) -> Identity | None:
-    """Resolve caller identity from a Bearer token.
+    """Resolve caller identity from a Bearer token or session cookie.
 
-    When ``rbac_enabled`` is ``True``, the token is verified as an RBAC
-    HMAC-SHA256 token with role+tenant claims.  When ``False``, the function
-    falls back to ``check_auth_header`` static-token validation (v1.6
-    behavior), returning a default admin identity on success.
+    When ``rbac_enabled`` is ``True``, the Bearer token is verified first as
+    an RBAC HMAC-SHA256 token with role+tenant claims.  When the Bearer token
+    is absent or invalid, the function falls back to the ``session_cookie``
+    via ``rbac.session.verify_session_cookie`` (browser sessions) — the
+    Bearer header always takes priority so the API path is unchanged.
 
-    Returns ``None`` when the token is invalid, expired, or the role is
-    unknown.
+    When ``rbac_enabled`` is ``False``, the function falls back to
+    ``check_auth_header`` static-token validation (v1.6 behavior), returning
+    a default admin identity on success.
+
+    Returns ``None`` when the token/cookie is invalid, expired, or the role
+    is unknown.
     """
     if rbac_enabled:
+        # Bearer header takes priority (API path unchanged).
         token = _strip_bearer(auth_header)
-        if token is None or rbac_secret is None:
-            return None
-        try:
-            claims = verify_token(token, rbac_secret, now=now)
-        except RbacTokenError:
-            return None
-        try:
-            role = Role(claims.role)
-        except ValueError:
-            return None
-        return Identity(role=role, tenant_id=claims.tenant_id)
+        if token is not None and rbac_secret is not None:
+            try:
+                claims = verify_token(token, rbac_secret, now=now)
+            except RbacTokenError:
+                claims = None
+            if claims is not None:
+                try:
+                    role = Role(claims.role)
+                except ValueError:
+                    role = None
+                if role is not None:
+                    return Identity(role=role, tenant_id=claims.tenant_id)
+        # Bearer absent or invalid — try session cookie fallback (browser sessions).
+        if session_cookie is not None and rbac_secret is not None and session_store is not None:
+            from .session import verify_session_cookie
+
+            record = verify_session_cookie(session_cookie, rbac_secret, session_store, now=now)
+            if record is not None:
+                try:
+                    role = Role(record.role)
+                except ValueError:
+                    role = None
+                if role is not None:
+                    return Identity(role=role, tenant_id=record.tenant_id)
+        return None
 
     # Static-token fallback (v1.6 behavior).  The ``admin_console_api.auth``
     # module is imported lazily so the rbac package remains stdlib-only at

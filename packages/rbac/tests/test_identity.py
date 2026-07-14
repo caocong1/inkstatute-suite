@@ -9,6 +9,7 @@ import unittest
 
 from rbac.identity import Identity, resolve_identity
 from rbac.roles import Role
+from rbac.session import InMemorySessionStore, issue_session_cookie
 from rbac.token import _b64url_encode, issue_token
 
 
@@ -172,6 +173,126 @@ class ResolveIdentityStaticFallbackTests(unittest.TestCase):
             "Bearer tok",
             static_token=None,
             rbac_enabled=False,
+        )
+        self.assertIsNone(identity)
+
+
+class ResolveIdentitySessionCookieTests(unittest.TestCase):
+    """Session cookie fallback tests (Phase 85)."""
+
+    def _make_store_and_cookie(
+        self, *, role: Role = Role.ADMIN, tenant_id: str = "t1", now: int = 1000, ttl: int = 28800
+    ) -> tuple[InMemorySessionStore, str]:
+        store = InMemorySessionStore()
+        sid = store.create(role=role, tenant_id=tenant_id, ttl_seconds=ttl, now=now)
+        cookie = issue_session_cookie("s", sid, role=role, tenant_id=tenant_id, ttl_seconds=ttl, now=now)
+        return store, cookie
+
+    def test_session_cookie_fallback_when_no_bearer(self) -> None:
+        store, cookie = self._make_store_and_cookie()
+        identity = resolve_identity(
+            None,
+            rbac_secret="s",
+            rbac_enabled=True,
+            session_cookie=cookie,
+            session_store=store,
+            now=1500,
+        )
+        self.assertIsNotNone(identity)
+        assert identity is not None
+        self.assertEqual(identity.role, Role.ADMIN)
+        self.assertEqual(identity.tenant_id, "t1")
+
+    def test_bearer_takes_priority_over_cookie(self) -> None:
+        store, cookie = self._make_store_and_cookie(role=Role.ADMIN, tenant_id="cookie-tenant")
+        # Bearer token with a different tenant.
+        token = issue_token("s", role=Role.LAWYER, tenant_id="bearer-tenant", now=1000)
+        identity = resolve_identity(
+            f"Bearer {token}",
+            rbac_secret="s",
+            rbac_enabled=True,
+            session_cookie=cookie,
+            session_store=store,
+            now=1500,
+        )
+        self.assertIsNotNone(identity)
+        assert identity is not None
+        self.assertEqual(identity.role, Role.LAWYER)
+        self.assertEqual(identity.tenant_id, "bearer-tenant")
+
+    def test_session_cookie_used_when_bearer_invalid(self) -> None:
+        store, cookie = self._make_store_and_cookie()
+        identity = resolve_identity(
+            "Bearer garbage",
+            rbac_secret="s",
+            rbac_enabled=True,
+            session_cookie=cookie,
+            session_store=store,
+            now=1500,
+        )
+        self.assertIsNotNone(identity)
+        assert identity is not None
+        self.assertEqual(identity.role, Role.ADMIN)
+        self.assertEqual(identity.tenant_id, "t1")
+
+    def test_session_cookie_invalid_returns_none(self) -> None:
+        store = InMemorySessionStore()
+        identity = resolve_identity(
+            None,
+            rbac_secret="s",
+            rbac_enabled=True,
+            session_cookie="tampered",
+            session_store=store,
+            now=1500,
+        )
+        self.assertIsNone(identity)
+
+    def test_no_bearer_no_cookie_returns_none(self) -> None:
+        store = InMemorySessionStore()
+        identity = resolve_identity(
+            None,
+            rbac_secret="s",
+            rbac_enabled=True,
+            session_cookie=None,
+            session_store=store,
+            now=1500,
+        )
+        self.assertIsNone(identity)
+
+    def test_session_cookie_no_store_returns_none(self) -> None:
+        store, cookie = self._make_store_and_cookie()
+        identity = resolve_identity(
+            None,
+            rbac_secret="s",
+            rbac_enabled=True,
+            session_cookie=cookie,
+            session_store=None,
+            now=1500,
+        )
+        self.assertIsNone(identity)
+
+    def test_session_cookie_unknown_role_returns_none(self) -> None:
+        store = InMemorySessionStore()
+        # Manually insert a session record with an invalid role string.
+        from rbac.session import SessionRecord
+
+        sid = "test-sid-bad-role"
+        record = SessionRecord(
+            sid=sid,
+            role="superuser",
+            tenant_id="t1",
+            created_at=1000,
+            expires_at=1000 + 28800,
+        )
+        store._sessions[sid] = record
+        cookie = issue_session_cookie("s", sid, role="superuser", tenant_id="t1", now=1000)
+        identity = resolve_identity(
+            None,
+            rbac_secret="s",
+            rbac_enabled=True,
+            session_cookie=cookie,
+            session_store=store,
+            now=1500,
         )
         self.assertIsNone(identity)
 
