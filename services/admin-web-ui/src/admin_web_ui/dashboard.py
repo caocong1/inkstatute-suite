@@ -181,6 +181,13 @@ def _page_template(
     .gate-pass-rate-fail {{ color: #c0392b; }}
     .gate-pass-rate-na {{ color: #888; font-size: 1rem; font-weight: 400; }}
     .run-gates-link {{ display: inline-block; margin: 0.5rem 0; padding: 6px 12px; background: #1a1a2e; color: #fff; border-radius: 6px; text-decoration: none; font-size: 0.875rem; font-weight: 600; }}
+    .auto-refresh-note {{ font-size: 0.875rem; color: #555; margin: 0.5rem 0; }}
+    .log-output {{
+      max-height: 600px; overflow-y: scroll; background: #1a1a2e; color: #e0e0e0;
+      padding: 1rem; border-radius: 6px; font-size: 0.8125rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap; word-break: break-all;
+    }}
   </style>
 </head>
 <body>

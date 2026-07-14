@@ -320,8 +320,15 @@ class AuthSessionTests(unittest.TestCase):
             headers={"Cookie": f"{SESSION_COOKIE_NAME}={cookie_value}"},
         )
         self.assertEqual(status, 200)
-        self.assertIn('<a href="/login"', body)
+        # Authenticated: Logout shown, Login absent (auth-state-aware nav)
         self.assertIn('<a href="/logout"', body)
+        self.assertNotIn('<a href="/login"', body)
+
+        # Anonymous: Login shown, Logout absent (login page renders with identity=None)
+        status_anon, body_anon, _ = self._request("/login")
+        self.assertEqual(status_anon, 200)
+        self.assertIn('<a href="/login"', body_anon)
+        self.assertNotIn('<a href="/logout"', body_anon)
 
     # --- RBAC guard still applies to cookie auth ---
 

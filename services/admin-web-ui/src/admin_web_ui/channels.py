@@ -348,7 +348,7 @@ def render_channels_page(
                 read_only=True,
                 error_message=error_message,
             )
-        return _page_template(PAGE_TITLE, body, identity)
+        return _page_template(PAGE_TITLE, body, identity, active_path="/config/channels")
 
     body = render_channels_form(
         api_data,

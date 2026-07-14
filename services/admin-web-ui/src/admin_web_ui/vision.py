@@ -481,7 +481,7 @@ def render_vision_page(
         error_message=error_message,
         probe_result=probe_result,
     )
-    return _page_template(PAGE_TITLE, body, identity)
+    return _page_template(PAGE_TITLE, body, identity, active_path="/config/vision")
 
 
 def _form_get(form: Mapping[str, Any], key: str) -> str | None:

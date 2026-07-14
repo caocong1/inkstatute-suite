@@ -63,7 +63,7 @@ def render_logs_page(
         error_code = _esc(error.get("code", "unknown")) if isinstance(error, dict) else "unknown"
         error_msg = _esc(error.get("message", "An error occurred.")) if isinstance(error, dict) else _esc(str(error))
         body = f'    <p class="error">Error [{error_code}]: {error_msg}</p>'
-        return _page_template("Log Viewer", body, identity)
+        return _page_template("Log Viewer", body, identity, active_path="/logs")
 
     # Build source availability map from the API ``sources`` list (if present).
     sources_list = api_data.get("sources", []) if isinstance(api_data, Mapping) else []
@@ -166,96 +166,15 @@ def render_logs_page(
 
 
 def _logs_page_template(title: str, body: str, identity: Identity | None = None) -> str:
-    """Page template with a ``<meta http-equiv="refresh">`` tag for auto-polling."""
-    from .dashboard import _esc
+    """Page template with a ``<meta http-equiv="refresh">`` tag for auto-polling.
 
-    escaped_title = _esc(title)
-    nav_items = [
-        ("/", "Dashboard"),
-        ("/sessions", "Sessions"),
-        ("/tasks", "Tasks"),
-        ("/feedback", "Feedback Review"),
-        ("/health", "Health"),
-        ("/gates", "Gates"),
-        ("/reports", "Reports"),
-        ("/logs", "Logs"),
-        ("/audit", "Audit Trail"),
-        ("/config/channels", "Channel Config"),
-        ("/config/providers", "Provider Config"),
-        ("/config/catalog", "Model Catalog"),
-        ("/config/vision", "Vision Config"),
-        ("/login", "Login"),
-        ("/logout", "Logout"),
-    ]
-    nav_links = "\n".join(
-        f'      <a href="{_esc(href)}" class="nav-link">{_esc(label)}</a>'
-        for href, label in nav_items
+    Thin wrapper delegating to ``_page_template`` with ``head_extras`` injecting
+    the meta-refresh tag and ``active_path="/logs"`` for nav active-state.
+    """
+    return _page_template(
+        title,
+        body,
+        identity,
+        active_path="/logs",
+        head_extras='<meta http-equiv="refresh" content="5">',
     )
-    identity_html = ""
-    if identity is not None:
-        identity_html = (
-            f'    <div class="identity">Role: <strong>{_esc(identity.role.value)}</strong>'
-            f' &middot; Tenant: <strong>{_esc(identity.tenant_id)}</strong></div>'
-        )
-    return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="5">
-  <title>{escaped_title} - InkStatute Admin</title>
-  <style>
-    body {{ font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #f5f5f5; color: #222; }}
-    .header {{ background: #1a1a2e; color: #fff; padding: 1rem 2rem; }}
-    .header h1 {{ margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.2; }}
-    .nav {{ background: #16213e; padding: 0.5rem 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }}
-    .nav-link {{ color: #aaccff; text-decoration: none; font-size: 0.875rem; font-weight: 600; }}
-    .nav-link:hover {{ color: #fff; }}
-    .main {{ padding: 2rem; max-width: 1200px; margin: 0 auto; }}
-    .section {{ background: #fff; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-    .section h2 {{ margin-top: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.2; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }}
-    .card {{ background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }}
-    .empty {{ color: #888; font-style: italic; }}
-    .identity {{ padding: 0.5rem 2rem; background: #0f3460; color: #aaccff; font-size: 0.875rem; font-weight: 600; }}
-    .error {{ color: #c0392b; font-weight: 600; }}
-    .field {{ margin: 0.5rem 0; font-size: 1rem; }}
-    .field label {{ display: block; font-weight: 600; font-size: 0.875rem; color: #555; margin-bottom: 0.25rem; }}
-    .ref-input {{
-      display: block; width: 100%; box-sizing: border-box; padding: 8px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      border: 1px solid #e0e0e0; border-radius: 6px; background: #fff;
-    }}
-    .ref-input:focus-visible, .btn-primary:focus-visible {{
-      outline: 2px solid #aaccff; outline-offset: 2px;
-    }}
-    .btn-primary {{
-      background: #1a1a2e; color: #fff; border: none; border-radius: 6px;
-      padding: 8px 16px; min-height: 44px; font-size: 1rem; cursor: pointer;
-    }}
-    select {{ min-height: 44px; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 1rem; }}
-    select:focus-visible {{ outline: 2px solid #aaccff; outline-offset: 2px; }}
-    .auto-refresh-note {{ font-size: 0.875rem; color: #555; margin: 0.5rem 0; }}
-    .log-output {{
-      max-height: 600px; overflow-y: scroll; background: #1a1a2e; color: #e0e0e0;
-      padding: 1rem; border-radius: 6px; font-size: 0.8125rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      white-space: pre-wrap; word-break: break-all;
-    }}
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>InkStatute Admin Dashboard</h1>
-  </div>
-  <div class="nav">
-{nav_links}
-  </div>
-{identity_html}
-  <div class="main">
-    <div class="section">
-      <h2>{escaped_title}</h2>
-{body}
-    </div>
-  </div>
-</body>
-</html>"""

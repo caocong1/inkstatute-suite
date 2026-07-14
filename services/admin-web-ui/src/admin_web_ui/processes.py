@@ -148,4 +148,4 @@ def render_processes_page(
     body = "\n".join(parts)
     from .dashboard import _page_template
 
-    return _page_template(title, body, identity)
+    return _page_template(title, body, identity, active_path="/processes")

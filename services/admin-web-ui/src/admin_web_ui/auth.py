@@ -82,7 +82,7 @@ def render_login_page(
       <input type="hidden" name="csrf_token" value="{_esc(csrf_token)}">
       <button type="submit" class="btn-primary">Log in</button>
     </form>"""
-    return _page_template("Login", body, identity=None)
+    return _page_template("Login", body, identity=None, active_path="/login")
 
 
 def render_logout_page(
@@ -97,7 +97,7 @@ def render_logout_page(
       <input type="hidden" name="csrf_token" value="{_esc(csrf_token)}">
       <button type="submit" class="btn-primary">Log out</button>
     </form>"""
-    return _page_template("Logout", body, identity=identity)
+    return _page_template("Logout", body, identity=identity, active_path="/logout")
 
 
 def _fresh_login_csrf(rbac_secret: str | None) -> str:

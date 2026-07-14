@@ -49,7 +49,7 @@ def render_audit_page(
         error_code = _esc(error.get("code", "unknown")) if isinstance(error, dict) else "unknown"
         error_msg = _esc(error.get("message", "An error occurred.")) if isinstance(error, dict) else _esc(str(error))
         body = f'    <p class="error">Error [{error_code}]: {error_msg}</p>'
-        return _page_template("Contract Event Audit", body, identity)
+        return _page_template("Contract Event Audit", body, identity, active_path="/audit")
 
     items = api_data.get("items", []) if isinstance(api_data, Mapping) else []
     count = api_data.get("count", len(items)) if isinstance(api_data, Mapping) else len(items)
@@ -130,7 +130,7 @@ def render_audit_page(
     count_html = f'    <p>Showing <strong>{_esc(count)}</strong> audit events.</p>'
 
     body = "\n".join([form_html, count_html, table_html, pagination_html, back_html])
-    return _page_template("Contract Event Audit", body, identity)
+    return _page_template("Contract Event Audit", body, identity, active_path="/audit")
 
 
 def render_trace_page(
@@ -154,7 +154,7 @@ def render_trace_page(
         error_msg = _esc(error.get("message", "An error occurred.")) if isinstance(error, dict) else _esc(str(error))
         body = f'    <p class="error">Error [{error_code}]: {error_msg}</p>'
         body += '\n    <p><a href="/audit">Back to Audit Trail</a></p>'
-        return _page_template("Trace Reconstruction", body, identity)
+        return _page_template("Trace Reconstruction", body, identity, active_path="/audit")
 
     metadata = api_data.get("metadata", {}) if isinstance(api_data, Mapping) else {}
     if not isinstance(metadata, Mapping):
@@ -211,4 +211,4 @@ def render_trace_page(
     back_html = '    <p><a href="/audit">Back to Audit Trail</a></p>'
 
     body = "\n".join([header, meta_html, events_html, back_html])
-    return _page_template("Trace Reconstruction", body, identity)
+    return _page_template("Trace Reconstruction", body, identity, active_path="/audit")
