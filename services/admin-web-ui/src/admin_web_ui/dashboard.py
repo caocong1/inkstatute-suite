@@ -75,6 +75,7 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/feedback", "Feedback Review"),
         ("/health", "Health"),
         ("/gates", "Gates"),
+        ("/reports", "Reports"),
         ("/config/channels", "Channel Config"),
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),
@@ -197,6 +198,7 @@ def render_dashboard(
         "feedback": "Feedback Review Queue",
         "health": "Health Monitoring",
         "gates": "Gate Status",
+        "reports": "Reports Dashboard",
     }
     title = title_map.get(section, "Admin Dashboard")
 
@@ -217,6 +219,8 @@ def render_dashboard(
         body = _render_health_section(data, boundary)
     elif section == "gates":
         body = _render_gates_section(data, boundary)
+    elif section == "reports":
+        body = _render_reports_section(data, boundary)
     else:
         pairs = _esc_dict(data, boundary)
         body = _render_kv_table(pairs)
@@ -252,6 +256,7 @@ def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
         ("Feedback Review", "/feedback", "Review pending feedback items"),
         ("Health", "/health", "Monitor system health status"),
         ("Gates", "/gates", "View V2 gate status"),
+        ("Reports", "/reports", "View aggregate report statistics over a time range"),
         (
             "Process Orchestration",
             "/processes",
@@ -357,6 +362,94 @@ def _render_gates_section(data: dict[str, Any], boundary: AdminUiBoundary) -> st
         parts.append(_render_kv_table(pairs))
     parts.append(_render_carried_human_gates_card())
     return "\n".join(parts)
+
+
+def _render_reports_section(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
+    """Render the reports dashboard with a time-range selector and metric cards.
+
+    All dynamic text is escaped via ``html.escape`` or ``boundary.escape_value``.
+    The ``window`` selection uses ``metadata.window`` from the API response.
+    """
+    if "error" in data:
+        error = data["error"]
+        error_code = _esc(error.get("code", "unknown")) if isinstance(error, dict) else "unknown"
+        error_msg = _esc(error.get("message", "An error occurred.")) if isinstance(error, dict) else _esc(str(error))
+        return f'    <p class="error">Error [{error_code}]: {error_msg}</p>'
+
+    metadata = data.get("metadata", {}) if isinstance(data.get("metadata"), Mapping) else {}
+    current_window = str(metadata.get("window", "7d"))
+    valid_windows = ("today", "7d", "30d", "custom")
+
+    options_html: list[str] = []
+    for w in valid_windows:
+        selected = " selected" if w == current_window else ""
+        options_html.append(f'      <option value="{_esc(w)}"{selected}>{_esc(w)}</option>')
+
+    from_inputs = ""
+    to_inputs = ""
+    if current_window == "custom":
+        from_val = _esc(metadata.get("time_from", ""))
+        to_val = _esc(metadata.get("time_to", ""))
+        from_inputs = (
+            f'      <div class="field"><label for="from">From (UTC)</label>'
+            f'<input type="datetime-local" id="from" name="from" value="{from_val}"></div>'
+        )
+        to_inputs = (
+            f'      <div class="field"><label for="to">To (UTC)</label>'
+            f'<input type="datetime-local" id="to" name="to" value="{to_val}"></div>'
+        )
+
+    form_html = (
+        '    <form method="GET" action="/reports" class="card">\n'
+        '      <div class="field"><label for="window">Time Range</label>'
+        f'<select id="window" name="window" onchange="this.form.submit()">\n'
+        + "\n".join(options_html)
+        + "      </select></div>\n"
+        f'{from_inputs}{to_inputs}'
+        '      <button type="submit" class="btn-primary">Refresh</button>\n'
+        '    </form>'
+    )
+
+    sessions = data.get("sessions", {}) if isinstance(data.get("sessions"), Mapping) else {}
+    tasks = data.get("tasks", {}) if isinstance(data.get("tasks"), Mapping) else {}
+    feedback = data.get("feedback", {}) if isinstance(data.get("feedback"), Mapping) else {}
+    gates = data.get("gates", {}) if isinstance(data.get("gates"), Mapping) else {}
+
+    def _metric_card(label: str, value: Any) -> str:
+        return (
+            f'    <div class="card">\n'
+            f'      <h3>{_esc(label)}</h3>\n'
+            f'      <p class="notice-honesty-body">{_esc(value)}</p>\n'
+            f'    </div>'
+        )
+
+    def _rate(value: Any) -> str:
+        try:
+            return f"{float(value) * 100:.1f}%"
+        except (TypeError, ValueError):
+            return _esc(value)
+
+    cards = [
+        _metric_card("Sessions", sessions.get("count", 0)),
+        _metric_card("Tasks Total", tasks.get("total", 0)),
+        _metric_card("Tasks Completed", tasks.get("completed", 0)),
+        _metric_card("Completion Rate", _rate(tasks.get("completion_rate", 0.0))),
+        _metric_card("Long Task Total", tasks.get("long_task_total", 0)),
+        _metric_card("Long Task Success Rate", _rate(tasks.get("long_task_success_rate", 0.0))),
+        _metric_card("Feedback Up", feedback.get("up", 0)),
+        _metric_card("Feedback Down", feedback.get("down", 0)),
+        _metric_card("Gate Pass Rate", _rate(
+            gates.get("gate_count", 0) and gates.get("gates_passed", 0) / gates.get("gate_count", 1) or 0.0
+        ) if gates.get("gate_count") else "N/A"),
+    ]
+
+    aggregated_at = _esc(metadata.get("aggregated_at", ""))
+    note = (
+        '    <p class="empty">Values are in UTC. '
+        f'Aggregated at: <code>{aggregated_at}</code></p>'
+    )
+
+    return "\n".join([form_html] + cards + [note])
 
 
 __all__ = ["render_dashboard", "_render_gate_honesty_banner"]

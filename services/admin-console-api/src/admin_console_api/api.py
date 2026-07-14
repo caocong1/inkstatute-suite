@@ -29,6 +29,7 @@ from .feedback import ThreadSafeFeedbackQueue
 from .gates import handle_gates
 from .health import handle_health
 from .processes_api import handle_process_get, handle_process_put
+from .reports import handle_reports
 from .views import handle_feedback, handle_sessions, handle_tasks
 
 RBAC_TOKEN_SECRET_ENV = "RBAC_TOKEN_SECRET"
@@ -142,6 +143,7 @@ def handle_admin_get(
     *,
     config_store: OperatorConfigStore | None = None,
     process_supervisor: Any = None,
+    reports_aggregator: Any = None,
 ) -> tuple[int, dict[str, Any]]:
     """Gate on feature flag + auth, then route to view / config handlers.
 
@@ -170,6 +172,16 @@ def handle_admin_get(
 
     if route_path == "/processes" or route_path.startswith("/processes/"):
         return handle_process_get(route_path, process_supervisor, feature_flags)
+
+    if route_path == "/reports" or route_path.startswith("/reports/"):
+        return handle_reports(
+            route_query,
+            reports_aggregator,
+            feedback_queue,
+            feature_flags,
+            tenant_filter=tenant_filter,
+            env=env,
+        )
 
     if route_path == "/config" or route_path.startswith("/config/"):
         store = config_store if config_store is not None else OperatorConfigStore()

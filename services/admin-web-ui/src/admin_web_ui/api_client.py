@@ -38,6 +38,7 @@ class AdminApiClient:
         auth_header: str | None = None,
         config_store: Any = None,
         process_supervisor: Any = None,
+        reports_aggregator: Any = None,
     ) -> tuple[int, dict[str, Any]]:
         """Proxy a GET request to ``handle_admin_get``.
 
@@ -61,6 +62,8 @@ class AdminApiClient:
             kwargs["config_store"] = config_store
         if process_supervisor is not None:
             kwargs["process_supervisor"] = process_supervisor
+        if reports_aggregator is not None:
+            kwargs["reports_aggregator"] = reports_aggregator
         return handle_admin_get(**kwargs)
 
     def proxy_put(

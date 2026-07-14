@@ -100,6 +100,7 @@ class AdminConsoleApiServer(BaseHTTPRequestHandler):
                     self.server.rbac_secret,
                     config_store=self.server.config_store,
                     process_supervisor=self.server.process_supervisor,
+                    reports_aggregator=getattr(self.server, "reports_aggregator", None),
                 )
             else:  # PUT
                 try:
@@ -161,6 +162,7 @@ def create_server(
     import os
 
     from conversation_read_view.read_model import build_read_model, load_records_from_jsonl
+    from conversation_read_view.reports_aggregator import ReportsAggregator
     from feedback_service.queue import build_pending_feedback_queue, load_jsonl_records
 
     source = env if env is not None else os.environ
@@ -179,6 +181,7 @@ def create_server(
 
     contract_log_path = source.get("INKSTATUTE_CONTRACT_LOG_PATH") or None
     read_model = _build_read_model(contract_log_path)
+    reports_aggregator = ReportsAggregator(contract_log_path, env=source)
 
     feedback_path = source.get("INKSTATUTE_FEEDBACK_QUEUE_PATH") or None
     feedback_queue = _build_feedback_queue(feedback_path)
@@ -194,6 +197,7 @@ def create_server(
     httpd.feedback_queue = feedback_queue
     httpd.config_store = config_store
     httpd.process_supervisor = process_supervisor
+    httpd.reports_aggregator = reports_aggregator
     httpd.handle_admin_get = handle_admin_get
     httpd.handle_admin_put = handle_admin_put
 

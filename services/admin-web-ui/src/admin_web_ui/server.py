@@ -88,6 +88,7 @@ _SECTION_MAP = {
     "/feedback": "feedback",
     "/health": "health",
     "/gates": "gates",
+    "/reports": "reports",
     "/processes": "processes",
     "/config/channels": "channels",
     "/config/providers": "providers",
@@ -102,6 +103,7 @@ _PROBE_PATH = "/config/providers/probe"
 _CATALOG_PATH = "/config/catalog"
 _VISION_PATH = "/config/vision"
 _PROCESSES_PATH = "/processes"
+_REPORTS_PATH = "/reports"
 
 # Routes that accept POST (all other routes remain GET-only).
 _POST_ROUTES = frozenset({
@@ -190,6 +192,7 @@ def handle_admin_web_ui_request(
     config_store: Any = None,
     handle_config_probe: Any = None,
     process_supervisor: Any = None,
+    reports_aggregator: Any = None,
 ) -> tuple[int, str, dict[str, str]]:
     """Handle a single admin web UI request (GET, or POST on ``/config/channels``).
 
@@ -427,7 +430,12 @@ def handle_admin_web_ui_request(
         )
 
     # Step 4 — proxy operational GET to admin-console-api
-    api_path = "/sessions" if route_path == "/" else route_path
+    # Preserve the original query string (e.g. ?window=today) so it reaches
+    # handle_admin_get for routes like /reports that accept query params.
+    if route_path == "/":
+        api_path = "/sessions"
+    else:
+        api_path = path
     status, api_data = client.proxy(
         handle_admin_get,
         api_path,
@@ -440,6 +448,7 @@ def handle_admin_web_ui_request(
         auth_header=auth_header,
         config_store=config_store,
         process_supervisor=process_supervisor,
+        reports_aggregator=reports_aggregator,
     )
 
     # Step 5 — render dashboard
@@ -1578,6 +1587,7 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
             config_store=getattr(self.server, "config_store", None),  # type: ignore[attr-defined]
             handle_config_probe=getattr(self.server, "handle_config_probe", None),  # type: ignore[attr-defined]
             process_supervisor=getattr(self.server, "process_supervisor", None),  # type: ignore[attr-defined]
+            reports_aggregator=getattr(self.server, "reports_aggregator", None),  # type: ignore[attr-defined]
         )
         encoded = html_body.encode("utf-8")
         self.send_response(status)
