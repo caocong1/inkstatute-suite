@@ -45,7 +45,7 @@
 - [x] **Phase 81: Reports Dashboard** - ReportsAggregator over existing read models (OBS-01, OBS-02, OBS-03) (completed 2026-07-14)
 - [x] **Phase 82: Log Viewing** - Byte-offset tail-follow log viewer with privacy scrubbing (OBS-04, OBS-05, OBS-06) (completed 2026-07-14)
 - [x] **Phase 83: Contract Event Audit** - Paginated audit trail + trace_id reconstruction (OBS-07, OBS-08) (completed 2026-07-14)
-- [ ] **Phase 84: Health & Gate Dashboard Enhancement** - Unified health/gate/flag dashboard with gate honesty (OBS-09, OBS-10)
+- [x] **Phase 84: Health & Gate Dashboard Enhancement** - Unified health/gate/flag dashboard with gate honesty (OBS-09, OBS-10) (completed 2026-07-14)
 - [ ] **Phase 85: Login Session Auth** - HMAC-signed session cookies coexisting with Bearer auth (AUTH-01, AUTH-02, AUTH-03, AUTH-04)
 - [ ] **Phase 86: Product Polish** - Error pages, nav, responsive layout, one-click startup, env docs (POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05)
 - [ ] **Phase 87: Integration, Smoke & Gate Honesty** - Cross-phase verification, end-to-end smoke, gate-honesty audit (no direct requirement mapping; verifies all)
@@ -190,7 +190,7 @@
 | 81. Reports Dashboard | v1.11 | 1/1 | Complete    | 2026-07-14 |
 | 82. Log Viewing | v1.11 | 3/3 | Complete | 2026-07-14 |
 | 83. Contract Event Audit | v1.11 | 3/3 | Complete | 2026-07-14 |
-| 84. Health & Gate Dashboard Enhancement | v1.11 | 0/? | Not started | — |
+| 84. Health & Gate Dashboard Enhancement | v1.11 | 2/2 | Complete | 2026-07-14 |
 | 85. Login Session Auth | v1.11 | 0/? | Not started | — |
 | 86. Product Polish | v1.11 | 0/? | Not started | — |
 | 87. Integration, Smoke & Gate Honesty | v1.11 | 0/? | Not started | — |
