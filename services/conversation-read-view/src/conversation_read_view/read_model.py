@@ -37,12 +37,14 @@ class ContractLogReadModel:
         issues: list[ReadModelIssue],
         trace_events: dict[str, list["_Record"]] | None = None,
         turn_to_trace: dict[str, str] | None = None,
+        all_records: list["_Record"] | None = None,
     ) -> None:
         self._conversations = dict(conversations)
         self._tasks = dict(tasks)
         self._trace_to_task_id = dict(trace_to_task_id)
         self._trace_events = dict(trace_events) if trace_events else {}
         self._turn_to_trace = dict(turn_to_trace) if turn_to_trace else {}
+        self._all_records = list(all_records) if all_records else []
         self.issues = list(issues)
 
     @classmethod
@@ -150,6 +152,7 @@ class ContractLogReadModel:
             issues=issues,
             trace_events=dict(trace_events),
             turn_to_trace=turn_to_trace,
+            all_records=normalized,
         )
 
     def get_conversation(self, conversation_id: str) -> JsonObject | None:
@@ -285,6 +288,56 @@ class ContractLogReadModel:
                 continue
             results.append((task.task_id, occurred_at, task_dict))
         results.sort(key=lambda entry: (entry[0], entry[1]))
+        return results
+
+    def list_audit_events(
+        self,
+        *,
+        event_type: str | None = None,
+        tenant_filter: Any = None,
+    ) -> list[tuple[str, str, dict[str, Any]]]:
+        """Return AgentTurn and FeedbackEvent records as ``(sort_key, occurred_at, item)`` tuples.
+
+        Sorted reverse-chronologically (occurred_at descending, then seq
+        descending).  ``event_type`` filters to ``"agent_turn"`` or
+        ``"feedback_event"``; ``None`` returns both.  ``tenant_filter`` is
+        applied by checking ``record.event.get("tenant_id")`` when active.
+        Each item dict contains: ``timestamp``, ``event_type``,
+        ``session_id``, ``trace_id``, ``turn_id``, and ``event`` (scrubbed
+        payload).  Records with forbidden keys are excluded (fail-closed).
+        """
+
+        audit_keys = {"agent_turn", "feedback_event"}
+        results: list[tuple[str, str, dict[str, Any]]] = []
+        for record in self._all_records:
+            if record.event_key not in audit_keys:
+                continue
+            if event_type is not None and record.event_key != event_type:
+                continue
+            if tenant_filter is not None:
+                record_tenant = record.event.get("tenant_id")
+                if record_tenant != tenant_filter:
+                    continue
+            turn_id = _string(record.event.get("turn_id")) or ""
+            conversation_id = _string(record.event.get("conversation_id")) or ""
+            trace_id = self._turn_to_trace.get(turn_id, "")
+            try:
+                scrubbed_event = scrub_contract_payload(record.event)
+            except ValueError:
+                # Fail-closed: forbidden key present, exclude the record.
+                continue
+            item = {
+                "timestamp": record.occurred_at,
+                "event_type": record.event_key,
+                "session_id": conversation_id,
+                "trace_id": trace_id,
+                "turn_id": turn_id,
+                "event": scrubbed_event,
+            }
+            sort_key = f"{record.occurred_at}|{record.seq}"
+            results.append((sort_key, record.occurred_at, item))
+        # Reverse-chronological: occurred_at descending, then seq descending.
+        results.sort(key=lambda entry: (entry[1], entry[0]), reverse=True)
         return results
 
 

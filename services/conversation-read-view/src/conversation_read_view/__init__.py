@@ -1,6 +1,7 @@
 """Read-only operator views derived from InkStatute V2 contract logs."""
 
 from .api import handle_get, parse_query_string
+from .audit import AUDIT_EVENT_TYPES, TRACE_FIELD_ALLOWLIST, handle_audit_get
 from .export import (
     CONVERSATION_CSV_COLUMNS,
     TASK_CSV_COLUMNS,
@@ -29,6 +30,7 @@ from .reports_aggregator import ReportsAggregator
 from .tenant_read_model import TenantScopedContractLogReadModel
 
 __all__ = [
+    "AUDIT_EVENT_TYPES",
     "CONVERSATION_CSV_COLUMNS",
     "ContractLogReadModel",
     "ConversationTurnView",
@@ -38,6 +40,7 @@ __all__ = [
     "ReadModelIssue",
     "ReportsAggregator",
     "TASK_CSV_COLUMNS",
+    "TRACE_FIELD_ALLOWLIST",
     "TaskView",
     "TenantScopedContractLogReadModel",
     "build_read_model",
@@ -49,6 +52,7 @@ __all__ = [
     "export_json",
     "find_forbidden_key_path",
     "find_forbidden_raw_payload_path",
+    "handle_audit_get",
     "handle_get",
     "load_records_from_jsonl",
     "parse_query_string",
