@@ -30,11 +30,17 @@ def _count_gates(gates: list[dict[str, Any]], exit_code: int) -> int:
     return sum(1 for g in gates if g.get("exit_code") == exit_code)
 
 
-def run_gate_summary(repo_root: str | Path | None = None) -> dict[str, Any]:
+def run_gate_summary(
+    repo_root: str | Path | None = None,
+    *,
+    timeout_seconds: int = GATE_TIMEOUT_SECONDS,
+) -> dict[str, Any]:
     """Run ``run_v2_gates.py --json-summary`` via subprocess and parse output.
 
     Returns a dict with ``passed`` (bool) and ``gates`` (list).  On timeout or
     JSON parse failure, returns an error dict — never raises.
+    ``timeout_seconds`` overrides the default 300s ceiling (e.g. for the
+    unified health endpoint which uses a shorter 30s timeout).
     """
 
     root = Path(repo_root) if repo_root is not None else _repo_root()
@@ -45,7 +51,7 @@ def run_gate_summary(repo_root: str | Path | None = None) -> dict[str, Any]:
             [sys.executable, str(script), "--json-summary"],
             capture_output=True,
             text=True,
-            timeout=GATE_TIMEOUT_SECONDS,
+            timeout=timeout_seconds,
             cwd=str(root),
             check=False,
         )

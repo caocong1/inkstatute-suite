@@ -27,7 +27,7 @@ from .auth import check_auth_header, extract_auth_header, resolve_admin_token
 from .audit import handle_audit
 from .config_api import handle_config_get, handle_config_put
 from .feedback import ThreadSafeFeedbackQueue
-from .gates import handle_gates
+from .gates import handle_gates, run_gate_summary
 from .health import handle_health
 from .logs import handle_logs
 from .processes_api import handle_process_get, handle_process_put
@@ -168,7 +168,15 @@ def handle_admin_get(
         return handle_feedback(route_query, read_model, feedback_queue, tenant_filter=tenant_filter)
 
     if route_path == "/health":
-        return handle_health(feature_flags, read_model)
+        gate_summary = None
+        if route_query.get("gates") == "true":
+            gate_summary = run_gate_summary(timeout_seconds=30)
+        return handle_health(
+            feature_flags,
+            read_model,
+            gate_summary=gate_summary,
+            process_supervisor=process_supervisor,
+        )
 
     if route_path == "/gates":
         return handle_gates()
