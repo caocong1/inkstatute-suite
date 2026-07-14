@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
 from admin_web_ui.boundary import AdminUiBoundary
-from admin_web_ui.dashboard import _render_gate_honesty_banner, render_dashboard
+from admin_web_ui.dashboard import _render_gate_honesty_banner, render_dashboard, render_error_page
 from rbac import Identity, Role
 
 
@@ -341,6 +342,58 @@ class UnifiedHealthDashboardTests(unittest.TestCase):
         self.assertIn("Gate Pass Rate", html_doc)
         self.assertIn("Feature Flags", html_doc)
         self.assertIn("Carried Human Gates", html_doc)
+
+
+class TestResponsive(unittest.TestCase):
+    """Verify no fixed CSS width exceeds 1280px in dashboard.py style block."""
+
+    def test_no_fixed_width_200px(self) -> None:
+        """The fixed width: 200px rule must be removed (replaced with max-width)."""
+        src = _DASHBOARD_SRC.read_text(encoding="utf-8")
+        # Check that no standalone "width: 200px" exists (not preceded by "max-").
+        matches = re.findall(r"(?<!max-)width:\s*200px", src)
+        self.assertEqual(matches, [], "Fixed width: 200px should be replaced with max-width")
+
+    def test_max_width_200px_present(self) -> None:
+        """The max-width: 200px rule must be present (replacing the fixed width)."""
+        src = _DASHBOARD_SRC.read_text(encoding="utf-8")
+        self.assertIn("max-width: 200px", src)
+
+    def test_no_fixed_width_exceeds_1280(self) -> None:
+        """No CSS rule in the style block has a fixed width exceeding 1280px."""
+        src = _DASHBOARD_SRC.read_text(encoding="utf-8")
+        # Find all "width: NNNpx" occurrences (fixed widths, not max-width).
+        matches = re.findall(r"(?<!max-)width:\s*(\d+)px", src)
+        for value in matches:
+            self.assertLessEqual(
+                int(value),
+                1280,
+                f"Fixed CSS width {value}px exceeds 1280px limit",
+            )
+
+
+class TestErrorPage(unittest.TestCase):
+    """Verify render_error_page produces escaped HTML with nav and back-to-dashboard link."""
+
+    def test_404_error_page_contains_status_and_back_link(self) -> None:
+        html_doc = render_error_page(404, "Not Found", "Unknown route: /test")
+        self.assertIn("Error 404", html_doc)
+        self.assertIn("Back to Dashboard", html_doc)
+
+    def test_error_page_escapes_dynamic_content(self) -> None:
+        html_doc = render_error_page(404, "Not Found", "<script>alert(1)</script>")
+        self.assertNotIn("<script>", html_doc)
+        self.assertIn("&lt;script&gt;", html_doc)
+
+    def test_error_page_contains_nav(self) -> None:
+        html_doc = render_error_page(500, "Internal Server Error", "An error occurred.")
+        self.assertIn("InkStatute Admin Dashboard", html_doc)
+        self.assertIn("/sessions", html_doc)
+
+    def test_error_page_no_traceback(self) -> None:
+        html_doc = render_error_page(500, "Internal Server Error", "An unexpected error occurred.")
+        self.assertNotIn("Traceback", html_doc)
+        self.assertNotIn("traceback", html_doc)
 
 
 if __name__ == "__main__":

@@ -113,8 +113,8 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
     .section h2 {{ margin-top: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.2; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }}
     .data-table {{ width: 100%; border-collapse: collapse; font-size: 0.875rem; }}
     .data-table td {{ padding: 0.4rem 0.6rem; border-bottom: 1px solid #eee; vertical-align: top; }}
-    .data-table td.key {{ font-weight: 600; color: #555; white-space: nowrap; width: 200px; }}
-    .data-table td.val {{ word-break: break-all; }}
+    .data-table td.key {{ font-weight: 600; color: #555; white-space: nowrap; max-width: 200px; min-width: 120px; }}
+    .data-table td.val {{ word-break: break-all; overflow-wrap: break-word; }}
     .card {{ background: #fafafa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }}
     .empty {{ color: #888; font-style: italic; }}
     .identity {{ padding: 0.5rem 2rem; background: #0f3460; color: #aaccff; font-size: 0.875rem; font-weight: 600; }}
@@ -187,6 +187,35 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
   </div>
 </body>
 </html>"""
+
+
+def render_error_page(
+    status_code: int,
+    title: str,
+    message: str,
+    identity: Identity | None = None,
+) -> str:
+    """Render a dedicated error page with nav and back-to-dashboard link.
+
+    All dynamic content (title, message) is passed through ``_esc()`` to
+    prevent XSS. The page uses ``_page_template`` so it inherits the full
+    nav bar, CSP header, and responsive CSS.
+
+    Args:
+        status_code: HTTP status code (e.g. 404, 500, 413).
+        title: Short error title (e.g. "Not Found").
+        message: Human-readable error detail (e.g. "Unknown route: /foo").
+        identity: The resolved caller identity (for display).
+
+    Returns:
+        A complete HTML document string with all dynamic content escaped.
+    """
+    body = (
+        f'    <p class="error">Error {status_code}: {_esc(title)}</p>\n'
+        f'    <p>{_esc(message)}</p>\n'
+        f'    <p><a href="/" class="btn-primary">Back to Dashboard</a></p>'
+    )
+    return _page_template(title, body, identity)
 
 
 def render_dashboard(
