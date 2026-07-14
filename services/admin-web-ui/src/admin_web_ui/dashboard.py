@@ -82,6 +82,8 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),
         ("/config/vision", "Vision Config"),
+        ("/login", "Login"),
+        ("/logout", "Logout"),
     ]
     nav_links = "\n".join(
         f'      <a href="{_esc(href)}" class="nav-link">{_esc(label)}</a>'
@@ -218,6 +220,8 @@ def render_dashboard(
         "reports": "Reports Dashboard",
         "logs": "Log Viewer",
         "audit": "Contract Event Audit",
+        "login": "Login",
+        "logout": "Logout",
     }
     title = title_map.get(section, "Admin Dashboard")
 

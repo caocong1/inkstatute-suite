@@ -184,6 +184,8 @@ def _logs_page_template(title: str, body: str, identity: Identity | None = None)
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),
         ("/config/vision", "Vision Config"),
+        ("/login", "Login"),
+        ("/logout", "Logout"),
     ]
     nav_links = "\n".join(
         f'      <a href="{_esc(href)}" class="nav-link">{_esc(label)}</a>'

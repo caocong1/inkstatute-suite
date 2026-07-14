@@ -81,6 +81,10 @@ def create_server(env: dict[str, str] | None = None) -> ThreadingHTTPServer:
     config_path = source.get("INKSTATUTE_OPERATOR_CONFIG_PATH") or None
     config_store = OperatorConfigStore(config_path)
 
+    from rbac import InMemorySessionStore
+
+    session_store = InMemorySessionStore()
+
     contract_log_path = source.get("INKSTATUTE_CONTRACT_LOG_PATH") or None
     read_model = _build_read_model(contract_log_path)
     reports_aggregator = ReportsAggregator(contract_log_path, env=source)
@@ -97,6 +101,7 @@ def create_server(env: dict[str, str] | None = None) -> ThreadingHTTPServer:
     httpd.feature_flags = feature_flags
     httpd.env = dict(source)
     httpd.rbac_secret = rbac_secret
+    httpd.session_store = session_store
     httpd.read_model = read_model
     httpd.feedback_queue = feedback_queue
     httpd.config_store = config_store

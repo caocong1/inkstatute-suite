@@ -22,14 +22,29 @@ from platform_runtime.feature_flags import (
     RuntimeFeatureFlags,
 )
 from rbac import (
+    DEFAULT_SESSION_TTL_SECONDS,
     Identity,
     RbacGuard,
     Role,
+    SESSION_COOKIE_NAME,
+    InMemorySessionStore,
+    issue_token,
+    parse_cookie_header,
     resolve_identity,
 )
 
 from .api_client import AdminApiClient, HandleAdminGet, HandleAdminPut
 from .audit import render_audit_page, render_trace_page
+from .auth import (
+    ANONYMOUS_IDENTITY,
+    LOGIN_PATH,
+    LOGOUT_PATH,
+    check_credentials,
+    handle_login_post,
+    handle_logout_post,
+    render_login_page,
+    render_logout_page,
+)
 from .boundary import AdminUiBoundary
 from .catalog import (
     ERROR_FLAG_OFF as CATALOG_ERROR_FLAG_OFF,
@@ -110,6 +125,8 @@ _PROCESSES_PATH = "/processes"
 _REPORTS_PATH = "/reports"
 _LOGS_PATH = "/logs"
 _AUDIT_PATH = "/audit"
+_LOGIN_PATH = LOGIN_PATH
+_LOGOUT_PATH = LOGOUT_PATH
 
 # Routes that accept POST (all other routes remain GET-only).
 _POST_ROUTES = frozenset({
@@ -204,6 +221,7 @@ def handle_admin_web_ui_request(
     process_supervisor: Any = None,
     reports_aggregator: Any = None,
     log_reader: Any = None,
+    session_store: Any = None,
 ) -> tuple[int, str, dict[str, str]]:
     """Handle a single admin web UI request (GET, or POST on ``/config/channels``).
 
@@ -232,8 +250,36 @@ def handle_admin_web_ui_request(
         )
         return 503, body_html, response_headers
 
-    # Step 2 — resolve route
+    # Resolve the RBAC secret early so it is available for login/logout and
+    # the standard auth flow.
+    secret = _resolve_rbac_secret(env, rbac_secret)
+
+    # Step 1b — login/logout routes (handled before standard RBAC auth).
     route_path = path.split("?")[0]
+    if route_path == _LOGIN_PATH:
+        return _handle_login(
+            http_method=http_method,
+            body=body,
+            headers=headers,
+            feature_flags=feature_flags,
+            env=env,
+            rbac_secret=secret,
+            session_store=session_store,
+            response_headers=response_headers,
+        )
+    if route_path == _LOGOUT_PATH:
+        return _handle_logout(
+            http_method=http_method,
+            body=body,
+            headers=headers,
+            feature_flags=feature_flags,
+            env=env,
+            rbac_secret=secret,
+            session_store=session_store,
+            response_headers=response_headers,
+        )
+
+    # Step 2 — resolve route
     section = _SECTION_MAP.get(route_path)
     # /logs/<source> subpaths map to the "logs" section.
     if section is None and (route_path == _LOGS_PATH or route_path.startswith("/logs/")):
@@ -267,14 +313,17 @@ def handle_admin_web_ui_request(
 
     # Step 3 — RBAC auth
     auth_header = _extract_auth_header(headers)
-    secret = _resolve_rbac_secret(env, rbac_secret)
 
     if feature_flags.rbac_enabled:
+        cookie_header = _extract_cookie_header(headers)
+        session_cookie = parse_cookie_header(cookie_header, SESSION_COOKIE_NAME)
         identity = resolve_identity(
             auth_header,
             rbac_secret=secret,
             static_token=None,
             rbac_enabled=True,
+            session_cookie=session_cookie,
+            session_store=session_store,
         )
         if identity is None:
             render_section = section if section not in ("channels", "providers", "catalog", "providers_probe", "vision") else "index"
@@ -284,6 +333,15 @@ def handle_admin_web_ui_request(
                 identity=None,
             )
             return 401, body_html, response_headers
+
+        # When the caller authenticated via session cookie (no Bearer header),
+        # mint a short-lived Bearer token so the downstream admin-console-api
+        # auth check succeeds.  The API does its own resolve_identity on the
+        # Bearer header — cookie auth is admin-web-ui-only.
+        if auth_header is None and secret is not None:
+            auth_header = "Bearer " + issue_token(
+                secret, role=identity.role, tenant_id=identity.tenant_id
+            )
 
         # Step 3b — RBAC role guard
         guard = RbacGuard()
@@ -1702,6 +1760,96 @@ def _handle_processes(
     return status, html_body, response_headers
 
 
+def _handle_login(
+    *,
+    http_method: str,
+    body: bytes | str | None,
+    headers: Mapping[str, str] | None,
+    feature_flags: RuntimeFeatureFlags,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    session_store: Any,
+    response_headers: dict[str, str],
+) -> tuple[int, str, dict[str, str]]:
+    """Handle GET/POST /login — render form or validate credentials + set cookie."""
+    if http_method == "GET":
+        csrf_token = issue_csrf_token(ANONYMOUS_IDENTITY, LOGIN_PATH, signing_key=rbac_secret)
+        html = render_login_page(csrf_token=csrf_token)
+        return 200, html, response_headers
+    if http_method == "POST":
+        session_ttl = _resolve_session_ttl(env)
+        secure_cookie = _resolve_secure_cookie(env)
+        status, html, extra_headers = handle_login_post(
+            body,
+            env=env,
+            rbac_secret=rbac_secret,
+            session_store=session_store,
+            session_ttl=session_ttl,
+            secure_cookie=secure_cookie,
+            build_set_cookie=_build_set_cookie_header,
+        )
+        merged = dict(response_headers)
+        merged.update(extra_headers)
+        return status, html, merged
+    # Other methods → 405
+    body_html = render_login_page(csrf_token=issue_csrf_token(ANONYMOUS_IDENTITY, LOGIN_PATH, signing_key=rbac_secret))
+    return 405, body_html, response_headers
+
+
+def _handle_logout(
+    *,
+    http_method: str,
+    body: bytes | str | None,
+    headers: Mapping[str, str] | None,
+    feature_flags: RuntimeFeatureFlags,
+    env: Mapping[str, str] | None,
+    rbac_secret: str | None,
+    session_store: Any,
+    response_headers: dict[str, str],
+) -> tuple[int, str, dict[str, str]]:
+    """Handle GET/POST /logout — GET returns 405, POST validates auth + CSRF."""
+    if http_method == "GET":
+        return 405, "Method Not Allowed", response_headers
+    if http_method == "POST":
+        # Resolve identity first (session cookie or Bearer).
+        auth_header = _extract_auth_header(headers)
+        cookie_header = _extract_cookie_header(headers)
+        session_cookie = parse_cookie_header(cookie_header, SESSION_COOKIE_NAME)
+        identity: Identity | None = None
+        if feature_flags.rbac_enabled:
+            identity = resolve_identity(
+                auth_header,
+                rbac_secret=rbac_secret,
+                static_token=None,
+                rbac_enabled=True,
+                session_cookie=session_cookie,
+                session_store=session_store,
+            )
+        else:
+            identity = Identity(role=Role.ADMIN, tenant_id="default")
+
+        if identity is None:
+            csrf_token = issue_csrf_token(ANONYMOUS_IDENTITY, LOGIN_PATH, signing_key=rbac_secret)
+            html = render_login_page(csrf_token=csrf_token, error_message="Authentication required")
+            return 401, html, response_headers
+
+        secure_cookie = _resolve_secure_cookie(env)
+        status, html, extra_headers = handle_logout_post(
+            body,
+            identity=identity,
+            rbac_secret=rbac_secret,
+            session_store=session_store,
+            session_cookie=session_cookie,
+            secure_cookie=secure_cookie,
+            build_clear_cookie=_build_clear_cookie_header,
+        )
+        merged = dict(response_headers)
+        merged.update(extra_headers)
+        return status, html, merged
+    # Other methods → 405
+    return 405, "Method Not Allowed", response_headers
+
+
 def _extract_auth_header(headers: Mapping[str, str] | None) -> str | None:
     """Extract the Authorization header from request headers (case-insensitive)."""
     if headers is None:
@@ -1710,6 +1858,60 @@ def _extract_auth_header(headers: Mapping[str, str] | None) -> str | None:
         if key.lower() == "authorization":
             return value
     return None
+
+
+def _extract_cookie_header(headers: Mapping[str, str] | None) -> str | None:
+    """Extract the Cookie header from request headers (case-insensitive)."""
+    if headers is None:
+        return None
+    for key, value in headers.items():
+        if key.lower() == "cookie":
+            return value
+    return None
+
+
+def _build_set_cookie_header(value: str, *, ttl: int, secure: bool) -> str:
+    """Build a Set-Cookie header value with security attributes."""
+    parts = [
+        f"{SESSION_COOKIE_NAME}={value}",
+        "Path=/",
+        f"Max-Age={ttl}",
+        "HttpOnly",
+        "SameSite=Strict",
+    ]
+    if secure:
+        parts.append("Secure")
+    return "; ".join(parts)
+
+
+def _build_clear_cookie_header(*, secure: bool) -> str:
+    """Build a Set-Cookie header value that clears the session cookie."""
+    parts = [
+        f"{SESSION_COOKIE_NAME}=",
+        "Path=/",
+        "Max-Age=0",
+        "HttpOnly",
+        "SameSite=Strict",
+    ]
+    if secure:
+        parts.append("Secure")
+    return "; ".join(parts)
+
+
+def _resolve_session_ttl(env: Mapping[str, str] | None) -> int:
+    """Resolve the session TTL from the SESSION_TTL_SECONDS env var."""
+    source: Mapping[str, str] = env if env is not None else os.environ
+    raw = source.get("SESSION_TTL_SECONDS", "")
+    try:
+        return max(60, int(raw))
+    except (ValueError, TypeError):
+        return DEFAULT_SESSION_TTL_SECONDS
+
+
+def _resolve_secure_cookie(env: Mapping[str, str] | None) -> bool:
+    """Resolve whether the Secure cookie attribute should be set."""
+    source: Mapping[str, str] = env if env is not None else os.environ
+    return source.get("ADMIN_WEB_UI_SECURE_COOKIE", "").lower() in ("1", "true", "yes")
 
 
 class AdminWebUiServer(BaseHTTPRequestHandler):
@@ -1772,6 +1974,7 @@ class AdminWebUiServer(BaseHTTPRequestHandler):
             process_supervisor=getattr(self.server, "process_supervisor", None),  # type: ignore[attr-defined]
             reports_aggregator=getattr(self.server, "reports_aggregator", None),  # type: ignore[attr-defined]
             log_reader=getattr(self.server, "log_reader", None),  # type: ignore[attr-defined]
+            session_store=getattr(self.server, "session_store", None),  # type: ignore[attr-defined]
         )
         encoded = html_body.encode("utf-8")
         self.send_response(status)
