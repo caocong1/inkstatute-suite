@@ -25,9 +25,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Observability — Reports
 
-- [ ] **OBS-01**: Operator can view a reports dashboard with aggregate statistics: session count, task completion rate, long-task success rate, and feedback distribution (up/down/none) over a selectable time range
-- [ ] **OBS-02**: Reports aggregate on-demand from existing data sources (ContractLogReadModel, feedback queue, gate summary) without introducing a new database or time-series store
-- [ ] **OBS-03**: Report aggregation uses bounded scanning (tail-read with limits, not full-file in-memory load) to avoid OOM on large event logs
+- [x] **OBS-01**: Operator can view a reports dashboard with aggregate statistics: session count, task completion rate, long-task success rate, and feedback distribution (up/down/none) over a selectable time range
+- [x] **OBS-02**: Reports aggregate on-demand from existing data sources (ContractLogReadModel, feedback queue, gate summary) without introducing a new database or time-series store
+- [x] **OBS-03**: Report aggregation uses bounded scanning (tail-read with limits, not full-file in-memory load) to avoid OOM on large event logs
 
 ### Observability — Log Viewing
 
