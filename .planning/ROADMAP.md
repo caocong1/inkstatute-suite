@@ -163,7 +163,11 @@
   4. A one-click startup script (`start-console.sh` or equivalent) launches admin-web-ui + admin-console-api with sensible defaults, env loading, and PID tracking
   5. `.env.example` documents all new environment variables (ports, flags, credentials, log paths, session TTL) with inline comments explaining each variable
 
-**Plans**: TBD (plan-phase will define)
+**Plans**: 3 plans
+Plans:
+- [ ] 86-01-PLAN.md — Error pages (404/500/413) + responsive CSS fixes
+- [ ] 86-02-PLAN.md — Nav active-state indication + auth-state-aware Login/Logout
+- [ ] 86-03-PLAN.md — One-click startup script + .env.example auth var docs
 **UI hint**: yes
 
 ### Phase 87: Integration, Smoke & Gate Honesty
@@ -192,7 +196,7 @@
 | 83. Contract Event Audit | v1.11 | 3/3 | Complete | 2026-07-14 |
 | 84. Health & Gate Dashboard Enhancement | v1.11 | 2/2 | Complete | 2026-07-14 |
 | 85. Login Session Auth | v1.11 | 2/2 | Complete | 2026-07-14 |
-| 86. Product Polish | v1.11 | 0/? | Not started | — |
+| 86. Product Polish | v1.11 | 0/3 | Not started | — |
 | 87. Integration, Smoke & Gate Honesty | v1.11 | 0/? | Not started | — |
 
 ## Completed Milestones
