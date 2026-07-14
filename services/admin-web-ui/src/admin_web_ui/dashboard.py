@@ -65,10 +65,16 @@ def _render_items(items: list[dict[str, Any]], boundary: AdminUiBoundary) -> str
     return "\n".join(cards)
 
 
-def _page_template(title: str, body: str, identity: Identity | None = None) -> str:
+def _page_template(
+    title: str,
+    body: str,
+    identity: Identity | None = None,
+    active_path: str | None = None,
+    head_extras: str = "",
+) -> str:
     """Render the full HTML page with CSP-compliant inline structure."""
     escaped_title = _esc(title)
-    nav_items = [
+    nav_items: list[tuple[str, str]] = [
         ("/", "Dashboard"),
         ("/sessions", "Sessions"),
         ("/tasks", "Tasks"),
@@ -76,17 +82,21 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
         ("/health", "Health"),
         ("/gates", "Gates"),
         ("/reports", "Reports"),
+        ("/processes", "Processes"),
         ("/logs", "Logs"),
         ("/audit", "Audit Trail"),
         ("/config/channels", "Channel Config"),
         ("/config/providers", "Provider Config"),
         ("/config/catalog", "Model Catalog"),
         ("/config/vision", "Vision Config"),
-        ("/login", "Login"),
-        ("/logout", "Logout"),
     ]
+    if identity is not None:
+        nav_items.append(("/logout", "Logout"))
+    else:
+        nav_items.append(("/login", "Login"))
     nav_links = "\n".join(
-        f'      <a href="{_esc(href)}" class="nav-link">{_esc(label)}</a>'
+        f'      <a href="{_esc(href)}" class="nav-link{" active" if href == active_path else ""}"'
+        f'{" aria-current=\"page\"" if href == active_path else ""}>{_esc(label)}</a>'
         for href, label in nav_items
     )
     identity_html = ""
@@ -100,6 +110,7 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {head_extras}
   <title>{escaped_title} - InkStatute Admin</title>
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 0; padding: 0; background: #f5f5f5; color: #222; }}
@@ -108,6 +119,7 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
     .nav {{ background: #16213e; padding: 0.5rem 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }}
     .nav-link {{ color: #aaccff; text-decoration: none; font-size: 0.875rem; font-weight: 600; }}
     .nav-link:hover {{ color: #fff; }}
+    .nav-link.active {{ color: #fff; border-bottom: 2px solid #aaccff; }}
     .main {{ padding: 2rem; max-width: 1200px; margin: 0 auto; }}
     .section {{ background: #fff; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
     .section h2 {{ margin-top: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.2; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }}
@@ -223,6 +235,7 @@ def render_dashboard(
     data: dict[str, Any],
     identity: Identity | None = None,
     boundary: AdminUiBoundary | None = None,
+    active_path: str | None = None,
 ) -> str:
     """Render a dashboard section as escaped HTML.
 
@@ -232,12 +245,25 @@ def render_dashboard(
         data: The response dict from admin-console-api.
         identity: The resolved caller identity (for display).
         boundary: The output boundary for text filtering.
+        active_path: Override the nav active-state path. When None, derived
+                     from ``_SECTION_TO_PATH`` using the section name.
 
     Returns:
         A complete HTML document string with all dynamic content escaped.
     """
     if boundary is None:
         boundary = AdminUiBoundary()
+
+    _SECTION_TO_PATH = {
+        "index": "/",
+        "sessions": "/sessions",
+        "tasks": "/tasks",
+        "feedback": "/feedback",
+        "health": "/health",
+        "gates": "/gates",
+        "reports": "/reports",
+    }
+    resolved_active_path = active_path if active_path is not None else _SECTION_TO_PATH.get(section)
 
     title_map = {
         "index": "Dashboard Overview",
@@ -259,7 +285,7 @@ def render_dashboard(
         error_code = _esc(error.get("code", "unknown")) if isinstance(error, dict) else "unknown"
         error_msg = _esc(error.get("message", "An error occurred.")) if isinstance(error, dict) else _esc(str(error))
         body = f'    <p class="error">Error [{error_code}]: {error_msg}</p>'
-        return _page_template(title, body, identity)
+        return _page_template(title, body, identity, active_path=resolved_active_path)
 
     if section == "index":
         body = _render_index(data, boundary)
@@ -277,7 +303,7 @@ def render_dashboard(
         pairs = _esc_dict(data, boundary)
         body = _render_kv_table(pairs)
 
-    return _page_template(title, body, identity)
+    return _page_template(title, body, identity, active_path=resolved_active_path)
 
 
 def _render_gate_honesty_banner() -> str:

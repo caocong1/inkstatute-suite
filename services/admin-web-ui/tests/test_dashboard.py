@@ -7,7 +7,12 @@ import unittest
 from pathlib import Path
 
 from admin_web_ui.boundary import AdminUiBoundary
-from admin_web_ui.dashboard import _render_gate_honesty_banner, render_dashboard, render_error_page
+from admin_web_ui.dashboard import (
+    _page_template,
+    _render_gate_honesty_banner,
+    render_dashboard,
+    render_error_page,
+)
 from rbac import Identity, Role
 
 
@@ -394,6 +399,75 @@ class TestErrorPage(unittest.TestCase):
         html_doc = render_error_page(500, "Internal Server Error", "An unexpected error occurred.")
         self.assertNotIn("Traceback", html_doc)
         self.assertNotIn("traceback", html_doc)
+
+
+class TestNavActiveState(unittest.TestCase):
+    """Verify nav active-state indication, auth-aware Login/Logout, and head_extras injection."""
+
+    def test_active_link_has_aria_current(self) -> None:
+        html_doc = _page_template("Test", "<p>body</p>", active_path="/")
+        self.assertIn('class="nav-link active"', html_doc)
+        self.assertIn('aria-current="page"', html_doc)
+        # The active link should be on href="/"
+        idx = html_doc.find('href="/"')
+        self.assertGreater(idx, -1)
+        active_fragment = html_doc[idx:idx + 120]
+        self.assertIn("active", active_fragment)
+        self.assertIn('aria-current="page"', active_fragment)
+        # Other links should NOT have the active class
+        sessions_idx = html_doc.find('href="/sessions"')
+        sessions_fragment = html_doc[sessions_idx:sessions_idx + 120]
+        self.assertNotIn("active", sessions_fragment)
+
+    def test_nav_consistent_across_pages(self) -> None:
+        html_root = _page_template("Test", "<p>body</p>", active_path="/")
+        html_sessions = _page_template("Test", "<p>body</p>", active_path="/sessions")
+        expected_labels = [
+            "Dashboard",
+            "Sessions",
+            "Tasks",
+            "Feedback Review",
+            "Health",
+            "Gates",
+            "Reports",
+            "Processes",
+            "Logs",
+            "Audit Trail",
+            "Channel Config",
+            "Provider Config",
+            "Model Catalog",
+            "Vision Config",
+        ]
+        for label in expected_labels:
+            self.assertIn(label, html_root)
+            self.assertIn(label, html_sessions)
+        # Count nav links — should be the same (14 nav items + 1 Login/Logout = 15)
+        root_count = html_root.count('class="nav-link')
+        sessions_count = html_sessions.count('class="nav-link')
+        self.assertEqual(root_count, sessions_count)
+
+    def test_login_logout_auth_aware(self) -> None:
+        # Anonymous — Login shown, Logout absent
+        html_anon = _page_template("Test", "<p>body</p>", identity=None)
+        self.assertIn("Login", html_anon)
+        self.assertNotIn("Logout", html_anon)
+        # Authenticated — Logout shown, Login absent
+        identity = Identity(role=Role.ADMIN, tenant_id="tenant-1")
+        html_auth = _page_template("Test", "<p>body</p>", identity=identity)
+        self.assertIn("Logout", html_auth)
+        self.assertNotIn("Login", html_auth)
+
+    def test_head_extras_injected(self) -> None:
+        meta_tag = '<meta http-equiv="refresh" content="5">'
+        html_with = _page_template("Test", "<p>body</p>", head_extras=meta_tag)
+        self.assertIn(meta_tag, html_with)
+        # Verify it's inside the <head> block
+        head_end = html_with.find("</head>")
+        meta_idx = html_with.find(meta_tag)
+        self.assertLess(meta_idx, head_end)
+        # Default head_extras="" should NOT inject the meta tag
+        html_without = _page_template("Test", "<p>body</p>")
+        self.assertNotIn('http-equiv="refresh"', html_without)
 
 
 if __name__ == "__main__":
