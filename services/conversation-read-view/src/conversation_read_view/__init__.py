@@ -8,6 +8,7 @@ from .export import (
     export_csv,
     export_json,
 )
+from .log_reader import LogReader
 from .models import (
     ConversationTurnView,
     ConversationView,
@@ -33,6 +34,7 @@ __all__ = [
     "ConversationTurnView",
     "ConversationView",
     "EventReference",
+    "LogReader",
     "ReadModelIssue",
     "ReportsAggregator",
     "TASK_CSV_COLUMNS",
