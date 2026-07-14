@@ -114,10 +114,11 @@ class DashboardRenderingTests(unittest.TestCase):
         self.assertIn("Feedback Review Queue", html_doc)
 
     def test_render_health(self) -> None:
-        data = {"ok": True, "components": [{"component_id": "api", "ok": True}]}
+        data = {"services": [{"name": "admin-console-api", "status": "ok", "ok": True, "host": None, "port": None}]}
         html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
         self.assertIn("Health Monitoring", html_doc)
-        self.assertIn("component_id", html_doc)
+        self.assertIn("Service Health", html_doc)
+        self.assertIn("admin-console-api", html_doc)
 
     def test_render_gates(self) -> None:
         data = {
@@ -172,6 +173,174 @@ class DashboardRenderingTests(unittest.TestCase):
         self.assertNotIn("onerror", html_doc)
         self.assertNotIn("onload", html_doc)
         self.assertNotIn("javascript:", html_doc)
+
+
+class UnifiedHealthDashboardTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.boundary = AdminUiBoundary()
+        self.identity = Identity(role=Role.ADMIN, tenant_id="tenant-1")
+
+    def test_render_health_unified_service_table(self) -> None:
+        data = {
+            "services": [
+                {"name": "admin-console-api", "status": "ok", "ok": True, "host": None, "port": None},
+                {"name": "wecom", "status": "running", "ok": True, "host": "127.0.0.1", "port": 8082},
+            ]
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("Service Health", html_doc)
+        self.assertIn('<table class="health-services-table">', html_doc)
+        self.assertIn("admin-console-api", html_doc)
+        self.assertIn("wecom", html_doc)
+        self.assertIn("running", html_doc)
+        self.assertIn("yes", html_doc)
+
+    def test_render_health_service_ok_false(self) -> None:
+        data = {
+            "services": [
+                {"name": "qqbot", "status": "stopped", "ok": False, "host": None, "port": None},
+            ]
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("status-err", html_doc)
+        self.assertIn("no", html_doc)
+
+    def test_render_health_gate_pass_rate(self) -> None:
+        data = {
+            "gate_pass_rate": 0.75,
+            "gate_count": 4,
+            "gates_passed": 3,
+            "gates_failed": 1,
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("75%", html_doc)
+        self.assertIn("3 passed", html_doc)
+        self.assertIn("4 total", html_doc)
+        self.assertIn("1 failed", html_doc)
+
+    def test_render_health_gate_pass_rate_100(self) -> None:
+        data = {"gate_pass_rate": 1.0, "gate_count": 2, "gates_passed": 2, "gates_failed": 0}
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("100%", html_doc)
+        self.assertIn("gate-pass-rate-ok", html_doc)
+
+    def test_render_health_gate_pass_rate_null(self) -> None:
+        data = {"gate_pass_rate": None}
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("Not run", html_doc)
+        self.assertIn("run-gates-link", html_doc)
+        self.assertIn('href="/health?gates=true"', html_doc)
+
+    def test_render_health_feature_flags_table(self) -> None:
+        data = {
+            "feature_flags": [
+                {"name": "admin_api_enabled", "enabled": True},
+                {"name": "wecom_channel_enabled", "enabled": False},
+            ]
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("Feature Flags", html_doc)
+        self.assertIn('<table class="flags-table">', html_doc)
+        self.assertIn("admin_api_enabled", html_doc)
+        self.assertIn("wecom_channel_enabled", html_doc)
+        self.assertIn("flag-on", html_doc)
+        self.assertIn("flag-off", html_doc)
+
+    def test_render_health_carried_human_gates(self) -> None:
+        data = {
+            "carried_human_gates": [
+                {"name": "Phase 5 WeCom UAT", "status": "carried", "auto_closed": False},
+            ]
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("Carried Human Gates", html_doc)
+        self.assertIn("Phase 5 WeCom UAT", html_doc)
+        self.assertIn("HUMAN GATE — carried, not auto-closed", html_doc)
+        self.assertIn("human-gate-carried", html_doc)
+
+    def test_render_health_carried_human_gate_non_green(self) -> None:
+        data = {
+            "carried_human_gates": [
+                {"name": "Phase 5 WeCom UAT", "status": "carried", "auto_closed": False},
+            ]
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("human-gate-carried", html_doc)
+        # The human-gate row should NOT contain status-ok (green)
+        # Find the human-gate-carried div and check it doesn't have status-ok
+        self.assertIn("human-gate-carried", html_doc)
+        # Verify the human-gate section does not use status-ok class
+        idx = html_doc.find("human-gate-carried")
+        # Check a window around the human-gate section
+        section = html_doc[idx:idx + 500]
+        self.assertNotIn("status-ok", section)
+
+    def test_render_health_gate_honesty_banner_present(self) -> None:
+        data = {"services": []}
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("This console does not close live acceptance gates", html_doc)
+        self.assertIn("not_live_acceptance", html_doc)
+
+    def test_render_health_no_mark_human_gate_control(self) -> None:
+        src = _DASHBOARD_SRC.read_text(encoding="utf-8")
+        self.assertNotIn("mark_human_gate", src)
+        self.assertNotIn("pass_human_gate", src)
+        self.assertNotIn("close_human_gate", src)
+
+    def test_render_health_html_escaped(self) -> None:
+        data = {
+            "services": [
+                {"name": "<script>alert(1)</script>", "status": "ok", "ok": True, "host": None, "port": None},
+            ]
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("&lt;script&gt;", html_doc)
+        self.assertNotIn("<script>alert(1)</script>", html_doc)
+
+    def test_render_health_empty_services(self) -> None:
+        data = {"services": []}
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("No service health data available.", html_doc)
+
+    def test_render_health_empty_feature_flags(self) -> None:
+        data = {"feature_flags": []}
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("No feature flag data available.", html_doc)
+
+    def test_render_health_no_innerhtml_or_dangerous_attributes(self) -> None:
+        data = {
+            "services": [{"name": "svc", "status": "ok", "ok": True, "host": None, "port": None}],
+            "feature_flags": [{"name": "flag", "enabled": True}],
+            "carried_human_gates": [{"name": "gate", "status": "carried", "auto_closed": False}],
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertNotIn("innerHTML", html_doc)
+        self.assertNotIn("onclick", html_doc)
+        self.assertNotIn("onerror", html_doc)
+        self.assertNotIn("onload", html_doc)
+        self.assertNotIn("javascript:", html_doc)
+
+    def test_render_health_run_gates_link(self) -> None:
+        data = {"gate_pass_rate": None}
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn('href="/health?gates=true"', html_doc)
+        self.assertIn("Run Gates", html_doc)
+
+    def test_render_health_full_unified(self) -> None:
+        data = {
+            "services": [{"name": "admin-console-api", "status": "ok", "ok": True, "host": None, "port": None}],
+            "gate_pass_rate": 0.5,
+            "gate_count": 2,
+            "gates_passed": 1,
+            "gates_failed": 1,
+            "feature_flags": [{"name": "admin_api_enabled", "enabled": True}],
+            "carried_human_gates": [{"name": "Phase 5 WeCom UAT", "status": "carried", "auto_closed": False}],
+        }
+        html_doc = render_dashboard("health", data, identity=self.identity, boundary=self.boundary)
+        self.assertIn("Service Health", html_doc)
+        self.assertIn("Gate Pass Rate", html_doc)
+        self.assertIn("Feature Flags", html_doc)
+        self.assertIn("Carried Human Gates", html_doc)
 
 
 if __name__ == "__main__":

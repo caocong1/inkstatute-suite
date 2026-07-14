@@ -152,6 +152,21 @@ def _page_template(title: str, body: str, identity: Identity | None = None) -> s
     .probe-result {{ margin-bottom: 1.5rem; }}
     select {{ min-height: 44px; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 1rem; }}
     select:focus-visible {{ outline: 2px solid #aaccff; outline-offset: 2px; }}
+    .human-gate-carried {{ background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; color: #856404; font-weight: 600; }}
+    .human-gate-label {{ font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #856404; }}
+    .health-services-table {{ width: 100%; border-collapse: collapse; font-size: 0.875rem; margin-bottom: 1rem; }}
+    .health-services-table th {{ text-align: left; padding: 0.4rem 0.6rem; border-bottom: 2px solid #eee; font-weight: 600; font-size: 0.8125rem; color: #555; }}
+    .health-services-table td {{ padding: 0.4rem 0.6rem; border-bottom: 1px solid #eee; }}
+    .flags-table {{ width: 100%; border-collapse: collapse; font-size: 0.875rem; }}
+    .flags-table th {{ text-align: left; padding: 0.4rem 0.6rem; border-bottom: 2px solid #eee; font-weight: 600; font-size: 0.8125rem; color: #555; }}
+    .flags-table td {{ padding: 0.4rem 0.6rem; border-bottom: 1px solid #eee; }}
+    .flag-on {{ color: #27ae60; font-weight: 600; }}
+    .flag-off {{ color: #888; }}
+    .gate-pass-rate {{ font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0; }}
+    .gate-pass-rate-ok {{ color: #27ae60; }}
+    .gate-pass-rate-fail {{ color: #c0392b; }}
+    .gate-pass-rate-na {{ color: #888; font-size: 1rem; font-weight: 400; }}
+    .run-gates-link {{ display: inline-block; margin: 0.5rem 0; padding: 6px 12px; background: #1a1a2e; color: #fff; border-radius: 6px; text-decoration: none; font-size: 0.875rem; font-weight: 600; }}
   </style>
 </head>
 <body>
@@ -252,6 +267,17 @@ def _render_carried_human_gates_card() -> str:
     )
 
 
+def _render_carried_human_gates_row(gate: dict[str, Any]) -> str:
+    """Render a single carried human gate with a distinct non-green visual state."""
+    name = _esc(gate.get("name", ""))
+    return (
+        f'    <div class="human-gate-carried" role="status" aria-label="Carried human gate">\n'
+        f'      <span class="human-gate-label">HUMAN GATE — carried, not auto-closed</span><br>\n'
+        f'      <span>{name}</span>\n'
+        f'    </div>'
+    )
+
+
 def _render_index(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
     """Render the dashboard index with navigation and config cards."""
     sections = [
@@ -324,29 +350,88 @@ def _render_feedback_section(data: dict[str, Any], boundary: AdminUiBoundary) ->
 
 
 def _render_health_section(data: dict[str, Any], boundary: AdminUiBoundary) -> str:
-    """Render the health monitoring section."""
+    """Render the unified health monitoring section.
+
+    Sub-sections:
+    1. Gate honesty banner (always rendered first)
+    2. Service Health table (admin API, WeCom host, QQBot host)
+    3. Gate Pass Rate (percentage or 'Not run' with Run Gates link)
+    4. Feature Flags table
+    5. Carried Human Gates (distinct non-green visual state)
+    """
     parts: list[str] = []
-    # Render top-level scalar fields as a table
-    scalar_pairs: list[tuple[str, str]] = []
-    nested_sections: list[str] = []
-    for key, value in data.items():
-        if isinstance(value, list):
-            nested_sections.append(f'    <h3>{_esc(key)}</h3>')
-            nested_sections.append(_render_items(value, boundary))
-        elif isinstance(value, Mapping):
-            nested_pairs = _esc_dict(value, boundary)
-            nested_sections.append(f'    <h3>{_esc(key)}</h3>')
-            nested_sections.append(_render_kv_table(nested_pairs))
-        else:
-            if isinstance(value, str):
-                decision = boundary.apply(value)
-                display = decision.visible_text or ""
-            else:
-                display = _esc(value)
-            scalar_pairs.append((_esc(key), display))
-    if scalar_pairs:
-        parts.append(_render_kv_table(scalar_pairs))
-    parts.extend(nested_sections)
+    parts.append(_render_gate_honesty_banner())
+
+    # Service Health table
+    services = data.get("services", [])
+    if isinstance(services, list) and services:
+        parts.append('    <h3>Service Health</h3>')
+        parts.append('    <table class="health-services-table">')
+        parts.append('      <thead><tr><th>Service</th><th>Status</th><th>OK</th><th>Host</th><th>Port</th></tr></thead>')
+        parts.append('      <tbody>')
+        for svc in services:
+            if isinstance(svc, dict):
+                name = _esc(svc.get("name", ""))
+                status = _esc(svc.get("status", ""))
+                ok = svc.get("ok", False)
+                ok_class = "status-ok" if ok else "status-err"
+                ok_text = "yes" if ok else "no"
+                host = _esc(svc.get("host") or "—")
+                port = _esc(svc.get("port") or "—")
+                parts.append(f'        <tr><td>{name}</td><td>{status}</td><td class="{ok_class}">{ok_text}</td><td>{host}</td><td>{port}</td></tr>')
+        parts.append('      </tbody>')
+        parts.append('    </table>')
+    else:
+        parts.append('    <h3>Service Health</h3>')
+        parts.append('    <p class="empty">No service health data available.</p>')
+
+    # Gate Pass Rate
+    parts.append('    <h3>Gate Pass Rate</h3>')
+    gate_pass_rate = data.get("gate_pass_rate")
+    if gate_pass_rate is not None:
+        pct = f"{gate_pass_rate * 100:.0f}%"
+        rate_class = "gate-pass-rate-ok" if gate_pass_rate >= 1.0 else "gate-pass-rate-fail"
+        parts.append(f'    <div class="gate-pass-rate {rate_class}">{_esc(pct)}</div>')
+        gate_count = data.get("gate_count")
+        gates_passed = data.get("gates_passed")
+        gates_failed = data.get("gates_failed")
+        if gate_count is not None:
+            parts.append(f'    <p>{_esc(gates_passed)} passed / {_esc(gate_count)} total ({_esc(gates_failed)} failed)</p>')
+    else:
+        parts.append('    <div class="gate-pass-rate gate-pass-rate-na">Not run</div>')
+        parts.append('    <a href="/health?gates=true" class="run-gates-link">Run Gates</a>')
+
+    # Feature Flags
+    feature_flags = data.get("feature_flags", [])
+    if isinstance(feature_flags, list) and feature_flags:
+        parts.append('    <h3>Feature Flags</h3>')
+        parts.append('    <table class="flags-table">')
+        parts.append('      <thead><tr><th>Flag</th><th>Enabled</th></tr></thead>')
+        parts.append('      <tbody>')
+        for flag in feature_flags:
+            if isinstance(flag, dict):
+                fname = _esc(flag.get("name", ""))
+                enabled = flag.get("enabled", False)
+                flag_class = "flag-on" if enabled else "flag-off"
+                flag_text = "on" if enabled else "off"
+                parts.append(f'        <tr><td>{fname}</td><td class="{flag_class}">{flag_text}</td></tr>')
+        parts.append('      </tbody>')
+        parts.append('    </table>')
+    else:
+        parts.append('    <h3>Feature Flags</h3>')
+        parts.append('    <p class="empty">No feature flag data available.</p>')
+
+    # Carried Human Gates
+    carried = data.get("carried_human_gates", [])
+    if isinstance(carried, list) and carried:
+        parts.append('    <h3>Carried Human Gates</h3>')
+        for gate in carried:
+            if isinstance(gate, dict):
+                parts.append(_render_carried_human_gates_row(gate))
+    else:
+        parts.append('    <h3>Carried Human Gates</h3>')
+        parts.append('    <p class="empty">No carried human gates data available.</p>')
+
     return "\n".join(parts)
 
 
@@ -458,4 +543,4 @@ def _render_reports_section(data: dict[str, Any], boundary: AdminUiBoundary) -> 
     return "\n".join([form_html] + cards + [note])
 
 
-__all__ = ["render_dashboard", "_render_gate_honesty_banner"]
+__all__ = ["render_dashboard", "_render_gate_honesty_banner", "_render_carried_human_gates_row"]
