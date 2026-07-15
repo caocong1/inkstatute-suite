@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.11
 milestone_name: milestone
-status: executing
+status: verifying
 stopped_at: Phase 79 planning complete
-last_updated: "2026-07-15T01:20:00.000Z"
-last_activity: 2026-07-15 -- Phase 86 Plan 02 executed (nav active-state + auth-aware Login/Logout + logs.py refactor)
+last_updated: "2026-07-15T04:00:45.536Z"
+last_activity: 2026-07-15
 progress:
   total_phases: 9
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 4
-  percent: 40
+  completed_phases: 5
+  total_plans: 11
+  completed_plans: 7
+  percent: 56
 ---
 
 # Project State
@@ -21,14 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-10)
 
 **Core value:** Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
-**Current focus:** Phase 86 — product-polish
+**Current focus:** Phase 87 — integration-smoke-gate-honesty
 
 ## Current Position
 
-Phase: 86 (product-polish) — EXECUTING
-Plan: 02 complete (86-02 SUMMARY committed); Plans 01-03 all complete
-Status: Phase 86 Plan 02 executed — nav active-state + auth-aware Login/Logout + logs.py refactor
-Last activity: 2026-07-15 -- Phase 86 Plan 02 executed (active_path, head_extras, auth-aware nav, _logs_page_template refactor)
+Phase: 87
+Status: Phase 86 complete; advancing to Phase 87 (cross-phase verification, no direct requirement mapping)
+Last activity: 2026-07-15
+
+Phase: 86 (product-polish) — COMPLETED
+Plan: Not started
+Status: Executed, verified, code-reviewed
+Last activity: 2026-07-15 -- Phase 86 complete (error pages, responsive CSS, nav active-state, auth-aware nav, startup script, env docs)
 
 Phase: 80 (wecom-http-host-process-orchestration) — COMPLETED
 Plan: 1 of 1
@@ -55,7 +59,7 @@ Note: Autonomous v1.10 work must never mark these complete or substitute fixture
 
 **Velocity:**
 
-- Total plans completed: 116
+- Total plans completed: 117
 - Average duration: N/A
 - Total execution time: ~0.03 hours
 
