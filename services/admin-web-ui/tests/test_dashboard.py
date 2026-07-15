@@ -7,12 +7,15 @@ import unittest
 from pathlib import Path
 
 from admin_web_ui.boundary import AdminUiBoundary
+from admin_web_ui.catalog import render_catalog_page
+from admin_web_ui.channels import render_channels_page
 from admin_web_ui.dashboard import (
     _page_template,
     _render_gate_honesty_banner,
     render_dashboard,
     render_error_page,
 )
+from admin_web_ui.providers import render_providers_page
 from rbac import Identity, Role
 
 
@@ -468,6 +471,74 @@ class TestNavActiveState(unittest.TestCase):
         # Default head_extras="" should NOT inject the meta tag
         html_without = _page_template("Test", "<p>body</p>")
         self.assertNotIn('http-equiv="refresh"', html_without)
+
+    def test_config_renderers_mark_active_nav_on_success_path(self) -> None:
+        """Regression for WR-01: render_*_page must thread active_path on the
+        success path, not only on the error path. Otherwise POLISH-02 nav
+        active-state highlighting is silently lost on normal page views.
+        """
+        identity = Identity(role=Role.ADMIN, tenant_id="t1")
+        channels_data = {
+            "data": {
+                "qqbot": {
+                    "channel_id": "qqbot",
+                    "enabled": False,
+                    "app_id_ref": None,
+                    "app_secret_ref": None,
+                    "token_secret_ref": None,
+                    "bot_secret_ref": None,
+                    "metadata": {},
+                },
+                "wecom": {
+                    "channel_id": "wecom",
+                    "enabled": False,
+                    "token_secret_ref": None,
+                    "encoding_aes_key_secret_ref": None,
+                    "corp_id_ref": None,
+                    "metadata": {},
+                },
+            },
+            "effective": {
+                "qqbot": {
+                    "platform_flag": False,
+                    "host_enabled": False,
+                    "effective_enabled": False,
+                    "refs_configured": {},
+                },
+                "wecom": {
+                    "platform_flag": False,
+                    "host_enabled": False,
+                    "effective_enabled": False,
+                    "refs_configured": {},
+                },
+            },
+            "metadata": {"operator_config_enabled": True},
+        }
+        providers_data = {"data": {}, "metadata": {"operator_config_enabled": True}}
+        catalog_data = {"data": {}, "metadata": {"operator_config_enabled": True}}
+
+        html_channels = render_channels_page(channels_data, identity=identity)
+        html_providers = render_providers_page(providers_data, identity=identity)
+        html_catalog = render_catalog_page(catalog_data, identity=identity)
+
+        for html, active_href in (
+            (html_channels, "/config/channels"),
+            (html_providers, "/config/providers"),
+            (html_catalog, "/config/catalog"),
+        ):
+            idx = html.find(f'href="{active_href}"')
+            self.assertGreater(idx, -1, f"missing nav link {active_href}")
+            fragment = html[idx : idx + 160]
+            self.assertIn(
+                "active",
+                fragment,
+                f"nav link {active_href} not marked active on success path",
+            )
+            self.assertIn(
+                'aria-current="page"',
+                fragment,
+                f"nav link {active_href} missing aria-current on success path",
+            )
 
 
 if __name__ == "__main__":

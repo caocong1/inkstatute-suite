@@ -358,7 +358,7 @@ def render_channels_page(
         flash_kind=flash_kind,
         error_message=error_message,
     )
-    return _page_template(PAGE_TITLE, body, identity)
+    return _page_template(PAGE_TITLE, body, identity, active_path="/config/channels")
 
 
 def _form_get(form: Mapping[str, list[str] | str], key: str) -> str | None:

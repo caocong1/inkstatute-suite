@@ -277,7 +277,7 @@ def render_catalog_page(
         flash_kind=flash_kind,
         error_message=error_message,
     )
-    return _page_template(PAGE_TITLE, body, identity)
+    return _page_template(PAGE_TITLE, body, identity, active_path="/config/catalog")
 
 
 def _form_get(form: Mapping[str, Any], key: str) -> str | None:
