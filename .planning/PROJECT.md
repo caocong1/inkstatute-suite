@@ -10,26 +10,14 @@ V2 is for proving that the running lawyer assistant can be received and sent thr
 
 Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
 
-## Current Milestone: v1.11 Product Console
+## Current Milestone: v1.11 Product Console — SHIPPED
 
-**Goal:** Make the admin console a runnable, product-grade operations control plane — after configuring WeCom/QQBot/provider/model, operators can orchestrate channel host processes and use the channels, with full observability through reports, logs, contract event audit, and health/gate dashboards.
+**Shipped:** 2026-07-15
+**Status:** COMPLETE — 9 phases shipped (79–87), 27/27 requirements satisfied, 9/9 phases verified, 8/8 integration checks passed. Audit: tech_debt (no blockers; documentation hygiene + carried human gates). Product-grade operations control plane: runnable entry points, process orchestration, reports/logs/audit/health dashboards, session auth, product polish, and end-to-end smoke verification with gate-honesty stamping.
 
-**Target features:**
-- Runnable service entry points for admin-web-ui and admin-console-api (stdlib http.server, port binding, signal handling, startup scripts)
-- Process orchestration: console as control plane can start/stop/inspect WeCom/QQBot host processes; config save → orchestrate restart to apply
-- Observability — reports: session/task volume, completion rate, long-task success rate, feedback distribution aggregate stats
-- Observability — real-time logs: online viewing of WeCom/QQBot/adapter runtime logs with level filter and search
-- Observability — contract event audit: AgentTurn/FeedbackEvent stream view with trace_id tracking
-- Observability — health/gate dashboard: service health, gate pass rate, feature flag status, human gate status visualization (enhance existing /gates)
-- Auth — token management: RBAC token issue/revoke/expire management page
-- Auth — login session interface: reserved username/password login + session cookie interface, MVP token-only but extensible
-- Product polish: error pages, navigation, responsive layout, one-click startup script, .env.example completion
+**Archive:** [v1.11-ROADMAP.md](milestones/v1.11-ROADMAP.md) | [v1.11-REQUIREMENTS.md](milestones/v1.11-REQUIREMENTS.md) | [v1.11-MILESTONE-AUDIT.md](milestones/v1.11-MILESTONE-AUDIT.md)
 
-**Deployment target:** Local/single-machine ops, prioritize usability. No TLS/reverse-proxy/production-stack requirement for this milestone.
-
-**Architecture constraint:** Keep stdlib http.server SSR, no React SPA / new DB / new queue (per AGENTS.md).
-
-**Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
+**Carried human gates (not closed):** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
 
 ## Previous: v1.10 Operator Config Console — SHIPPED
 
@@ -209,6 +197,18 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ## Shipped Milestones
 
+### v1.11 Product Console (Shipped: 2026-07-15)
+
+Product-grade operations control plane across 9 phases (79–87): runnable `python -m` entry points with ThreadingHTTPServer, WeCom/QQBot process orchestration via admin console, reports/logs/audit/health dashboards reading from existing data sources (no new DB), HMAC-signed session auth coexisting with Bearer tokens, product polish (error pages, responsive nav, one-click startup), and end-to-end smoke test with gate-honesty stamping. Stdlib-only constraint maintained throughout. Audit: tech_debt (27/27 requirements, 9/9 phases, 8/8 integration; no blockers).
+
+**Archive:** [v1.11-ROADMAP.md](milestones/v1.11-ROADMAP.md) | [v1.11-REQUIREMENTS.md](milestones/v1.11-REQUIREMENTS.md) | [v1.11-MILESTONE-AUDIT.md](milestones/v1.11-MILESTONE-AUDIT.md)
+
+### v1.10 Operator Config Console (Shipped: 2026-07-12)
+
+InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes. Refs-only store with Hermes filesystem ban, dual-knob channel enablement, SSRF-safe provider probe, vision routing runtime, CSRF-protected SSR config pages, gate-honesty banners. 7 phases (73–78.1), 20/20 requirements, audit passed.
+
+**Archive:** [v1.10-ROADMAP.md](milestones/v1.10-ROADMAP.md) | [v1.10-REQUIREMENTS.md](milestones/v1.10-REQUIREMENTS.md) | [v1.10-MILESTONE-AUDIT.md](milestones/v1.10-MILESTONE-AUDIT.md)
+
 ### v1.9 QQBot Host Composition (Shipped: 2026-07-10)
 
 Thin `services/qqbot-service/` webhook host composing package Protocol methods, dual-knob runtime registration, Protocol-path smoke dry-run, and controlled live HUMAN GATE honesty/runbook. Audit passed 11/11. Closed v1.8 accepted host-composition gaps.
@@ -251,11 +251,11 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v1.10 Operator Config Console (Phases 73–78.1) — operator config for channels, providers/catalog, vision routing.
-- **Active milestone:** v1.11 Product Console — defining requirements.
+- **Last shipped:** v1.11 Product Console (Phases 79–87) — product-grade operations control plane with process orchestration, observability dashboards, session auth, and end-to-end smoke verification.
+- **Active milestone:** None — planning next milestone via `/gsd-new-milestone`.
 - **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
 - **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
-- **Doc updates:** Root README + `.env.example` describe usage and planned config console (2026-07-10).
+- **Tech debt (v1.11):** Missing SUMMARY.md for phases 82-85; unchecked REQUIREMENTS.md checkboxes for OBS-04..10; incomplete Nyquist validation for 7/9 phases. All non-blocking.
 
 
 ## Evolution
@@ -278,4 +278,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-12 — milestone v1.11 Product Console started*
+*Last updated: 2026-07-15 — milestone v1.11 Product Console shipped*

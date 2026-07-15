@@ -1,5 +1,21 @@
 # Project Milestones: 墨律 InkStatute
 
+## v1.11 Product Console (Shipped: 2026-07-15)
+
+**Phases completed:** 9 phases, 11 plans, 21 tasks
+
+**Key accomplishments:**
+
+- Runnable `python -m` entry points for `admin-web-ui` and `admin-console-api` on `ThreadingHTTPServer`, with a thread-safety audit and guarded shared mutable state.
+- Make `wecom_service` and `qqbot_service` runnable HTTP hosts, and integrate process control into the admin console and web UI.
+- 81-reports-dashboard
+- Dedicated 404/500/413 SSR error pages with nav, HTML-escaped content, and CSP headers; responsive CSS fix removing fixed 200px width
+- Active-state nav indication on all 16 pages, auth-state-aware Login/Logout links, and elimination of the duplicated `_logs_page_template` in logs.py
+- One-click bash startup script for admin-web-ui + admin-console-api with env loading, JSON PID tracking, trap cleanup, and complete .env.example auth var documentation
+- E2e smoke test that boots admin-web-ui via create_server, logs in via session auth, starts a channel host subprocess, views scrubbed logs, browses reports, and audits a contract trace — all stdlib-only with not_live_acceptance=true stamping
+
+---
+
 ## v1.10 v1.10 (Shipped: 2026-07-12)
 
 **Phases completed:** 7 phases, 26 plans, 58 tasks

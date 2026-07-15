@@ -21,22 +21,8 @@
   - Archive: [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
 - Complete **v1.10 Operator Config Console** - Phases 73-78.1 shipped 2026-07-12. InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
   - Audit: [v1.10-MILESTONE-AUDIT.md](v1.10-MILESTONE-AUDIT.md)
-
-## Current Milestone
-
-**v1.11 Product Console** — Phases 79–87 (planning)
-
-**Goal:** Make the admin console a runnable, product-grade operations control plane — after configuring WeCom/QQBot/provider/model, operators can orchestrate channel host processes and use the channels, with full observability through reports, logs, contract event audit, and health/gate dashboards.
-
-**Carried human gates (not closed by this milestone):**
-
-- Phase 5 live WeCom UAT
-- Phase 8 five-workday lawyer trial (artifacts preserved at `.planning/phases/08-lawyer-trial-acceptance/`)
-- Operator `--live` QQ OpenAPI acceptance (HUMAN GATE by design)
-
-**Stack constraints (enforced every phase):** stdlib-only (`dependencies = []`); no new DB/queue/SPA; no Flask/FastAPI/Django; no React/Vue SPA; no WebSocket/SSE libs (HTTP polling for logs); no `psutil`; no `celery`/`dramatiq`/`rq`; no TLS termination in-console; no process auto-restart watchdog. All new feature flags default OFF.
-
-**Parallelism:** After Phase 79, Phases 81, 82, 83, 85 can proceed in parallel waves (all read-only or admin-only, independent routes). Phase 80 waits for 79. Phase 84 waits for 79 + 80. Phase 86 waits for 85. Phase 87 waits for all.
+- Complete **v1.11 Product Console** - Phases 79-87 shipped 2026-07-15. Product-grade operations control plane: runnable entry points, process orchestration, reports/logs/audit/health dashboards, session auth, product polish, and end-to-end smoke verification. Audit: tech_debt (27/27 requirements, 9/9 phases, 8/8 integration; no blockers).
+  - Archive: [v1.11-ROADMAP.md](milestones/v1.11-ROADMAP.md) | [v1.11-REQUIREMENTS.md](milestones/v1.11-REQUIREMENTS.md) | [v1.11-MILESTONE-AUDIT.md](milestones/v1.11-MILESTONE-AUDIT.md)
 
 ## Phases
 
@@ -207,6 +193,27 @@
 ## Completed Milestones
 
 <details>
+<summary>✅ v1.11 Product Console (Phases 79-87) — SHIPPED 2026-07-15</summary>
+
+- [x] Phase 79: Entry Points & Threading Foundation (1/1 plans) — completed 2026-07-13
+- [x] Phase 80: WeCom HTTP Host + Process Orchestration (1/1 plans) — completed 2026-07-13
+- [x] Phase 81: Reports Dashboard (1/1 plans) — completed 2026-07-14
+- [x] Phase 82: Log Viewing (1/1 plans) — completed 2026-07-14
+- [x] Phase 83: Contract Event Audit (1/1 plans) — completed 2026-07-14
+- [x] Phase 84: Health & Gate Dashboard Enhancement (1/1 plans) — completed 2026-07-14
+- [x] Phase 85: Login Session Auth (1/1 plans) — completed 2026-07-14
+- [x] Phase 86: Product Polish (3/3 plans) — completed 2026-07-15
+- [x] Phase 87: Integration, Smoke & Gate Honesty (1/1 plans) — completed 2026-07-15
+
+**Full archive:** [v1.11-ROADMAP.md](milestones/v1.11-ROADMAP.md) | [v1.11-REQUIREMENTS.md](milestones/v1.11-REQUIREMENTS.md) | [v1.11-MILESTONE-AUDIT.md](milestones/v1.11-MILESTONE-AUDIT.md)
+
+**Key accomplishments:** Runnable `python -m` entry points with ThreadingHTTPServer; WeCom/QQBot process orchestration via admin console; reports/logs/audit/health dashboards reading from existing data sources (no new DB); HMAC-signed session auth coexisting with Bearer tokens; product polish (error pages, responsive nav, one-click startup); end-to-end smoke test with gate-honesty stamping. Stdlib-only constraint maintained throughout.
+
+**Carried human gates (not closed):** Phase 5 WeCom UAT, Phase 8 lawyer trial, QQ --live acceptance.
+
+</details>
+
+<details>
 <summary>✅ v1.10 Operator Config Console (Phases 73-78.1) — SHIPPED 2026-07-12</summary>
 
 - [x] Phase 73: Operator Config Foundation (3/3 plans) — completed 2026-07-10
@@ -337,4 +344,4 @@ Live Phase 5 WeCom UAT and Phase 8 five-workday lawyer trial remain carried huma
 
 ---
 
-*Roadmap updated: 2026-07-13 — v1.11 Product Console roadmap created (Phases 79–87)*
+*Roadmap updated: 2026-07-15 — v1.11 Product Console shipped (Phases 79–87)*
