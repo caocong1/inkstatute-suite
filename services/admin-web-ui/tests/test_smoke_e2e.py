@@ -19,10 +19,6 @@ import urllib.request
 from pathlib import Path
 
 from admin_web_ui.__main__ import create_server
-from admin_web_ui.csrf import issue_csrf_token
-from conversation_read_view.log_reader import LogReader
-from conversation_read_view.read_model import build_read_model
-from rbac import Identity, Role
 
 _SELF_PATH = Path(__file__).resolve()
 
@@ -112,6 +108,8 @@ class TestConsoleSmokeEndToEnd(unittest.TestCase):
                     else {}
                 )
                 return exc.code, body, resp_headers
+        except urllib.error.URLError as exc:
+            self.fail(f"URLError for {method} {path}: {exc.reason}")
 
     def _login(self, port: int) -> str:
         status, body, _ = self._request(port, "/login")
