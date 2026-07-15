@@ -197,12 +197,57 @@ class TestConsoleSmokeEndToEnd(unittest.TestCase):
         path.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return str(path)
 
+    def _write_log_lines(self, tmpdir: Path) -> str:
+        path = tmpdir / "events.jsonl"
+        lines = [
+            json.dumps({"level": "INFO", "msg": "smoke test log line"}),
+            json.dumps({"level": "INFO", "msg": "<script>alert(1)</script>"}),
+        ]
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return str(path)
+
+    def _get_csrf_for_processes(self, port: int, cookie: str) -> str:
+        status, body, _ = self._request(
+            port, "/processes", headers={"Cookie": cookie}
+        )
+        self.assertEqual(status, 200)
+        marker = 'name="csrf_token" value="'
+        idx = body.index(marker) + len(marker)
+        end = body.index('"', idx)
+        return body[idx:end]
+
+    def _post_processes(
+        self,
+        port: int,
+        cookie: str,
+        csrf_token: str,
+        name: str,
+        action: str,
+    ) -> tuple[int, str]:
+        form = (
+            f"name={name}&action={action}&csrf_token={csrf_token}"
+        ).encode("utf-8")
+        status, body, _ = self._request(
+            port,
+            "/processes",
+            method="POST",
+            data=form,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Cookie": cookie,
+            },
+        )
+        return status, body
+
     def _build_evidence(
         self,
         surfaces: list[tuple[str, int]],
         audit_trace: dict[str, object],
+        *,
+        process_start: dict[str, object] | None = None,
+        log_viewing: dict[str, object] | None = None,
     ) -> dict[str, object]:
-        return {
+        evidence: dict[str, object] = {
             "schema": "console-smoke-v1",
             "mode": "dry-run",
             "not_live_acceptance": True,
@@ -212,6 +257,11 @@ class TestConsoleSmokeEndToEnd(unittest.TestCase):
             },
             "audit_trace": audit_trace,
         }
+        if process_start is not None:
+            evidence["process_start"] = process_start
+        if log_viewing is not None:
+            evidence["log_viewing"] = log_viewing
+        return evidence
 
     def test_console_smoke_e2e(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -246,13 +296,39 @@ class TestConsoleSmokeEndToEnd(unittest.TestCase):
             self.assertEqual(trace_status, 200)
             self.assertIn("Trace Reconstruction", trace_body)
 
+            proc_csrf = self._get_csrf_for_processes(port, cookie)
+            proc_status, _proc_body = self._post_processes(
+                port, cookie, proc_csrf, "wecom", "start"
+            )
+            self.assertEqual(proc_status, 200)
+
+            self._write_log_lines(tmpdir_path)
+            log_status, log_body, _ = self._request(
+                port,
+                "/logs/contract_events?offset=0",
+                headers={"Cookie": cookie},
+            )
+            self.assertEqual(log_status, 200)
+            self.assertIn("smoke test log line", log_body)
+            self.assertNotIn("<script>alert(1)</script>", log_body)
+
             evidence = self._build_evidence(
                 surfaces,
                 {"status": trace_status, "passed": trace_status == 200},
+                process_start={
+                    "status": proc_status,
+                    "passed": proc_status == 200,
+                },
+                log_viewing={
+                    "status": log_status,
+                    "passed": log_status == 200 and "<script>" not in log_body,
+                },
             )
             self.assertIs(evidence["not_live_acceptance"], True)
             for surface, status in surfaces:
                 self.assertTrue(evidence["surfaces"][surface]["passed"])
+            self.assertTrue(evidence["process_start"]["passed"])
+            self.assertTrue(evidence["log_viewing"]["passed"])
 
     def test_smoke_evidence_stamps_not_live_acceptance(self) -> None:
         evidence = self._build_evidence(
@@ -283,6 +359,70 @@ class TestConsoleSmokeEndToEnd(unittest.TestCase):
                 method="POST",
                 data=form,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            self.assertEqual(status, 403)
+
+    def test_smoke_process_start_and_log_viewing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            env = self._env(tmpdir_path)
+            httpd = create_server(env)
+            port = self._start(httpd)
+
+            cookie = self._login(port)
+
+            csrf_token = self._get_csrf_for_processes(port, cookie)
+            proc_status, _proc_body = self._post_processes(
+                port, cookie, csrf_token, "wecom", "start"
+            )
+            self.assertEqual(proc_status, 200)
+
+            self._write_log_lines(tmpdir_path)
+            log_status, log_body, _ = self._request(
+                port,
+                "/logs/contract_events?offset=0",
+                headers={"Cookie": cookie},
+            )
+            self.assertEqual(log_status, 200)
+            self.assertIn("smoke test log line", log_body)
+            self.assertNotIn("<script>alert(1)</script>", log_body)
+
+            evidence = {
+                "schema": "console-smoke-v1",
+                "mode": "dry-run",
+                "not_live_acceptance": True,
+                "process_start": {
+                    "status": proc_status,
+                    "passed": proc_status == 200,
+                },
+                "log_viewing": {
+                    "status": log_status,
+                    "passed": log_status == 200 and "<script>" not in log_body,
+                },
+            }
+            self.assertIs(evidence["not_live_acceptance"], True)
+            self.assertTrue(evidence["process_start"]["passed"])
+            self.assertTrue(evidence["log_viewing"]["passed"])
+
+    def test_smoke_process_post_without_csrf_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            env = self._env(tmpdir_path)
+            httpd = create_server(env)
+            port = self._start(httpd)
+
+            cookie = self._login(port)
+
+            form = b"name=wecom&action=start"
+            status, _body, _ = self._request(
+                port,
+                "/processes",
+                method="POST",
+                data=form,
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cookie": cookie,
+                },
             )
             self.assertEqual(status, 403)
 
