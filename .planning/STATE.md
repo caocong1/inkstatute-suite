@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 98 Plan 98-02 complete (three-mode detection + continue/switch/aside + LLM fallback)
-last_updated: "2026-08-10T22:30:00.000Z"
-last_activity: 2026-08-10 -- Phase 98 Plan 98-02 execution complete. Created mode_classifier.py (AgentMode enum, ClassifyContext, ClassifyResult, ModeClassifierPort, LLMModeClassifier, fallback_classify, normalize_action, parse_mode_str, parse_classifier_response, classify_with_retry, classify_error_diagnostic — ported 1:1 from agent_classifier.rs 691 lines). Ported 14 unit tests from Rust test suite as Python golden tests. Integrated mode detection into RouterService.decide() via optional mode_classifier parameter; results stored in RouteDecision.metadata (agent_mode, mode_action, mode_label, mode_source, mode_fallback_reason — no new top-level fields). 123 router-service tests pass. All 36 gates green. 4 commits: 300b7ee, f82bf6c, 0135a6c, 65c5e5a.
+stopped_at: Phase 98 COMPLETE (real-index routing — strong-signal + soft matcher + three-mode detection + decision logging)
+last_updated: "2026-08-10T23:30:00.000Z"
+last_activity: 2026-08-10 -- Phase 98 Plan 98-03 execution complete. Created decision_log.py (JSONL append per session, append_decision_log + record_routing_error — ported from lawfirm-profile/scripts/router.py lines 299-337). Completed RouteDecision field mapping (all 15 fields, session_id stored in metadata). Added report_routing_error() method to RouterService. Wired route_mismatch feedback association. Created test_decision_log.py (19 tests) and test_phase98_success_criteria.py (27 tests with explicit assertions for all 6 success criteria). 169 router-service tests pass. All 36 gates green. 3 commits: 529a50f, 3fad904, 51421ef. Phase 98 COMPLETE. SKILL-07, SKILL-08 marked complete.
 progress:
   total_phases: 17
-  completed_phases: 10
-  total_plans: 48
-  completed_plans: 48
-  percent: 61
+  completed_phases: 11
+  total_plans: 51
+  completed_plans: 51
+  percent: 65
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 98 — Real-Index Routing (Plan 98-02 complete, 98-03 next)
+**Current focus:** Phase 99 — Practice Profile (next phase to plan)
 
 ## Current Position
 
-Phase: 98 (real-index-routing) — Plan 98-02 COMPLETE
-Plan: 98-01 (Wave 1) and 98-02 (Wave 2: three-mode detection) complete. 98-03 (Wave 3: decision logging) pending.
-Status: Plan 98-02 execution complete. mode_classifier.py (AgentMode, ClassifyContext, ClassifyResult, ModeClassifierPort, LLMModeClassifier, fallback_classify, normalize_action, parse_mode_str, parse_classifier_response, classify_with_retry, classify_error_diagnostic — ported 1:1 from agent_classifier.rs). 14 unit tests ported from Rust test suite. Mode detection integrated into RouterService.decide() via optional mode_classifier; results in RouteDecision.metadata (no new top-level fields). 123 tests pass, 36 gates green. Ready for 98-03.
-Last activity: 2026-08-10 -- Plan 98-02 execution: Created mode_classifier.py (ported 1:1 from agent_classifier.rs 691 lines), ported 14 unit tests as golden tests, integrated mode detection into RouteDecision.metadata. 4 commits.
+Phase: 98 (real-index-routing) — COMPLETE
+Plan: 98-01, 98-02, 98-03 all complete. Phase 98 fully done.
+Status: Phase 98 execution complete. decision_log.py (JSONL append per session, append_decision_log + record_routing_error — ported from router.py). RouteDecision field mapping complete (all 15 fields, session_id in metadata). report_routing_error() method on RouterService. route_mismatch feedback association wired. test_decision_log.py (19 tests) + test_phase98_success_criteria.py (27 tests). 169 router-service tests pass, 36 gates green. SKILL-07, SKILL-08 marked complete. Phase 98 marked complete in ROADMAP.md.
+Last activity: 2026-08-10 -- Plan 98-03 execution: Created decision_log.py, completed RouteDecision mapping, added report_routing_error(), wired route_mismatch, created 46 new tests (19 decision log + 27 success criteria). 3 commits. Phase 98 COMPLETE.
 
-**Next command:** `/gsd-execute 98-03` (Phase 98 Wave 3: decision logging + route_mismatch feedback association)
+**Next command:** `/gsd-plan 99` (Phase 99: Practice Profile — CLAUDE.md 执业配置多租户化)
 
 ## Milestone v3.0 Overview
 
@@ -110,17 +110,17 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-10T22:30:00.000Z
-Stopped at: Phase 98 Plan 98-02 complete (three-mode detection + continue/switch/aside + LLM fallback)
+Last session: 2026-08-10T23:30:00.000Z
+Stopped at: Phase 98 COMPLETE (real-index routing — strong-signal + soft matcher + three-mode detection + decision logging)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..06 + SKILL-09 + SAFE-05 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-97 complete, Phase 98 in progress)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-98 complete, Phase 99 next)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute 98-03` (Phase 98 Wave 3: decision logging + route_mismatch feedback association)
-- 或 `/gsd-autonomous` 自动推进 Phases 98-104
+- `/gsd-plan 99` (Phase 99: Practice Profile — CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈)
+- 或 `/gsd-autonomous` 自动推进 Phases 99-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点
