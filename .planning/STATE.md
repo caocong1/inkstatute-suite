@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
-status: planning
-stopped_at: Phase 96 plans written (4 plans, 3 waves)
-last_updated: "2026-08-09T12:00:00.000Z"
-last_activity: 2026-08-09 -- Phase 96 plan phase complete (4 plans: 96-01 scanner core, 96-02 classification+metadata, 96-03 conflict model, 96-04 gate+e2e+completion; 3 waves: W1→W2 parallel→W3)
+status: executing
+stopped_at: Phase 96 Plan 96-01 complete (scanner core, 50 tests pass)
+last_updated: "2026-08-09T14:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 96 Plan 96-01 executed: packages/skill-index scaffolded with scanner, frontmatter parser, token estimator, read-only enforcement (50 tests, 33 gates green, gate-coverage expected failure deferred to 96-04)
 progress:
   total_phases: 17
   completed_phases: 8
   total_plans: 39
-  completed_plans: 35
-  percent: 47
+  completed_plans: 36
+  percent: 49
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 96 — Real Skill Index (plans written, ready for execution)
+**Current focus:** Phase 96 — Real Skill Index (Plan 96-01 complete, Wave 2 next)
 
 ## Current Position
 
-Phase: 96 (real-skill-index) — PLANS WRITTEN
-Plan: 4 plans created (96-01, 96-02, 96-03, 96-04), 3 waves
-Status: Phase 96 plan phase complete — 4 plans written with wave-based parallelization (Wave 1: 96-01 scanner core; Wave 2: 96-02 classification+metadata ∥ 96-03 conflict model; Wave 3: 96-04 gate+e2e+completion). Ready for `/gsd-execute-plan 96`.
-Last activity: 2026-08-09 -- Phase 96 plan phase complete (4 plans, 3 waves, scanner core → classification+merge → gate+e2e)
+Phase: 96 (real-skill-index) — EXECUTING
+Plan: 96-01 COMPLETE (scanner core), 96-02/96-03/96-04 pending
+Status: Phase 96 Plan 96-01 executed — packages/skill-index scaffolded with scanner, frontmatter parser, token estimator, read-only enforcement. 50 tests pass. 33 existing gates green (gate-coverage expected failure deferred to 96-04). Wave 2 (96-02 classification+metadata ∥ 96-03 conflict model) ready to execute.
+Last activity: 2026-08-09 -- Plan 96-01 executed: scanner core (50 tests, read-only enforced, 338+51 SKILL.md discovered)
 
-**Next command:** `/gsd-execute-plan 96` for Phase 96 (Real Skill Index) — starts with Wave 1 (Plan 96-01)
+**Next command:** Execute Wave 2 (Plan 96-02 classification+metadata ∥ Plan 96-03 conflict model) for Phase 96
 
 ## Milestone v3.0 Overview
 
@@ -110,17 +110,17 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-09T12:00:00.000Z
-Stopped at: Phase 96 plans written (4 plans, 3 waves)
+Last session: 2026-08-09T14:00:00.000Z
+Stopped at: Phase 96 Plan 96-01 complete (scanner core, 50 tests pass)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-95 complete, Phase 96 plans written)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-95 complete, Phase 96 Plan 96-01 complete)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute-plan 96` — 开始 Phase 96 (Real Skill Index)
+- Execute Wave 2: Plan 96-02 (classification+metadata) ∥ Plan 96-03 (conflict model) for Phase 96
 - 或 `/gsd-autonomous` 自动推进 Phases 96-104
 - 或 `/gsd-autonomous --to 96` 只跑到"能力层"这个里程碑点
