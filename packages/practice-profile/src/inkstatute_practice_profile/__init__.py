@@ -9,6 +9,12 @@ from .injector import (
     ProfileInjectionResult,
     SkillNotFoundError,
 )
+from .interview import (
+    ColdStartInterviewOrchestrator,
+    InterviewState,
+    InterviewStep,
+)
+from .interview_definitions import COMMERCIAL_LEGAL_INTERVIEW_STEPS
 from .model import PracticeProfile
 from .rbac_check import (
     PROFILE_READ_ROLES,
@@ -21,7 +27,11 @@ from .secret_guard import SecretDetectedError, validate_no_secrets
 from .store import InMemoryPracticeProfileStore, PracticeProfileStore
 
 __all__ = [
+    "COMMERCIAL_LEGAL_INTERVIEW_STEPS",
+    "ColdStartInterviewOrchestrator",
     "InMemoryPracticeProfileStore",
+    "InterviewState",
+    "InterviewStep",
     "PROFILE_READ_ROLES",
     "PROFILE_WRITE_ROLES",
     "PracticeProfile",
