@@ -60,7 +60,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 ### 阶段 B — 通道统一
 
 - [x] **Phase 91: Unified Gateway** - 多租户 HTTP+SSE 网关，取代 platform_api 与 lawyer-web-chat 的重叠 (GW-01..06)
-- [ ] **Phase 92: Shared UI Core** - 从 lawyer-desktop 抽取 @inkstatute/ui-core，chat UI 单一实现 (UI-01, UI-02, UI-03, UI-06)
+- [x] **Phase 92: Shared UI Core** - 从 lawyer-desktop 抽取 @inkstatute/ui-core，chat UI 单一实现 (UI-01, UI-02, UI-03, UI-06) ✅
 - [ ] **Phase 93: Web Client** - 响应式 Web 客户端（桌面 + 移动浏览器） (UI-04)
 - [ ] **Phase 94: Desktop Client** - Tauri 外壳复用，invoke() → Gateway，离线只读 (UI-05)
 - [ ] **Phase 95: Bot Channel Degradation** - WeCom/QQ 改为 Gateway 消费者 + 非流式降级 (BOT-01, BOT-02, BOT-03)
@@ -166,7 +166,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 全项目 grep 不到第二份 chat 消息列表 / 流式渲染 / ask_user 卡片实现；`apps/web_chat` 原型渲染器被标记 deprecated
   6. `ui-core` 有构建产物与类型声明，可被 `apps/web` 与 `apps/desktop` 同时依赖
 
-**Plans**: 4 (92-01 Tracer: scaffold+theme+reducer+ChatPanel+fixtures ✅ | 92-02 Chat interaction components ✅ | 92-03 Document preview + citations ✅ | 92-04 Full integration)
+**Plans**: 4 (92-01 Tracer: scaffold+theme+reducer+ChatPanel+fixtures ✅ | 92-02 Chat interaction components ✅ | 92-03 Document preview + citations ✅ | 92-04 Full integration ✅)
 **UI hint**: yes
 
 ### Phase 93: Web Client

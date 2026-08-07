@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: in_progress
-stopped_at: Phase 92 plan 03 complete (document preview & citation panel)
-last_updated: "2026-08-08T20:42:00.000Z"
-last_activity: 2026-08-08 -- Phase 92 plan 03 complete (DocPreview + CitationPanel + legal types + renderSegs + groupCitations, 100 vitest tests, 32 gates green)
+stopped_at: Phase 92 complete (shared UI core — all 4 plans done, 32 gates green)
+last_updated: "2026-08-08T21:00:00.000Z"
+last_activity: 2026-08-08 -- Phase 92 complete (Icons, MentionComposer, MentionMenu, TitleBar, HomePage, ConversationDrawer, AgentTracePanel, jsonHighlight, platform-sdk-ts expanded with Last-Event-ID, web_chat deprecated, 105 vitest tests, 32 gates green)
 progress:
   total_phases: 17
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 20
   completed_plans: 20
-  percent: 25
+  percent: 29
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 92 — Shared UI Core (IN PROGRESS)
+**Current focus:** Phase 92 — Shared UI Core (COMPLETE)
 
 ## Current Position
 
-Phase: 92 (shared-ui-core) — IN PROGRESS
-Plan: 03 complete (92-03 document preview & citation panel: DocPreview, CitationPanel, legal types, renderSegs, groupCitations)
-Status: Phase 92 plan 03 complete, 32 gates green, ready for plan 92-04
-Last activity: 2026-08-08 -- Phase 92 plan 03 complete (DocPreview + CitationPanel + legal types + renderSegs + groupCitations, 100 vitest tests, 32 gates green)
+Phase: 92 (shared-ui-core) — COMPLETE
+Plan: 04 complete (92-04 full integration: Icons, MentionComposer, MentionMenu, TitleBar, HomePage, ConversationDrawer, AgentTracePanel, jsonHighlight, platform-sdk-ts expanded, web_chat deprecated)
+Status: Phase 92 complete, 32 gates green, ready for Phase 93
+Last activity: 2026-08-08 -- Phase 92 complete (all 4 plans done, 105 vitest tests, 32 gates green)
 
-**Next command:** `/gsd-execute-plan 92-04` （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-execute-plan 93` （或 `/gsd-autonomous` 自动推进）
 
 ## Milestone v3.0 Overview
 
@@ -121,6 +121,6 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute-plan 92-04` — 继续 Phase 92 (remaining components + build verification)
-- 或 `/gsd-autonomous` 自动推进 Phases 92-104
+- `/gsd-execute-plan 93` — 继续 Phase 93 (Web Client)
+- 或 `/gsd-autonomous` 自动推进 Phases 93-104
 - 或 `/gsd-autonomous --to 93` 只跑到"可用 Web 产品"这个里程碑点
