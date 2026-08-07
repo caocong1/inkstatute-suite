@@ -53,7 +53,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 ### 阶段 A — 协议底座
 
-- [ ] **Phase 88: Unified Event Contract** - ACP 同构的统一事件词汇 + Schema/绑定 + 降级规则 + V2 契约保持 (EVT-01..06)
+- [x] **Phase 88: Unified Event Contract** - ACP 同构的统一事件词汇 + Schema/绑定 + 降级规则 + V2 契约保持 (EVT-01..06)
 - [ ] **Phase 89: ACP Backend Client** - Python ACP client 驱动 hermes acp 与第二后端，子进程生命周期 (ACP-01, ACP-02, ACP-03, ACP-06)
 - [ ] **Phase 90: ACP Event Bridge & Output Boundary** - 双向映射 + 输出边界 + 权限安全默认 (ACP-04, ACP-05, ACP-07, SAFE-02, SAFE-03)
 
@@ -96,7 +96,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   3. ✅ 澄清提问契约支持 2-4 题、单选 / 多选 / 自由文本，字段语义与 `ai-for-china-legal/shared/inkstatute-integration/ASK-USER-PROTOCOL.md` 一致（含 `allow_multiple`），并能与 V2 `RunInterrupt` 的 `interrupt_id` / `resume_state_ref` 互转 (EVT-03 complete, Plan 88-03)
   4. ✅ 五相进度（research → intake → retrieval → draft → review）契约存在，且有到 thinking / tool / streaming / review 的映射表与测试 (EVT-04 complete, Plan 88-04)
   5. ✅ 每类事件的 bot 降级行为（缓冲 / 投递 / 丢弃 / 折叠为业务化提示）在代码中声明且可测——给定一串事件，聚合器产出确定的最终投递内容 (EVT-05 complete, Plan 88-05)
-  6. 现有 28 个 gate 全绿，V2 的 5 个 schema 字段无一改动或删除
+  6. ✅ 现有 28 个 gate 全绿，V2 的 5 个 schema 字段无一改动或删除 (EVT-06 complete, Plan 88-06)
 
 **Plans**: TBD (est. 3-4)
 **UI hint**: no

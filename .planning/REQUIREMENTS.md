@@ -16,7 +16,7 @@
 - [x] **EVT-03**: 澄清提问契约（2-4 题、单选 / 多选 / 自由文本），与 `ai-for-china-legal/shared/inkstatute-integration/ASK-USER-PROTOCOL.md` 语义一致，并与 V2 `RunInterrupt` 对齐
 - [x] **EVT-04**: 五相进度契约（research → intake → retrieval → draft → review）及其与 thinking / tool / streaming / review 的映射
 - [x] **EVT-05**: 每类事件定义 bot 非流式降级行为（缓冲 / 投递 / 丢弃 / 折叠为业务化提示），降级规则可测
-- [ ] **EVT-06**: V2 的 5 个 schema（AgentTurn / AgentResult / ExecutionTrace / FeedbackEvent / RouteDecision）保留不变作为落库契约，由事件流投影生成；现有 28 个 gate 保持绿
+- [x] **EVT-06**: V2 的 5 个 schema（AgentTurn / AgentResult / ExecutionTrace / FeedbackEvent / RouteDecision）保留不变作为落库契约，由事件流投影生成；现有 28 个 gate 保持绿
 
 ### ACP — 后端层
 
@@ -156,7 +156,7 @@
 | EVT-03 | Phase 88 | Complete |
 | EVT-04 | Phase 88 | Complete |
 | EVT-05 | Phase 88 | Complete |
-| EVT-06 | Phase 88 | Pending |
+| EVT-06 | Phase 88 | Complete |
 | ACP-01 | Phase 89 | Pending |
 | ACP-02 | Phase 89 | Pending |
 | ACP-03 | Phase 89 | Pending |
