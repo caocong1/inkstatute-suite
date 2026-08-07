@@ -1,8 +1,25 @@
-/** Placeholder — full implementation in Task 93-01-05 */
-import { type Component } from "solid-js";
+/**
+ * WorkspacePage — tracer shell (minimal).
+ *
+ * Reads :conversationId route param and shows a placeholder.
+ * The full chat panel + EventStreamStore wiring is Plan 93-02.
+ * This proves the route works and navigation reaches the workspace page.
+ */
+import { onMount, type Component } from "solid-js";
 import { useParams } from "@solidjs/router";
 
 export const WorkspacePage: Component = () => {
   const params = useParams();
-  return <div>工作区占位: {params.conversationId}</div>;
+
+  onMount(() => {
+    document.title = "对话 · 墨律 InkStatute";
+  });
+
+  return (
+    <div class="ws">
+      <div class="ws-placeholder">
+        对话 {params.conversationId} — 工作区加载中…
+      </div>
+    </div>
+  );
 };
