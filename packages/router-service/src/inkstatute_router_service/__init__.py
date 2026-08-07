@@ -16,6 +16,12 @@ from .model_classifier import ModelClassificationResult, ModelClassifierPort
 from .port import RouterPort
 from .service import RouterService
 from .strategies import RouterStrategy
+from .strong_signal import (
+    StrongSignalRule,
+    build_strong_signal_rules,
+    is_simple_factual,
+    match_strong_signal,
+)
 from .tool_resolver import ToolResolutionMap, resolve_all_tool_refs, resolve_tool_refs
 
 __all__ = [
@@ -28,8 +34,12 @@ __all__ = [
     "RouterPort",
     "RouterService",
     "RouterStrategy",
+    "StrongSignalRule",
     "ToolResolutionMap",
+    "build_strong_signal_rules",
     "classify_intent",
+    "is_simple_factual",
+    "match_strong_signal",
     "resolve_all_tool_refs",
     "resolve_tool_refs",
 ]
