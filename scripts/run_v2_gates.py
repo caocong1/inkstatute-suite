@@ -87,7 +87,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "wecom-service",
             (py, "-m", "unittest", "discover", "-s", "services/wecom-service/tests"),
-            (wecom_src, channel_core_src, platform_src, contract_src, platform_runtime_src, operator_config_src),
+            (wecom_src, wecom_channel_src, channel_core_src, platform_src, contract_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
             "hermes-contract-layer",
@@ -122,12 +122,12 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "codex-backend",
             (py, "-m", "unittest", "discover", "-s", "packages/backends/codex/tests"),
-            (codex_backend_src, platform_src, platform_runtime_src, wecom_src, channel_core_src),
+            (codex_backend_src, platform_src, platform_runtime_src, wecom_src, wecom_channel_src, channel_core_src, operator_config_src),
         ),
         Gate(
             "provider-model-backend",
             (py, "-m", "unittest", "discover", "-s", "packages/backends/provider_model/tests"),
-            (provider_model_backend_src, platform_src, platform_runtime_src, wecom_src, channel_core_src),
+            (provider_model_backend_src, platform_src, platform_runtime_src, wecom_src, wecom_channel_src, channel_core_src, operator_config_src),
         ),
         Gate(
             "model-gateway",
@@ -193,7 +193,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "feedback-service",
             (py, "-m", "unittest", "discover", "services/feedback-service/tests"),
-            (feedback_src, wecom_src, channel_core_src, contract_src, platform_src, platform_runtime_src),
+            (feedback_src, wecom_src, wecom_channel_src, channel_core_src, contract_src, platform_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
             "phase7-privacy-boundary",
@@ -209,7 +209,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, rbac_src, channel_core_src, qqbot_src, qqbot_service_src, mcp_registry_src, model_gateway_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, wecom_channel_src, operator_config_src, hermes_src, hermes_backend_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, codex_backend_src, provider_model_backend_src, admin_api_src, rbac_src, channel_core_src, qqbot_src, qqbot_service_src, mcp_registry_src, model_gateway_src),
         ),
         Gate(
             "v2-acceptance-traceability",

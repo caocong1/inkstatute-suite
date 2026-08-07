@@ -9,6 +9,7 @@ gate implementation details.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -41,7 +42,15 @@ def run_gate_summary(
     JSON parse failure, returns an error dict — never raises.
     ``timeout_seconds`` overrides the default 300s ceiling (e.g. for the
     unified health endpoint which uses a shorter 30s timeout).
+
+    If ``INKSTATUTE_SKIP_GATE_SUMMARY=1`` is set in the environment, returns a
+    stub result without spawning a subprocess.  This breaks the circular
+    dependency that occurs when the admin-web-ui smoke test hits ``/reports``,
+    which would otherwise re-invoke the full gate suite (including the
+    admin-web-ui gate itself) via subprocess.
     """
+    if os.environ.get("INKSTATUTE_SKIP_GATE_SUMMARY") == "1":
+        return {"passed": False, "gates": [], "error": "skipped"}
 
     root = Path(repo_root) if repo_root is not None else _repo_root()
     script = root / GATE_SCRIPT

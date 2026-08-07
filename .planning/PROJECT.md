@@ -2,15 +2,40 @@
 
 ## What This Is
 
-墨律 InkStatute V2 is an InkStatute-owned WeCom service plus backend-neutral platform contract and agent-adapter layer, with a second production channel path for QQBot. Hermes `lawfirm` is the first production agent backend; V2 adds WeCom receive/send, industry-neutral contracts, agent adapter contracts, Hermes bootstrap/version boundaries, assistant output filtering, shadow event recording, feedback normalization, read-only views, CI gates, lawyer trial acceptance, and a thin QQBot webhook host that composes the package-level channel Protocol without reimplementing crypto/normalize/send.
+墨律 InkStatute 是一个统一的法律助手平台：**一套法律能力核心，通过同一套事件词汇同时服务所有客户端和所有 agent 后端**。
 
-V2 is for proving that the running lawyer assistant can be received and sent through InkStatute-owned channel services, observed, replayed, validated, deployed through a low-coupling agent adapter, presented as a pure lawyer bot, and evolved through a stable platform contract without rebuilding Hermes core systems.
+- **通道层**：Web（桌面/移动浏览器）、桌面 App（Windows/macOS）、WeCom bot、QQ bot；移动原生 App 规划中。全部共享一份 UI 核心，chat UI 只有一份实现。
+- **后端层**：任何说 ACP（Zed Agent Client Protocol）的 agent —— Hermes、Codex、Claude Code、Gemini CLI —— 加上墨律自研的 Python agent core。换后端不需要改任何通道代码。
+- **能力层**：`ai-for-china-legal`（345 个 SKILL.md）+ `legal-skills`（51 个）共 396 个真实中国法律 skill，以只读 vendoring 引用，平台提供索引与按后端物化，一份 skill 三处可用。
+
+平台自己不执行法律任务，也不为每个后端写胶水。它做的是：定义一套事件词汇，让它同时跑在两条链路上——对客户端说 HTTP+SSE，对后端说 ACP over stdio——并负责扇出、租户、持久化、输出边界与通道降级。
 
 ## Core Value
 
-Lawyers can use InkStatute's own WeCom lawyer assistant service while V2 records industry-neutral, privacy-aware contract events that are valid, replayable, feedback-linked, CI-verifiable, and agent-backend-neutral. Hermes lawfirm is the first agent backend, and Hermes gateway/meta/update/command notices must not leak to ordinary users.
+律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-## Current Milestone: v1.11 Product Console — SHIPPED
+## Current Milestone: v3.0 Unified Legal Core — IN PROGRESS
+
+**Started:** 2026-08-06
+**Status:** Phases 88-104（17 phases，61 requirements，四阶段）
+**Source:** [V3-PRD.md](../docs/requirements/V3-PRD.md) | **Evidence:** [V3-SELECTION.md](research/V3-SELECTION.md)
+
+**为什么重新定位：** V2 交付了 118,556 行 Python、3,173 个测试、28 个 CI gate 的高质量平台管道，但全仓库 grep `ai-for-china-legal` 只命中 PRD 和一份研究笔记——**管道从未接上真实法律能力**。同时存在三个互不相认的执行器（Hermes profile、lawyer-desktop 自研 Rust、lawyer-ai/OpenCode），各自重复实现了 skill 加载、路由、MCP、ask_user。V2 的四个范围前提（单通道、单后端、无真实 skill、自研只留口）已全部失效。
+
+**四个阶段：**
+
+| 阶段 | Phases | 完成后的状态 |
+|---|---|---|
+| A 协议底座 | 88-90 | Hermes 可通过 ACP 被平台驱动 |
+| B 通道统一 | 91-95 | 律师可在 web / 桌面 / WeCom / QQ 四处用同一套能力 |
+| C 能力层 | 96-99 | 396 个真实法律 skill 首次进入平台 |
+| D 自研核心 | 100-104 | 心脏换成自研 Python core，通道层零改动 |
+
+**关键路径：** 88 → 89 → 90 → 91 → 92 → 93（走完即有可用 Web 产品）
+
+**决定性发现：** `hermes acp --check` → `Hermes ACP check OK`（Hermes Agent v0.19.0）。本项目使用的 Hermes 原生支持 ACP；Codex / Claude Code / Gemini CLI / OpenCode / Cursor / Cline 亦然（ACP Registry 174+ agent）。现有 `packages/backends/{hermes,codex}` 共 3,875 行自定义 adapter 可归并为一个 ACP client。
+
+## Previous: v1.11 Product Console — SHIPPED
 
 **Shipped:** 2026-07-15
 **Status:** COMPLETE — 9 phases shipped (79–87), 27/27 requirements satisfied, 9/9 phases verified, 8/8 integration checks passed. Audit: tech_debt (no blockers; documentation hygiene + carried human gates). Product-grade operations control plane: runnable entry points, process orchestration, reports/logs/audit/health dashboards, session auth, product polish, and end-to-end smoke verification with gate-honesty stamping.
@@ -104,10 +129,26 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ### Active
 
-- [ ] v1.10: Operator Config Console — channel (QQ/WeCom), provider (vendor+custom), model catalog, vision routing
-- [ ] Complete the five-workday lawyer trial acceptance criteria. (human gate — carried)
-- [ ] Phase 5 live WeCom UAT operator confirmation. (human gate — carried)
-- [ ] Operator `--live` QQ OpenAPI acceptance evidence. (human gate — carried; not auto-claimed)
+**v3.0 Unified Legal Core — 61 requirements across 10 categories. See [REQUIREMENTS.md](REQUIREMENTS.md) for the full list and traceability matrix.**
+
+- [ ] EVT-01..06: 统一事件契约（ACP 同构词汇 + Schema/绑定 + 降级规则 + V2 契约保持） — Phase 88
+- [ ] ACP-01..07: ACP 后端层（Python client + hermes acp + 第二后端 + 事件桥 + 输出边界 + 权限安全默认） — Phases 89-90
+- [ ] GW-01..06: 统一多租户 HTTP+SSE Gateway — Phase 91
+- [ ] UI-01..06: 共享 UI 核心 + Web 客户端 + 桌面客户端（chat UI 单一实现） — Phases 92-94
+- [ ] BOT-01..03: WeCom/QQ 改为 Gateway 消费者 + 非流式降级，现有生产行为不回退 — Phase 95
+- [ ] SKILL-01..09: 396 个真实 SKILL.md 索引 / 物化 / 路由 — Phases 96-98
+- [ ] PROF-01..03: 执业配置（CLAUDE.md 机制）多租户化 — Phase 99
+- [ ] CORE-01..10: 自研 Python agent core（流式 turn loop / 工具层 / 法律护栏移植 / 双入口） — Phases 100-103
+- [ ] CONV-01..05: 存量收敛，约 5,465 行退役 + gate 体系更新 — Phase 104
+- [ ] SAFE-01..06: 安全与法律安全（贯穿）
+
+**Human gates（不得由自动化声称通过）：**
+
+- [ ] HG-1 法律质量：移植后的 prompt 装配与法律护栏须由律师抽样确认 — Phase 102
+- [ ] HG-4 修订稿质量：Word 原生修订 docx 须由律师确认可用于对外谈判 — Phase 101
+- [ ] HG-2 / Phase 5 live WeCom UAT operator confirmation. (carried from V2)
+- [ ] HG-3 / 五工作日律师试运行验收. (carried from V2)
+- [ ] Operator `--live` QQ OpenAPI acceptance evidence. (carried from v1.9; not auto-claimed)
 - [ ] Future host/ops candidates from v1.9 archive: HOST-F01 durable wakeup stores; HOST-F02 async ACK queue; HOST-F03 health endpoints (deferred unless promoted)
 - [x] Define the V2 platform contract package with five event schemas, async task states, error categories, JSON Schema, Python bindings, and fixtures.
 - [x] Model AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision as platform events with traceable relationships.
@@ -123,42 +164,67 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 - [x] M2-07: QQBot complete loop as second channel proving ChannelAdapter portability. — Phase 43 (v1.6)
 - [x] M2-08: Gate coverage meta-test enforcing every packages/*/src and services/*/src directory is covered by a V2 gate. — Phase 44 (v1.6)
 
-### Out of Scope
+### Out of Scope (v3.0)
 
-- Retired product V1 as an active requirement source - V2 PRD replaces it.
-- Rebuilding Hermes core, session storage, router, skill registry, MCP registry, or model gateway - V2 calls Hermes as an agent backend, not a Hermes fork.
-- Production Codex or direct provider-model adapters - V2 defines the contract and configuration shape, but only Hermes mode is required to be production-ready.
-- Full multi-channel gateway - V2 builds the minimum InkStatute WeCom service only.
-- New independent authoritative conversation database - V2 read models come from contract logs, with Hermes sessions only as a fallback adapter.
-- Full Web UI, Tauri desktop, QQBot complete V2 loop, and WeChat complete V2 loop - not part of V2 acceptance.
-- Automatic legal skill synthesis or automatic modification of high-risk legal conclusion skills - V2 records `skill_candidate` for human review only.
-- Storing raw customer legal payloads in contract logs by default - logs prefer references and minimized sensitive data.
+- **移动原生 App 出包上架**（Android / iOS）— 推 V4。Tauri 2 移动端较嫩，中国 Android 无 Play Store、iOS 需 App Store 中国区 + ICP 备案（2-4 周）。本期移动浏览器顶着，共享 UI 按可打包成 App 的方式设计但不出包。
+- **SaaS 多租户规模化**（agent 进程池 / 远程 ACP 传输 / 水平扩容）— 契约留 `backend_process_mode` 口，实现不做。业主已定"先自用"。
+- **桌面端完全离线的本地 agent runtime** — 业主已定"在线为主，离线只读"。
+- **重建 Hermes core** — Hermes 是 ACP 后端之一。
+- **复制 skill 语料进平台仓** — 只读 vendoring 引用。两个 skill 仓有各自 license（含 CC-BY-NC）、作者与演进节奏，复制立刻产生第四份分叉。
+- **平台自建 skill 执行 runtime** — 所有候选后端都原生加载 SKILL.md；平台建索引 + 物化器。
+- **通道层对齐 AG-UI / Vercel AI SDK** — 所有客户端均为第一方，零互操作收益。保留映射文档。
+- **后端层对齐 A2A** — A2A 是跨组织 agent↔agent，层次不对。
+- **ACP v2 特性** — v2 为 draft 且已知破坏性变更；锁 v1。
+- **新通道**（WeChat 小程序 / WhatsApp / Slack）。
+- **向量检索 / embedding RAG** — 沿用 SQLite FTS5。
+- **自动合成或自动修改高风险法律结论 skill** — 继承 V2 约束，只记 `skill_candidate`，人审。
+- **契约日志默认存客户法律原文** — reference-first。
+- Retired product V1 and V2 as active requirement sources — V3 PRD replaces them（V2-PRD 保留为历史文档）。
 
 ## Context
 
-- Source of truth: `docs/requirements/V2-PRD.md`.
-- Production Codex or direct provider-model adapters - V2 defines the contract and configuration shape, but only Hermes mode is required to be production-ready.
-- Intel entry point: `.planning/intel/SYNTHESIS.md`.
-- Target runtime: Python packages/services first, with JSON Schema as the cross-language contract format; TypeScript can follow after V2 priority work.
-- Full Web UI, Primary wotop, QQBot complere V2 lokf,low: high-autonomy GSD with human gates for blockers, legal/safety concerns, and manual lawyer trial validation.
-- PRD development order is binding for this roadmap: platform contract, contract test suite, Hermes integration risk resolution, Hermes shadow layer, WeCom loop, read/feedback services, CI/composability, lawyer trial.
+- **Source of truth: `docs/requirements/V3-PRD.md`.** 选型证据：`.planning/research/V3-SELECTION.md`。V1/V2-PRD 保留为历史文档，不再是活跃需求源。
+- **相关仓库**（本仓之外，皆为 workspace 同级目录）：
+  - `ai-for-china-legal` — 345 个 SKILL.md，13 plugin，Claude-Code-plugin 格式，纯 prompt；含 `shared/inkstatute-integration/`（为墨律写的 ask_user 协议与 UX 待办）
+  - `legal-skills` — 51 个 SKILL.md，37/51 带 `scripts/`（140 个 .py），MIT + CC-BY-NC 双许可
+  - `lawyer-desktop` — 本项目前身，Tauri 2.11 + SolidJS；其 UI（23 组件 + 墨律三主题）与 agent 核心逻辑（router 627 / classifier 691 / tool_leak 392）是 V3 的迁入源
+  - `lawfirm-profile` — 生产中的 Hermes profile，312 skill；`scripts/router.py`（498 行强信号路由）与 `scripts/contract_review_trackchanges.py`（41,185 字节 Word 原生修订）是必须保住的能力
+  - `lawyer-ai` — OpenCode 原型，已搁置，不迁入
+- **Target runtime**: Python 为平台与 agent core 语言；TypeScript 为客户端与共享 UI；JSON Schema 为跨语言契约格式。
+- **Workflow**: 高自主 GSD，人工闸门保留给法律质量、真机通道与律师试运行。
+- **开发顺序具约束力**：协议底座（88-90）→ 通道统一（91-95）→ 能力层（96-99）→ 自研核心（100-104）。阶段 A+B+C 完成即可交付可用产品（后端用 `hermes acp`），阶段 D 换心脏。
 
-
-- **Architecture**: WeCom ingress/egress is owned by InkStatute; agent backend access goes through an adapter contract - Hermes remains the first production agent backend, not the channel boundary.
-- **Integration**: Hermes core execution should remain unchanged - contract work uses hooks, mappers, writers, adapter wrappers, output policy, and tests.
-- **Sequencing**: `platform-contract` and `contract-test-suite` come before production Hermes hook work - prevents building hooks against unstable contracts.
-- **Risk control**: Hermes hook ordering, inbound turn reconstruction, message IDs, long-task states, feedback targets, idempotency, and redaction rules must be resolved before production hook implementation.
-- **Privacy**: Contract logs use `raw_payload_ref` and avoid sensitive full text by default - protects customer legal materials and work product.
-- **User-facing output**: Ordinary WeCom users must not see Hermes/gateway/update/command/meta notices - InkStatute WeCom service either blocks them or rewrites them into InkStatute-owned service notices.
-- **Deployment**: Runtime secrets, tokens, DBs, logs, customer files, feedback payloads, and raw legal payloads stay outside profile bundles and the repo.
-- **Legal safety**: High-risk feedback remains human-reviewed - V2 records skill candidates but does not auto-modify legal conclusions.
-- **Composability**: Platform schemas and CI must stay industry-neutral - legal-specific fields belong in `industry_context` or profile extensions.
+- **Architecture**: 一套事件词汇，两条链路——对客户端 HTTP+SSE，对后端 ACP over stdio。平台只做扇出、租户、持久化、输出边界与通道降级，不执行法律任务也不为每个后端写胶水。
+- **Backend seam**: 对齐 Zed 的 Agent Client Protocol（v1）。已本机验证 `hermes acp --check` OK。一个 ACP client 取代 N 个自定义 adapter。
+- **Channel seam**: 不对齐外部协议（客户端全为第一方，零互操作收益），但事件词汇与 ACP `session/update` 同构，使平台退化为薄中继。
+- **Skill layer**: 只读 vendoring + 索引 + 按后端物化。平台不建 skill 执行 runtime，不复制语料。
+- **Self-built core**: 默认后端，但架构上无特权——与 hermes/codex 走同一 BackendAdapter 与同一事件词汇。一份实现两个入口（in-process + `inkstatute-agent acp`）。
+- **Privacy**: 契约日志 reference-first（`raw_payload_ref`），不存敏感全文。
+- **User-facing output**: 输出边界在 ACP 事件桥与 Gateway 双重执行；后端 meta/gateway/system/update/command 噪声不得到达普通律师用户。
+- **Permission safety**: ACP `session/request_permission` 服务端不得默认 allow；`terminal`/`execute_code` 类必须显式拒绝或上抛审批（参考 Buzz 的 auto-allow 事故）。
+- **Legal safety**: 高风险法律结论人审；research-gate 与 citation 审计不可绕过；不自动合成或修改法律结论类 skill。
+- **Composability**: 平台 schema 与 CI 保持行业中立，法律专用字段只进 `industry_context`；由 `solutions/demo_non_legal` 验证。
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| V2 PRD is the active product specification | V1 scope was retired and too broad for the current validation goal | - Pending |
+| **V3 PRD 取代 V2 成为活跃规格** | V2 的四个范围前提（单通道、单后端、无真实 skill、自研只留口）全部失效；且平台从未接上 396 个真实法律 skill | Decided 2026-08-06 |
+| **后端层对齐 ACP（Zed Agent Client Protocol v1）** | 本机 `hermes acp --check` 已验证 OK；Codex/Claude Code/Gemini/OpenCode/Cursor/Cline 全支持，Registry 174+ agent；一个 client 取代 3,875 行自定义 adapter；`session/update`+`elicitation`+`request_permission` 与产品需求一一对应 | Decided 2026-08-06 |
+| **锁 ACP v1，不用 v2** | v2 为 draft，已知破坏性变更（移除 `fs/*`/`terminal/*`/`session/load`/`tool_call`）；`initialize` 做版本协商，v2 特性开关关闭 | Decided 2026-08-06 |
+| **通道层不对齐 AG-UI / Vercel AI SDK / A2A** | 所有客户端均为第一方，标准协议的互操作价值为零；引入第二套事件词汇 + 外部依赖是净负债。但事件词汇与 ACP 同构，保留 AG-UI 映射文档 | Decided 2026-08-06 |
+| **自研 agent core 用 Python** | 依据能力非成本：最难的法律产出（Word 原生修订 docx）已有 41,185 字节 Python 实现，Rust 侧只有 74 行基础 docx；skill 语料含 140 个 .py；平台 118K 行 Python + 28 gate。Rust 的离线嵌入优势因业主选定"在线为主"而失效 | Decided 2026-08-06 |
+| **自研 core 是默认后端但架构无特权** | 换 `backend_id` 不得需要改任何通道层或 UI 代码；一份实现两个入口（in-process BackendAdapter + `inkstatute-agent acp`） | Decided 2026-08-06 |
+| **先定协议、后换心脏**：阶段 A+B+C 用 `hermes acp` 即可交付可用产品，阶段 D 再换自研核心 | 先拿到可用产品，换心脏时不动任何通道代码；也避免把"移植 4,000 行 Rust"放在关键路径上 | Decided 2026-08-06 |
+| **skill 语料只读 vendoring，平台建索引 + 物化器** | 所有候选后端都原生加载 SKILL.md；复制进平台仓会立刻产生第四份分叉；两仓有各自 license（含 CC-BY-NC）与演进节奏 | Decided 2026-08-06 |
+| **废弃 `solutions/lawfirm/manifest.json` 的 4 条手写 skill 元数据作为 skill 源** | 它与 396 个真实 skill 完全无关，是 V2 为跑通 SolutionLoader 造的假数据 | Decided 2026-08-06 |
+| **共享 UI 沿用 SolidJS，从 lawyer-desktop 抽取 `ui-core`** | 团队已有两处 SolidJS 投入；墨律三主题与 23 个已打磨组件是设计资产；换框架收益不足以抵消丢弃代价。chat UI 必须收敛为单一实现（现状约 80% 重复） | Decided 2026-08-06 |
+| **移动原生 App 推迟到 V4，本期移动浏览器** | Tauri 2 移动端比桌面端嫩；中国 Android 无 Play Store、iOS 需 App Store 中国区 + ICP 备案 2-4 周。推迟不返工 | Decided 2026-08-06 |
+| **先自用（≤50 律师），SaaS 只留契约口** | ACP 每会话一子进程（~200ms 启动）在单律所完全可行，在 SaaS 是死路。契约留 `backend_process_mode`（per_session/pooled/remote），换实现不换契约 | Decided 2026-08-06 |
+| **桌面端在线为主、离线只读** | 消除了自研核心必须可嵌入桌面端的约束，从而消除了 Rust 的主要优势论据 | Decided 2026-08-06 |
+| **lawyer-desktop 拆解而非整体迁入** | UI → `packages/ui-core`；Tauri 外壳 → `apps/desktop`；agent 逻辑（~4,000 行 PURE/IO 代码）→ 移植进 Python `packages/agent-core`；SQLite CRUD 不迁（平台已有持久化） | Decided 2026-08-06 |
+| **工具轮必须流式** | lawyer-desktop 现状是工具轮非流式（先整轮拿 tool_calls，仅最终 content 流），这是要修的缺陷而非要移植的资产 | Decided 2026-08-06 |
+| V2 PRD is the active product specification | V1 scope was retired and too broad for the current validation goal | Superseded by V3 on 2026-08-06 |
 | Build WeCom receive/send in InkStatute, not Hermes gateway | The user-facing lawyer bot is this product's channel service; Hermes should only provide agent logic | Decided 2026-06-28 |
 | Treat Hermes lawfirm as the first agent backend adapter, not the platform or channel boundary | The product must support future Codex/provider-model modes without rewriting platform contracts | Decided 2026-06-28 |
 | JSON Schema and Python bindings come before TypeScript | Current runtime priority is Python packages/services with schema as the cross-language contract | - Pending |

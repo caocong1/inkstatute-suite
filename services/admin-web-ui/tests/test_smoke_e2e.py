@@ -10,6 +10,7 @@ and stamping ``not_live_acceptance=true`` on every evidence record.
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import threading
 import unittest
@@ -48,6 +49,18 @@ class TestConsoleSmokeEndToEnd(unittest.TestCase):
     """End-to-end smoke that boots the console and exercises every surface."""
 
     SECRET = "test-smoke-secret"
+
+    def setUp(self) -> None:
+        # Break the circular dependency: the /reports surface calls
+        # run_gate_summary() which spawns the full gate suite as a subprocess.
+        # The gate suite includes the admin-web-ui gate, which re-runs this
+        # test, which hits /reports again — creating unbounded recursion that
+        # takes ~30s and exceeds the 5s HTTP timeout.  Setting this env var
+        # makes run_gate_summary() return a stub instantly.
+        os.environ["INKSTATUTE_SKIP_GATE_SUMMARY"] = "1"
+
+    def tearDown(self) -> None:
+        os.environ.pop("INKSTATUTE_SKIP_GATE_SUMMARY", None)
 
     def _env(self, tmpdir: Path) -> dict[str, str]:
         return {
