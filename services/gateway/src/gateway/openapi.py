@@ -53,6 +53,7 @@ def build_openapi_document(base_path: str = "/v1") -> dict[str, Any]:
             {"name": "Uploads", "description": "File upload endpoints"},
             {"name": "Feedback", "description": "Feedback submission endpoints"},
             {"name": "Skills", "description": "Skills listing endpoints"},
+            {"name": "PracticeProfile", "description": "Practice profile endpoints"},
         ],
         "paths": _build_paths(base_path),
         "components": _build_components(),
@@ -120,6 +121,16 @@ def _build_paths(base_path: str) -> dict[str, Any]:
         },
         f"{base_path}/skills": {
             "get": _list_skills_operation(),
+        },
+        f"{base_path}/practice-profile": {
+            "get": _get_practice_profile_operation(),
+            "put": _put_practice_profile_operation(),
+        },
+        f"{base_path}/practice-profile/interview": {
+            "post": _start_interview_operation(),
+        },
+        f"{base_path}/practice-profile/interview/answers": {
+            "post": _submit_interview_answers_operation(),
         },
     }
 
@@ -354,6 +365,89 @@ def _list_skills_operation() -> dict[str, Any]:
     }
 
 
+def _get_practice_profile_operation() -> dict[str, Any]:
+    return {
+        "tags": ["PracticeProfile"],
+        "summary": "Get the tenant's practice profile(s).",
+        "description": "Returns the tenant's practice profile for all plugins, or a specific plugin when ?plugin=X is provided. All authenticated roles can read. Cross-tenant access is denied.",
+        "operationId": "getPracticeProfile",
+        "parameters": [
+            {
+                "name": "plugin",
+                "in": "query",
+                "required": False,
+                "description": "Filter by plugin name (e.g. commercial-legal).",
+                "schema": {"type": "string"},
+            },
+        ],
+        "responses": {
+            "200": _json_response("PracticeProfileResponse", _practice_profile_example()),
+            "401": _error_response("unauthorized"),
+            "403": _error_response("forbidden"),
+            "404": _error_response("not_found"),
+        },
+    }
+
+
+def _put_practice_profile_operation() -> dict[str, Any]:
+    return {
+        "tags": ["PracticeProfile"],
+        "summary": "Update the tenant's practice profile.",
+        "description": "Updates the tenant's practice profile. Requires ADMIN or OPERATOR role. Validates no secrets in the profile data. Cross-tenant access is denied (tenant_id from auth context, not request body).",
+        "operationId": "putPracticeProfile",
+        "parameters": [],
+        "requestBody": _json_request_body(
+            schema_ref="PracticeProfile",
+            examples={"sanitized": _practice_profile_example()},
+        ),
+        "responses": {
+            "200": _json_response("PracticeProfileUpdateResponse", {"status": "updated", "tenant_id": "default", "plugin": "commercial-legal"}),
+            "400": _error_response("secret_detected"),
+            "401": _error_response("unauthorized"),
+            "403": _error_response("forbidden"),
+        },
+    }
+
+
+def _start_interview_operation() -> dict[str, Any]:
+    return {
+        "tags": ["PracticeProfile"],
+        "summary": "Start a cold-start interview.",
+        "description": "Starts a 5-step cold-start interview to configure the tenant's practice profile. Requires ADMIN or OPERATOR role. Returns the first elicitation payload with 2-4 questions.",
+        "operationId": "startInterview",
+        "parameters": [],
+        "requestBody": _json_request_body(
+            schema_ref="StartInterviewRequest",
+            examples={"sanitized": {"summary": "Start interview", "value": {"plugin": "commercial-legal"}}},
+        ),
+        "responses": {
+            "200": _json_response("ElicitationPayload", _elicitation_example()),
+            "401": _error_response("unauthorized"),
+            "403": _error_response("forbidden"),
+        },
+    }
+
+
+def _submit_interview_answers_operation() -> dict[str, Any]:
+    return {
+        "tags": ["PracticeProfile"],
+        "summary": "Submit answers for the current interview step.",
+        "description": "Submits answers for the current interview step and advances to the next. When all 5 steps are complete, finalizes and stores the practice profile. Requires ADMIN or OPERATOR role.",
+        "operationId": "submitInterviewAnswers",
+        "parameters": [],
+        "requestBody": _json_request_body(
+            schema_ref="SubmitInterviewAnswersRequest",
+            examples={"sanitized": {"summary": "Submit answers", "value": {"plugin": "commercial-legal", "answers": {"question_id": "answer_value"}}}},
+        ),
+        "responses": {
+            "200": _json_response("ElicitationPayload", _elicitation_example()),
+            "401": _error_response("unauthorized"),
+            "403": _error_response("forbidden"),
+            "404": _error_response("not_found"),
+        },
+    }
+
+
 # ---------------------------------------------------------------------------
 # Component definitions
 # ---------------------------------------------------------------------------
@@ -379,6 +473,12 @@ def _build_components() -> dict[str, Any]:
             "ArtifactResponse": _artifact_response_schema(),
             "SkillsListResponse": _skills_list_response_schema(),
             "SkillDescriptor": _skill_descriptor_schema(),
+            "PracticeProfile": _practice_profile_schema(),
+            "PracticeProfileResponse": _practice_profile_response_schema(),
+            "PracticeProfileUpdateResponse": _practice_profile_update_response_schema(),
+            "StartInterviewRequest": _start_interview_request_schema(),
+            "SubmitInterviewAnswersRequest": _submit_interview_answers_request_schema(),
+            "ElicitationPayload": _elicitation_payload_schema(),
             "Run": _run_schema(),
             "RunListResponse": _run_list_response_schema(),
             "RunEventFrame": _run_event_frame_schema(),
@@ -659,6 +759,89 @@ def _skill_descriptor_schema() -> dict[str, Any]:
     }
 
 
+def _practice_profile_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["tenant_id", "plugin"],
+        "properties": {
+            "tenant_id": {"type": "string"},
+            "plugin": {"type": "string"},
+            "identity": {"type": "object"},
+            "user_role": {"type": "object"},
+            "integrations": {"type": "object"},
+            "escalation_matrix": {"type": "object"},
+            "document_style": {"type": "object"},
+            "shared_guardrails": {"type": "object"},
+            "plugin_configs": {"type": "object"},
+            "temporary_mode": {"type": "boolean"},
+            "updated_at": {"type": ["string", "null"]},
+        },
+        "additionalProperties": False,
+    }
+
+
+def _practice_profile_response_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "tenant_id": {"type": "string"},
+            "profiles": {"type": "object"},
+            "count": {"type": "integer"},
+        },
+        "additionalProperties": True,
+    }
+
+
+def _practice_profile_update_response_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["status", "tenant_id", "plugin"],
+        "properties": {
+            "status": {"type": "string"},
+            "tenant_id": {"type": "string"},
+            "plugin": {"type": "string"},
+        },
+        "additionalProperties": False,
+    }
+
+
+def _start_interview_request_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "plugin": {"type": "string"},
+        },
+        "additionalProperties": False,
+    }
+
+
+def _submit_interview_answers_request_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "plugin": {"type": "string"},
+            "answers": {"type": "object"},
+        },
+        "additionalProperties": False,
+    }
+
+
+def _elicitation_payload_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["interrupt_id", "intro", "questions"],
+        "properties": {
+            "interrupt_id": {"type": "string"},
+            "intro": {"type": "string"},
+            "questions": {"type": "array", "items": {"type": "object"}},
+            "resume_state_ref": {"type": ["string", "null"]},
+            "metadata": {"type": "object"},
+            "tenant_id": {"type": "string"},
+        },
+        "additionalProperties": True,
+    }
+
+
 def _run_schema() -> dict[str, Any]:
     return {
         "type": "object",
@@ -860,6 +1043,40 @@ def _skills_example() -> dict[str, Any]:
             "tenant_id": "tenant-example",
             "skills": [],
             "count": 0,
+        },
+    }
+
+
+def _practice_profile_example() -> dict[str, Any]:
+    return {
+        "summary": "Practice profile",
+        "value": {
+            "tenant_id": "tenant-example",
+            "plugin": "commercial-legal",
+            "identity": {"org_name": "示例律所"},
+            "user_role": {"role": "律师"},
+            "integrations": {},
+            "escalation_matrix": {"auto_escalation": False},
+            "document_style": {"revision_tone": "半正式"},
+            "shared_guardrails": {"jurisdiction_identification": "中国大陆法律"},
+            "plugin_configs": {"commercial-legal": {"风险偏好": "平衡型"}},
+            "temporary_mode": False,
+            "updated_at": None,
+        },
+    }
+
+
+def _elicitation_example() -> dict[str, Any]:
+    return {
+        "summary": "Elicitation payload",
+        "value": {
+            "interrupt_id": "interview-tenant-example-commercial-legal-identity-team",
+            "intro": "让我们了解您的团队和执业环境",
+            "questions": [
+                {"id": "identity-team.company_name", "question": "您所在的公司或律所名称是什么？", "allow_multiple": False},
+            ],
+            "resume_state_ref": "interview-tenant-example-commercial-legal",
+            "metadata": {"step_id": "identity-team", "step_index": 0, "total_steps": 5},
         },
     }
 

@@ -306,10 +306,10 @@ class TestGatewayIntegration(unittest.TestCase):
         # submit_approval, and list_sessions (Plan 93-03-04).
         # The key requirement is that all endpoint PATHS exist and are
         # routable (not 404). Verify via OPERATIONS count.
-        self.assertEqual(len(OPERATIONS), 14, "Should have 14 operations across 13 paths")
+        self.assertEqual(len(OPERATIONS), 18, "Should have 18 operations across 17 paths")
 
     def test_success_criteria_1_openapi_document(self) -> None:
-        """Verify OpenAPI document contains all 12 paths."""
+        """Verify OpenAPI document contains all 15 paths."""
         doc = build_openapi_document()
         expected_paths = [
             "/v1/sessions",
@@ -324,10 +324,13 @@ class TestGatewayIntegration(unittest.TestCase):
             "/v1/uploads",
             "/v1/feedback",
             "/v1/skills",
+            "/v1/practice-profile",
+            "/v1/practice-profile/interview",
+            "/v1/practice-profile/interview/answers",
         ]
         for path in expected_paths:
             self.assertIn(path, doc["paths"], f"Missing path in OpenAPI: {path}")
-        self.assertEqual(len(doc["paths"]), 12)
+        self.assertEqual(len(doc["paths"]), 15)
 
     # ------------------------------------------------------------------
     # SC-2: SSE Last-Event-ID reconnection
@@ -717,7 +720,7 @@ class TestGatewayIntegration(unittest.TestCase):
         os.environ.get("INKSTATUTE_GATE_RUNNING") == "1",
         "Skipping nested gate execution (already running inside gate runner)",
     )
-    def test_gate_count_is_36(self) -> None:
+    def test_gate_count_is_37(self) -> None:
         """Run python scripts/run_v2_gates.py --list and count gates."""
         result = subprocess.run(
             [sys.executable, "scripts/run_v2_gates.py", "--list"],
@@ -726,7 +729,7 @@ class TestGatewayIntegration(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip()]
-        self.assertEqual(len(lines), 36, f"Expected 36 gates, got {len(lines)}")
+        self.assertEqual(len(lines), 37, f"Expected 37 gates, got {len(lines)}")
 
     # ------------------------------------------------------------------
     # No external dependencies

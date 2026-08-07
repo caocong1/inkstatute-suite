@@ -1,6 +1,6 @@
 """Tests for the full OpenAPI 3.1 document of the InkStatute Gateway.
 
-Verifies that the OpenAPI document covers all 12 endpoints, has complete
+Verifies that the OpenAPI document covers all 15 endpoints, has complete
 schemas with tenant_id in all response schemas, security schemes, the
 Last-Event-ID header parameter, deterministic rendering, and basic
 validation passes.
@@ -34,6 +34,9 @@ EXPECTED_PATHS = [
     "/v1/uploads",
     "/v1/feedback",
     "/v1/skills",
+    "/v1/practice-profile",
+    "/v1/practice-profile/interview",
+    "/v1/practice-profile/interview/answers",
 ]
 
 EXPECTED_TAGS = {
@@ -46,6 +49,7 @@ EXPECTED_TAGS = {
     "Uploads",
     "Feedback",
     "Skills",
+    "PracticeProfile",
 }
 
 _HTTP_METHODS = ("get", "post", "put", "delete", "patch")
@@ -76,14 +80,14 @@ class TestOpenApiDocument(unittest.TestCase):
         self.assertEqual(self.document["info"]["title"], "InkStatute Gateway API")
 
     # ------------------------------------------------------------------
-    # 3. All 12 paths present
+    # 3. All 15 paths present
     # ------------------------------------------------------------------
 
-    def test_all_12_paths_present(self) -> None:
+    def test_all_15_paths_present(self) -> None:
         paths = self.document["paths"]
         for expected in EXPECTED_PATHS:
             self.assertIn(expected, paths, f"Missing path: {expected}")
-        self.assertEqual(len(paths), 12, f"Expected 12 paths, got {len(paths)}")
+        self.assertEqual(len(paths), 15, f"Expected 15 paths, got {len(paths)}")
 
     # ------------------------------------------------------------------
     # 4. All operations have operationId
@@ -213,7 +217,7 @@ class TestOpenApiDocument(unittest.TestCase):
             self.assertIn(expected_tag, tag_names, f"Missing tag: {expected_tag}")
         for tag in tags:
             self.assertIn("description", tag, f"Tag '{tag['name']}' missing description")
-        self.assertEqual(len(tags), 9, f"Expected 9 tags, got {len(tags)}")
+        self.assertEqual(len(tags), 10, f"Expected 10 tags, got {len(tags)}")
 
     # ------------------------------------------------------------------
     # 11. Render is deterministic (byte-stable)

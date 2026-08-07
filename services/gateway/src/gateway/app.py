@@ -40,6 +40,7 @@ from .event_buffer import RunEventBuffer
 from .feedback import GatewayFeedbackHandler, handle_submit_feedback_request
 from .login import GatewayLoginHandler
 from .approvals import GatewayApprovalHandler
+from .practice_profile import GatewayPracticeProfileHandler
 from .runs import handle_get_run_request, handle_list_session_runs_request
 from .sessions import GatewaySessionManager, build_set_cookie_header, serialize_session, serialize_session_list
 from .skills import GatewaySkillsHandler, handle_skills_request
@@ -67,6 +68,10 @@ OPERATION_GET_ARTIFACT = "get_artifact"
 OPERATION_UPLOAD = "upload"
 OPERATION_SUBMIT_FEEDBACK = "submit_feedback"
 OPERATION_LIST_SKILLS = "list_skills"
+OPERATION_GET_PROFILE = "get_practice_profile"
+OPERATION_PUT_PROFILE = "put_practice_profile"
+OPERATION_START_INTERVIEW = "start_interview"
+OPERATION_SUBMIT_INTERVIEW_ANSWERS = "submit_interview_answers"
 
 OPERATIONS: tuple[str, ...] = (
     OPERATION_CREATE_SESSION,
@@ -83,6 +88,10 @@ OPERATIONS: tuple[str, ...] = (
     OPERATION_UPLOAD,
     OPERATION_SUBMIT_FEEDBACK,
     OPERATION_LIST_SKILLS,
+    OPERATION_GET_PROFILE,
+    OPERATION_PUT_PROFILE,
+    OPERATION_START_INTERVIEW,
+    OPERATION_SUBMIT_INTERVIEW_ANSWERS,
 )
 
 
@@ -129,6 +138,7 @@ class GatewayApp:
         login_handler: GatewayLoginHandler | None = None,
         elicitation_handler: GatewayElicitationHandler | None = None,
         approval_handler: GatewayApprovalHandler | None = None,
+        practice_profile_handler: GatewayPracticeProfileHandler | None = None,
     ) -> None:
         self._config = config
         self._runtime = runtime
@@ -143,6 +153,7 @@ class GatewayApp:
         self._login_handler = login_handler
         self._elicitation_handler = elicitation_handler
         self._approval_handler = approval_handler
+        self._practice_profile_handler = practice_profile_handler
 
     @property
     def config(self) -> GatewayConfig:
@@ -183,6 +194,10 @@ class GatewayApp:
     @property
     def approval_handler(self) -> GatewayApprovalHandler | None:
         return self._approval_handler
+
+    @property
+    def practice_profile_handler(self) -> GatewayPracticeProfileHandler | None:
+        return self._practice_profile_handler
 
     async def dispatch(
         self,
@@ -255,6 +270,22 @@ class GatewayApp:
                 return await self._handle_submit_feedback(ctx, body_dict)
             if operation == OPERATION_LIST_SKILLS:
                 return self._handle_list_skills(ctx, path)
+            if operation == OPERATION_GET_PROFILE:
+                if self._practice_profile_handler is None:
+                    return _not_implemented("get_practice_profile")
+                return self._handle_get_profile(ctx, path)
+            if operation == OPERATION_PUT_PROFILE:
+                if self._practice_profile_handler is None:
+                    return _not_implemented("put_practice_profile")
+                return self._practice_profile_handler.handle_put_profile(ctx, body_dict)
+            if operation == OPERATION_START_INTERVIEW:
+                if self._practice_profile_handler is None:
+                    return _not_implemented("start_interview")
+                return self._practice_profile_handler.handle_start_interview(ctx, body_dict)
+            if operation == OPERATION_SUBMIT_INTERVIEW_ANSWERS:
+                if self._practice_profile_handler is None:
+                    return _not_implemented("submit_interview_answers")
+                return self._practice_profile_handler.submit_interview_answers(ctx, body_dict)
             return _error_response("unknown_operation", f"Unknown operation: {operation}", status=404)
         except GatewayError as exc:
             return _error_response(exc.code, str(exc), status=exc.status, details=exc.details)
@@ -491,6 +522,27 @@ class GatewayApp:
             clean_path, query = path.split("?", 1)
         return handle_skills_request(self._skills_handler, ctx, clean_path, query)
 
+    def _handle_get_profile(
+        self,
+        ctx: AuthContext,
+        path: str,
+    ) -> JsonObject:
+        """Handle GET /v1/practice-profile — return tenant's profile(s).
+
+        Supports an optional ``?plugin=X`` query parameter to filter
+        by plugin name.
+        """
+        # Extract query string from path if present.
+        plugin: str | None = None
+        if "?" in path:
+            _, query = path.split("?", 1)
+            for param in query.split("&"):
+                if param.startswith("plugin="):
+                    plugin = param[len("plugin="):]
+                    break
+        assert self._practice_profile_handler is not None
+        return self._practice_profile_handler.handle_get_profile(ctx, plugin)
+
 
 # ---------------------------------------------------------------------------
 # Path routing
@@ -587,6 +639,22 @@ def _parse_route(method: str, path: str, base_path: str) -> tuple[str, dict[str,
     # GET /v1/skills/{skill_id}
     if method == "GET" and len(parts) == 2 and parts[0] == "skills":
         return OPERATION_LIST_SKILLS, {"skill_id": parts[1]}
+
+    # GET /v1/practice-profile (with optional ?plugin=X query param)
+    if method == "GET" and parts == ["practice-profile"]:
+        return OPERATION_GET_PROFILE, {}
+
+    # PUT /v1/practice-profile
+    if method == "PUT" and parts == ["practice-profile"]:
+        return OPERATION_PUT_PROFILE, {}
+
+    # POST /v1/practice-profile/interview
+    if method == "POST" and parts == ["practice-profile", "interview"]:
+        return OPERATION_START_INTERVIEW, {}
+
+    # POST /v1/practice-profile/interview/answers
+    if method == "POST" and parts == ["practice-profile", "interview", "answers"]:
+        return OPERATION_SUBMIT_INTERVIEW_ANSWERS, {}
 
     return None
 
@@ -839,16 +907,20 @@ __all__ = [
     "OPERATION_CREATE_RUN",
     "OPERATION_CREATE_SESSION",
     "OPERATION_GET_ARTIFACT",
+    "OPERATION_GET_PROFILE",
     "OPERATION_GET_RUN",
     "OPERATION_GET_SESSION",
     "OPERATION_LIST_SESSIONS",
     "OPERATION_LIST_SESSION_RUNS",
     "OPERATION_LIST_SKILLS",
     "OPERATION_LOGIN",
+    "OPERATION_PUT_PROFILE",
+    "OPERATION_START_INTERVIEW",
     "OPERATION_STREAM_RUN",
     "OPERATION_SUBMIT_APPROVAL",
     "OPERATION_SUBMIT_ELICITATION",
     "OPERATION_SUBMIT_FEEDBACK",
+    "OPERATION_SUBMIT_INTERVIEW_ANSWERS",
     "OPERATION_UPLOAD",
     "GatewayApp",
     "GatewayApprovalHandler",
@@ -858,6 +930,7 @@ __all__ = [
     "GatewayError",
     "GatewayFeedbackHandler",
     "GatewayLoginHandler",
+    "GatewayPracticeProfileHandler",
     "GatewaySkillsHandler",
     "GatewayUploadHandler",
 ]
