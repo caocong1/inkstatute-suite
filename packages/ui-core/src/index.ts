@@ -19,3 +19,9 @@ export type {
   RenderState,
   ChatMessage,
 } from "./event-reducer";
+
+export { createEventStream } from "./stores/eventStream";
+export type {
+  EventStreamStore,
+  EventStreamOptions,
+} from "./stores/eventStream";
