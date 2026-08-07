@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Mapping
 from platform_contract import RouteDecision, RouteMode
 
 from .classifier import classify_intent
-from .decision_log import append_decision_log
+from .decision_log import append_decision_log, record_routing_error
 from .legal_risk import LegalRiskAssessment, LegalRiskClassifierPort
 from .mode_classifier import ClassifyContext, ModeClassifierPort
 from .model_classifier import ModelClassifierPort
@@ -134,6 +134,40 @@ class RouterService:
             session_id = context.get("session_id", "")
             append_decision_log(decision, user_msg, self._log_dir, session_id)
 
+        return decision
+
+    def report_routing_error(
+        self,
+        context: Mapping[str, Any],
+        actual_skill: str,
+    ) -> RouteDecision:
+        """Re-route a message and record it as a routing error.
+
+        Ports the ``report_routing_error()`` pattern from
+        ``lawfirm-profile/scripts/router.py`` (lines 431-444).
+
+        Use when user feedback indicates the router picked the wrong
+        skill.  Re-routes the message via :meth:`decide`, records the
+        error via :func:`record_routing_error`, and returns the
+        decision that *should have been made* (for caller inspection).
+
+        The error is recorded to ``{log_dir}/router_errors.jsonl`` when
+        ``log_dir`` is set.  When ``log_dir`` is ``None``, the decision
+        is still computed but no error is recorded.
+
+        Args:
+            context: The routing context (must contain ``message``).
+            actual_skill: The skill the user/agent actually used.
+
+        Returns:
+            The :class:`RouteDecision` for the re-routed message.
+        """
+        decision = self.decide(context)
+        if self._log_dir is not None:
+            message = context.get("message")
+            user_msg = message if isinstance(message, str) else ""
+            error_log = self._log_dir / "router_errors.jsonl"
+            record_routing_error(decision, user_msg, actual_skill, error_log)
         return decision
 
     def _decide_core(self, context: Mapping[str, Any]) -> RouteDecision:
@@ -679,7 +713,16 @@ class RouterService:
         context defaults.  When not provided, the method falls back to
         ``context.get("gates_before", [])`` / ``context.get("gates_after", [])``
         (preserving existing behavior).
+
+        The ``session_id`` from context is stored in ``metadata`` (not as
+        a top-level field — contract freeze preserved).
         """
+        merged_metadata: dict[str, Any] = dict(metadata_extra) if metadata_extra is not None else {}
+        # Store session_id in metadata (not a top-level field — SAFETY-06).
+        session_id = context.get("session_id")
+        if session_id:
+            merged_metadata.setdefault("session_id", session_id)
+
         return RouteDecision(
             route_decision_id=context.get("route_decision_id", ""),
             turn_id=context.get("turn_id", ""),
@@ -695,5 +738,5 @@ class RouterService:
             reason=reason,
             route_mismatch=context.get("route_mismatch"),
             industry_context=dict(context.get("industry_context", {})),
-            metadata=metadata_extra if metadata_extra is not None else {},
+            metadata=merged_metadata,
         )
