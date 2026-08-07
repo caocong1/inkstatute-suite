@@ -251,7 +251,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 正文注入受上下文预算约束——给定预算，注入器能在 2K–20K token 的 skill 正文中做出确定性取舍并记录被裁剪的部分
   6. `solutions/lawfirm/manifest.json` 不再包含 4 条手写 skill 元数据；manifest 只保留 persona / output_policy / MCP / industry_context / secret_templates，且 `solution-loader` 与 `skill-registry` 的测试相应更新后全绿
 
-**Plans**: 4 (97-01 materializer core ✅ | 97-02 context budget injector | 97-03 skill-registry migration + manifest cleanup | 97-04 CLI + e2e + phase completion)
+**Plans**: 4 (97-01 materializer core ✅ | 97-02 context budget injector ✅ | 97-03 skill-registry migration + manifest cleanup | 97-04 CLI + e2e + phase completion)
 **UI hint**: no
 
 ### Phase 98: Real-Index Routing
