@@ -20,6 +20,7 @@ from platform_contract import RouteDecision, RouteMode
 
 from .classifier import classify_intent
 from .legal_risk import LegalRiskAssessment, LegalRiskClassifierPort
+from .mode_classifier import ClassifyContext, ModeClassifierPort
 from .model_classifier import ModelClassifierPort
 from .soft_matcher import (
     SKIP_CLARIFICATION_THRESHOLD,
@@ -62,6 +63,13 @@ class RouterService:
     ``legal_risk_classifier`` and ``model_classifier``.  Both default to
     ``None``, preserving the ``dependencies = []`` invariant — the actual
     implementations are host-injected.
+
+    An optional ``mode_classifier`` (``ModeClassifierPort``) can be injected
+    to perform Chat/Draft/Evidence three-mode detection.  When provided,
+    the classification result is stored in ``RouteDecision.metadata``
+    (keys: ``agent_mode``, ``mode_action``, ``mode_label``, ``mode_source``,
+    ``mode_fallback_reason``).  When ``None`` (the default), no mode-related
+    metadata keys are present (backward compatible).
     """
 
     def __init__(
@@ -70,11 +78,13 @@ class RouterService:
         strategy: RouterStrategy = RouterStrategy.RULE,
         legal_risk_classifier: LegalRiskClassifierPort | None = None,
         model_classifier: ModelClassifierPort | None = None,
+        mode_classifier: ModeClassifierPort | None = None,
     ) -> None:
         self._registry = skill_registry
         self._strategy = strategy
         self._legal_risk_classifier = legal_risk_classifier
         self._model_classifier = model_classifier
+        self._mode_classifier = mode_classifier
 
     def decide(self, context: Mapping[str, Any]) -> RouteDecision:
         """Produce a ``RouteDecision`` from *context* using the active strategy.
@@ -92,7 +102,23 @@ class RouterService:
            skip), ``gate_after=["legal-de-ai-polish"]``
         5. **Fall through** to the existing strategy cascade
            (RULE/SKILL/HYBRID)
+
+        After the routing decision is computed, if a ``mode_classifier`` is
+        injected, Chat/Draft/Evidence mode detection runs and the result is
+        merged into ``RouteDecision.metadata``.  Mode detection is orthogonal
+        to skill routing — it classifies the user's interaction mode, not
+        which skill to route to.
         """
+        decision = self._decide_core(context)
+
+        # Mode detection runs AFTER the routing decision (orthogonal to skill routing).
+        if self._mode_classifier is not None:
+            decision = self._merge_mode_metadata(decision, context)
+
+        return decision
+
+    def _decide_core(self, context: Mapping[str, Any]) -> RouteDecision:
+        """Core routing logic — pre-router layer + strategy cascade."""
         message = context.get("message")
         message_str = message if isinstance(message, str) else None
 
@@ -188,6 +214,59 @@ class RouterService:
         if self._strategy == RouterStrategy.SKILL:
             return self._decide_skill(context)
         return self._decide_rule(context)
+
+    def _merge_mode_metadata(
+        self,
+        decision: RouteDecision,
+        context: Mapping[str, Any],
+    ) -> RouteDecision:
+        """Run mode classification and merge results into decision metadata.
+
+        Builds a ``ClassifyContext`` from the routing context, calls
+        ``mode_classifier.classify()``, and returns a new ``RouteDecision``
+        with mode-related keys added to ``metadata``.  No new top-level
+        fields are added (contract freeze preserved — SAFETY-06).
+        """
+        message = context.get("message")
+        message_str = message if isinstance(message, str) else ""
+
+        classify_ctx = ClassifyContext(
+            user_message=message_str,
+            has_directory_ref=bool(context.get("has_directory_ref", False)),
+            has_file_ref=bool(context.get("has_file_ref", False)),
+            directory_aliases=list(context.get("directory_aliases", [])),
+            current_mode=context.get("current_mode"),
+            current_task_label=context.get("current_task_label"),
+            has_active_document=bool(context.get("has_active_document", False)),
+        )
+
+        mode_result = self._mode_classifier.classify(classify_ctx)
+
+        # Merge mode metadata into existing metadata (no new top-level fields).
+        merged_metadata = dict(decision.metadata)
+        merged_metadata["agent_mode"] = str(mode_result.mode)
+        merged_metadata["mode_action"] = mode_result.action
+        merged_metadata["mode_label"] = mode_result.label
+        merged_metadata["mode_source"] = mode_result.source
+        merged_metadata["mode_fallback_reason"] = mode_result.fallback_reason
+
+        return RouteDecision(
+            route_decision_id=decision.route_decision_id,
+            turn_id=decision.turn_id,
+            primary_skill=decision.primary_skill,
+            confidence=decision.confidence,
+            mode=decision.mode,
+            created_at=decision.created_at,
+            supporting_skills=list(decision.supporting_skills),
+            gates_before=list(decision.gates_before),
+            gates_after=list(decision.gates_after),
+            required_tools=list(decision.required_tools),
+            matched_rule=decision.matched_rule,
+            reason=decision.reason,
+            route_mismatch=decision.route_mismatch,
+            industry_context=dict(decision.industry_context),
+            metadata=merged_metadata,
+        )
 
     def _decide_rule(self, context: Mapping[str, Any]) -> RouteDecision:
         """RULE strategy: keyword/regex intent classification."""
