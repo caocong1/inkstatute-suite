@@ -319,7 +319,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. MCP 工具（`law-database`、`wenshu`）可被发现与调用，调用摘要进入 `tool_call.*` 事件与 `ExecutionTrace.tool_calls`
   6. 工具权限遵守 Phase 90 的安全默认——不存在未经审批的 shell / 代码执行路径
 
-**Plans**: TBD (est. 4)
+**Plans**: 4 (101-01 tool registry + EventEmitter + clarification ✅ | 101-02 file_read + MCP client + regulation search | 101-03 document_generate + track-changes | 101-04 e2e + completion)
 **UI hint**: no
 
 ### Phase 102: Legal Guardrail Port
@@ -403,7 +403,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 98. Real-Index Routing | C | 0/TBD | Not started | - |
 | 99. Practice Profile | C | 0/TBD | Not started | - |
 | 100. Agent Core Skeleton | D | 4/4 | Complete | 2026-08-11 |
-| 101. Agent Core Tools | D | 0/TBD | Not started | - |
+| 101. Agent Core Tools | D | 1/4 | In Progress | - |
 | 102. Legal Guardrail Port | D | 0/TBD | Not started | - |
 | 103. Dual Entry Points | D | 0/TBD | Not started | - |
 | 104. Legacy Convergence | D | 0/TBD | Not started | - |

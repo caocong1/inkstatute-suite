@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 101 plan complete — 4 plans written (101-01 through 101-04), 3 waves, ready for execution
-last_updated: "2026-08-11T14:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 101 plan-phase: read 101-CONTEXT.md, 101-RESEARCH.md, REQUIREMENTS.md (CORE-02/03), ROADMAP.md (Phase 101 success criteria), STATE.md, AGENTS.md, run_v2_gates.py (gate registration pattern), agent-core source (turn_loop.py ToolExecutor seam, event_emitter.py 9 emit methods, tools/__init__.py stub, config.py), platform-contract (events.py Artifact/McpServerDescriptor, unified_events.py ElicitationRequestedPayload/ArtifactCreatedPayload, elicitation.py validate_question_count, enums.py RunEventType), mcp-registry (registry.py McpRegistryPort/McpServerRecord), lawfirm-profile/scripts/contract_review_trackchanges.py (TrackChangesBuilder, process() at line 620, REVIEW_ITEMS at line 36). Wrote 4 plan files: 101-01-PLAN.md (Wave 1: ToolRegistry + EventEmitter extensions + clarification tool, 6 tasks), 101-02-PLAN.md (Wave 2: PathSandbox + file_read + MCP client + regulation search + builtin registry, 6 tasks), 101-03-PLAN.md (Wave 2: TrackChangesBuilder adaptation + document_generate tool + OOXML verification, 5 tasks), 101-04-PLAN.md (Wave 3: multi-tool e2e + error recovery + MCP e2e + track-changes e2e + security verification + success criteria + phase completion, 10 tasks). Wave structure: Wave 1 (101-01) → Wave 2 (101-02 ∥ 101-03) → Wave 3 (101-04). Total: 27 tasks across 4 plans.
+stopped_at: Phase 101 plan 101-01 complete — ToolRegistry + EventEmitter extensions + clarification tool + turn loop terminate_turn, 6/6 tasks done, all 38 gates green
+last_updated: "2026-08-11T15:00:00.000Z"
+last_activity: 2026-08-11 -- Phase 101 exec 101-01: ToolRegistry (registry.py), dispatching ToolExecutor (executor.py), EventEmitter extensions (emit_artifact_created, emit_elicitation_requested + side-channel buffer), clarification tool (clarification.py — ask_user, emits elicitation.requested, returns terminate_turn metadata), turn loop terminate_turn check (emit run.state_changed waiting_for_user), e2e integration test (test_e2e_tool_registry.py). 65 new tests (17 tool_registry + 24 clarification + 5 e2e + 13 event_emitter + 6 turn_loop). All 405 agent-core tests pass. All 38 gates green. Commits: 9ce46ca, 877b386, 9f57679, 234e121, 5c844ff, 109476d.
 progress:
   total_phases: 17
   completed_phases: 13
   total_plans: 62
-  completed_plans: 56
-  percent: 74
+  completed_plans: 57
+  percent: 75
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 101 plan complete — 4 plans written, 3 waves, ready for execution
+**Current focus:** Phase 101 plan 101-01 complete — ToolRegistry + EventEmitter extensions + clarification tool + turn loop terminate_turn
 
 ## Current Position
 
-Phase: 101 (agent-core-tools) — plan complete, ready for execution
-Status: Phase 101 plan-phase complete. 4 plan files written (101-01 through 101-04) with 27 total tasks across 3 waves. Wave 1 (101-01): ToolRegistry + EventEmitter extensions (emit_artifact_created, emit_elicitation_requested) + clarification tool + turn loop terminate_turn enhancement. Wave 2 (101-02 ∥ 101-03): PathSandbox + file_read + MCP client (JSON-RPC 2.0 over stdio) + regulation search ∥ TrackChangesBuilder adaptation + document_generate tool + OOXML verification. Wave 3 (101-04): multi-tool e2e + error recovery + MCP e2e + track-changes e2e + security verification + all 6 success criteria + phase completion (CORE-02/03 complete).
-Last activity: 2026-08-11 -- Phase 101 plan-phase. 4 plans, 27 tasks, 3 waves.
+Phase: 101 (agent-core-tools) — plan 101-01 complete, 3 plans remaining
+Status: Phase 101 plan 101-01 complete. ToolRegistry, dispatching ToolExecutor, EventEmitter extensions (emit_artifact_created, emit_elicitation_requested + side-channel buffer), clarification (ask_user) tool, and turn loop terminate_turn enhancement all implemented. 65 new tests, all 405 agent-core tests pass, all 38 gates green. Next: 101-02 (Wave 2: file_read + MCP client + regulation search) and 101-03 (Wave 2: document_generate + track-changes) can run in parallel.
+Last activity: 2026-08-11 -- Phase 101 exec 101-01. 6 tasks, 6 commits, 65 new tests.
 
-**Next command:** `/gsd-exec 101-01` (Wave 1: ToolRegistry + EventEmitter extensions + clarification tool)
+**Next command:** `/gsd-exec 101-02` (Wave 2: file_read + MCP client + regulation search) or `/gsd-exec 101-03` (Wave 2: document_generate + track-changes)
 
 ## Milestone v3.0 Overview
 
@@ -109,16 +109,17 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-11T14:00:00.000Z
-Stopped at: Phase 101 plan complete — 4 plans written (101-01 through 101-04), 3 waves, ready for execution
+Last session: 2026-08-11T15:00:00.000Z
+Stopped at: Phase 101 plan 101-01 complete — ToolRegistry + EventEmitter extensions + clarification tool + turn loop terminate_turn, 6/6 tasks done, all 38 gates green
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01 + CORE-04 + CORE-09 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 plan complete, next: exec 101-01)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 plan 101-01 complete, next: exec 101-02 ∥ 101-03)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-exec 101-01` (Wave 1: ToolRegistry + EventEmitter extensions + clarification tool)
+- `/gsd-exec 101-02` (Wave 2: file_read + MCP client + regulation search)
+- `/gsd-exec 101-03` (Wave 2: document_generate + track-changes)
 - 或 `/gsd-autonomous` 自动推进 Phases 101-104
