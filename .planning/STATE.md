@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 94-03 complete (invoke() migration verified, SettingsPanel, AppUpdateBanner, command surface audit)
+stopped_at: Phase 94 complete (native menu bar, E2E tests, desktop/web consistency, all 6 success criteria verified, UI-05 marked complete)
 last_updated: "2026-08-09T00:00:00.000Z"
-last_activity: 2026-08-09 -- Phase 94-03 complete (invoke() migration verification + reduced SettingsPanel 4 tabs + AppUpdateBanner 5 states + command surface audit 21 commands, 71 vitest + 22 Python gate tests, 34 gates green)
+last_activity: 2026-08-09 -- Phase 94 complete (native menu bar 6 menus + E2E 11 scenarios + desktop/web consistency 6 tests + phase94-verification 15 tests, 103 vitest + 22 Python gate tests, 34 gates green, UI-05 complete)
 progress:
   total_phases: 17
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 28
-  completed_plans: 30
-  percent: 43
+  completed_plans: 31
+  percent: 44
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 94 — Desktop Client (94-03 complete, 94-04+ pending)
+**Current focus:** Phase 95 — Bot Channel Degradation (Phase 94 complete)
 
 ## Current Position
 
-Phase: 94 (desktop-client) — PLAN 94-03 COMPLETE
-Plan: 94-03 complete (4 commits: invoke() migration verification + reduced SettingsPanel + AppUpdateBanner + command surface audit)
-Status: Phase 94-03 complete — invoke() migration verified, SettingsPanel with 4 tabs, AppUpdateBanner with 5 states, 21 desktop-only Tauri commands, 71 vitest + 22 Python gate tests, 34 gates green
-Last activity: 2026-08-09 -- Phase 94-03 complete (invoke() migration verification + reduced SettingsPanel 4 tabs + AppUpdateBanner 5 states + command surface audit 21 commands, 71 vitest + 22 Python gate tests, 34 gates green)
+Phase: 94 (desktop-client) — COMPLETE ✅
+Plan: 94-04 complete (4 commits: native menu bar + E2E tests + desktop/web consistency + phase completion)
+Status: Phase 94 complete — native menu bar 6 menus, E2E 11 scenarios, desktop/web consistency 6 tests, phase94-verification 15 tests, 103 vitest + 22 Python gate tests, 34 gates green, UI-05 marked complete
+Last activity: 2026-08-09 -- Phase 94 complete (native menu bar 6 menus + E2E 11 scenarios + desktop/web consistency 6 tests + phase94-verification 15 tests, 103 vitest + 22 Python gate tests, 34 gates green, UI-05 complete)
 
-**Next command:** `/gsd-execute-plan 94` for 94-04 (full integration test + cross-platform build verification) （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-execute-plan 95` for Phase 95 (Bot Channel Degradation) （或 `/gsd-autonomous` 自动推进）
 
 ## Milestone v3.0 Overview
 
@@ -111,16 +111,16 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 ## Session Continuity
 
 Last session: 2026-08-09T00:00:00.000Z
-Stopped at: Phase 94-03 complete (invoke() migration verified, SettingsPanel, AppUpdateBanner, command surface audit)
+Stopped at: Phase 94 complete (native menu bar, E2E tests, desktop/web consistency, all 6 success criteria verified, UI-05 marked complete)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-93 complete, Phase 94-01/02/03 complete, ready for 94-04)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-94 complete, ready for Phase 95)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute-plan 94` — 继续 Phase 94 (94-04: full integration test + cross-platform build verification)
-- 或 `/gsd-autonomous` 自动推进 Phases 94-104
+- `/gsd-execute-plan 95` — 开始 Phase 95 (Bot Channel Degradation)
+- 或 `/gsd-autonomous` 自动推进 Phases 95-104
 - 或 `/gsd-autonomous --to 95` 只跑到"通道统一"这个里程碑点

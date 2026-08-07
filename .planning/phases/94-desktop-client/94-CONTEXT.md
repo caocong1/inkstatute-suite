@@ -1,7 +1,7 @@
 ---
 phase: 94
 slug: desktop-client
-plan_count: TBD
+plan_count: 4
 subsystem: apps/desktop
 tags: [tauri, solidjs, desktop, offline, fts5, auto-update, window-controls, gateway]
 requires:
@@ -69,8 +69,8 @@ coverage:
   requirements: 1
   success_criteria: 6
 duration: TBD
-completed: false
-status: context-gathered
+completed: true
+status: complete
 created: 2026-08-08
 ---
 
