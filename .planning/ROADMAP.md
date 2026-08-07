@@ -54,7 +54,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 ### 阶段 A — 协议底座
 
 - [x] **Phase 88: Unified Event Contract** - ACP 同构的统一事件词汇 + Schema/绑定 + 降级规则 + V2 契约保持 (EVT-01..06)
-- [ ] **Phase 89: ACP Backend Client** - Python ACP client 驱动 hermes acp 与第二后端，子进程生命周期 (ACP-01, ACP-02, ACP-03, ACP-06)
+- [x] **Phase 89: ACP Backend Client** - Python ACP client 驱动 hermes acp 与第二后端，子进程生命周期 (ACP-01, ACP-02, ACP-03, ACP-06)
 - [ ] **Phase 90: ACP Event Bridge & Output Boundary** - 双向映射 + 输出边界 + 权限安全默认 (ACP-04, ACP-05, ACP-07, SAFE-02, SAFE-03)
 
 ### 阶段 B — 通道统一
