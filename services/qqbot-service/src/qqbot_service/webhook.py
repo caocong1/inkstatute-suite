@@ -18,9 +18,12 @@ from inkstatute_channels_qqbot.feedback_ingress import (
     handle_feedback_callback,
 )
 from inkstatute_channels_qqbot.ingress_runtime import QQBotRuntimeIngress
+from platform_contract.events import AgentTurn
 from platform_runtime.output_boundary import BoundaryAction
 from platform_runtime.protocols import AckResponse, ChannelDelivery, RawInbound, SolutionBinding
 
+from qqbot_service.event_consumer import QQBotEventConsumer
+from qqbot_service.gateway_client import GatewayClient
 from qqbot_service.secrets import resolve_secret_ref
 from qqbot_service.wiring import QQBotWiredRuntime
 
@@ -150,6 +153,109 @@ def _resolve_reply_text(
     return None
 
 
+def _agent_turn_to_dict(turn: AgentTurn) -> dict[str, Any]:
+    """Serialize an :class:`AgentTurn` to a dict for the Gateway create_run body.
+
+    Includes ``user_id``, ``content``, ``message_type``, ``attachments``,
+    and ``metadata`` fields — the minimum needed by the Gateway to create a run.
+    """
+    return {
+        "turn_id": turn.turn_id,
+        "conversation_id": turn.conversation_id,
+        "channel": turn.channel if isinstance(turn.channel, str) else str(turn.channel),
+        "user_id": turn.user_id,
+        "message_type": turn.message_type if isinstance(turn.message_type, str) else str(turn.message_type),
+        "received_at": turn.received_at,
+        "content": turn.content,
+        "attachments": [
+            {k: v for k, v in att.__dict__.items()} if hasattr(att, "__dict__") else dict(att)
+            for att in turn.attachments
+        ],
+        "metadata": dict(turn.metadata) if turn.metadata else {},
+    }
+
+
+def _extract_qq_scene_metadata(normalized: Any) -> dict[str, Any]:
+    """Extract QQ-specific scene metadata from a normalized inbound.
+
+    Returns a dict with ``scene``, ``user_openid``, ``group_openid``,
+    ``msg_id``, ``msg_seq`` keys — the fields the QQ event consumer needs
+    for scene-aware delivery and passive reply window checking.
+    """
+    turn_meta: dict[str, Any] = {}
+    if normalized.message is not None:
+        turn_meta = dict(getattr(normalized.message, "metadata", {}) or {})
+
+    scene = turn_meta.get("scene")
+    user_openid = turn_meta.get("user_openid") or getattr(
+        normalized.message, "user_id", None
+    )
+    group_openid = turn_meta.get("group_openid")
+    if scene == "group" and not group_openid:
+        group_openid = turn_meta.get("scene_id")
+    elif scene == "c2c" and not user_openid:
+        user_openid = turn_meta.get("scene_id")
+
+    msg_id = turn_meta.get("message_id") or turn_meta.get("msg_id")
+    msg_seq = turn_meta.get("msg_seq")
+
+    return {
+        "scene": scene,
+        "user_openid": user_openid,
+        "group_openid": group_openid,
+        "msg_id": msg_id,
+        "msg_seq": msg_seq,
+    }
+
+
+async def _compose_via_gateway(
+    *,
+    wired: QQBotWiredRuntime,
+    normalized: Any,
+    raw: RawInbound,
+    ack: AckResponse,
+    payload: dict[str, Any],
+    when: str,
+    solution: SolutionBinding | None,
+    tenant_id: str,
+    workspace_id: str,
+    bot_instance_id: str,
+    feedback_sink: MutableSequence[dict[str, Any]] | None,
+) -> dict[str, Any]:
+    """Gateway consumer path (BOT-02): create run via Gateway, consume SSE, deliver.
+
+    This function replaces the old ingress path (direct agent calls) with a
+    Gateway HTTP client + SSE consumer. No direct agent or backend calls
+    are made — the Gateway is the sole agent contact point.
+    """
+    turn = normalized.message
+    turn_dict = _agent_turn_to_dict(turn)
+
+    scene_meta = _extract_qq_scene_metadata(normalized)
+
+    conversation_id = turn.conversation_id if turn.conversation_id else None
+
+    consumer = QQBotEventConsumer(
+        gateway_client=wired.gateway_client,
+        adapter=wired.adapter,
+        solution=solution,
+        tenant_id=tenant_id,
+    )
+    evidence = await consumer.consume_and_deliver(
+        turn=turn_dict,
+        scene=scene_meta["scene"],
+        user_openid=scene_meta["user_openid"],
+        group_openid=scene_meta["group_openid"],
+        msg_id=scene_meta["msg_id"],
+        msg_seq=scene_meta["msg_seq"],
+        conversation_id=conversation_id,
+        received_at=when,
+    )
+    evidence["branch"] = "message"
+    evidence["gateway_path"] = True
+    return evidence
+
+
 async def run_post_ack_composition(
     wired: QQBotWiredRuntime,
     raw: RawInbound,
@@ -206,6 +312,23 @@ async def run_post_ack_composition(
             )
         evidence["status"] = "completed"
         return evidence
+
+    # Gateway consumer path (BOT-02): when gateway_client is available,
+    # use the event consumer instead of direct agent calls.
+    if wired.gateway_client is not None and normalized.message is not None:
+        return await _compose_via_gateway(
+            wired=wired,
+            normalized=normalized,
+            raw=raw,
+            ack=ack,
+            payload=payload,
+            when=when,
+            solution=solution,
+            tenant_id=tenant_id,
+            workspace_id=workspace_id,
+            bot_instance_id=bot_instance_id,
+            feedback_sink=feedback_sink,
+        )
 
     # Message path: package ingress → optional deliver behind output boundary.
     binding = solution or SolutionBinding(
