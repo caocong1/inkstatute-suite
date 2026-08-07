@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 100 COMPLETE — agent core skeleton with e2e tests (38 gates green, 340 agent-core tests, CORE-01/CORE-04/CORE-09 complete)
-last_updated: "2026-08-11T12:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 100 Plan 100-04 (Wave 3): e2e integration tests + phase completion. 5 new test files: test_e2e_turn_orchestration.py (11 tests — multi-turn tool orchestration, event sequence, seq monotonicity, provider_usage, always-streaming), test_silence_threshold.py (10 tests — ScriptedClock + RecordingEmitter verify no gaps > 5s during tool rounds, heartbeats fire when silence exceeds threshold), test_e2e_context_budget.py (16 tests — skill body injection + history trim, determinism, CJK-aware estimation, ContextAssemblyBudgetError), test_e2e_model_layer.py (26 tests — OpenAI/Anthropic/Ollama streaming + tool calls, circuit breaker/rate limiter/cost tracker integration, usage in events), test_e2e_error_recovery.py (17 tests — tool failure recovery, provider error, turn limit exceeded, multiple failures then recovery). fixtures/turn_scripts.py shared turn script fixtures. 340 tests in agent-core gate (80 new e2e tests). 38 gates green. 5 commits: 09f3d75, f43bf03, 0866179, ecaf2f4, 44466f0. CORE-01, CORE-04, CORE-09 marked complete. Phase 100 marked complete.
+stopped_at: Phase 101 discuss complete — 11 gray areas auto-selected, 101-CONTEXT.md + 101-DISCUSSION-LOG.md written, ready for plan
+last_updated: "2026-08-11T13:00:00.000Z"
+last_activity: 2026-08-11 -- Phase 101 discuss-phase (auto mode): loaded Phase 100 context (100-CONTEXT.md, 100-RESEARCH.md, 100-03-SUMMARY.md, 100-04-PLAN.md), scouted codebase (contract_review_trackchanges.py TrackChangesBuilder class, mcp-registry catalog vs client gap, elicitation.py ElicitationRequestedPayload, ArtifactKind enum with TRACKCHANGES_DOCX, GatewayArtifactStore, acp-client _DANGEROUS_PERMISSION_KINDS, MCP connector law-database/wenshu with standard JSON-RPC 2.0 over stdio, turn_loop.py ToolExecutor seam). Identified 11 gray areas, auto-selected all with recommended options. Key decisions: ToolRegistry + dispatching executor, clarification tool emits elicitation.requested + terminate_turn metadata, MCP client in agent-core/tools/mcp_client.py, import TrackChangesBuilder (not rewrite), emit_artifact_created() added to EventEmitter, local file path artifact storage with uri_ref. 2 files committed: 101-CONTEXT.md (651 lines), 101-DISCUSSION-LOG.md.
 progress:
   total_phases: 17
   completed_phases: 13
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 100 COMPLETE — agent core skeleton with e2e tests, ready for Phase 101
+**Current focus:** Phase 101 discuss complete — 11 gray areas auto-selected, ready for plan
 
 ## Current Position
 
-Phase: 100 (agent-core-skeleton) — ✅ COMPLETE (Plans 100-01, 100-02, 100-03, 100-04 all complete)
-Status: Phase 100 fully completed. packages/agent-core/ now has: AgentCoreConfig, EventEmitter, LlmProvider Protocol + StreamDelta types + FixtureProvider + OpenAI/Anthropic/Ollama runners + GatewayComponents (100-01/100-02), AgentContextAssembler + async turn loop + message helpers (100-03), 5 e2e test files with 80 new tests covering all 6 success criteria (100-04). 340 tests in agent-core gate, 38 gates green. CORE-01, CORE-04, CORE-09 marked complete.
-Last activity: 2026-08-11 -- Plan 100-04 e2e tests + phase completion. 340 agent-core tests, 38 gates green.
+Phase: 101 (agent-core-tools) — discuss complete, ready for plan
+Status: Phase 101 discuss-phase complete (auto mode). 11 gray areas identified and auto-selected with recommended options. 101-CONTEXT.md and 101-DISCUSSION-LOG.md written and committed. Key decisions: ToolRegistry + dispatching ToolExecutor, clarification tool emits elicitation.requested + terminate_turn metadata, MCP client in agent-core/tools/mcp_client.py, import TrackChangesBuilder (not rewrite per CORE-03), emit_artifact_created() added to EventEmitter, local file path artifact storage with uri_ref, no terminal/execute_code permission paths.
+Last activity: 2026-08-11 -- Phase 101 discuss-phase (auto mode). 11 gray areas auto-selected.
 
-**Next command:** `/gsd-implement 101` (Phase 101: Agent Core Tools — tool layer + Word native track-changes docx)
+**Next command:** `/gsd-plan 101` (Phase 101: Agent Core Tools — tool layer + Word native track-changes docx, CORE-02 + CORE-03)
 
 ## Milestone v3.0 Overview
 
@@ -109,16 +109,16 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-11T12:00:00.000Z
-Stopped at: Phase 100 COMPLETE — agent core skeleton with e2e tests (38 gates green, 340 agent-core tests, CORE-01/CORE-04/CORE-09 complete)
+Last session: 2026-08-11T13:00:00.000Z
+Stopped at: Phase 101 discuss complete — 11 gray areas auto-selected, 101-CONTEXT.md + 101-DISCUSSION-LOG.md written, ready for plan
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01 + CORE-04 + CORE-09 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 next)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 discuss complete, next: plan)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-implement 101` (Phase 101: Agent Core Tools — tool layer + Word native track-changes docx, CORE-02 + CORE-03)
+- `/gsd-plan 101` (Phase 101: Agent Core Tools — tool layer + Word native track-changes docx, CORE-02 + CORE-03)
 - 或 `/gsd-autonomous` 自动推进 Phases 101-104
