@@ -58,11 +58,11 @@
 - [x] **SKILL-02**: 索引在**不修改任一 skill 仓**的前提下生成；正确区分约 60 个编排入口与约 285 个叶子子技能；正确解析 frontmatter、父子关系、`plugin.json` ✅ Phase 96
 - [x] **SKILL-03**: 索引记录 `token_estimate`、`declared_gates`、`referenced_resources`、`practice_profile_dependency`、`host_assumptions`、`required_scripts`，供路由、可观测与上下文预算使用 ✅ Phase 96
 - [x] **SKILL-04**: 双仓合并与冲突模型——命名空间隔离、`legal-` 前缀、四态冲突分类（`in-sync` / `upstream-changed` / `both-changed` / `local-missing`），继承 `lawfirm-profile/scripts/sync_legal_skills.py` 语义 ✅ Phase 96
-- [ ] **SKILL-05**: skill 物化器——把语料按每个后端期望的布局落地（Hermes profile / ACP agent skills / 自研 core），一份 skill 三处可用；宿主假设按目标后端改写
-- [ ] **SKILL-06**: 元数据 / 正文 / 工具依赖三分离；正文按需注入且受上下文预算约束（实测正文 2K–20K token）
+- [x] **SKILL-05**: skill 物化器——把语料按每个后端期望的布局落地（Hermes profile / ACP agent skills / 自研 core），一份 skill 三处可用；宿主假设按目标后端改写 ✅ Phase 97
+- [x] **SKILL-06**: 元数据 / 正文 / 工具依赖三分离；正文按需注入且受上下文预算约束（实测正文 2K–20K token）✅ Phase 97
 - [ ] **SKILL-07**: `packages/router-service` 数据源从 4 条手写元数据换成真实索引；移植 `lawfirm-profile/scripts/router.py` 的 12 条强信号正则与 0.4 软匹配阈值，行为不回退
 - [ ] **SKILL-08**: 移植 `lawyer-desktop/src-tauri/src/skills/agent_classifier.rs` 的 Chat / Draft / Evidence 三模式判定与 continue / switch / aside 动作
-- [ ] **SKILL-09**: 废弃 `solutions/lawfirm/manifest.json` 的 4 条手写 skill 元数据作为 skill 源；manifest 只保留 persona / output_policy / MCP / industry_context / secret_templates
+- [x] **SKILL-09**: 废弃 `solutions/lawfirm/manifest.json` 的 4 条手写 skill 元数据作为 skill 源；manifest 只保留 persona / output_policy / MCP / industry_context / secret_templates ✅ Phase 97
 
 ### PROF — 执业配置
 
@@ -183,9 +183,9 @@
 | SKILL-02 | Phase 96 | Complete ✅ |
 | SKILL-03 | Phase 96 | Complete ✅ |
 | SKILL-04 | Phase 96 | Complete ✅ |
-| SKILL-05 | Phase 97 | Pending |
-| SKILL-06 | Phase 97 | Pending |
-| SKILL-09 | Phase 97 | Pending |
+| SKILL-05 | Phase 97 | Complete ✅ |
+| SKILL-06 | Phase 97 | Complete ✅ |
+| SKILL-09 | Phase 97 | Complete ✅ |
 | SKILL-07 | Phase 98 | Pending |
 | SKILL-08 | Phase 98 | Pending |
 | PROF-01 | Phase 99 | Pending |
