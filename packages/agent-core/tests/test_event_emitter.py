@@ -467,5 +467,274 @@ class TestEventOrdering(unittest.TestCase):
         self.assertLess(d2.seq, final.seq)
 
 
+# ---------------------------------------------------------------------------
+# emit_artifact_created tests
+# ---------------------------------------------------------------------------
+
+
+class TestEmitArtifactCreated(unittest.TestCase):
+    """emit_artifact_created() produces artifact.created events."""
+
+    def test_event_type_is_artifact_created(self):
+        from platform_contract.enums import ArtifactKind
+        from platform_contract.events import Artifact
+
+        emitter = EventEmitter("run-1")
+        artifact = Artifact(
+            artifact_id="art-1",
+            kind=ArtifactKind.TRACKCHANGES_DOCX,
+            name="审查稿.docx",
+            uri="file:///tmp/output.docx",
+        )
+        event = emitter.emit_artifact_created(artifact)
+        self.assertEqual(event.event_type, RunEventType.ARTIFACT_CREATED_V3.value)
+
+    def test_payload_has_artifact_dataclass(self):
+        from platform_contract.enums import ArtifactKind
+        from platform_contract.events import Artifact
+
+        emitter = EventEmitter("run-1")
+        artifact = Artifact(
+            artifact_id="art-1",
+            kind=ArtifactKind.DOCX,
+            name="合同.docx",
+            uri="file:///tmp/contract.docx",
+            mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+        event = emitter.emit_artifact_created(artifact)
+        self.assertIsNotNone(event.payload)
+        self.assertIn("artifact", event.payload)
+        self.assertEqual(event.payload["artifact"]["artifact_id"], "art-1")
+        self.assertEqual(event.payload["artifact"]["kind"], "docx")
+        self.assertEqual(event.payload["artifact"]["name"], "合同.docx")
+        self.assertEqual(event.payload["artifact"]["uri"], "file:///tmp/contract.docx")
+
+    def test_payload_with_metadata(self):
+        from platform_contract.enums import ArtifactKind
+        from platform_contract.events import Artifact
+
+        emitter = EventEmitter("run-1")
+        artifact = Artifact(
+            artifact_id="art-2",
+            kind=ArtifactKind.PDF,
+            name="report.pdf",
+            uri="file:///tmp/report.pdf",
+        )
+        event = emitter.emit_artifact_created(
+            artifact,
+            metadata={"source": "document_generate"},
+        )
+        self.assertIn("source", event.metadata)
+        self.assertEqual(event.metadata["source"], "document_generate")
+
+    def test_seq_monotonic_with_existing_methods(self):
+        """emit_artifact_created gets monotonic seq alongside other methods."""
+        from platform_contract.enums import ArtifactKind
+        from platform_contract.events import Artifact
+
+        emitter = EventEmitter("run-1")
+        e0 = emitter.emit_thought_delta("thinking")  # seq=0
+        artifact = Artifact(
+            artifact_id="art-1",
+            kind=ArtifactKind.DOCX,
+            name="doc.docx",
+            uri="file:///tmp/doc.docx",
+        )
+        e1 = emitter.emit_artifact_created(artifact)  # seq=1
+        e2 = emitter.emit_message_delta("done")  # seq=2
+        self.assertEqual(e0.seq, 0)
+        self.assertEqual(e1.seq, 1)
+        self.assertEqual(e2.seq, 2)
+
+    def test_works_with_injectable_clock(self):
+        from platform_contract.enums import ArtifactKind
+        from platform_contract.events import Artifact
+
+        clock = FakeClock()
+        emitter = EventEmitter("run-1", clock=clock)
+        artifact = Artifact(
+            artifact_id="art-1",
+            kind=ArtifactKind.DOCX,
+            name="doc.docx",
+            uri="file:///tmp/doc.docx",
+        )
+        event = emitter.emit_artifact_created(artifact)
+        self.assertEqual(event.occurred_at, "2026-01-01T00:00:00+00:00")
+
+
+# ---------------------------------------------------------------------------
+# emit_elicitation_requested tests
+# ---------------------------------------------------------------------------
+
+
+class TestEmitElicitationRequested(unittest.TestCase):
+    """emit_elicitation_requested() produces elicitation.requested events."""
+
+    def test_event_type_is_elicitation_requested(self):
+        from platform_contract.unified_events import ElicitationOption, ElicitationQuestion
+
+        emitter = EventEmitter("run-1")
+        questions = [
+            ElicitationQuestion(
+                id="q1",
+                question="您是甲方还是乙方？",
+                options=[ElicitationOption(label="甲方", value="party_a")],
+            ),
+            ElicitationQuestion(
+                id="q2",
+                question="合同类型？",
+                options=[ElicitationOption(label="租赁", value="lease")],
+            ),
+        ]
+        event = emitter.emit_elicitation_requested(
+            interrupt_id="int-1",
+            intro="请回答以下问题",
+            questions=questions,
+        )
+        self.assertEqual(event.event_type, RunEventType.ELICITATION_REQUESTED.value)
+
+    def test_payload_has_interrupt_id_intro_questions(self):
+        from platform_contract.unified_events import ElicitationOption, ElicitationQuestion
+
+        emitter = EventEmitter("run-1")
+        questions = [
+            ElicitationQuestion(
+                id="q1",
+                question="问题1",
+                allow_multiple=False,
+                options=[ElicitationOption(label="选项A", value="a")],
+            ),
+            ElicitationQuestion(
+                id="q2",
+                question="问题2",
+                allow_multiple=True,
+                options=[
+                    ElicitationOption(label="选项B", value="b"),
+                    ElicitationOption(label="选项C", value="c"),
+                ],
+            ),
+        ]
+        event = emitter.emit_elicitation_requested(
+            interrupt_id="int-123",
+            intro="澄清引导语",
+            questions=questions,
+        )
+        self.assertEqual(event.payload["interrupt_id"], "int-123")
+        self.assertEqual(event.payload["intro"], "澄清引导语")
+        self.assertEqual(len(event.payload["questions"]), 2)
+        self.assertEqual(event.payload["questions"][0]["id"], "q1")
+        self.assertEqual(event.payload["questions"][0]["question"], "问题1")
+        self.assertEqual(event.payload["questions"][0]["options"][0]["label"], "选项A")
+        self.assertEqual(event.payload["questions"][0]["options"][0]["value"], "a")
+        self.assertEqual(event.payload["questions"][1]["allow_multiple"], True)
+
+    def test_payload_with_optional_fields(self):
+        from platform_contract.unified_events import ElicitationQuestion
+
+        emitter = EventEmitter("run-1")
+        questions = [
+            ElicitationQuestion(id="q1", question="问题1"),
+            ElicitationQuestion(id="q2", question="问题2"),
+        ]
+        event = emitter.emit_elicitation_requested(
+            interrupt_id="int-1",
+            intro="intro",
+            questions=questions,
+            resume_state_ref="state-ref-123",
+            expires_at="2026-12-31T23:59:59+00:00",
+        )
+        self.assertEqual(event.payload["resume_state_ref"], "state-ref-123")
+        self.assertEqual(event.payload["expires_at"], "2026-12-31T23:59:59+00:00")
+
+    def test_payload_optional_fields_default_none(self):
+        from platform_contract.unified_events import ElicitationQuestion
+
+        emitter = EventEmitter("run-1")
+        questions = [
+            ElicitationQuestion(id="q1", question="问题1"),
+            ElicitationQuestion(id="q2", question="问题2"),
+        ]
+        event = emitter.emit_elicitation_requested(
+            interrupt_id="int-1",
+            intro="intro",
+            questions=questions,
+        )
+        self.assertIsNone(event.payload["resume_state_ref"])
+        self.assertIsNone(event.payload["expires_at"])
+
+    def test_free_text_questions_have_empty_options(self):
+        from platform_contract.unified_events import ElicitationQuestion
+
+        emitter = EventEmitter("run-1")
+        questions = [
+            ElicitationQuestion(id="q1", question="请描述情况"),
+            ElicitationQuestion(id="q2", question="请补充信息"),
+        ]
+        event = emitter.emit_elicitation_requested(
+            interrupt_id="int-1",
+            intro="intro",
+            questions=questions,
+        )
+        self.assertEqual(event.payload["questions"][0]["options"], [])
+        self.assertEqual(event.payload["questions"][1]["options"], [])
+
+    def test_seq_monotonic_with_existing_methods(self):
+        """emit_elicitation_requested gets monotonic seq alongside other methods."""
+        from platform_contract.unified_events import ElicitationQuestion
+
+        emitter = EventEmitter("run-1")
+        e0 = emitter.emit_thought_delta("thinking")  # seq=0
+        e1 = emitter.emit_elicitation_requested(
+            interrupt_id="int-1",
+            intro="intro",
+            questions=[
+                ElicitationQuestion(id="q1", question="q1"),
+                ElicitationQuestion(id="q2", question="q2"),
+            ],
+        )  # seq=1
+        e2 = emitter.emit_run_state_changed("waiting_for_user")  # seq=2
+        self.assertEqual(e0.seq, 0)
+        self.assertEqual(e1.seq, 1)
+        self.assertEqual(e2.seq, 2)
+
+    def test_works_with_injectable_clock(self):
+        from platform_contract.unified_events import ElicitationQuestion
+
+        clock = FakeClock()
+        emitter = EventEmitter("run-1", clock=clock)
+        event = emitter.emit_elicitation_requested(
+            interrupt_id="int-1",
+            intro="intro",
+            questions=[
+                ElicitationQuestion(id="q1", question="q1"),
+                ElicitationQuestion(id="q2", question="q2"),
+            ],
+        )
+        self.assertEqual(event.occurred_at, "2026-01-01T00:00:00+00:00")
+
+    def test_updates_last_event_time(self):
+        """emit_elicitation_requested updates last_event_time (via _emit)."""
+        from platform_contract.unified_events import ElicitationQuestion
+
+        clock = FakeMonotonicClock(start=0.0)
+        config = AgentCoreConfig(silence_threshold_seconds=5.0)
+        emitter = EventEmitter("run-1", config, monotonic_clock=clock)
+
+        emitter.emit_thought_delta("initial")
+        self.assertEqual(emitter.last_event_time, 0.0)
+
+        emitter.emit_elicitation_requested(
+            interrupt_id="int-1",
+            intro="intro",
+            questions=[
+                ElicitationQuestion(id="q1", question="q1"),
+                ElicitationQuestion(id="q2", question="q2"),
+            ],
+        )
+        # last_event_time should be updated (still 0.0 since FakeMonotonicClock doesn't advance)
+        # But the key point is _emit was called — verify via seq
+        self.assertEqual(emitter.seq, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

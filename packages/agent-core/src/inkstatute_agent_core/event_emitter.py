@@ -38,8 +38,11 @@ from datetime import datetime, timezone
 from typing import Any, Callable
 
 from platform_contract.enums import RunEventType
-from platform_contract.events import ErrorInfo, RunEvent
+from platform_contract.events import Artifact, ErrorInfo, RunEvent
 from platform_contract.unified_events import (
+    ArtifactCreatedPayload,
+    ElicitationQuestion,
+    ElicitationRequestedPayload,
     ErrorEventPayload,
     MessageCompletedPayload,
     MessageDeltaPayload,
@@ -324,6 +327,62 @@ class EventEmitter:
             metadata=metadata or {},
         )
         return self._emit(RunEventType.ERROR, payload, metadata=metadata)
+
+    def emit_artifact_created(
+        self,
+        artifact: Artifact,
+        metadata: JsonObject | None = None,
+    ) -> RunEvent:
+        """Emit an ``artifact.created`` event.
+
+        Args:
+            artifact: The ``Artifact`` dataclass describing the produced
+                artifact (docx, trackchanges_docx, etc.).
+            metadata: Optional metadata dict.
+
+        Returns:
+            A ``RunEvent`` with ``event_type="artifact.created"`` and
+            a serialized ``ArtifactCreatedPayload`` containing the
+            ``Artifact`` dataclass.
+        """
+        payload = ArtifactCreatedPayload(
+            artifact=artifact,
+            metadata=metadata or {},
+        )
+        return self._emit(RunEventType.ARTIFACT_CREATED_V3, payload, metadata=metadata)
+
+    def emit_elicitation_requested(
+        self,
+        interrupt_id: str,
+        intro: str,
+        questions: list[ElicitationQuestion],
+        resume_state_ref: str | None = None,
+        expires_at: str | None = None,
+        metadata: JsonObject | None = None,
+    ) -> RunEvent:
+        """Emit an ``elicitation.requested`` event.
+
+        Args:
+            interrupt_id: Unique identifier for this elicitation interrupt.
+            intro: Introductory text shown to the user.
+            questions: List of 2-4 ``ElicitationQuestion`` objects.
+            resume_state_ref: Optional reference to resume state.
+            expires_at: Optional ISO-8601 expiry timestamp.
+            metadata: Optional metadata dict.
+
+        Returns:
+            A ``RunEvent`` with ``event_type="elicitation.requested"`` and
+            a serialized ``ElicitationRequestedPayload``.
+        """
+        payload = ElicitationRequestedPayload(
+            interrupt_id=interrupt_id,
+            intro=intro,
+            questions=questions,
+            resume_state_ref=resume_state_ref,
+            expires_at=expires_at,
+            metadata=metadata or {},
+        )
+        return self._emit(RunEventType.ELICITATION_REQUESTED, payload, metadata=metadata)
 
 
 __all__ = ["EventEmitter"]
