@@ -22,7 +22,7 @@ from inkstatute_skill_materializer.body_injector import (
 )
 from inkstatute_skill_materializer.three_separation import produce_routing_manifest
 
-from .fixtures.body_injector_fixtures import build_medium_skill
+from fixtures.body_injector_fixtures import build_medium_skill
 
 
 # ---------------------------------------------------------------------------

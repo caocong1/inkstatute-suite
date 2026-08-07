@@ -23,7 +23,7 @@ from inkstatute_skill_materializer.body_injector import (
     _PRIORITY_LOW,
 )
 
-from .fixtures.body_injector_fixtures import (
+from fixtures.body_injector_fixtures import (
     build_small_skill,
     build_medium_skill,
     build_large_skill,
