@@ -21,7 +21,13 @@ from platform_contract import RouteDecision, RouteMode
 from .classifier import classify_intent
 from .legal_risk import LegalRiskAssessment, LegalRiskClassifierPort
 from .model_classifier import ModelClassifierPort
+from .soft_matcher import (
+    SKIP_CLARIFICATION_THRESHOLD,
+    SOFT_MATCH_THRESHOLD,
+    best_soft_match,
+)
 from .strategies import RouterStrategy
+from .strong_signal import is_simple_factual, match_strong_signal
 
 if TYPE_CHECKING:
     from inkstatute_skill_registry import SkillRegistryPort
@@ -71,7 +77,112 @@ class RouterService:
         self._model_classifier = model_classifier
 
     def decide(self, context: Mapping[str, Any]) -> RouteDecision:
-        """Produce a ``RouteDecision`` from *context* using the active strategy."""
+        """Produce a ``RouteDecision`` from *context* using the active strategy.
+
+        The routing flow includes a pre-router layer that runs BEFORE the
+        strategy cascade for ALL strategies:
+
+        1. **Empty/trivially short** (len < 4) → ``None``, confidence 0.9
+        2. **Strong-signal rules** (first match wins) → rule's primary_skill,
+           confidence 0.95, gates from rule
+        3. **Factual short-circuit** → ``None``, confidence 0.85,
+           ``matched_rule="factual_short_circuit"``
+        4. **Soft trigger-phrase matching** (threshold ≥ 0.4) → best match,
+           ``gate_before=["ask-user-enforcement"]`` (unless score ≥ 0.7 →
+           skip), ``gate_after=["legal-de-ai-polish"]``
+        5. **Fall through** to the existing strategy cascade
+           (RULE/SKILL/HYBRID)
+        """
+        message = context.get("message")
+        message_str = message if isinstance(message, str) else None
+
+        # 1. Empty / trivially short → treat as factual
+        if message_str is not None:
+            msg = message_str.strip()
+            if not msg or len(msg) < 4:
+                return self._build_decision(
+                    context,
+                    mode=RouteMode.SIMPLE_QA,
+                    primary_skill=None,
+                    confidence=0.9,
+                    reason="empty or trivially short message",
+                    matched_rule="",
+                    metadata_extra={
+                        "router_strategy": str(self._strategy),
+                        "router_service_version": ROUTER_SERVICE_VERSION,
+                        "pre_router_layer": "trivially_short",
+                    },
+                )
+
+        # 2. Strong-signal rules (first match wins)
+        if message_str is not None:
+            rule = match_strong_signal(message_str.strip())
+            if rule is not None:
+                gates_before = [rule.gate_before] if rule.gate_before else []
+                gates_after = [rule.gate_after] if rule.gate_after else []
+                return self._build_decision(
+                    context,
+                    mode=RouteMode.MATCHED,
+                    primary_skill=rule.primary,
+                    confidence=rule.confidence,
+                    supporting_skills=list(rule.supporting),
+                    gates_before=gates_before,
+                    gates_after=gates_after,
+                    matched_rule=rule.name,
+                    reason=rule.reason,
+                    metadata_extra={
+                        "router_strategy": str(self._strategy),
+                        "router_service_version": ROUTER_SERVICE_VERSION,
+                        "pre_router_layer": "strong_signal",
+                        "skip_clarification": rule.skip_clarification,
+                    },
+                )
+
+        # 3. Simple factual Q? (statute lookup, term definition)
+        if message_str is not None and is_simple_factual(message_str.strip()):
+            return self._build_decision(
+                context,
+                mode=RouteMode.SIMPLE_QA,
+                primary_skill=None,
+                confidence=0.85,
+                matched_rule="factual_short_circuit",
+                reason="simple_factual_question (statute/term lookup, no skill needed)",
+                metadata_extra={
+                    "router_strategy": str(self._strategy),
+                    "router_service_version": ROUTER_SERVICE_VERSION,
+                    "pre_router_layer": "factual_short_circuit",
+                },
+            )
+
+        # 4. Soft trigger-phrase matching (threshold ≥ 0.4)
+        if message_str is not None and self._registry is not None:
+            descriptors = self._registry.list_skills()
+            best_id, best_score, best_reason = best_soft_match(
+                message_str.strip(), descriptors, exclude=set(),
+            )
+            if best_id is not None and best_score >= SOFT_MATCH_THRESHOLD:
+                skip = best_score >= SKIP_CLARIFICATION_THRESHOLD
+                gates_before = [] if skip else ["ask-user-enforcement"]
+                gates_after = ["legal-de-ai-polish"]
+                return self._build_decision(
+                    context,
+                    mode=RouteMode.MATCHED,
+                    primary_skill=best_id,
+                    confidence=round(best_score, 3),
+                    gates_before=gates_before,
+                    gates_after=gates_after,
+                    matched_rule="soft_trigger_match",
+                    reason=best_reason,
+                    metadata_extra={
+                        "router_strategy": str(self._strategy),
+                        "router_service_version": ROUTER_SERVICE_VERSION,
+                        "pre_router_layer": "soft_trigger_match",
+                        "skip_clarification": skip,
+                        "soft_match_score": round(best_score, 3),
+                    },
+                )
+
+        # 5. Fall through to the existing strategy cascade
         if self._strategy == RouterStrategy.HYBRID:
             return self._decide_hybrid(context)
         if self._strategy == RouterStrategy.SKILL:
@@ -460,9 +571,17 @@ class RouterService:
         matched_rule: str | None = None,
         reason: str | None = None,
         supporting_skills: list[str] | None = None,
+        gates_before: list[str] | None = None,
+        gates_after: list[str] | None = None,
         metadata_extra: dict[str, Any] | None = None,
     ) -> RouteDecision:
-        """Construct a frozen ``RouteDecision`` from context defaults and provided values."""
+        """Construct a frozen ``RouteDecision`` from context defaults and provided values.
+
+        When *gates_before* or *gates_after* are provided, they override the
+        context defaults.  When not provided, the method falls back to
+        ``context.get("gates_before", [])`` / ``context.get("gates_after", [])``
+        (preserving existing behavior).
+        """
         return RouteDecision(
             route_decision_id=context.get("route_decision_id", ""),
             turn_id=context.get("turn_id", ""),
@@ -471,8 +590,8 @@ class RouterService:
             mode=mode,
             created_at=context.get("created_at", ""),
             supporting_skills=supporting_skills if supporting_skills is not None else list(context.get("supporting_skills", [])),
-            gates_before=list(context.get("gates_before", [])),
-            gates_after=list(context.get("gates_after", [])),
+            gates_before=gates_before if gates_before is not None else list(context.get("gates_before", [])),
+            gates_after=gates_after if gates_after is not None else list(context.get("gates_after", [])),
             required_tools=required_tools if required_tools is not None else [],
             matched_rule=matched_rule,
             reason=reason,

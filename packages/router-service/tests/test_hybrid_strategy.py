@@ -128,7 +128,7 @@ class HybridRuleLayerTests(unittest.TestCase):
             strategy=RouterStrategy.HYBRID,
             skill_registry=fake,
         )
-        decision = service.decide({"message": "请审查这份合同"})
+        decision = service.decide({"message": "请审查这份合同文件的内容"})
 
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.primary_skill, "test/compliance_review")
@@ -143,7 +143,7 @@ class HybridRuleLayerTests(unittest.TestCase):
             strategy=RouterStrategy.HYBRID,
             skill_registry=None,
         )
-        decision = service.decide({"message": "请问什么是合同"})
+        decision = service.decide({"message": "请问这个条款是否有效力呢"})
 
         self.assertEqual(decision.mode, "simple_qa")
         self.assertAlmostEqual(decision.confidence, 0.6)
@@ -199,7 +199,7 @@ class HybridSkillLayerTests(unittest.TestCase):
             strategy=RouterStrategy.HYBRID,
             skill_registry=fake,
         )
-        decision = service.decide({"message": "Contract"})
+        decision = service.decide({"message": "Contract document"})
 
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.primary_skill, "test/contract_drafting")
@@ -226,7 +226,7 @@ class HybridSkillLayerTests(unittest.TestCase):
             strategy=RouterStrategy.HYBRID,
             skill_registry=fake,
         )
-        decision = service.decide({"message": "Case"})
+        decision = service.decide({"message": "Case document analysis"})
 
         self.assertEqual(decision.mode, "simple_qa")
         self.assertAlmostEqual(decision.confidence, 0.6)
@@ -252,7 +252,7 @@ class HybridModelLayerTests(unittest.TestCase):
             skill_registry=None,
             model_classifier=model,
         )
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
 
         self.assertEqual(decision.mode, "matched")
         self.assertAlmostEqual(decision.confidence, 0.9)
@@ -268,7 +268,7 @@ class HybridModelLayerTests(unittest.TestCase):
             skill_registry=None,
             model_classifier=model,
         )
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
 
         self.assertEqual(decision.mode, "simple_qa")
         self.assertAlmostEqual(decision.confidence, 0.6)
@@ -282,7 +282,7 @@ class HybridModelLayerTests(unittest.TestCase):
             skill_registry=None,
             model_classifier=model,
         )
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
 
         self.assertEqual(decision.mode, "zero_match")
         self.assertAlmostEqual(decision.confidence, 0.3)
@@ -303,7 +303,7 @@ class HybridNoMatchTests(unittest.TestCase):
             strategy=RouterStrategy.HYBRID,
             skill_registry=None,
         )
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
 
         self.assertEqual(decision.mode, "zero_match")
         self.assertAlmostEqual(decision.confidence, 0.0)
@@ -318,7 +318,7 @@ class HybridNoMatchTests(unittest.TestCase):
             strategy=RouterStrategy.HYBRID,
             skill_registry=fake,
         )
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
 
         self.assertEqual(decision.mode, "zero_match")
         self.assertAlmostEqual(decision.confidence, 0.0)
@@ -340,7 +340,7 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
             skill_registry=None,
             legal_risk_classifier=KeywordLegalRiskClassifier(),
         )
-        decision = service.decide({"message": "我要提起诉讼"})
+        decision = service.decide({"message": "我要提起诉讼和仲裁程序呢"})
 
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.primary_skill, "hermes")
@@ -367,8 +367,8 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
             skill_registry=fake,
             legal_risk_classifier=KeywordLegalRiskClassifier(),
         )
-        # "合规审查" is both a review-intent keyword AND a high-risk keyword
-        decision = service.decide({"message": "请进行合规审查"})
+        # "法律意见" is a high-risk keyword; "审查" is a review-intent keyword
+        decision = service.decide({"message": "请帮我出具法律意见并审查"})
 
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.primary_skill, "hermes")
@@ -383,7 +383,7 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
             skill_registry=None,
             legal_risk_classifier=KeywordLegalRiskClassifier(),
         )
-        decision = service.decide({"message": "诉讼"})
+        decision = service.decide({"message": "诉讼相关的问题需要处理呢"})
 
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.primary_skill, "hermes")
@@ -396,9 +396,9 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
             skill_registry=None,
             legal_risk_classifier=None,
         )
-        decision = service.decide({"message": "诉讼"})
+        decision = service.decide({"message": "诉讼相关的问题需要处理呢"})
 
-        # No override — "诉讼" doesn't match any intent keyword, so it falls
+        # No override — "诉讼相关的问题需要处理呢" doesn't match any intent keyword, so it falls
         # through to zero_match (fallback).
         self.assertNotIn("forced_to_hermes", decision.metadata)
         self.assertNotIn("legal_risk_assessment", decision.metadata)
@@ -420,7 +420,7 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
             skill_registry=fake,
             legal_risk_classifier=KeywordLegalRiskClassifier(),
         )
-        decision = service.decide({"message": "请问什么是合同"})
+        decision = service.decide({"message": "请问这个合同条款是否有效"})
 
         # "合同" is medium-risk, not high-risk → no override
         self.assertNotIn("forced_to_hermes", decision.metadata)
@@ -458,10 +458,10 @@ class HybridConfidenceInvariantTests(unittest.TestCase):
             legal_risk_classifier=KeywordLegalRiskClassifier(),
         )
         contexts = [
-            {"message": "请问什么是合同"},  # rule match
+            {"message": "请问这个合同条款是否有效"},  # rule match
             {"skill_id": "test/legal_qa"},  # skill exact
-            {"message": "xyz random"},  # model fallback
-            {"message": "诉讼"},  # high-risk override
+            {"message": "xyz random text"},  # model fallback
+            {"message": "诉讼相关的问题需要处理呢"},  # high-risk override
             {"message": "hello world"},  # no match
         ]
         for ctx in contexts:
@@ -474,8 +474,8 @@ class HybridConfidenceInvariantTests(unittest.TestCase):
         """metadata['router_strategy'] == 'hybrid' for all hybrid decisions."""
         service = RouterService(strategy=RouterStrategy.HYBRID)
         contexts = [
-            {"message": "请问什么是合同"},
-            {"message": "xyz random"},
+            {"message": "请问这个合同条款是否有效"},
+            {"message": "xyz random text"},
             {"message": ""},
         ]
         for ctx in contexts:
@@ -517,9 +517,9 @@ class HybridFrozenModeTests(unittest.TestCase):
         )
         contexts = [
             {"skill_id": "test/skill_1"},
-            {"message": "请起草一份合同"},
-            {"message": "xyz random"},
-            {"message": "诉讼"},
+            {"message": "请起草一份合同文件的内容"},
+            {"message": "xyz random text"},
+            {"message": "诉讼相关的问题需要处理呢"},
             {"message": "hello"},
         ]
         for ctx in contexts:
@@ -547,7 +547,7 @@ class HybridStatelessTests(unittest.TestCase):
             skill_registry=fake,
             legal_risk_classifier=KeywordLegalRiskClassifier(),
         )
-        context = {"message": "请问什么是合同", "turn_id": "turn-001"}
+        context = {"message": "请问这个合同条款是否有效", "turn_id": "turn-001"}
         decision1 = service.decide(context)
         decision2 = service.decide(context)
         self.assertEqual(decision1, decision2)
@@ -580,7 +580,7 @@ class HybridRegressionTests(unittest.TestCase):
             legal_risk_classifier=KeywordLegalRiskClassifier(),
             model_classifier=_FakeModelClassifier(confidence=0.99),
         )
-        decision = service.decide({"message": "请审查这份合同"})
+        decision = service.decide({"message": "请审查这份合同文件的内容"})
         self.assertEqual(decision.mode, "matched")
         self.assertAlmostEqual(decision.confidence, 0.7)
         self.assertEqual(decision.metadata["router_strategy"], "rule")
@@ -607,7 +607,7 @@ class HybridRegressionTests(unittest.TestCase):
     def test_existing_rule_strategy_zero_match_unchanged(self) -> None:
         """RULE strategy with no match → zero_match, confidence=0.0."""
         service = RouterService(strategy=RouterStrategy.RULE)
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
         self.assertEqual(decision.mode, "zero_match")
         self.assertAlmostEqual(decision.confidence, 0.0)
 

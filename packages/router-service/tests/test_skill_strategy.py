@@ -117,7 +117,7 @@ class SkillStrategySearchTests(unittest.TestCase):
             default_search=[],
         )
         service = RouterService(strategy=RouterStrategy.SKILL, skill_registry=fake)
-        decision = service.decide({"message": "请起草一份合同"})
+        decision = service.decide({"message": "请起草一份合同文件的内容"})
 
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.primary_skill, "lawfirm/contract_drafting")
@@ -136,7 +136,7 @@ class SkillStrategySearchTests(unittest.TestCase):
             default_search=[],
         )
         service = RouterService(strategy=RouterStrategy.SKILL, skill_registry=fake)
-        decision = service.decide({"message": "请问什么是合同"})
+        decision = service.decide({"message": "请问这个条款是否有效力呢"})
 
         self.assertEqual(decision.mode, "simple_qa")
         self.assertEqual(decision.confidence, 0.5)
@@ -148,7 +148,7 @@ class SkillStrategySearchTests(unittest.TestCase):
     def test_skill_lookup_no_match_zero_match(self) -> None:
         fake = _FakeSkillRegistry(default_search=[])
         service = RouterService(strategy=RouterStrategy.SKILL, skill_registry=fake)
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
 
         self.assertEqual(decision.mode, "zero_match")
         self.assertEqual(decision.confidence, 0.0)

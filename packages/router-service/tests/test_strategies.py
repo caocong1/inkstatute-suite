@@ -126,14 +126,14 @@ class TestRuleStrategyRouteModeMapping(unittest.TestCase):
         """RULE strategy with keyword match -> mode=matched (frozen), strategy in metadata."""
         registry = _make_factual_qa_registry()
         service = RouterService(strategy=RouterStrategy.RULE, skill_registry=registry)
-        decision = service.decide({"message": "请问什么是合同"})
+        decision = service.decide({"message": "请问这个条款是否有效力呢"})
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.metadata["router_strategy"], "rule")
 
     def test_rule_strategy_no_match_maps_to_zero_match(self) -> None:
         """RULE strategy with no keyword match -> mode=zero_match (frozen)."""
         service = RouterService(strategy=RouterStrategy.RULE)
-        decision = service.decide({"message": "xyz random"})
+        decision = service.decide({"message": "xyz random text"})
         self.assertEqual(decision.mode, "zero_match")
         self.assertEqual(decision.metadata["router_strategy"], "rule")
 

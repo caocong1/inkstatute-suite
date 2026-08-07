@@ -53,7 +53,7 @@ class TestRouterServiceRuleStrategy(unittest.TestCase):
         """RULE strategy with a keyword match and registry hit -> mode=matched."""
         registry = _make_review_registry()
         service = RouterService(strategy=RouterStrategy.RULE, skill_registry=registry)
-        decision = service.decide({"message": "请审查这份合同"})
+        decision = service.decide({"message": "请审查这份合同文件的内容"})
         self.assertEqual(decision.mode, "matched")
         self.assertEqual(decision.primary_skill, "lawfirm/compliance_review")
         self.assertAlmostEqual(decision.confidence, 0.7)
@@ -70,7 +70,7 @@ class TestRouterServiceRuleStrategy(unittest.TestCase):
     def test_decide_rule_strategy_simple_qa_no_registry(self) -> None:
         """RULE strategy with keyword match but no registry -> mode=simple_qa."""
         service = RouterService(strategy=RouterStrategy.RULE, skill_registry=None)
-        decision = service.decide({"message": "请问什么是合同"})
+        decision = service.decide({"message": "请问这个条款是否有效力呢"})
         self.assertEqual(decision.mode, "simple_qa")
         self.assertAlmostEqual(decision.confidence, 0.5)
 
