@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 100 plans 100-02 + 100-03 complete — model layer + context assembler + async turn loop (38 gates green, 260 agent-core tests)
-last_updated: "2026-08-11T00:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 100 plans 100-02 and 100-03 implementation (Wave 2 parallel). Plan 100-02: model layer — LlmProvider Protocol, StreamDelta union types (ContentDelta, ReasoningDelta, ToolCallDelta, UsageDelta, FinishDelta), ChatRequest, UsageAccumulator, FixtureProvider with TurnScript, OpenAI/Anthropic/Ollama stream providers, gateway components wrapper. Plan 100-03: AgentContextAssembler (history trim + skill body injection, CJK-aware, deterministic), async turn loop (always-streaming, tool_call.started|delta|completed, thought.delta heartbeats, error recovery, turn limit max_turns=10), message building helpers (build_tool_result_message, build_assistant_message, append_tool_results, extract_tool_calls_from_deltas). 260 tests in agent-core gate. 38 gates green. 3 commits for 100-03: 06f6db9 (context assembler), 1dcf9bb (turn loop), 689198e (messages).
+stopped_at: Phase 100 COMPLETE — agent core skeleton with e2e tests (38 gates green, 340 agent-core tests, CORE-01/CORE-04/CORE-09 complete)
+last_updated: "2026-08-11T12:00:00.000Z"
+last_activity: 2026-08-11 -- Phase 100 Plan 100-04 (Wave 3): e2e integration tests + phase completion. 5 new test files: test_e2e_turn_orchestration.py (11 tests — multi-turn tool orchestration, event sequence, seq monotonicity, provider_usage, always-streaming), test_silence_threshold.py (10 tests — ScriptedClock + RecordingEmitter verify no gaps > 5s during tool rounds, heartbeats fire when silence exceeds threshold), test_e2e_context_budget.py (16 tests — skill body injection + history trim, determinism, CJK-aware estimation, ContextAssemblyBudgetError), test_e2e_model_layer.py (26 tests — OpenAI/Anthropic/Ollama streaming + tool calls, circuit breaker/rate limiter/cost tracker integration, usage in events), test_e2e_error_recovery.py (17 tests — tool failure recovery, provider error, turn limit exceeded, multiple failures then recovery). fixtures/turn_scripts.py shared turn script fixtures. 340 tests in agent-core gate (80 new e2e tests). 38 gates green. 5 commits: 09f3d75, f43bf03, 0866179, ecaf2f4, 44466f0. CORE-01, CORE-04, CORE-09 marked complete. Phase 100 marked complete.
 progress:
   total_phases: 17
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 58
-  completed_plans: 55
-  percent: 72
+  completed_plans: 56
+  percent: 74
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 100 plans 100-02 + 100-03 complete — model layer + context assembler + async turn loop
+**Current focus:** Phase 100 COMPLETE — agent core skeleton with e2e tests, ready for Phase 101
 
 ## Current Position
 
-Phase: 100 (agent-core-skeleton) — IMPLEMENTING (Plans 100-01, 100-02, 100-03 complete)
-Status: Plans 100-02 (Wave 2) and 100-03 (Wave 2) completed. packages/agent-core/ now has: AgentCoreConfig, EventEmitter, LlmProvider Protocol + StreamDelta types + FixtureProvider (100-02), AgentContextAssembler + async turn loop + message helpers (100-03). 260 tests in agent-core gate, 38 gates green. Ready for Wave 3 (100-04: e2e integration + phase completion).
-Last activity: 2026-08-11 -- Plans 100-02 + 100-03 implementation. 260 agent-core tests, 38 gates green.
+Phase: 100 (agent-core-skeleton) — ✅ COMPLETE (Plans 100-01, 100-02, 100-03, 100-04 all complete)
+Status: Phase 100 fully completed. packages/agent-core/ now has: AgentCoreConfig, EventEmitter, LlmProvider Protocol + StreamDelta types + FixtureProvider + OpenAI/Anthropic/Ollama runners + GatewayComponents (100-01/100-02), AgentContextAssembler + async turn loop + message helpers (100-03), 5 e2e test files with 80 new tests covering all 6 success criteria (100-04). 340 tests in agent-core gate, 38 gates green. CORE-01, CORE-04, CORE-09 marked complete.
+Last activity: 2026-08-11 -- Plan 100-04 e2e tests + phase completion. 340 agent-core tests, 38 gates green.
 
-**Next command:** `/gsd-implement 100-04` (Wave 3: e2e integration + phase completion)
+**Next command:** `/gsd-implement 101` (Phase 101: Agent Core Tools — tool layer + Word native track-changes docx)
 
 ## Milestone v3.0 Overview
 
@@ -109,17 +109,16 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-11T00:00:00.000Z
-Stopped at: Phase 100 plans 100-02 + 100-03 complete — model layer + context assembler + async turn loop (38 gates green, 260 agent-core tests)
+Last session: 2026-08-11T12:00:00.000Z
+Stopped at: Phase 100 COMPLETE — agent core skeleton with e2e tests (38 gates green, 340 agent-core tests, CORE-01/CORE-04/CORE-09 complete)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-99 complete, Phase 100 implementing)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01 + CORE-04 + CORE-09 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 next)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-implement 100-04` (Wave 3: e2e integration + phase completion — FixtureProvider + turn loop e2e, silence threshold assertion, phase completion)
-- 或 `/gsd-implement 100` 自动推进剩余 plans (Wave 3)
-- 或 `/gsd-autonomous` 自动推进 Phases 100-104
+- `/gsd-implement 101` (Phase 101: Agent Core Tools — tool layer + Word native track-changes docx, CORE-02 + CORE-03)
+- 或 `/gsd-autonomous` 自动推进 Phases 101-104

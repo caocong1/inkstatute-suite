@@ -72,15 +72,15 @@
 
 ### CORE — 自研 agent 核心（Python）
 
-- [ ] **CORE-01**: `packages/agent-core` async 流式 turn loop——首字节即流，**工具轮也流式**，不得整轮缓冲（修复 lawyer-desktop 现状缺陷）
+- [x] **CORE-01**: `packages/agent-core` async 流式 turn loop——首字节即流，**工具轮也流式**，不得整轮缓冲（修复 lawyer-desktop 现状缺陷） ✅ Phase 100
 - [ ] **CORE-02**: 工具层——澄清提问、法规检索、文件读取、文档生成、MCP client；工具结果回注与多轮工具编排
 - [ ] **CORE-03**: Word 原生修订 docx 产出能力，直接复用 `lawfirm-profile/scripts/contract_review_trackchanges.py`（41,185 字节）的能力，不重写
-- [ ] **CORE-04**: 上下文预算与裁剪策略，处理 skill 正文 2K–20K token 的注入成本
+- [x] **CORE-04**: 上下文预算与裁剪策略，处理 skill 正文 2K–20K token 的注入成本 ✅ Phase 100
 - [ ] **CORE-05**: 移植 `lawyer-desktop/src-tauri/src/skills/router.rs`（627 行）的中文法律 prompt 装配、research-gate 注入、检索工具映射、引用书写规范
 - [ ] **CORE-06**: 移植 `lawyer-desktop/src-tauri/src/llm/tool_leak.rs`（392 行）的工具调用泄漏检测与解析（DSML / XML 变体、全角字符归一、重试），用 Rust 侧现有测试用例作为对拍集
 - [ ] **CORE-07**: 移植 citation 审计（引用抽取 + 核验 + verified / retrieved / unverified 标注）
 - [ ] **CORE-08**: 四条法律护栏在核心中代码级强制——research-gate 前置、ask-user-enforcement 阻断、citation 审计、de-AI polish
-- [ ] **CORE-09**: 多 provider 模型层（OpenAI 兼容 / Anthropic / Ollama），由 `packages/backends/provider_model` 归并而来，复用 `packages/model-gateway` 的熔断 / 限流 / 成本追踪
+- [x] **CORE-09**: 多 provider 模型层（OpenAI 兼容 / Anthropic / Ollama），由 `packages/backends/provider_model` 归并而来，复用 `packages/model-gateway` 的熔断 / 限流 / 成本追踪 ✅ Phase 100
 - [ ] **CORE-10**: 双入口一份实现——in-process `BackendAdapter`（`backend_id="inkstatute"`）+ `inkstatute-agent acp` 标准 ACP agent 入口，`--check` 可通过
 
 ### CONV — 存量收敛
@@ -191,9 +191,9 @@
 | PROF-01 | Phase 99 | Complete ✅ |
 | PROF-02 | Phase 99 | Complete ✅ |
 | PROF-03 | Phase 99 | Complete ✅ |
-| CORE-01 | Phase 100 | Pending |
-| CORE-04 | Phase 100 | Pending |
-| CORE-09 | Phase 100 | Pending |
+| CORE-01 | Phase 100 | Complete ✅ |
+| CORE-04 | Phase 100 | Complete ✅ |
+| CORE-09 | Phase 100 | Complete ✅ |
 | CORE-02 | Phase 101 | Pending |
 | CORE-03 | Phase 101 | Pending |
 | CORE-05 | Phase 102 | Pending |
@@ -244,4 +244,4 @@ v3.0 完成的判定条件（全部满足）：
 ---
 
 *Requirements defined: 2026-08-06*
-*Last updated: 2026-08-06 after V3 architecture re-scoping*
+*Last updated: 2026-08-11 after Phase 100 completion (CORE-01, CORE-04, CORE-09 complete)*

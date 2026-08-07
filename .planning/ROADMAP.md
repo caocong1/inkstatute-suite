@@ -74,7 +74,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 ### 阶段 D — 自研核心
 
-- [ ] **Phase 100: Agent Core Skeleton** - Python async 流式 turn loop（工具轮也流式）+ 上下文预算 + 模型层 (CORE-01, CORE-04, CORE-09) — Plans 100-01, 100-02, 100-03 complete (scaffold + EventEmitter + config + model layer + context assembler + turn loop + messages)
+- [x] **Phase 100: Agent Core Skeleton** - Python async 流式 turn loop（工具轮也流式）+ 上下文预算 + 模型层 (CORE-01, CORE-04, CORE-09) ✅ COMPLETE — Plans 100-01, 100-02, 100-03, 100-04 complete (scaffold + EventEmitter + config + model layer + context assembler + turn loop + messages + e2e tests + phase completion)
 - [ ] **Phase 101: Agent Core Tools** - 工具层 + Word 原生修订 docx (CORE-02, CORE-03)
 - [ ] **Phase 102: Legal Guardrail Port** - prompt 装配 / tool_leak / citation 审计 / 四护栏移植 (CORE-05..08, SAFE-01, SAFE-04)
 - [ ] **Phase 103: Dual Entry Points** - in-process BackendAdapter + inkstatute-agent acp (CORE-10)
@@ -288,21 +288,21 @@ Carried human gates from v1.x (NOT closed by v3.0):
 **Plans**: 3 (99-01 ✅ complete, 99-02 ✅ complete, 99-03 ✅ complete) ✅ COMPLETE
 **UI hint**: no
 
-### Phase 100: Agent Core Skeleton
+### Phase 100: Agent Core Skeleton ✅ COMPLETE
 
 **Goal**: 存在一个 Python 自研 agent 核心骨架，其流式表现优于被移植的 Rust 原版——工具轮期间客户端不会经历整轮静默
 **Depends on**: Phase 97
-**Requirements**: CORE-01, CORE-04, CORE-09
+**Requirements**: CORE-01, CORE-04, CORE-09 (all complete ✅)
 **Success Criteria** (what must be TRUE):
 
-  1. `packages/agent-core` 存在，实现 async 流式 turn loop，产出 Phase 88 的统一事件；有多轮工具编排与轮次上限
-  2. **工具轮流式**：工具调用期间持续产出 `thought.delta` 与 `tool_call.started|delta|completed`，测试断言从提交到最终回复之间不存在超过阈值的事件静默期（这是对 `lawyer-desktop` 现状缺陷的修复）
-  3. 上下文预算与裁剪策略生效：给定 token 预算与一组 skill 正文（2K–20K token）+ 历史，装配器产出确定性的上下文并记录被裁剪内容
-  4. 模型层由 `packages/backends/provider_model` 归并而来，支持 OpenAI 兼容 / Anthropic / Ollama，流式与工具调用在各 provider 间归一
-  5. 模型层复用 `packages/model-gateway` 的熔断 / 限流 / 成本追踪，`usage` 数据进入事件流
-  6. 全部测试可在无外部 LLM 的情况下用 fixture provider 运行
+  1. ✅ `packages/agent-core` 存在，实现 async 流式 turn loop，产出 Phase 88 的统一事件；有多轮工具编排与轮次上限 (Plans 100-01, 100-03, 100-04)
+  2. ✅ **工具轮流式**：工具调用期间持续产出 `thought.delta` 与 `tool_call.started|delta|completed`，测试断言从提交到最终回复之间不存在超过阈值的事件静默期（这是对 `lawyer-desktop` 现状缺陷的修复） (Plan 100-04, test_silence_threshold.py — 10 tests with ScriptedClock + RecordingEmitter)
+  3. ✅ 上下文预算与裁剪策略生效：给定 token 预算与一组 skill 正文（2K–20K token）+ 历史，装配器产出确定性的上下文并记录被裁剪内容 (Plan 100-03, test_e2e_context_budget.py — 16 tests)
+  4. ✅ 模型层由 `packages/backends/provider_model` 归并而来，支持 OpenAI 兼容 / Anthropic / Ollama，流式与工具调用在各 provider 间归一 (Plan 100-02, test_e2e_model_layer.py — 26 tests)
+  5. ✅ 模型层复用 `packages/model-gateway` 的熔断 / 限流 / 成本追踪，`usage` 数据进入事件流 (Plan 100-02, test_e2e_model_layer.py — circuit breaker, rate limiter, cost tracker integration tests)
+  6. ✅ 全部测试可在无外部 LLM 的情况下用 fixture provider 运行 (FixtureProvider + Fake*Transport — 340 agent-core tests, 0 external calls)
 
-**Plans**: TBD (est. 4)
+**Plans**: 4 (100-01 scaffold+EventEmitter+config ✅ | 100-02 model layer+gateway ✅ | 100-03 context assembler+turn loop ✅ | 100-04 e2e tests+phase completion ✅) ✅ COMPLETE
 **UI hint**: no
 
 ### Phase 101: Agent Core Tools
@@ -402,7 +402,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 97. Skill Materialization | C | 0/TBD | Not started | - |
 | 98. Real-Index Routing | C | 0/TBD | Not started | - |
 | 99. Practice Profile | C | 0/TBD | Not started | - |
-| 100. Agent Core Skeleton | D | 0/TBD | Not started | - |
+| 100. Agent Core Skeleton | D | 4/4 | Complete | 2026-08-11 |
 | 101. Agent Core Tools | D | 0/TBD | Not started | - |
 | 102. Legal Guardrail Port | D | 0/TBD | Not started | - |
 | 103. Dual Entry Points | D | 0/TBD | Not started | - |
