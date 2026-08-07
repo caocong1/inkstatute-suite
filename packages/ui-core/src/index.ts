@@ -53,3 +53,6 @@ export type { MessageFeedbackProps } from "./components/MessageFeedback";
 
 export { DocDraftingLoader } from "./components/DocDraftingLoader";
 export type { DocDraftingLoaderProps } from "./components/DocDraftingLoader";
+
+export { WorkflowProgressSteps, WorkflowNotice, ModeSwitchCard, WorkflowSuggestions } from "./components/WorkflowProgressSteps";
+export type { WorkflowProgressStepsProps, ModeSwitchCardProps } from "./components/WorkflowProgressSteps";

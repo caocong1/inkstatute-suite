@@ -56,8 +56,18 @@ export interface ClarificationRequest {
   answers?: ClarificationAnswer[];
 }
 
+export type WorkflowMode = "chat" | "draft" | "evidence";
+
 export interface WorkflowState {
   status: "idle" | "running" | "waiting" | "complete" | "error";
   steps: WorkflowStep[];
   clarification?: ClarificationRequest;
+  /** Workflow mode — used for title display. */
+  mode?: WorkflowMode;
+  /** Override label for the workflow title. */
+  mode_label?: string;
+  /** Suggestion prompts shown as clickable chips. */
+  suggestions?: string[];
+  /** Message ID associated with the workflow (for clarification submission). */
+  message_id?: string;
 }

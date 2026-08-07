@@ -6,17 +6,18 @@
  * Receives state via props from the event reducer (RenderState).
  * Uses adapter interfaces for file open and drag-drop.
  *
- * For the tracer slice: renders message thread, streaming buffer,
- * composer with send, stage pill, simplified workflow notice,
- * and basic clarification card.
+ * Renders message thread, streaming buffer, composer with send, stage pill,
+ * and the full WorkflowProgressSteps (WorkflowNotice + ClarificationCard +
+ * ModeSwitchCard + WorkflowSuggestions).
  */
 
-import { For, Show, createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { SolidMarkdown } from "solid-markdown";
 import remarkGfm from "remark-gfm";
 import type { RenderState, ChatMessage } from "../event-reducer";
 import type { ClarificationAnswer } from "../types/workflow";
 import { useAdapters } from "../adapters";
+import { WorkflowProgressSteps } from "./WorkflowProgressSteps";
 import "./ChatPanel.css";
 
 export interface ChatPanelProps {
@@ -39,133 +40,6 @@ function AssistantContent(props: { text: string }) {
     <div class="prose chat-md">
       <SolidMarkdown remarkPlugins={[remarkGfm]}>{props.text}</SolidMarkdown>
     </div>
-  );
-}
-
-/** Simplified workflow notice for the tracer slice. */
-function WorkflowNotice(props: { state: RenderState }) {
-  const workflow = () => props.state.workflow;
-  const statusText = () => {
-    const s = workflow().status;
-    if (s === "running") return "正在处理";
-    if (s === "waiting") return "等等你补充后继续";
-    if (s === "complete") return "处理完成";
-    if (s === "error") return "处理时遇到问题";
-    return "";
-  };
-  return (
-    <Show when={workflow().steps.length > 0 || workflow().status !== "idle"}>
-      <div class="plan">
-        <div class="plan-h">
-          <span class="chip">{statusText()}</span>
-        </div>
-        <For each={workflow().steps}>
-          {(step) => (
-            <div class={`step ${step.state}`}>
-              <span class="mk" />
-              <span class="tx">{step.label}</span>
-              <Show when={step.detail}>
-                <span class="meta">{step.detail}</span>
-              </Show>
-            </div>
-          )}
-        </For>
-      </div>
-    </Show>
-  );
-}
-
-/** Simplified ClarificationCard for the tracer slice. */
-function ClarificationCard(props: {
-  state: RenderState;
-  onSubmit?: (answers: ClarificationAnswer[]) => void;
-}) {
-  const clarification = () => props.state.clarification;
-  const [selected, setSelected] = createSignal<Record<string, string[]>>({});
-
-  function toggleSelection(qId: string, optId: string, allowMultiple: boolean) {
-    setSelected((prev) => {
-      const current = prev[qId] ?? [];
-      if (allowMultiple) {
-        const next = current.includes(optId)
-          ? current.filter((id) => id !== optId)
-          : [...current, optId];
-        return { ...prev, [qId]: next };
-      }
-      return { ...prev, [qId]: [optId] };
-    });
-  }
-
-  function submit() {
-    const clar = clarification();
-    if (!clar) return;
-    const answers: ClarificationAnswer[] = clar.questions.map((q) => {
-      const sel = selected()[q.id] ?? [];
-      const optLabels = q.options
-        .filter((o) => sel.includes(o.id))
-        .map((o) => o.label);
-      return {
-        question_id: q.id,
-        question: q.question,
-        answer: optLabels.join("|"),
-        display_answer: optLabels.join("、"),
-      };
-    });
-    props.onSubmit?.(answers);
-  }
-
-  return (
-    <Show when={clarification()}>
-      {(clar) => (
-        <div class="plan">
-          <div class="plan-h">
-            <span class="chip">补充信息</span>
-          </div>
-          <Show when={clar().intro}>
-            <div class="step">
-              <span class="tx">{clar().intro}</span>
-            </div>
-          </Show>
-          <For each={clar().questions}>
-            {(q) => (
-              <div class="step">
-                <div class="tx">
-                  <div style={{ "margin-bottom": "8px" }}>{q.question}</div>
-                  <div class="clarify-options" style={{ display: "flex", "flex-wrap": "wrap", gap: "7px" }}>
-                    <For each={q.options}>
-                      {(opt) => {
-                        const isSelected = createMemo(() =>
-                          (selected()[q.id] ?? []).includes(opt.id),
-                        );
-                        return (
-                          <button
-                            type="button"
-                            class="chip"
-                            classList={{ "on": isSelected() }}
-                            style={{
-                              "border-color": isSelected() ? "var(--accent)" : "var(--line)",
-                              background: isSelected() ? "var(--accent-soft)" : "var(--surface)",
-                            }}
-                            onClick={() => toggleSelection(q.id, opt.id, q.allow_multiple ?? false)}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      }}
-                    </For>
-                  </div>
-                </div>
-              </div>
-            )}
-          </For>
-          <div class="step">
-            <button type="button" class="btn-accent" onClick={submit}>
-              提交补充信息
-            </button>
-          </div>
-        </div>
-      )}
-    </Show>
   );
 }
 
@@ -294,14 +168,12 @@ export function ChatPanel(props: ChatPanelProps) {
             </div>
           </Show>
 
-          {/* Workflow notice */}
-          <Show when={props.state.workflow.steps.length > 0 || props.state.workflow.status !== "idle"}>
-            <WorkflowNotice state={props.state} />
-          </Show>
-
-          {/* Clarification card */}
-          <Show when={props.state.clarification}>
-            <ClarificationCard state={props.state} onSubmit={props.onClarificationSubmit} />
+          {/* Full WorkflowProgressSteps — WorkflowNotice + ClarificationCard + Suggestions */}
+          <Show when={props.state.workflow.steps.length > 0 || props.state.workflow.status !== "idle" || props.state.clarification}>
+            <WorkflowProgressSteps
+              workflow={props.state.workflow}
+              onClarificationSubmit={props.onClarificationSubmit}
+            />
           </Show>
         </Show>
       </div>
