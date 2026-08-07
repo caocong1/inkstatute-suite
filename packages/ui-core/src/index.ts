@@ -127,3 +127,23 @@ export type { CitationPanelProps } from "./components/CitationPanel";
 
 export { DocPreview } from "./components/DocPreview";
 export type { DocPreviewProps } from "./components/DocPreview";
+
+// Mention components — @-mention autocomplete with WorkspaceAdapter
+export { MentionComposer } from "./components/MentionComposer";
+export type { MentionComposerProps, MentionComposerApi } from "./components/MentionComposer";
+export { MentionMenu } from "./components/MentionMenu";
+export type { MentionMenuProps } from "./components/MentionMenu";
+
+// Context ref types — for @-mention candidates
+export type { ContextRefPayload } from "./types/contextRefs";
+
+// Mention utility functions
+export {
+  detectAtTrigger,
+  filterMentionCandidates,
+  buildMentionInsert,
+  isRefMentioned,
+  resolveInlineMentions,
+  validateMentionPaths,
+  serializeEditor,
+} from "./utils/mentions";
