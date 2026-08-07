@@ -19,7 +19,14 @@ Public API::
 """
 
 from .acp_materializer import ACPMaterializer, materialize_acp
-from .body_injector import SkillBodyInjector
+from .body_injector import (
+    SkillBodyBudgetError,
+    SkillBodyInjectionResult,
+    SkillBodyInjector,
+    SkillNotFoundError,
+    SourceFileNotFoundError,
+    read_skill_body,
+)
 from .hermes_materializer import HermesMaterializer, materialize_hermes
 from .host_assumption_rewriter import HostAssumptionRewriter
 from .three_separation import produce_routing_manifest
@@ -31,8 +38,13 @@ __all__ = [
     "ACPMaterializer",
     "HermesMaterializer",
     "HostAssumptionRewriter",
+    "SkillBodyBudgetError",
+    "SkillBodyInjectionResult",
     "SkillBodyInjector",
+    "SkillNotFoundError",
+    "SourceFileNotFoundError",
     "materialize_acp",
     "materialize_hermes",
     "produce_routing_manifest",
+    "read_skill_body",
 ]
