@@ -217,7 +217,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 同一条任务从 WeCom 发起，律师收到的内容与 Web 端最终结果语义一致（答复 + 产物 + 澄清 + 反馈卡片）
   6. 后端 meta / gateway / system 噪声在 bot 通道同样不可见（输出边界在 Gateway 与降级层双重生效）
 
-**Plans**: TBD (est. 3-4)
+**Plans**: 3+ (95-01 Wave 1 Tracer ✅, 95-02 WeCom Full Migration ✅, 95-03+ QQ migration pending)
 **UI hint**: no
 
 ### Phase 96: Real Skill Index
