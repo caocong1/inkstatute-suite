@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 99 plan complete — 3 plans written, 3 waves (profile core → injection+interview → gateway+e2e)
+stopped_at: Phase 99 plan 99-01 complete — practice-profile package scaffolded, data model, store, secret guard, temp mode, RBAC, gate registered (37 gates green)
 last_updated: "2026-08-11T00:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 99 plan-phase. Read 99-CONTEXT.md, 99-RESEARCH.md, REQUIREMENTS.md (PROF-01/02/03), ROADMAP.md (Phase 99 success criteria), STATE.md, AGENTS.md, scripts/run_v2_gates.py (gate registration pattern), platform-contract/elicitation.py, skill-materializer/body_injector.py, rbac/session.py (SessionStore Protocol pattern). Created 3 plan files: 99-01-PLAN.md (Wave 1: package scaffold + PracticeProfile data model + PracticeProfileStore + secret_guard + temporary mode defaults + RBAC helpers, 8 tasks), 99-02-PLAN.md (Wave 2: PracticeProfileInjector + ColdStartInterviewOrchestrator + commercial-legal interview definitions + coverage test, 5 tasks), 99-03-PLAN.md (Wave 3: Gateway handler + 3 endpoints + gate registration 36→37 + e2e tests + success criteria verification + phase completion, 8 tasks). Total: 3 plans, 21 tasks, 3 waves.
+last_activity: 2026-08-11 -- Phase 99 plan 99-01 executed. Created packages/practice-profile with: PracticeProfile frozen dataclass (model.py, structured JSON with plugin_configs: dict[str, JsonObject]), create_temporary_profile + TEMPORARY_MODE_TAG (defaults.py, 6 defaults from practice-profile-schema.md §3.2), validate_no_secrets + SecretDetectedError (secret_guard.py, recursive key+value pattern matching, never echoes secret text), PracticeProfileStore Protocol + InMemoryPracticeProfileStore (store.py, thread-safe, tenant-scoped, secret-validated upsert), rbac_check.py (ADMIN/OPERATOR write, all 4 roles read, cross-tenant denied). 70 unit tests across 5 test files. Gate registered in run_v2_gates.py (36→37) + compileall + gate-coverage. All 37 gates green. 9 commits.
 progress:
   total_phases: 17
   completed_phases: 11
   total_plans: 54
-  completed_plans: 51
-  percent: 65
+  completed_plans: 52
+  percent: 66
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 99 — Practice Profile (plan complete, ready to execute)
+**Current focus:** Phase 99 — Practice Profile (plan 99-01 complete, 99-02 next)
 
 ## Current Position
 
-Phase: 99 (practice-profile) — PLAN COMPLETE
-Status: Phase 99 plan-phase complete. 3 plan files written: 99-01-PLAN.md (Wave 1, 8 tasks), 99-02-PLAN.md (Wave 2, 5 tasks), 99-03-PLAN.md (Wave 3, 8 tasks). Total 21 tasks across 3 waves. Wave 1: packages/practice-profile scaffold + PracticeProfile data model + PracticeProfileStore (Protocol + InMemory) + secret_guard + temporary mode defaults + RBAC helpers. Wave 2: PracticeProfileInjector (## 执业配置 context injection) + ColdStartInterviewOrchestrator (5-step elicitation, 2-4 questions/round) + commercial-legal interview definitions + coverage test for 337 dependent skills. Wave 3: Gateway handler (GET/PUT/POST interview endpoints) + gate registration (36→37) + e2e tests + 6 success criteria verification + PROF-01/02/03 marked complete + phase completion.
-Last activity: 2026-08-11 -- Phase 99 plan-phase. Read 8 source/context files. Created 3 plan files. Updated STATE.md.
+Phase: 99 (practice-profile) — PLAN 99-01 COMPLETE
+Status: Phase 99 plan 99-01 executed. packages/practice-profile scaffolded with PracticeProfile data model (model.py), temporary mode defaults (defaults.py), secret guard (secret_guard.py), PracticeProfileStore Protocol + InMemoryPracticeProfileStore (store.py), RBAC helpers (rbac_check.py). 70 unit tests. Gate registered (37 gates green). 9 commits.
+Last activity: 2026-08-11 -- Phase 99 plan 99-01 executed. Created 6 source modules + 5 test files + gate registration. All 37 gates green.
 
-**Next command:** `/gsd-execute 99-01` (Wave 1: Practice profile core — package scaffold, data model, store, secret guard, temp mode, RBAC)
+**Next command:** `/gsd-execute 99-02` (Wave 2: Context injection + cold-start interview — depends on 99-01)
 
 ## Milestone v3.0 Overview
 
@@ -110,7 +110,7 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 ## Session Continuity
 
 Last session: 2026-08-11T00:00:00.000Z
-Stopped at: Phase 99 plan complete — 3 plans written, 3 waves (profile core → injection+interview → gateway+e2e)
+Stopped at: Phase 99 plan 99-01 complete — practice-profile package scaffolded, data model, store, secret guard, temp mode, RBAC, gate registered (37 gates green)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 complete)
@@ -120,8 +120,7 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute 99-01` (Wave 1: Practice profile core — package scaffold, data model, store, secret guard, temp mode, RBAC)
 - `/gsd-execute 99-02` (Wave 2: Context injection + cold-start interview — depends on 99-01)
-- `/gsd-execute 99-03` (Wave 3: Gateway endpoints + gate registration + e2e + phase completion — depends on 99-02)
+- `/gsd-execute 99-03` (Wave 3: Gateway endpoints + e2e + phase completion — depends on 99-02)
 - 或 `/gsd-autonomous` 自动推进 Phases 99-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点

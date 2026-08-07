@@ -285,7 +285,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 执业配置的读写经 RBAC 授权，跨租户访问被拒
   6. 执业配置不含 secrets，且不进入契约事件日志
 
-**Plans**: TBD (est. 3)
+**Plans**: 3 (99-01 ✅ complete, 99-02 pending, 99-03 pending)
 **UI hint**: no
 
 ### Phase 100: Agent Core Skeleton
