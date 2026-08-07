@@ -1,3 +1,5 @@
+// @deprecated Superseded by @inkstatute/ui-core. See src/index.ts for details.
+//
 // Embeddable web chat renderer for InkStatute RunEvent streaming.
 //
 // This renderer is remote/thin: it consumes sanitized SDK/API event records
