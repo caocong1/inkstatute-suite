@@ -67,6 +67,12 @@ from .events import (
     ToolCall,
     Workspace,
 )
+from .elicitation import (
+    elicitation_to_run_interrupt,
+    format_answer_display,
+    run_interrupt_to_elicitation,
+    validate_question_count,
+)
 from .unified_events import (
     ArtifactCreatedPayload,
     CitationRecord,
@@ -122,7 +128,9 @@ __all__ = [
     "ElicitationQuestion",
     "ElicitationRequestedPayload",
     "ExecutionTrace",
+    "elicitation_to_run_interrupt",
     "FeedbackAction",
+    "format_answer_display",
     "FeedbackEvent",
     "FeedbackEventType",
     "FeedbackSource",
@@ -153,6 +161,7 @@ __all__ = [
     "RunEvent",
     "RunEventType",
     "RunInterrupt",
+    "run_interrupt_to_elicitation",
     "RunStateChangedPayload",
     "RunStep",
     "RunStepKind",
@@ -174,4 +183,5 @@ __all__ = [
     "deserialize_payload",
     "serialize_payload",
     "validate_agent_backend_manifest",
+    "validate_question_count",
 ]
