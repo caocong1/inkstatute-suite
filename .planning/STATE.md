@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
-status: executing
-stopped_at: Phase 94 complete (native menu bar, E2E tests, desktop/web consistency, all 6 success criteria verified, UI-05 marked complete)
-last_updated: "2026-08-09T00:00:00.000Z"
+status: verifying
+stopped_at: Phase 95 context gathered
+last_updated: "2026-08-07T17:41:06.887Z"
 last_activity: 2026-08-09 -- Phase 94 complete (native menu bar 6 menus + E2E 11 scenarios + desktop/web consistency 6 tests + phase94-verification 15 tests, 103 vitest + 22 Python gate tests, 34 gates green, UI-05 complete)
 progress:
   total_phases: 17
-  completed_phases: 8
-  total_plans: 28
+  completed_phases: 7
+  total_plans: 31
   completed_plans: 31
-  percent: 44
+  percent: 41
 ---
 
 # Project State
@@ -110,8 +110,8 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-09T00:00:00.000Z
-Stopped at: Phase 94 complete (native menu bar, E2E tests, desktop/web consistency, all 6 success criteria verified, UI-05 marked complete)
+Last session: 2026-08-07T17:41:06.882Z
+Stopped at: Phase 95 context gathered
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 complete)
