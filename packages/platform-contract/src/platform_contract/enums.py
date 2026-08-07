@@ -107,6 +107,21 @@ class RunEventType(StrEnum):
     APPROVAL_REQUESTED = "approval_requested"
     ARTIFACT_CREATED = "artifact_created"
     ERROR = "error"
+    # V3 unified event types (ACP-isomorphic). V2 values retained for backward compatibility.
+    SESSION_STARTED = "session.started"
+    MESSAGE_DELTA_V3 = "message.delta"
+    MESSAGE_COMPLETED = "message.completed"
+    THOUGHT_DELTA = "thought.delta"
+    TOOL_CALL_STARTED_V3 = "tool_call.started"
+    TOOL_CALL_DELTA = "tool_call.delta"
+    TOOL_CALL_COMPLETED_V3 = "tool_call.completed"
+    PLAN_UPDATED = "plan.updated"
+    PHASE_CHANGED = "phase.changed"
+    ELICITATION_REQUESTED = "elicitation.requested"
+    PERMISSION_REQUESTED = "permission.requested"
+    ARTIFACT_CREATED_V3 = "artifact.created"
+    CITATION_RECORDED = "citation.recorded"
+    RUN_STATE_CHANGED = "run.state_changed"
 
 
 class RunStepKind(StrEnum):

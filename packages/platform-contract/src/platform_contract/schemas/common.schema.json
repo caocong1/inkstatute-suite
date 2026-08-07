@@ -118,7 +118,21 @@
         "tool_call_completed",
         "approval_requested",
         "artifact_created",
-        "error"
+        "error",
+        "session.started",
+        "message.delta",
+        "message.completed",
+        "thought.delta",
+        "tool_call.started",
+        "tool_call.delta",
+        "tool_call.completed",
+        "plan.updated",
+        "phase.changed",
+        "elicitation.requested",
+        "permission.requested",
+        "artifact.created",
+        "citation.recorded",
+        "run.state_changed"
       ]
     },
     "run_step_kind": {
