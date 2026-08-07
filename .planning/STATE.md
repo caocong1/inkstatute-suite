@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 98 Plan 98-01 complete (strong-signal + soft matcher + data source migration + golden tests + gate mapping)
-last_updated: "2026-08-10T21:30:00.000Z"
-last_activity: 2026-08-10 -- Phase 98 Plan 98-01 execution complete. Created strong_signal.py (11 regex rules + factual short-circuit, ported from lawfirm-profile/scripts/router.py), soft_matcher.py (bag-of-triggers scoring, 0.4 threshold, 0.7 skip-clarification). Integrated pre-router layer into RouterService.decide() running BEFORE strategy cascade for ALL strategies. Migrated data source to real skill-index.json via index_to_descriptors() (389 skills). Ported 15-case integration fixture (80% accuracy) and 8-case eval fixture (100% accuracy) as golden tests. Mapped gate_before/gate_after to RouteDecision.gates_before/gates_after. 109 router-service tests pass. All 36 gates green. 6 commits: 11b9f18, dee4f8c, 32dc30d, 858c249, 8677610, efacc9a.
+stopped_at: Phase 98 Plan 98-02 complete (three-mode detection + continue/switch/aside + LLM fallback)
+last_updated: "2026-08-10T22:30:00.000Z"
+last_activity: 2026-08-10 -- Phase 98 Plan 98-02 execution complete. Created mode_classifier.py (AgentMode enum, ClassifyContext, ClassifyResult, ModeClassifierPort, LLMModeClassifier, fallback_classify, normalize_action, parse_mode_str, parse_classifier_response, classify_with_retry, classify_error_diagnostic — ported 1:1 from agent_classifier.rs 691 lines). Ported 14 unit tests from Rust test suite as Python golden tests. Integrated mode detection into RouterService.decide() via optional mode_classifier parameter; results stored in RouteDecision.metadata (agent_mode, mode_action, mode_label, mode_source, mode_fallback_reason — no new top-level fields). 123 router-service tests pass. All 36 gates green. 4 commits: 300b7ee, f82bf6c, 0135a6c, 65c5e5a.
 progress:
   total_phases: 17
   completed_phases: 10
-  total_plans: 47
-  completed_plans: 47
-  percent: 60
+  total_plans: 48
+  completed_plans: 48
+  percent: 61
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 98 — Real-Index Routing (Plan 98-01 complete, 98-02 next)
+**Current focus:** Phase 98 — Real-Index Routing (Plan 98-02 complete, 98-03 next)
 
 ## Current Position
 
-Phase: 98 (real-index-routing) — Plan 98-01 COMPLETE
-Plan: 98-01 (Wave 1) complete. 98-02 (Wave 2: three-mode detection) and 98-03 (Wave 3: decision logging) pending.
-Status: Plan 98-01 execution complete. strong_signal.py (11 regex rules + factual short-circuit), soft_matcher.py (bag-of-triggers scoring), pre-router integration in RouterService.decide(), data source migration to skill-index.json, 15-case + 8-case golden tests, gate mapping all done. 109 tests pass, 36 gates green. Ready for 98-02.
-Last activity: 2026-08-10 -- Plan 98-01 execution: Created strong_signal.py and soft_matcher.py, integrated pre-router layer into RouterService.decide(), migrated data source to real skill-index.json (389 skills), ported golden tests (80%/100% accuracy), mapped gates. 6 commits.
+Phase: 98 (real-index-routing) — Plan 98-02 COMPLETE
+Plan: 98-01 (Wave 1) and 98-02 (Wave 2: three-mode detection) complete. 98-03 (Wave 3: decision logging) pending.
+Status: Plan 98-02 execution complete. mode_classifier.py (AgentMode, ClassifyContext, ClassifyResult, ModeClassifierPort, LLMModeClassifier, fallback_classify, normalize_action, parse_mode_str, parse_classifier_response, classify_with_retry, classify_error_diagnostic — ported 1:1 from agent_classifier.rs). 14 unit tests ported from Rust test suite. Mode detection integrated into RouterService.decide() via optional mode_classifier; results in RouteDecision.metadata (no new top-level fields). 123 tests pass, 36 gates green. Ready for 98-03.
+Last activity: 2026-08-10 -- Plan 98-02 execution: Created mode_classifier.py (ported 1:1 from agent_classifier.rs 691 lines), ported 14 unit tests as golden tests, integrated mode detection into RouteDecision.metadata. 4 commits.
 
-**Next command:** `/gsd-execute 98-02` (Phase 98 Wave 2: three-mode detection + continue/switch/aside + LLM fallback)
+**Next command:** `/gsd-execute 98-03` (Phase 98 Wave 3: decision logging + route_mismatch feedback association)
 
 ## Milestone v3.0 Overview
 
@@ -110,8 +110,8 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-10T21:30:00.000Z
-Stopped at: Phase 98 Plan 98-01 complete (strong-signal + soft matcher + data source migration + golden tests + gate mapping)
+Last session: 2026-08-10T22:30:00.000Z
+Stopped at: Phase 98 Plan 98-02 complete (three-mode detection + continue/switch/aside + LLM fallback)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..06 + SKILL-09 + SAFE-05 complete)
@@ -121,6 +121,6 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute 98-02` (Phase 98 Wave 2: three-mode detection + continue/switch/aside + LLM fallback — SKILL-08)
+- `/gsd-execute 98-03` (Phase 98 Wave 3: decision logging + route_mismatch feedback association)
 - 或 `/gsd-autonomous` 自动推进 Phases 98-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点

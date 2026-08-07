@@ -69,7 +69,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 - [x] **Phase 96: Real Skill Index** - 真实索引 396 个 SKILL.md，双仓合并与冲突模型 (SKILL-01..04, SAFE-05) ✅
 - [x] **Phase 97: Skill Materialization** - 按后端物化，三分离，废弃假 manifest skill 源 (SKILL-05, SKILL-06, SKILL-09) ✅ COMPLETE
-- [~] **Phase 98: Real-Index Routing** - 路由换真实索引 + 移植强信号规则与三模式判定 (SKILL-07, SKILL-08) — Plan 98-01 complete (strong-signal + soft matcher + golden tests)
+- [~] **Phase 98: Real-Index Routing** - 路由换真实索引 + 移植强信号规则与三模式判定 (SKILL-07, SKILL-08) — Plan 98-01 + 98-02 complete (strong-signal + soft matcher + golden tests + three-mode detection + LLM fallback)
 - [ ] **Phase 99: Practice Profile** - CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈 (PROF-01, PROF-02, PROF-03)
 
 ### 阶段 D — 自研核心
@@ -268,7 +268,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 路由决策产出 `RouteDecision` 契约事件并写决策日志，可用于后续 `route_mismatch` 反馈关联
   6. 给定一组真实律师任务样本，路由能命中具体的叶子子技能（而不是只能命中 4 个假 skill 名）
 
-**Plans**: 3 (98-01 strong-signal + soft matcher + golden tests ✅ | 98-02 three-mode detection | 98-03 decision logging + phase completion)
+**Plans**: 3 (98-01 strong-signal + soft matcher + golden tests ✅ | 98-02 three-mode detection + LLM fallback ✅ | 98-03 decision logging + phase completion)
 **UI hint**: no
 
 ### Phase 99: Practice Profile
