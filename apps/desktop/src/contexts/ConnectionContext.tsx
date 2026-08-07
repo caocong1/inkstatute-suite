@@ -28,7 +28,7 @@ export interface ConnectionContextValue {
   isOffline: () => boolean;
 }
 
-const ConnectionContext = createContext<ConnectionContextValue>();
+export const ConnectionContext = createContext<ConnectionContextValue>();
 
 export const ConnectionProvider: ParentComponent = (props) => {
   const [connectionState, setConnectionState] = createSignal<ConnectionState>("checking");
