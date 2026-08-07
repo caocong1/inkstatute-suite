@@ -37,7 +37,10 @@ export interface SessionContextValue {
   cancelRun: () => Promise<void>;
 }
 
-const SessionContext = createContext<SessionContextValue>();
+const _SessionContext = createContext<SessionContextValue>();
+
+// Export for testing — allows injecting mock session values
+export const SessionContext = _SessionContext;
 
 export interface SessionProviderProps {
   conversationId: string;
@@ -118,14 +121,14 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
   };
 
   return (
-    <SessionContext.Provider value={value}>
+    <_SessionContext.Provider value={value}>
       {props.children}
-    </SessionContext.Provider>
+    </_SessionContext.Provider>
   );
 };
 
 export function useSession(): SessionContextValue {
-  const ctx = useContext(SessionContext);
+  const ctx = useContext(_SessionContext);
   if (!ctx) {
     throw new Error("useSession() must be used within a SessionProvider");
   }
