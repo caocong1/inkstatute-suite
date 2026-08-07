@@ -61,7 +61,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 - [x] **Phase 91: Unified Gateway** - 多租户 HTTP+SSE 网关，取代 platform_api 与 lawyer-web-chat 的重叠 (GW-01..06)
 - [x] **Phase 92: Shared UI Core** - 从 lawyer-desktop 抽取 @inkstatute/ui-core，chat UI 单一实现 (UI-01, UI-02, UI-03, UI-06) ✅
-- [ ] **Phase 93: Web Client** - 响应式 Web 客户端（桌面 + 移动浏览器） (UI-04)
+- [ ] **Phase 93: Web Client** - 响应式 Web 客户端（桌面 + 移动浏览器） (UI-04) — Plan 01 complete (tracer)
 - [ ] **Phase 94: Desktop Client** - Tauri 外壳复用，invoke() → Gateway，离线只读 (UI-05)
 - [ ] **Phase 95: Bot Channel Degradation** - WeCom/QQ 改为 Gateway 消费者 + 非流式降级 (BOT-01, BOT-02, BOT-03)
 
@@ -394,8 +394,8 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 89. ACP Backend Client | A | 3/4 | In Progress|  |
 | 90. ACP Event Bridge & Output Boundary | A | 4/4 | Complete | 2026-08-07 |
 | 91. Unified Gateway | B | 3/5 | In Progress|  |
-| 92. Shared UI Core | B | 0/TBD | Not started | - |
-| 93. Web Client | B | 0/TBD | Not started | - |
+| 92. Shared UI Core | B | 4/4 | Complete | 2026-08-08 |
+| 93. Web Client | B | 1/TBD | In Progress | - |
 | 94. Desktop Client | B | 0/TBD | Not started | - |
 | 95. Bot Channel Degradation | B | 0/TBD | Not started | - |
 | 96. Real Skill Index | C | 0/TBD | Not started | - |
