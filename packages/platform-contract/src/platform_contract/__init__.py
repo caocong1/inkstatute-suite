@@ -4,6 +4,7 @@ from .agent_adapter import (
     AdapterCapabilitySet,
     AgentBackendManifest,
     AgentBackendMode,
+    BackendProcessMode,
     validate_agent_backend_manifest,
 )
 from .bot_degradation import (
@@ -122,6 +123,7 @@ __all__ = [
     "AgentTurn",
     "AgentBackendManifest",
     "AgentBackendMode",
+    "BackendProcessMode",
     "Approval",
     "ApprovalStatus",
     "Artifact",

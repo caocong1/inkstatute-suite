@@ -15,6 +15,20 @@ class AgentBackendMode(StrEnum):
     PROVIDER_MODEL = "provider_model"
 
 
+# V3: backend_process_mode contract — only per_session is implemented;
+# pooled/remote are reserved for V4 (SCALE-01..03).
+class BackendProcessMode(StrEnum):
+    """Process mode for ACP backend subprocess management.
+
+    Only ``PER_SESSION`` is implemented in V3; ``POOLED`` and ``REMOTE``
+    are reserved for V4 (SCALE-01..03).
+    """
+
+    PER_SESSION = "per_session"
+    POOLED = "pooled"
+    REMOTE = "remote"
+
+
 @dataclass(frozen=True, slots=True)
 class AdapterCapabilitySet:
     hook_event_support: list[str] = field(default_factory=list)
@@ -135,5 +149,6 @@ __all__ = [
     "AdapterCapabilitySet",
     "AgentBackendManifest",
     "AgentBackendMode",
+    "BackendProcessMode",
     "validate_agent_backend_manifest",
 ]
