@@ -13,6 +13,10 @@
  * Artifact download: DocPreview shows a download button when artifacts exist →
  *   gateway.getArtifact() → webFileAdapter.saveFile()
  *
+ * Mobile tab toggle: On mobile (<768px), a tab bar switches between
+ * 对话 (chat), 文书 (document), 引用 (citations). On desktop, chat and doc
+ * are side-by-side and the tab bar is hidden via CSS.
+ *
  * SSE connection status indicators:
  * - isStreaming() → "正在思考…" pulsing indicator
  * - streamError() → "连接中断，正在重连…" error indicator
@@ -31,15 +35,20 @@ import { gateway } from "../config/gateway";
 import { uploadFile } from "../lib/upload";
 import { webFileAdapter } from "../adapters/webFileAdapter";
 
+type MobileTab = "chat" | "doc" | "cite";
+
 export const WorkspaceContent: Component = () => {
   const session = useSession();
   const [citeOpen, setCiteOpen] = createSignal(false);
   const [downloadError, setDownloadError] = createSignal<string | null>(null);
+  const [activeTab, setActiveTab] = createSignal<MobileTab>("chat");
 
   const artifact = () => session.state().artifacts[0] ?? null;
   const citationGroups = (): CitationGroups =>
     groupCitations(session.state().citations);
   const hasCitations = () => session.state().citations.length > 0;
+  const hasArtifacts = () => session.state().artifacts.length > 0;
+  const citationCount = () => session.state().citations.length;
 
   /**
    * Handle file attachment: upload via gateway, then send message with attachment.
@@ -72,7 +81,45 @@ export const WorkspaceContent: Component = () => {
   }
 
   return (
-    <div class="ws">
+    <div
+      class="ws"
+      classList={{ "doc-visible": activeTab() === "doc" }}
+    >
+      {/* Mobile tab toggle bar */}
+      <div class="ws-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          classList={{ on: activeTab() === "chat" }}
+          onClick={() => setActiveTab("chat")}
+        >
+          对话
+        </button>
+        <button
+          type="button"
+          role="tab"
+          classList={{ on: activeTab() === "doc" }}
+          onClick={() => hasArtifacts() && setActiveTab("doc")}
+          disabled={!hasArtifacts()}
+        >
+          文书
+        </button>
+        <button
+          type="button"
+          role="tab"
+          classList={{ on: activeTab() === "cite" }}
+          onClick={() => {
+            if (hasCitations()) {
+              setActiveTab("cite");
+              setCiteOpen(true);
+            }
+          }}
+          disabled={!hasCitations()}
+        >
+          {hasCitations() ? `引用（${citationCount()}）` : "引用"}
+        </button>
+      </div>
+
       <div class="ws-chat">
         <Show when={session.isStreaming()}>
           <div class="ws-stream-indicator" role="status">
@@ -128,13 +175,13 @@ export const WorkspaceContent: Component = () => {
           onToggle={() => setCiteOpen(false)}
         />
       </Show>
-      <Show when={hasCitations() && !citeOpen()}>
+      <Show when={hasCitations() && !citeOpen() && activeTab() !== "cite"}>
         <button
           class="ws-cite-toggle"
           type="button"
           onClick={() => setCiteOpen(true)}
         >
-          引用（{session.state().citations.length}）
+          引用（{citationCount()}）
         </button>
       </Show>
     </div>
