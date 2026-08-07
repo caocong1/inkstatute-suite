@@ -1,0 +1,213 @@
+/**
+ * Fixture event stream — simulates a complete task lifecycle.
+ *
+ * Same fixture format as Phase 93's web E2E tests (apps/web/tests/fixtures/run-events.json),
+ * ensuring desktop/web consistency. The event sequence covers:
+ *   session.started → phase.changed (research) → thought.delta →
+ *   tool_call.started → tool_call.completed → phase.changed (intake) →
+ *   elicitation.requested → phase.changed (draft) → message.delta (x5) →
+ *   message.completed → artifact.created → citation.recorded →
+ *   run.state_changed (completed)
+ *
+ * This fixture is used by:
+ *   - e2e-workflow.test.tsx (E2E integration tests)
+ *   - desktop-web-consistency.test.ts (desktop/web consistency verification)
+ */
+import type { RunEventEnvelope } from "@inkstatute/platform-sdk-ts/events";
+
+export function fixtureEventStream(): RunEventEnvelope[] {
+  return [
+    {
+      event_id: "evt-001",
+      run_id: "run-test-001",
+      event_type: "session.started",
+      occurred_at: "2026-08-08T10:00:00Z",
+      seq: 1,
+      payload: {
+        backend_id: "hermes",
+        session_id: "sess-001",
+        capabilities: ["streaming", "elicitation"],
+      },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-002",
+      run_id: "run-test-001",
+      event_type: "phase.changed",
+      occurred_at: "2026-08-08T10:00:01Z",
+      seq: 2,
+      payload: { phase: "research" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-003",
+      run_id: "run-test-001",
+      event_type: "thought.delta",
+      occurred_at: "2026-08-08T10:00:02Z",
+      seq: 3,
+      payload: { delta: "正在分析需求..." },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-004",
+      run_id: "run-test-001",
+      event_type: "tool_call.started",
+      occurred_at: "2026-08-08T10:00:03Z",
+      seq: 4,
+      payload: {
+        tool_call_id: "tc-1",
+        tool_name: "legal_search",
+        kind: "search",
+      },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-005",
+      run_id: "run-test-001",
+      event_type: "tool_call.completed",
+      occurred_at: "2026-08-08T10:00:05Z",
+      seq: 5,
+      payload: {
+        tool_call_id: "tc-1",
+        status: "success",
+        content: "找到3条相关法规",
+      },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-006",
+      run_id: "run-test-001",
+      event_type: "phase.changed",
+      occurred_at: "2026-08-08T10:00:06Z",
+      seq: 6,
+      payload: { phase: "intake", previous_phase: "research" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-007",
+      run_id: "run-test-001",
+      event_type: "elicitation.requested",
+      occurred_at: "2026-08-08T10:00:07Z",
+      seq: 7,
+      payload: {
+        interrupt_id: "int-1",
+        intro: "需要补充信息",
+        questions: [
+          {
+            id: "q1",
+            question: "合同类型是什么？",
+            allow_multiple: false,
+            options: [
+              { label: "买卖合同", value: "sale" },
+              { label: "租赁合同", value: "lease" },
+              { label: "服务合同", value: "service" },
+            ],
+          },
+          {
+            id: "q2",
+            question: "涉及哪些风险点？",
+            allow_multiple: true,
+            options: [
+              { label: "付款风险", value: "payment" },
+              { label: "违约风险", value: "breach" },
+              { label: "知识产权风险", value: "ip" },
+            ],
+          },
+        ],
+        resume_state_ref: "state-001",
+      },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-008",
+      run_id: "run-test-001",
+      event_type: "phase.changed",
+      occurred_at: "2026-08-08T10:00:08Z",
+      seq: 8,
+      payload: { phase: "draft", previous_phase: "intake" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-009",
+      run_id: "run-test-001",
+      event_type: "message.delta",
+      occurred_at: "2026-08-08T10:00:09Z",
+      seq: 9,
+      payload: { delta: "根据您的要求，", message_id: "msg-001" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-010",
+      run_id: "run-test-001",
+      event_type: "message.delta",
+      occurred_at: "2026-08-08T10:00:10Z",
+      seq: 10,
+      payload: { delta: "拟定以下文书：", message_id: "msg-001" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-011",
+      run_id: "run-test-001",
+      event_type: "message.delta",
+      occurred_at: "2026-08-08T10:00:11Z",
+      seq: 11,
+      payload: { delta: "合同审查报告", message_id: "msg-001" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-012",
+      run_id: "run-test-001",
+      event_type: "message.delta",
+      occurred_at: "2026-08-08T10:00:12Z",
+      seq: 12,
+      payload: { delta: "。", message_id: "msg-001" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-013",
+      run_id: "run-test-001",
+      event_type: "message.delta",
+      occurred_at: "2026-08-08T10:00:13Z",
+      seq: 13,
+      payload: { delta: "请审阅。", message_id: "msg-001" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-014",
+      run_id: "run-test-001",
+      event_type: "message.completed",
+      occurred_at: "2026-08-08T10:00:14Z",
+      seq: 14,
+      payload: {
+        content: "根据您的要求，拟定以下文书：合同审查报告。请审阅。",
+        message_id: "msg-001",
+      },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-015",
+      run_id: "run-test-001",
+      event_type: "artifact.created",
+      occurred_at: "2026-08-08T10:00:15Z",
+      seq: 15,
+      payload: {
+        artifact: {
+          artifact_id: "art-001",
+          kind: "docx",
+          name: "合同审查报告.docx",
+          uri: "artifact://run-test-001/art-001",
+          mime_type:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        },
+      },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-016",
+      run_id: "run-test-001",
+      event_type: "citation.recorded",
+      occurred_at: "2026-08-08T10:00:16Z",
+      seq: 16,
+      payload: {
+        citations: [
+          { source: "《合同法》第107条", status: "verified" },
+          { source: "《民法典》第585条", status: "retrieved" },
+          { source: "案例：(2023)京01民终123号", status: "unverified" },
+        ],
+      },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-017",
+      run_id: "run-test-001",
+      event_type: "run.state_changed",
+      occurred_at: "2026-08-08T10:00:17Z",
+      seq: 17,
+      payload: { status: "succeeded", previous_status: "running" },
+    } as RunEventEnvelope,
+  ];
+}
