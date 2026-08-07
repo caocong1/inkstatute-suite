@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/citation_recorded.schema.json",
+  "title": "CitationRecordedPayload",
+  "description": "Payload for the citation.recorded unified event (ACP _meta extension). Citations with verified/retrieved/unverified status.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "citations"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "citation.recorded"
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "status"
+        ],
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "retrieved",
+              "unverified"
+            ]
+          }
+        }
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

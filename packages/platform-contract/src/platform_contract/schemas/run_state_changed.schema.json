@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/run_state_changed.schema.json",
+  "title": "RunStateChangedPayload",
+  "description": "Payload for the run.state_changed unified event (ACP status update).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "status"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "run.state_changed"
+    },
+    "status": {
+      "$ref": "common.schema.json#/$defs/async_task_state"
+    },
+    "previous_status": {
+      "$ref": "common.schema.json#/$defs/async_task_state"
+    },
+    "error": {
+      "$ref": "common.schema.json#/$defs/error_info"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

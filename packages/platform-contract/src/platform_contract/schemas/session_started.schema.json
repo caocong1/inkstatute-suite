@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/session_started.schema.json",
+  "title": "SessionStartedPayload",
+  "description": "Payload for the session.started unified event (ACP session/new response).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "backend_id"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "session.started"
+    },
+    "backend_id": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/thought_delta.schema.json",
+  "title": "ThoughtDeltaPayload",
+  "description": "Payload for the thought.delta unified event (ACP agent_thought_chunk).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "delta"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "thought.delta"
+    },
+    "delta": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

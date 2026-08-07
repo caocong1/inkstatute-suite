@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/tool_call_started.schema.json",
+  "title": "ToolCallStartedPayload",
+  "description": "Payload for the tool_call.started unified event (ACP tool_call_update).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "tool_call_id",
+    "tool_name"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "tool_call.started"
+    },
+    "tool_call_id": {
+      "type": "string"
+    },
+    "tool_name": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "read",
+        "edit",
+        "delete",
+        "move",
+        "search",
+        "execute",
+        "think",
+        "fetch",
+        "other"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/plan_updated.schema.json",
+  "title": "PlanUpdatedPayload",
+  "description": "Payload for the plan.updated unified event (ACP plan / plan_update).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "plan"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "plan.updated"
+    },
+    "plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "status"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

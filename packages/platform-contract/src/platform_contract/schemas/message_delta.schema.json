@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/message_delta.schema.json",
+  "title": "MessageDeltaPayload",
+  "description": "Payload for the message.delta unified event (ACP agent_message_chunk).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "delta"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "message.delta"
+    },
+    "delta": {
+      "type": "string"
+    },
+    "message_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

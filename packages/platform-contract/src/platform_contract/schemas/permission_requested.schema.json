@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/permission_requested.schema.json",
+  "title": "PermissionRequestedPayload",
+  "description": "Payload for the permission.requested unified event (ACP session/request_permission). Must NEVER be auto-approved server-side.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "permission_id",
+    "tool_call_id",
+    "description"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "permission.requested"
+    },
+    "permission_id": {
+      "type": "string"
+    },
+    "tool_call_id": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "terminal",
+        "execute_code",
+        "fs_read",
+        "fs_write",
+        "other"
+      ]
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

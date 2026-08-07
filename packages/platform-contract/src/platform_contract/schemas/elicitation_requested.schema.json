@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/elicitation_requested.schema.json",
+  "title": "ElicitationRequestedPayload",
+  "description": "Payload for the elicitation.requested unified event (ACP elicitation/create). 2-4 questions, single/multi/free-text.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "interrupt_id",
+    "intro",
+    "questions"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "elicitation.requested"
+    },
+    "interrupt_id": {
+      "type": "string"
+    },
+    "intro": {
+      "type": "string"
+    },
+    "questions": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/elicitation_question"
+      }
+    },
+    "resume_state_ref": {
+      "type": "string"
+    },
+    "expires_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  },
+  "$defs": {
+    "elicitation_question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "question"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "allow_multiple": {
+          "type": "boolean",
+          "default": false
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "label",
+              "value"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

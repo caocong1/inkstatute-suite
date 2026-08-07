@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/phase_changed.schema.json",
+  "title": "PhaseChangedPayload",
+  "description": "Payload for the phase.changed unified event (five-phase progress: research/intake/retrieval/draft/review).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "phase"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "phase.changed"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "research",
+        "intake",
+        "retrieval",
+        "draft",
+        "review"
+      ]
+    },
+    "previous_phase": {
+      "type": "string",
+      "enum": [
+        "research",
+        "intake",
+        "retrieval",
+        "draft",
+        "review"
+      ]
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

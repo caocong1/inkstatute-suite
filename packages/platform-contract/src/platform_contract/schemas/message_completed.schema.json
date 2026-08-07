@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/message_completed.schema.json",
+  "title": "MessageCompletedPayload",
+  "description": "Payload for the message.completed unified event (ACP agent_message v2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "content"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "message.completed"
+    },
+    "content": {
+      "type": "string"
+    },
+    "message_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/error_event.schema.json",
+  "title": "ErrorEventPayload",
+  "description": "Payload for the error unified event (ACP JSON-RPC error). Three error categories: contract/runtime/channel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "error"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "error"
+    },
+    "error": {
+      "$ref": "common.schema.json#/$defs/error_info"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

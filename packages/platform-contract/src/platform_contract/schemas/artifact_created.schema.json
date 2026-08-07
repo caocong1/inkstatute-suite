@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/artifact_created.schema.json",
+  "title": "ArtifactCreatedPayload",
+  "description": "Payload for the artifact.created unified event (ACP Artifact content block).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "artifact"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "artifact.created"
+    },
+    "artifact": {
+      "$ref": "common.schema.json#/$defs/artifact"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}
