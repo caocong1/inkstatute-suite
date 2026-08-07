@@ -8,7 +8,7 @@ two-person rule, and per-tenant namespaces.
 
 from .api import handle_get
 from .discovery import build_discovery_index
-from .mapper import load_skills_from_manifests, manifest_skill_to_descriptor
+from .mapper import index_to_descriptors, load_skills_from_manifests, manifest_skill_to_descriptor
 from .registry import SkillRegistry, SkillRegistryPort
 from .write import (
     HumanReviewRecord,
@@ -34,6 +34,7 @@ __all__ = [
     "handle_get",
     "handle_post",
     "handle_put",
+    "index_to_descriptors",
     "load_skills_from_manifests",
     "manifest_skill_to_descriptor",
 ]
