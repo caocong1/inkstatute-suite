@@ -108,3 +108,18 @@ All acceptance criteria from the plan are met:
 - ✅ All tests pass (22 new Gateway + 9 new web)
 - ✅ All 33 gates green
 - ✅ TypeScript compiles cleanly
+
+## Self-Check: PASSED
+
+- [x] All tasks executed and committed (4 tasks + 1 docs commit)
+- [x] All acceptance_criteria PASS
+- [x] 5 Gateway stub endpoints implemented (get_session, list_session_runs, get_run, submit_elicitation, submit_approval)
+- [x] Upload wired in web client (FileReader-based)
+- [x] Artifact download wired in web client
+- [x] ClarificationCard submission to Gateway (submit_elicitation)
+- [x] MessageFeedback submission to Gateway (submit_feedback)
+- [x] Full lawyer flow works (upload → task → clarify → artifact → feedback)
+- [x] GET /v1/sessions for multi-device session visibility
+- [x] No auto-approve path in approval handler
+- [x] 33 gates green
+- [x] SUMMARY.md with Self-Check: PASSED
