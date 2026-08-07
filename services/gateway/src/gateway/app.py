@@ -35,9 +35,11 @@ from platform_contract.events import (
 from .artifacts import GatewayArtifactStore, handle_get_artifact_request
 from .auth import AuthContext, GatewayAuth, GatewayAuthError
 from .config import GatewayConfig
+from .elicitation import GatewayElicitationHandler
 from .event_buffer import RunEventBuffer
 from .feedback import GatewayFeedbackHandler, handle_submit_feedback_request
 from .login import GatewayLoginHandler
+from .approvals import GatewayApprovalHandler
 from .runs import handle_get_run_request, handle_list_session_runs_request
 from .sessions import GatewaySessionManager, build_set_cookie_header, serialize_session
 from .skills import GatewaySkillsHandler, handle_skills_request
@@ -123,6 +125,8 @@ class GatewayApp:
         feedback_handler: GatewayFeedbackHandler | None = None,
         skills_handler: GatewaySkillsHandler | None = None,
         login_handler: GatewayLoginHandler | None = None,
+        elicitation_handler: GatewayElicitationHandler | None = None,
+        approval_handler: GatewayApprovalHandler | None = None,
     ) -> None:
         self._config = config
         self._runtime = runtime
@@ -135,6 +139,8 @@ class GatewayApp:
         self._feedback_handler = feedback_handler or GatewayFeedbackHandler()
         self._skills_handler = skills_handler
         self._login_handler = login_handler
+        self._elicitation_handler = elicitation_handler
+        self._approval_handler = approval_handler
 
     @property
     def config(self) -> GatewayConfig:
@@ -167,6 +173,14 @@ class GatewayApp:
     @property
     def login_handler(self) -> GatewayLoginHandler | None:
         return self._login_handler
+
+    @property
+    def elicitation_handler(self) -> GatewayElicitationHandler | None:
+        return self._elicitation_handler
+
+    @property
+    def approval_handler(self) -> GatewayApprovalHandler | None:
+        return self._approval_handler
 
     async def dispatch(
         self,
@@ -218,9 +232,17 @@ class GatewayApp:
             if operation == OPERATION_GET_RUN:
                 return self._handle_get_run(ctx, path_params)
             if operation == OPERATION_SUBMIT_ELICITATION:
-                return _not_implemented("submit_elicitation")
+                if self._elicitation_handler is None:
+                    return _not_implemented("submit_elicitation")
+                return self._elicitation_handler.handle_submit_elicitation(
+                    ctx, path_params.get("run_id", ""), body_dict,
+                )
             if operation == OPERATION_SUBMIT_APPROVAL:
-                return _not_implemented("submit_approval")
+                if self._approval_handler is None:
+                    return _not_implemented("submit_approval")
+                return self._approval_handler.handle_submit_approval(
+                    ctx, path_params.get("run_id", ""), body_dict,
+                )
             if operation == OPERATION_GET_ARTIFACT:
                 return await self._handle_get_artifact(ctx, path_params)
             if operation == OPERATION_UPLOAD:
@@ -808,8 +830,10 @@ __all__ = [
     "OPERATION_SUBMIT_FEEDBACK",
     "OPERATION_UPLOAD",
     "GatewayApp",
+    "GatewayApprovalHandler",
     "GatewayArtifactStore",
     "GatewayDisabledError",
+    "GatewayElicitationHandler",
     "GatewayError",
     "GatewayFeedbackHandler",
     "GatewayLoginHandler",
