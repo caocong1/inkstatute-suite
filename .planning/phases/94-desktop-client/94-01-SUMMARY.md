@@ -111,3 +111,18 @@ A complete `apps/desktop` application scaffold with Tauri 2 shell, 6 Tauri-backe
 - **94-03**: Offline read-only mode (history + downloaded artifacts)
 - **94-04**: FTS5 workspace index + attachment引用
 - **94-05**: Full integration test + cross-platform build verification
+
+## Self-Check: PASSED
+
+- [x] All tasks executed and committed (7 commits)
+- [x] All acceptance_criteria PASS
+- [x] apps/desktop scaffold created (package.json, vite.config.ts, tsconfig, src-tauri/)
+- [x] Tauri shell builds (cargo check passes)
+- [x] 6 desktop adapters implemented (including WindowAdapter)
+- [x] Gateway connection works (configurable URL, cross-origin)
+- [x] App shell with TitleBar renders
+- [x] Home page and workspace page render
+- [x] desktop gate registered in run_v2_gates.py
+- [x] 34 gates green
+- [x] Zero agent logic in Tauri commands
+- [x] Zero own chat UI code (all from ui-core)
