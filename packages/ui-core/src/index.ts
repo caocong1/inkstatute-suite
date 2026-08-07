@@ -8,3 +8,14 @@
 
 export { useTheme } from "./stores/theme";
 export type { ThemeVariant } from "./stores/theme";
+
+export {
+  reduce,
+  initialState,
+  traceToolLabel,
+  normalizeClarification,
+} from "./event-reducer";
+export type {
+  RenderState,
+  ChatMessage,
+} from "./event-reducer";
