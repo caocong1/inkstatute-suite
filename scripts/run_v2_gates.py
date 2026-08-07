@@ -83,6 +83,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     acp_event_bridge_src = repo_root / "packages" / "acp-event-bridge" / "src"
     gateway_src = repo_root / "services" / "gateway" / "src"
     ui_core_src = repo_root / "packages" / "ui-core" / "src"
+    practice_profile_src = repo_root / "packages" / "practice-profile" / "src"
     web_src = repo_root / "apps" / "web" / "src"
     desktop_src = repo_root / "apps" / "desktop" / "src"
 
@@ -246,6 +247,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (feedback_src, wecom_src, wecom_channel_src, channel_core_src, contract_src, platform_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
+            "practice-profile",
+            (py, "-m", "unittest", "discover", "-s", "packages/practice-profile/tests"),
+            (practice_profile_src, platform_src, rbac_src),
+        ),
+        Gate(
             "phase7-privacy-boundary",
             (
                 py,
@@ -292,6 +298,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/backends/provider_model/src",
                 "packages/model-gateway/src",
                 "packages/multi-agent-adapter/src",
+                "packages/practice-profile/src",
                 "services/admin-web-ui/src",
                 "services/lawyer-web-chat/src",
                 "services/gateway/src",
