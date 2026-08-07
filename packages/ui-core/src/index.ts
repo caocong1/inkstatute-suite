@@ -50,3 +50,6 @@ export type { DraftingProgressStepsProps } from "./components/DraftingProgressSt
 
 export { MessageFeedback } from "./components/MessageFeedback";
 export type { MessageFeedbackProps } from "./components/MessageFeedback";
+
+export { DocDraftingLoader } from "./components/DocDraftingLoader";
+export type { DocDraftingLoaderProps } from "./components/DocDraftingLoader";
