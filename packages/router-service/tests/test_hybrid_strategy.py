@@ -115,13 +115,13 @@ class HybridRuleLayerTests(unittest.TestCase):
     def test_hybrid_rule_match_with_registry(self) -> None:
         """Rule match + registry hit → confidence=0.9, mode=matched."""
         descriptor = _make_descriptor(
-            "lawfirm/compliance_review",
+            "test/compliance_review",
             name="compliance_review",
             required_tool_refs=["law_search"],
             metadata={"intent": "review"},
         )
         fake = _FakeSkillRegistry(
-            skills_by_id={"lawfirm/compliance_review": descriptor},
+            skills_by_id={"test/compliance_review": descriptor},
             search_results={"review": [descriptor]},
         )
         service = RouterService(
@@ -131,7 +131,7 @@ class HybridRuleLayerTests(unittest.TestCase):
         decision = service.decide({"message": "请审查这份合同"})
 
         self.assertEqual(decision.mode, "matched")
-        self.assertEqual(decision.primary_skill, "lawfirm/compliance_review")
+        self.assertEqual(decision.primary_skill, "test/compliance_review")
         self.assertAlmostEqual(decision.confidence, 0.9)
         self.assertEqual(decision.metadata["router_strategy"], "hybrid")
         self.assertEqual(decision.metadata["cascade_stage"], "rule")
@@ -162,19 +162,19 @@ class HybridSkillLayerTests(unittest.TestCase):
     def test_hybrid_skill_exact_match(self) -> None:
         """skill_id lookup → confidence=1.0, mode=matched."""
         descriptor = _make_descriptor(
-            "lawfirm/case_qa",
+            "test/case_qa",
             name="Case QA",
             required_tool_refs=["tool_a"],
         )
-        fake = _FakeSkillRegistry(skills_by_id={"lawfirm/case_qa": descriptor})
+        fake = _FakeSkillRegistry(skills_by_id={"test/case_qa": descriptor})
         service = RouterService(
             strategy=RouterStrategy.HYBRID,
             skill_registry=fake,
         )
-        decision = service.decide({"skill_id": "lawfirm/case_qa"})
+        decision = service.decide({"skill_id": "test/case_qa"})
 
         self.assertEqual(decision.mode, "matched")
-        self.assertEqual(decision.primary_skill, "lawfirm/case_qa")
+        self.assertEqual(decision.primary_skill, "test/case_qa")
         self.assertAlmostEqual(decision.confidence, 1.0)
         self.assertEqual(decision.metadata["cascade_stage"], "skill")
         self.assertEqual(decision.metadata["skill_lookup_method"], "get_skill")
@@ -187,7 +187,7 @@ class HybridSkillLayerTests(unittest.TestCase):
         Skill layer's name-substring search.
         """
         descriptor = _make_descriptor(
-            "lawfirm/contract_drafting",
+            "test/contract_drafting",
             name="Contract Drafting",
             required_tool_refs=["docx_tool"],
         )
@@ -202,7 +202,7 @@ class HybridSkillLayerTests(unittest.TestCase):
         decision = service.decide({"message": "Contract"})
 
         self.assertEqual(decision.mode, "matched")
-        self.assertEqual(decision.primary_skill, "lawfirm/contract_drafting")
+        self.assertEqual(decision.primary_skill, "test/contract_drafting")
         self.assertAlmostEqual(decision.confidence, 0.85)
         self.assertEqual(decision.metadata["cascade_stage"], "skill")
 
@@ -214,9 +214,9 @@ class HybridSkillLayerTests(unittest.TestCase):
         Skill layer's name-substring search with multiple results.
         """
         descriptors = [
-            _make_descriptor("lawfirm/qa_1", name="QA 1"),
-            _make_descriptor("lawfirm/qa_2", name="QA 2"),
-            _make_descriptor("lawfirm/qa_3", name="QA 3"),
+            _make_descriptor("test/qa_1", name="QA 1"),
+            _make_descriptor("test/qa_2", name="QA 2"),
+            _make_descriptor("test/qa_3", name="QA 3"),
         ]
         fake = _FakeSkillRegistry(
             search_results={"Case": descriptors},
@@ -246,7 +246,7 @@ class HybridModelLayerTests(unittest.TestCase):
 
     def test_hybrid_model_classifier_high_confidence(self) -> None:
         """Model classifier returns 0.9 → mode=matched."""
-        model = _FakeModelClassifier(confidence=0.9, predicted_skill="lawfirm/custom")
+        model = _FakeModelClassifier(confidence=0.9, predicted_skill="test/custom")
         service = RouterService(
             strategy=RouterStrategy.HYBRID,
             skill_registry=None,
@@ -256,7 +256,7 @@ class HybridModelLayerTests(unittest.TestCase):
 
         self.assertEqual(decision.mode, "matched")
         self.assertAlmostEqual(decision.confidence, 0.9)
-        self.assertEqual(decision.primary_skill, "lawfirm/custom")
+        self.assertEqual(decision.primary_skill, "test/custom")
         self.assertEqual(decision.metadata["cascade_stage"], "model")
         self.assertTrue(decision.metadata["model_classification"])
 
@@ -353,13 +353,13 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
     def test_hybrid_high_risk_overrides_high_confidence(self) -> None:
         """High-risk query that would normally route to a skill → forced to Hermes."""
         descriptor = _make_descriptor(
-            "lawfirm/compliance_review",
+            "test/compliance_review",
             name="compliance_review",
             required_tool_refs=["law_search"],
             metadata={"intent": "review"},
         )
         fake = _FakeSkillRegistry(
-            skills_by_id={"lawfirm/compliance_review": descriptor},
+            skills_by_id={"test/compliance_review": descriptor},
             search_results={"review": [descriptor]},
         )
         service = RouterService(
@@ -406,13 +406,13 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
     def test_hybrid_low_risk_no_override(self) -> None:
         """Low-risk query → no legal-risk override, normal cascade."""
         descriptor = _make_descriptor(
-            "lawfirm/legal_qa",
+            "test/legal_qa",
             name="legal_qa",
             required_tool_refs=["law_search"],
             metadata={"intent": "factual_qa"},
         )
         fake = _FakeSkillRegistry(
-            skills_by_id={"lawfirm/legal_qa": descriptor},
+            skills_by_id={"test/legal_qa": descriptor},
             search_results={"factual_qa": [descriptor]},
         )
         service = RouterService(
@@ -425,7 +425,7 @@ class HybridLegalRiskOverrideTests(unittest.TestCase):
         # "合同" is medium-risk, not high-risk → no override
         self.assertNotIn("forced_to_hermes", decision.metadata)
         self.assertEqual(decision.mode, "matched")
-        self.assertEqual(decision.primary_skill, "lawfirm/legal_qa")
+        self.assertEqual(decision.primary_skill, "test/legal_qa")
         # Legal risk assessment is still recorded in metadata
         self.assertIn("legal_risk_assessment", decision.metadata)
         self.assertEqual(decision.metadata["legal_risk_assessment"]["risk_level"], "medium")
@@ -442,12 +442,12 @@ class HybridConfidenceInvariantTests(unittest.TestCase):
     def test_hybrid_confidence_always_populated(self) -> None:
         """All hybrid decisions have confidence as float 0.0–1.0."""
         descriptor = _make_descriptor(
-            "lawfirm/legal_qa",
+            "test/legal_qa",
             name="legal_qa",
             metadata={"intent": "factual_qa"},
         )
         fake = _FakeSkillRegistry(
-            skills_by_id={"lawfirm/legal_qa": descriptor},
+            skills_by_id={"test/legal_qa": descriptor},
             search_results={"factual_qa": [descriptor]},
         )
         model = _FakeModelClassifier(confidence=0.7)
@@ -459,7 +459,7 @@ class HybridConfidenceInvariantTests(unittest.TestCase):
         )
         contexts = [
             {"message": "请问什么是合同"},  # rule match
-            {"skill_id": "lawfirm/legal_qa"},  # skill exact
+            {"skill_id": "test/legal_qa"},  # skill exact
             {"message": "xyz random"},  # model fallback
             {"message": "诉讼"},  # high-risk override
             {"message": "hello world"},  # no match
@@ -500,12 +500,12 @@ class HybridFrozenModeTests(unittest.TestCase):
     def test_hybrid_mode_is_frozen_value(self) -> None:
         valid_modes = {"matched", "simple_qa", "skipped", "zero_match"}
         descriptor = _make_descriptor(
-            "lawfirm/skill_1",
+            "test/skill_1",
             name="Skill 1",
             metadata={"intent": "drafting"},
         )
         fake = _FakeSkillRegistry(
-            skills_by_id={"lawfirm/skill_1": descriptor},
+            skills_by_id={"test/skill_1": descriptor},
             search_results={"drafting": [descriptor]},
         )
         model = _FakeModelClassifier(confidence=0.6)
@@ -516,7 +516,7 @@ class HybridFrozenModeTests(unittest.TestCase):
             legal_risk_classifier=KeywordLegalRiskClassifier(),
         )
         contexts = [
-            {"skill_id": "lawfirm/skill_1"},
+            {"skill_id": "test/skill_1"},
             {"message": "请起草一份合同"},
             {"message": "xyz random"},
             {"message": "诉讼"},
@@ -534,12 +534,12 @@ class HybridStatelessTests(unittest.TestCase):
     def test_hybrid_strategy_is_stateless(self) -> None:
         """Two calls with the same context must return equal RouteDecision objects."""
         descriptor = _make_descriptor(
-            "lawfirm/case_qa",
+            "test/case_qa",
             name="Case QA",
             metadata={"intent": "factual_qa"},
         )
         fake = _FakeSkillRegistry(
-            skills_by_id={"lawfirm/case_qa": descriptor},
+            skills_by_id={"test/case_qa": descriptor},
             search_results={"factual_qa": [descriptor]},
         )
         service = RouterService(
@@ -564,13 +564,13 @@ class HybridRegressionTests(unittest.TestCase):
     def test_existing_rule_strategy_unchanged(self) -> None:
         """RULE strategy still produces mode=matched with confidence=0.7."""
         descriptor = _make_descriptor(
-            "lawfirm/compliance_review",
+            "test/compliance_review",
             name="compliance_review",
             required_tool_refs=["law_search"],
             metadata={"intent": "review"},
         )
         fake = _FakeSkillRegistry(
-            skills_by_id={"lawfirm/compliance_review": descriptor},
+            skills_by_id={"test/compliance_review": descriptor},
             search_results={"review": [descriptor]},
         )
         service = RouterService(
@@ -588,18 +588,18 @@ class HybridRegressionTests(unittest.TestCase):
     def test_existing_skill_strategy_unchanged(self) -> None:
         """SKILL strategy still produces mode=matched with confidence=1.0."""
         descriptor = _make_descriptor(
-            "lawfirm/case_qa",
+            "test/case_qa",
             name="Case QA",
             required_tool_refs=["tool_a"],
         )
-        fake = _FakeSkillRegistry(skills_by_id={"lawfirm/case_qa": descriptor})
+        fake = _FakeSkillRegistry(skills_by_id={"test/case_qa": descriptor})
         service = RouterService(
             strategy=RouterStrategy.SKILL,
             skill_registry=fake,
             legal_risk_classifier=KeywordLegalRiskClassifier(),
             model_classifier=_FakeModelClassifier(confidence=0.99),
         )
-        decision = service.decide({"skill_id": "lawfirm/case_qa"})
+        decision = service.decide({"skill_id": "test/case_qa"})
         self.assertEqual(decision.mode, "matched")
         self.assertAlmostEqual(decision.confidence, 1.0)
         self.assertEqual(decision.metadata["router_strategy"], "skill")
