@@ -158,8 +158,7 @@ def aggregate_events(events: list[dict]) -> BotDelivery:
     delivered = False
 
     # State flags for first-then-silent and fold
-    first_plan_seen = False
-    first_phase_seen = False
+    first_plan_or_phase_seen = False
     first_tool_call_seen = False
 
     for event in sorted_events:
@@ -214,14 +213,9 @@ def aggregate_events(events: list[dict]) -> BotDelivery:
             continue
 
         if category is DegradationCategory.FIRST_THEN_SILENT:
-            if event_type == "plan.updated":
-                if not first_plan_seen:
-                    intermediate_prompts.append(_PLAN_FIRST_PROMPT)
-                    first_plan_seen = True
-            elif event_type == "phase.changed":
-                if not first_phase_seen:
-                    intermediate_prompts.append(_PLAN_FIRST_PROMPT)
-                    first_phase_seen = True
+            if not first_plan_or_phase_seen:
+                intermediate_prompts.append(_PLAN_FIRST_PROMPT)
+                first_plan_or_phase_seen = True
             continue
 
         if category is DegradationCategory.ATTACH:
