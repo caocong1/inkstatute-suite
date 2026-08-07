@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/elicitation_question.schema.json",
+  "title": "ElicitationQuestion",
+  "description": "Standalone, reusable JSON Schema for a single ask-user clarification question. Matches ai-for-china-legal/shared/inkstatute-integration/ASK-USER-PROTOCOL.md: id, question, allow_multiple (default false), options (label/value). Absence of the options array implies a free-text question.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "question"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Question identifier."
+    },
+    "question": {
+      "type": "string",
+      "description": "Question text presented to the user."
+    },
+    "allow_multiple": {
+      "type": "boolean",
+      "default": false,
+      "description": "false = single-select, true = multi-select. Per-question; do not force multi globally."
+    },
+    "options": {
+      "type": "array",
+      "description": "Choice options. Each item has label (display text) and value (machine value). Absence of this array implies a free-text question.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "value"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Display text (e.g. Chinese label)."
+          },
+          "value": {
+            "type": "string",
+            "description": "Machine value used in answers."
+          }
+        }
+      }
+    }
+  }
+}
