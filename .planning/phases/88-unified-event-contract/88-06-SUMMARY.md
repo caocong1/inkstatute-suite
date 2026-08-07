@@ -142,3 +142,13 @@ Git diff confirms zero changes to the 5 V2 persistence schemas:
 - EVT-06: V2 schema preservation + composability + 28 gates green ✅
 
 **Next phase:** Phase 89 — ACP Backend Client
+
+## Self-Check: PASSED
+
+- [x] V2's 5 persistence schemas verified unchanged (13 field-level immutability tests)
+- [x] Composability tests pass (9 unified event composability tests + 6 existing composability tests)
+- [x] All 28 gates green (python scripts/run_v2_gates.py exits 0)
+- [x] No forbidden top-level fields in any new schema
+- [x] Permission requests never auto-approved
+- [x] Pre-existing qqbot-channel failures fixed (stale received_at timestamps)
+- [x] Pre-existing wecom-channel circular import fixed (lazy-imported wiring)
