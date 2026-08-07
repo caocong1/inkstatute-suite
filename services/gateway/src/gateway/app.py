@@ -38,6 +38,7 @@ from .config import GatewayConfig
 from .event_buffer import RunEventBuffer
 from .feedback import GatewayFeedbackHandler, handle_submit_feedback_request
 from .sessions import GatewaySessionManager, build_set_cookie_header
+from .skills import GatewaySkillsHandler, handle_skills_request
 from .sse import GatewaySseStream, parse_last_event_id
 from .upload import GatewayUploadHandler, handle_upload_request
 
@@ -117,6 +118,7 @@ class GatewayApp:
         upload_handler: GatewayUploadHandler | None = None,
         artifact_store: GatewayArtifactStore | None = None,
         feedback_handler: GatewayFeedbackHandler | None = None,
+        skills_handler: GatewaySkillsHandler | None = None,
     ) -> None:
         self._config = config
         self._runtime = runtime
@@ -127,6 +129,7 @@ class GatewayApp:
         self._upload_handler = upload_handler or GatewayUploadHandler()
         self._artifact_store = artifact_store or GatewayArtifactStore()
         self._feedback_handler = feedback_handler or GatewayFeedbackHandler()
+        self._skills_handler = skills_handler
 
     @property
     def config(self) -> GatewayConfig:
@@ -151,6 +154,10 @@ class GatewayApp:
     @property
     def feedback_handler(self) -> GatewayFeedbackHandler:
         return self._feedback_handler
+
+    @property
+    def skills_handler(self) -> GatewaySkillsHandler | None:
+        return self._skills_handler
 
     async def dispatch(
         self,
@@ -201,7 +208,7 @@ class GatewayApp:
             if operation == OPERATION_SUBMIT_FEEDBACK:
                 return await self._handle_submit_feedback(ctx, body_dict)
             if operation == OPERATION_LIST_SKILLS:
-                return _not_implemented("list_skills")
+                return self._handle_list_skills(ctx, path)
             return _error_response("unknown_operation", f"Unknown operation: {operation}", status=404)
         except GatewayError as exc:
             return _error_response(exc.code, str(exc), status=exc.status, details=exc.details)
@@ -367,6 +374,21 @@ class GatewayApp:
     ) -> JsonObject:
         return handle_submit_feedback_request(self._feedback_handler, ctx, body)
 
+    def _handle_list_skills(
+        self,
+        ctx: AuthContext,
+        path: str,
+    ) -> JsonObject:
+        """Handle GET /v1/skills* — proxy to skill-registry via skills handler."""
+        if self._skills_handler is None:
+            return _not_implemented("list_skills")
+        # Extract query string from path if present.
+        query = None
+        clean_path = path
+        if "?" in path:
+            clean_path, query = path.split("?", 1)
+        return handle_skills_request(self._skills_handler, ctx, clean_path, query)
+
 
 # ---------------------------------------------------------------------------
 # Path routing
@@ -447,6 +469,14 @@ def _parse_route(method: str, path: str, base_path: str) -> tuple[str, dict[str,
     # GET /v1/skills
     if method == "GET" and parts == ["skills"]:
         return OPERATION_LIST_SKILLS, {}
+
+    # GET /v1/skills/search
+    if method == "GET" and len(parts) == 2 and parts[0] == "skills" and parts[1] == "search":
+        return OPERATION_LIST_SKILLS, {}
+
+    # GET /v1/skills/{skill_id}
+    if method == "GET" and len(parts) == 2 and parts[0] == "skills":
+        return OPERATION_LIST_SKILLS, {"skill_id": parts[1]}
 
     return None
 
@@ -713,5 +743,6 @@ __all__ = [
     "GatewayDisabledError",
     "GatewayError",
     "GatewayFeedbackHandler",
+    "GatewaySkillsHandler",
     "GatewayUploadHandler",
 ]
