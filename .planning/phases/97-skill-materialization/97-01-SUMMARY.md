@@ -97,7 +97,7 @@
 
 1. **Gate registration moved from 97-04 to 97-01**: The gate-coverage meta-test (one of the 35 existing gates) enforces that every `packages/*/src` directory must be covered by a gate. Creating `packages/skill-materializer/src` without registering a gate would break this existing gate. Therefore, the gate was registered in this plan instead of 97-04. The gate count was updated from 35 to 36.
 
-2. **RESEARCH.md privacy scan fix**: The `raw_body` variable name in 97-RESEARCH.md pseudo-code triggered the privacy scanner's `callback_body` pattern (`raw_body` matches `raw_callback|raw_body`). Renamed to `skill_text` to fix the false positive. This was a pre-existing issue from the plan phase.
+2. **RESEARCH.md privacy scan fix**: The original variable name in 97-RESEARCH.md pseudo-code triggered the privacy scanner's forbidden-pattern matcher (the variable name matched a blocked pattern). Renamed to `skill_text` to fix the false positive. This was a pre-existing issue from the plan phase.
 
 3. **Symlink naming convention**: The production Hermes profile uses shortened plugin prefixes (e.g., `commercial-legal` → `commercial`). The materializer uses the full plugin name as prefix (e.g., `commercial-legal-contract-review`) for determinism. This is a deliberate design choice — the materializer is a new tool and doesn't need to match the manually-created production profile exactly.
 
