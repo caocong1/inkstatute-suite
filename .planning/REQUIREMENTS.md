@@ -23,10 +23,10 @@
 - [x] **ACP-01**: Python ACP client（stdio，锁定协议 v1，`initialize` 版本与能力协商），实现 `BackendAdapter` 9 方法 Protocol
 - [x] **ACP-02**: `hermes acp` 后端可用，含能力探测与 Hermes 版本兼容矩阵；替代 `packages/backends/hermes` 的自定义 HTTP runs API
 - [x] **ACP-03**: 至少一个额外 ACP 后端（`codex-acp` 或 `claude-agent-acp`）跑通同一契约，证明后端可替换性
-- [ ] **ACP-04**: ACP `session/update` ⟷ 统一事件双向映射（含 `tool_call_update` / `plan` / `elicitation` / `request_permission`），往返语义无损
+- [x] **ACP-04**: ACP `session/update` ⟷ 统一事件双向映射（含 `tool_call_update` / `plan` / `elicitation` / `request_permission`），往返语义无损
 - [x] **ACP-05**: 输出边界在事件桥上强制执行——后端 meta / gateway / system / update / command / help / `available_commands_update` / `terminal` 类内容不得到达普通用户
 - [x] **ACP-06**: ACP 会话与子进程生命周期管理（new / resume / cancel / close、超时回收、崩溃重启），契约预留 `backend_process_mode`（`per_session` / `pooled` / `remote`）
-- [ ] **ACP-07**: 权限请求安全默认——`terminal` / `execute_code` 类权限请求必须显式拒绝或上抛用户审批，服务端不得默认 allow
+- [x] **ACP-07**: 权限请求安全默认——`terminal` / `execute_code` 类权限请求必须显式拒绝或上抛用户审批，服务端不得默认 allow
 
 ### GW — 统一网关与通道层
 
@@ -161,9 +161,9 @@
 | ACP-02 | Phase 89 | Complete |
 | ACP-03 | Phase 89 | Complete |
 | ACP-06 | Phase 89 | Complete |
-| ACP-04 | Phase 90 | Pending |
+| ACP-04 | Phase 90 | Complete |
 | ACP-05 | Phase 90 | Complete |
-| ACP-07 | Phase 90 | Pending |
+| ACP-07 | Phase 90 | Complete |
 | GW-01 | Phase 91 | Pending |
 | GW-02 | Phase 91 | Pending |
 | GW-03 | Phase 91 | Pending |
