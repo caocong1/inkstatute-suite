@@ -10,6 +10,7 @@
  */
 
 import { createContext, useContext } from "solid-js";
+import type { LegalDocumentModel } from "../types/legal";
 
 // ---------------------------------------------------------------------------
 // FileAdapter — replaces platform dialog open/save
@@ -74,8 +75,7 @@ export interface WorkspaceAdapter {
 // ---------------------------------------------------------------------------
 
 export interface DocumentParser {
-  // TODO(92-03): replace with LegalDocumentModel
-  parseLegalDocument(rawJson: string): Promise<unknown>;
+  parseLegalDocument(rawJson: string): Promise<LegalDocumentModel>;
 }
 
 // ---------------------------------------------------------------------------

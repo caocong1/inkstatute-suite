@@ -56,3 +56,24 @@ export type { DocDraftingLoaderProps } from "./components/DocDraftingLoader";
 
 export { WorkflowProgressSteps, WorkflowNotice, ModeSwitchCard, WorkflowSuggestions } from "./components/WorkflowProgressSteps";
 export type { WorkflowProgressStepsProps, ModeSwitchCardProps } from "./components/WorkflowProgressSteps";
+
+// Legal types — ported verbatim from lawyer-desktop/src/types/legal.ts
+export type {
+  TextSegment,
+  DocParty,
+  ArticleNote,
+  ArticleBlock,
+  Article,
+  CitationVerification,
+  CitationCard,
+  CitationAuditItem,
+  CitationAudit,
+  DocMeta,
+  LegalCitation,
+  LegalParty,
+  LegalClause,
+  LegalSection,
+  LegalDocumentModel,
+  ParseLegalDocumentResponse,
+  CitationGroups,
+} from "./types/legal";
