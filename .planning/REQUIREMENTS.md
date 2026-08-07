@@ -48,9 +48,9 @@
 
 ### BOT — 社交通道
 
-- [ ] **BOT-01**: WeCom 与 QQ 通道复用同一事件流，实现非流式降级（事件聚合 + "仍在处理"业务化推送 + 最终投递）
-- [ ] **BOT-02**: `services/wecom-service` 与 `services/qqbot-service` 改为 Gateway 事件流消费者，不再各自持有 agent 调用
-- [ ] **BOT-03**: 现有生产行为不回退——WeCom 5 秒 ACK / AES-CBC 验签解密 / 模板卡片、QQ ED25519 验签 / 回调校验、双方幂等与重试
+- [x] **BOT-01**: WeCom 与 QQ 通道复用同一事件流，实现非流式降级（事件聚合 + "仍在处理"业务化推送 + 最终投递）
+- [x] **BOT-02**: `services/wecom-service` 与 `services/qqbot-service` 改为 Gateway 事件流消费者，不再各自持有 agent 调用
+- [x] **BOT-03**: 现有生产行为不回退——WeCom 5 秒 ACK / AES-CBC 验签解密 / 模板卡片、QQ ED25519 验签 / 回调校验、双方幂等与重试
 
 ### SKILL — 能力层
 
@@ -176,9 +176,9 @@
 | UI-06 | Phase 92 | Complete |
 | UI-04 | Phase 93 | Complete |
 | UI-05 | Phase 94 | Complete |
-| BOT-01 | Phase 95 | Pending |
-| BOT-02 | Phase 95 | Pending |
-| BOT-03 | Phase 95 | Pending |
+| BOT-01 | Phase 95 | Complete |
+| BOT-02 | Phase 95 | Complete |
+| BOT-03 | Phase 95 | Complete |
 | SKILL-01 | Phase 96 | Pending |
 | SKILL-02 | Phase 96 | Pending |
 | SKILL-03 | Phase 96 | Pending |

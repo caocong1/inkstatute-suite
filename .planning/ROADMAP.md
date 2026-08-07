@@ -63,7 +63,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 - [x] **Phase 92: Shared UI Core** - 从 lawyer-desktop 抽取 @inkstatute/ui-core，chat UI 单一实现 (UI-01, UI-02, UI-03, UI-06) ✅
 - [x] **Phase 93: Web Client** - 响应式 Web 客户端（桌面 + 移动浏览器） (UI-04) ✅
 - [x] **Phase 94: Desktop Client** - Tauri 外壳复用，invoke() → Gateway，离线只读 (UI-05) ✅
-- [ ] **Phase 95: Bot Channel Degradation** - WeCom/QQ 改为 Gateway 消费者 + 非流式降级 (BOT-01, BOT-02, BOT-03)
+- [x] **Phase 95: Bot Channel Degradation** - WeCom/QQ 改为 Gateway 消费者 + 非流式降级 (BOT-01, BOT-02, BOT-03) ✅ COMPLETE
 
 ### 阶段 C — 能力层
 
@@ -203,21 +203,21 @@ Carried human gates from v1.x (NOT closed by v3.0):
 **Plans**: 4 (94-01 Tracer + 94-02 SSE/Offline/FTS5 + 94-03 invoke migration/Settings/Update + 94-04 Menus/E2E/Completion) ✅
 **UI hint**: yes
 
-### Phase 95: Bot Channel Degradation
+### Phase 95: Bot Channel Degradation ✅ COMPLETE
 
 **Goal**: WeCom 与 QQ 通道复用同一事件流并正确降级为非流式，现有生产行为一步不退
 **Depends on**: Phase 91
-**Requirements**: BOT-01, BOT-02, BOT-03
+**Requirements**: BOT-01, BOT-02, BOT-03 (all complete)
 **Success Criteria** (what must be TRUE):
 
-  1. 事件降级层存在：给定一串统一事件，产出 (a) 一条最终投递消息、(b) 若干"仍在处理"业务化中间推送、(c) 产物文件投递、(d) 澄清与审批的模板卡片；降级规则来自 Phase 88 的声明且有测试
-  2. `services/wecom-service` 与 `services/qqbot-service` 改为 Gateway 事件流消费者，源码中不再存在直接的 agent/backend 调用
-  3. WeCom 现有行为不回退：5 秒 ACK、AES-CBC 验签解密、模板卡片、媒体上传下载、幂等与重试——现有测试全绿
-  4. QQ 现有行为不回退：ED25519 验签、回调校验 op=13、webhook 端口约束、幂等——现有 28 个 qqbot 测试文件全绿
-  5. 同一条任务从 WeCom 发起，律师收到的内容与 Web 端最终结果语义一致（答复 + 产物 + 澄清 + 反馈卡片）
-  6. 后端 meta / gateway / system 噪声在 bot 通道同样不可见（输出边界在 Gateway 与降级层双重生效）
+  1. ✅ 事件降级层存在：给定一串统一事件，产出 (a) 一条最终投递消息、(b) 若干"仍在处理"业务化中间推送、(c) 产物文件投递、(d) 澄清与审批的模板卡片；降级规则来自 Phase 88 的声明且有测试
+  2. ✅ `services/wecom-service` 与 `services/qqbot-service` 改为 Gateway 事件流消费者，源码中不再存在直接的 agent/backend 调用
+  3. ✅ WeCom 现有行为不回退：5 秒 ACK、AES-CBC 验签解密、模板卡片、媒体上传下载、幂等与重试——现有测试全绿
+  4. ✅ QQ 现有行为不回退：ED25519 验签、回调校验 op=13、webhook 端口约束、幂等——现有 28 个 qqbot 测试文件全绿
+  5. ✅ 同一条任务从 WeCom 发起，律师收到的内容与 Web 端最终结果语义一致（答复 + 产物 + 澄清 + 反馈卡片）
+  6. ✅ 后端 meta / gateway / system 噪声在 bot 通道同样不可见（输出边界在 Gateway 与降级层双重生效）
 
-**Plans**: 3 (95-01 Wave 1 Tracer ✅, 95-02 WeCom Full Migration ✅, 95-03 QQ Full Migration ✅)
+**Plans**: 4 (95-01 Tracer ✅ + 95-02 WeCom Migration ✅ + 95-03 QQ Migration ✅ + 95-04 Cross-Channel/Completion ✅) ✅
 **UI hint**: no
 
 ### Phase 96: Real Skill Index
@@ -397,7 +397,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 92. Shared UI Core | B | 4/4 | Complete | 2026-08-08 |
 | 93. Web Client | B | 4/4 | Complete | 2026-08-08 |
 | 94. Desktop Client | B | 4/4 | Complete | 2026-08-09 |
-| 95. Bot Channel Degradation | B | 3/3 | Complete | 2026-08-09 |
+| 95. Bot Channel Degradation | B | 4/4 | Complete | 2026-08-09 |
 | 96. Real Skill Index | C | 0/TBD | Not started | - |
 | 97. Skill Materialization | C | 0/TBD | Not started | - |
 | 98. Real-Index Routing | C | 0/TBD | Not started | - |

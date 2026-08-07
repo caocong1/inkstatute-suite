@@ -1,7 +1,7 @@
 ---
 phase: 95
 slug: bot-channel-degradation
-status: draft
+status: complete
 created: 2026-08-09
 depends_on: 91
 requirements: BOT-01, BOT-02, BOT-03

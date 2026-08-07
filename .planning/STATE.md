@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: in_progress
-stopped_at: Phase 95 Plan 03 complete (QQ Bot Full Migration — Phase 95 complete)
-last_updated: "2026-08-09T14:00:00.000Z"
-last_activity: 2026-08-09 -- Phase 95 Plan 03 complete (QQ webhook → Gateway consumer path, 136 qqbot-service tests, 34 gates green, BOT-01/BOT-02/BOT-03)
+stopped_at: Phase 95 complete (Bot Channel Degradation — all 4 plans done, BOT-01/02/03 complete)
+last_updated: "2026-08-09T15:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 95 complete (Gateway client + event consumer + WeCom migration + QQ migration + cross-channel consistency + output boundary verification, BOT-01/02/03 complete, 34 gates green)
 progress:
   total_phases: 17
   completed_phases: 8
-  total_plans: 31
-  completed_plans: 31
-  percent: 47
+  total_plans: 35
+  completed_plans: 35
+  percent: 49
 ---
 
 # Project State
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 95 — Bot Channel Degradation (COMPLETE — all 3 plans done)
+**Current focus:** Phase 96 — Real Skill Index (Phase 95 complete)
 
 ## Current Position
 
-Phase: 95 (bot-channel-degradation) — COMPLETE
-Plan: 95-03 complete (7 commits: gateway_client.py + event_consumer.py + fixtures/fakes/tests + wiring gateway_client field + webhook _compose_via_gateway + __main__ env vars + 15 gateway migration tests + privacy fix)
-Status: Phase 95 Plan 03 complete — QQ Bot Full Migration: webhook post-ACK composition uses Gateway event consumer when gateway_client available, backward-compatible fallback when None, 136 qqbot-service tests (53 new), 34 gates green, BOT-01/BOT-02/BOT-03
-Last activity: 2026-08-09 -- Phase 95 Plan 03 complete (QQ webhook → Gateway consumer path, 136 qqbot-service tests, 34 gates green, BOT-01/BOT-02/BOT-03)
+Phase: 95 (bot-channel-degradation) — COMPLETE ✅
+Plan: 95-04 complete (3 commits: WeCom cross-channel consistency tests + QQ cross-channel consistency tests + output boundary tests + GSD artifact updates)
+Status: Phase 95 complete — Cross-channel consistency verified (WeCom and QQ produce same semantic result as Web), output boundary double-enforced (no backend noise in bot channels), all 6 success criteria verified, 34 gates green, BOT-01/BOT-02/BOT-03 marked complete
+Last activity: 2026-08-09 -- Phase 95 complete (Gateway client + event consumer + WeCom migration + QQ migration + cross-channel consistency + output boundary verification, BOT-01/02/03 complete, 34 gates green)
 
 **Next command:** `/gsd-execute-plan 96` for Phase 96 (Real Skill Index) （或 `/gsd-autonomous` 自动推进）
 
@@ -110,11 +110,11 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-09T14:00:00.000Z
-Stopped at: Phase 95 Plan 03 complete (QQ Bot Full Migration — Phase 95 complete)
+Last session: 2026-08-09T15:00:00.000Z
+Stopped at: Phase 95 complete (Bot Channel Degradation — all 4 plans done, BOT-01/02/03 complete)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 complete)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 complete)
 Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-95 complete, ready for Phase 96)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
