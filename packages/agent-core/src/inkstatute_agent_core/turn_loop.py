@@ -218,6 +218,12 @@ async def run_turn(
                             args_dict,
                         )
 
+                        # Drain side-channel events emitted by the tool
+                        # handler (e.g. elicitation.requested, artifact.created)
+                        # and yield them before tool_call.completed.
+                        for side_event in emitter.drain_side_channel_events():
+                            yield side_event
+
                         if result.error is not None:
                             # Tool returned an error
                             yield emitter.emit_tool_call_completed(

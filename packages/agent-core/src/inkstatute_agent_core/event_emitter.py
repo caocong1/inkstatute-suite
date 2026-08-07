@@ -97,6 +97,11 @@ class EventEmitter:
         self._monotonic_clock = monotonic_clock or _default_monotonic_clock
         self._seq = 0
         self._last_event_time: float = self._monotonic_clock()
+        # Side-channel buffer for events emitted by tool handlers (e.g.
+        # elicitation.requested, artifact.created) that are not directly
+        # yielded by the turn loop generator.  The turn loop drains this
+        # buffer after tool execution and yields the events.
+        self._side_channel_events: list[RunEvent] = []
 
     # ------------------------------------------------------------------
     # Public properties
@@ -119,6 +124,28 @@ class EventEmitter:
     @property
     def config(self) -> AgentCoreConfig:
         return self._config
+
+    # ------------------------------------------------------------------
+    # Side-channel event buffer
+    # ------------------------------------------------------------------
+
+    def drain_side_channel_events(self) -> list[RunEvent]:
+        """Return and clear the side-channel event buffer.
+
+        Tool handlers (e.g. clarification, document generation) may emit
+        events directly via the emitter (``emit_elicitation_requested``,
+        ``emit_artifact_created``) that are not yielded by the turn loop
+        generator.  These events are stored in a side-channel buffer.
+        The turn loop calls this method after tool execution to drain
+        the buffer and yield the events in seq order.
+
+        Returns:
+            List of ``RunEvent`` objects that were emitted via the side
+            channel.  The buffer is cleared after draining.
+        """
+        events = self._side_channel_events
+        self._side_channel_events = []
+        return events
 
     # ------------------------------------------------------------------
     # Core emit method
@@ -349,7 +376,9 @@ class EventEmitter:
             artifact=artifact,
             metadata=metadata or {},
         )
-        return self._emit(RunEventType.ARTIFACT_CREATED_V3, payload, metadata=metadata)
+        event = self._emit(RunEventType.ARTIFACT_CREATED_V3, payload, metadata=metadata)
+        self._side_channel_events.append(event)
+        return event
 
     def emit_elicitation_requested(
         self,
@@ -382,7 +411,9 @@ class EventEmitter:
             expires_at=expires_at,
             metadata=metadata or {},
         )
-        return self._emit(RunEventType.ELICITATION_REQUESTED, payload, metadata=metadata)
+        event = self._emit(RunEventType.ELICITATION_REQUESTED, payload, metadata=metadata)
+        self._side_channel_events.append(event)
+        return event
 
 
 __all__ = ["EventEmitter"]
