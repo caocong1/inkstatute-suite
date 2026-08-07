@@ -397,7 +397,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 92. Shared UI Core | B | 4/4 | Complete | 2026-08-08 |
 | 93. Web Client | B | 4/4 | Complete | 2026-08-08 |
 | 94. Desktop Client | B | 4/4 | Complete | 2026-08-09 |
-| 95. Bot Channel Degradation | B | 0/TBD | Not started | - |
+| 95. Bot Channel Degradation | B | 1/TBD | In Progress | - |
 | 96. Real Skill Index | C | 0/TBD | Not started | - |
 | 97. Skill Materialization | C | 0/TBD | Not started | - |
 | 98. Real-Index Routing | C | 0/TBD | Not started | - |

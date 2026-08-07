@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
-status: verifying
-stopped_at: Phase 95 context gathered
-last_updated: "2026-08-07T17:41:06.887Z"
-last_activity: 2026-08-09 -- Phase 94 complete (native menu bar 6 menus + E2E 11 scenarios + desktop/web consistency 6 tests + phase94-verification 15 tests, 103 vitest + 22 Python gate tests, 34 gates green, UI-05 complete)
+status: in_progress
+stopped_at: Phase 95 Plan 01 complete (Wave 1 Tracer)
+last_updated: "2026-08-09T12:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 95 Plan 01 complete (gateway_client.py + event_consumer.py + 35 new tests, 34 gates green, BOT-01 partial)
 progress:
   total_phases: 17
   completed_phases: 7
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 95 — Bot Channel Degradation (Phase 94 complete)
+**Current focus:** Phase 95 — Bot Channel Degradation (Plan 01 complete, Plans 02+ pending)
 
 ## Current Position
 
-Phase: 94 (desktop-client) — COMPLETE ✅
-Plan: 94-04 complete (4 commits: native menu bar + E2E tests + desktop/web consistency + phase completion)
-Status: Phase 94 complete — native menu bar 6 menus, E2E 11 scenarios, desktop/web consistency 6 tests, phase94-verification 15 tests, 103 vitest + 22 Python gate tests, 34 gates green, UI-05 marked complete
-Last activity: 2026-08-09 -- Phase 94 complete (native menu bar 6 menus + E2E 11 scenarios + desktop/web consistency 6 tests + phase94-verification 15 tests, 103 vitest + 22 Python gate tests, 34 gates green, UI-05 complete)
+Phase: 95 (bot-channel-degradation) — IN PROGRESS
+Plan: 95-01 complete (6 commits: gateway_client.py + event_consumer.py + fixtures + fakes + 35 tests + __init__.py exports)
+Status: Phase 95 Plan 01 complete — Wave 1 Tracer: Gateway HTTP client + SSE consumer + degradation aggregator + delivery mapper, 125 wecom-service tests (35 new), 34 gates green, BOT-01 partial
+Last activity: 2026-08-09 -- Phase 95 Plan 01 complete (gateway_client.py + event_consumer.py + 35 new tests, 34 gates green, BOT-01 partial)
 
-**Next command:** `/gsd-execute-plan 95` for Phase 95 (Bot Channel Degradation) （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-execute-plan 95` for Phase 95 Plan 02 (or next plan) （或 `/gsd-autonomous` 自动推进）
 
 ## Milestone v3.0 Overview
 
@@ -110,8 +110,8 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-07T17:41:06.882Z
-Stopped at: Phase 95 context gathered
+Last session: 2026-08-09T12:00:00.000Z
+Stopped at: Phase 95 Plan 01 complete (Wave 1 Tracer)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 complete)
@@ -121,6 +121,6 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute-plan 95` — 开始 Phase 95 (Bot Channel Degradation)
+- `/gsd-execute-plan 95` — 继续 Phase 95 (Bot Channel Degradation) Plan 02+
 - 或 `/gsd-autonomous` 自动推进 Phases 95-104
 - 或 `/gsd-autonomous --to 95` 只跑到"通道统一"这个里程碑点
