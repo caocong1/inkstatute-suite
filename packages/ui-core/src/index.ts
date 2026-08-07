@@ -44,3 +44,6 @@ export type { ChatPanelProps } from "./components/ChatPanel";
 
 export { ClarificationCard } from "./components/ClarificationCard";
 export type { ClarificationCardProps } from "./components/ClarificationCard";
+
+export { DraftingProgressSteps, DRAFTING_STEPS, phaseToActiveIndex, stepState } from "./components/DraftingProgressSteps";
+export type { DraftingProgressStepsProps } from "./components/DraftingProgressSteps";

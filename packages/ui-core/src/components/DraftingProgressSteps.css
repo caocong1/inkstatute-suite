@@ -1,0 +1,325 @@
+.draft-steps {
+  margin: 4px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: linear-gradient(var(--surface), var(--surface-2));
+  overflow: hidden;
+}
+
+.draft-steps-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+.draft-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 14px;
+  font-size: 12.5px;
+}
+
+.draft-step + .draft-step {
+  border-top: 1px solid var(--line-soft);
+}
+
+.draft-step-mk {
+  flex: 0 0 16px;
+  height: 16px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.draft-step.done .draft-step-mk {
+  background: var(--accent);
+}
+
+.draft-step.done .draft-step-mk svg {
+  width: 9px;
+  height: 9px;
+  stroke: var(--on-accent);
+  fill: none;
+  stroke-width: 2.6;
+}
+
+.draft-step.run .draft-step-mk {
+  border: 1.6px solid var(--accent);
+}
+
+.draft-step.run .draft-step-sp {
+  width: 8px;
+  height: 8px;
+  border: 1.6px solid var(--accent);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: ml-spin 0.9s linear infinite;
+}
+
+.draft-step.wait .draft-step-mk {
+  border: 1.6px solid var(--line);
+}
+
+.draft-step-tx {
+  flex: 1;
+  color: var(--ink-soft);
+}
+
+.draft-step-tx small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.draft-step.run .draft-step-tx {
+  color: var(--ink);
+}
+
+.draft-step.wait .draft-step-tx {
+  color: var(--muted);
+}
+
+.draft-step-meta {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+.draft-step.run .draft-step-meta {
+  color: var(--accent);
+}
+
+.draft-step.error .draft-step-mk {
+  border: 1.6px solid var(--danger, #c94f45);
+  background: color-mix(in srgb, var(--danger, #c94f45) 12%, transparent);
+}
+
+.draft-step.error .draft-step-tx,
+.draft-step.error .draft-step-meta {
+  color: var(--danger, #c94f45);
+}
+
+.workflow-steps {
+  margin-top: 0;
+}
+
+.workflow-notice {
+  width: calc(100% - 28px);
+  margin: 10px auto;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  color: var(--ink-soft);
+  overflow: hidden;
+}
+
+.workflow-notice-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 11px;
+  font-size: 12px;
+}
+
+.workflow-notice-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: 0 0 auto;
+}
+
+.workflow-notice.running .workflow-notice-dot,
+.workflow-notice.waiting .workflow-notice-dot {
+  animation: stream-pulse 1.2s ease-in-out infinite;
+}
+
+.workflow-notice.error .workflow-notice-dot {
+  background: var(--danger, #c94f45);
+}
+
+.workflow-notice-title {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.workflow-notice-summary {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-notice-toggle {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  padding: 3px 7px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.workflow-notice-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.workflow-notice-steps {
+  border-top: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.workflow-notice-steps .draft-step {
+  padding: 8px 11px;
+}
+
+.clarify-card {
+  margin: 6px 0 0;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 68%, transparent);
+}
+
+.clarify-intro {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.clarify-q + .clarify-q {
+  margin-top: 12px;
+}
+
+.clarify-q-title {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.clarify-q-hint {
+  margin-left: 4px;
+  font-size: 11.5px;
+  color: var(--ink-muted, var(--ink-soft));
+  font-weight: 400;
+}
+
+.clarify-options.multi .clarify-option.on {
+  box-shadow: inset 0 0 0 1px var(--accent, var(--line));
+}
+
+.clarify-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.clarify-option {
+  min-height: 30px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  padding: 6px 9px;
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+  text-align: left;
+}
+
+.clarify-option:hover:not(:disabled),
+.clarify-option.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.clarify-option small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.clarify-free {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  outline: none;
+}
+
+.clarify-free:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.clarify-answer {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.clarify-submit {
+  margin-top: 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 7px 11px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.clarify-submit:disabled,
+.clarify-option:disabled,
+.workflow-suggestions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.workflow-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px 14px 13px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.workflow-suggestions button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.workflow-suggestions button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}

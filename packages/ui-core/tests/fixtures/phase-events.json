@@ -1,0 +1,56 @@
+[
+  {
+    "event_id": "evt-phase-001",
+    "run_id": "run-phase-001",
+    "event_type": "phase.changed",
+    "occurred_at": "2026-08-08T12:00:00Z",
+    "seq": 1,
+    "payload": {
+      "phase": "research"
+    }
+  },
+  {
+    "event_id": "evt-phase-002",
+    "run_id": "run-phase-001",
+    "event_type": "phase.changed",
+    "occurred_at": "2026-08-08T12:00:01Z",
+    "seq": 2,
+    "payload": {
+      "phase": "intake",
+      "previous_phase": "research"
+    }
+  },
+  {
+    "event_id": "evt-phase-003",
+    "run_id": "run-phase-001",
+    "event_type": "phase.changed",
+    "occurred_at": "2026-08-08T12:00:02Z",
+    "seq": 3,
+    "payload": {
+      "phase": "retrieval",
+      "previous_phase": "intake"
+    }
+  },
+  {
+    "event_id": "evt-phase-004",
+    "run_id": "run-phase-001",
+    "event_type": "phase.changed",
+    "occurred_at": "2026-08-08T12:00:03Z",
+    "seq": 4,
+    "payload": {
+      "phase": "draft",
+      "previous_phase": "retrieval"
+    }
+  },
+  {
+    "event_id": "evt-phase-005",
+    "run_id": "run-phase-001",
+    "event_type": "phase.changed",
+    "occurred_at": "2026-08-08T12:00:04Z",
+    "seq": 5,
+    "payload": {
+      "phase": "review",
+      "previous_phase": "draft"
+    }
+  }
+]
