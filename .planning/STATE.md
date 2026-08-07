@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 98 COMPLETE (real-index routing — strong-signal + soft matcher + three-mode detection + decision logging)
-last_updated: "2026-08-10T23:30:00.000Z"
-last_activity: 2026-08-10 -- Phase 98 Plan 98-03 execution complete. Created decision_log.py (JSONL append per session, append_decision_log + record_routing_error — ported from lawfirm-profile/scripts/router.py lines 299-337). Completed RouteDecision field mapping (all 15 fields, session_id stored in metadata). Added report_routing_error() method to RouterService. Wired route_mismatch feedback association. Created test_decision_log.py (19 tests) and test_phase98_success_criteria.py (27 tests with explicit assertions for all 6 success criteria). 169 router-service tests pass. All 36 gates green. 3 commits: 529a50f, 3fad904, 51421ef. Phase 98 COMPLETE. SKILL-07, SKILL-08 marked complete.
+stopped_at: Phase 99 discuss complete — context captured, 11 gray areas auto-selected
+last_updated: "2026-08-11T00:00:00.000Z"
+last_activity: 2026-08-11 -- Phase 99 discuss-phase (auto mode). Loaded prior context (98-CONTEXT, 98-RESEARCH, 98-03-SUMMARY). Scouted codebase: 15 CLAUDE.md files in ai-for-china-legal (13 plugin-level + 1 root + 1 shared), 13 cold-start-interview SKILL.md files, practice_profile_dependency detection in metadata_extractor.py, elicitation contract in platform-contract, RBAC roles/identity in packages/rbac, Gateway auth/sessions/elicitation handlers, body_injector.py from Phase 97, host_assumption_rewriter.py CLAUDE.md flagging. Identified 11 gray areas, all auto-selected with recommended options. Created 99-CONTEXT.md (11 scout findings + 11 key decisions) and 99-DISCUSSION-LOG.md (11 gray areas with options + rationale). Committed as 3fbc7bd.
 progress:
   total_phases: 17
   completed_phases: 11
@@ -22,16 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 99 — Practice Profile (next phase to plan)
+**Current focus:** Phase 99 — Practice Profile (discuss complete, ready to plan)
 
 ## Current Position
 
-Phase: 98 (real-index-routing) — COMPLETE
-Plan: 98-01, 98-02, 98-03 all complete. Phase 98 fully done.
-Status: Phase 98 execution complete. decision_log.py (JSONL append per session, append_decision_log + record_routing_error — ported from router.py). RouteDecision field mapping complete (all 15 fields, session_id in metadata). report_routing_error() method on RouterService. route_mismatch feedback association wired. test_decision_log.py (19 tests) + test_phase98_success_criteria.py (27 tests). 169 router-service tests pass, 36 gates green. SKILL-07, SKILL-08 marked complete. Phase 98 marked complete in ROADMAP.md.
-Last activity: 2026-08-10 -- Plan 98-03 execution: Created decision_log.py, completed RouteDecision mapping, added report_routing_error(), wired route_mismatch, created 46 new tests (19 decision log + 27 success criteria). 3 commits. Phase 98 COMPLETE.
+Phase: 99 (practice-profile) — DISCUSS COMPLETE
+Status: Phase 99 discuss-phase complete (auto mode). 99-CONTEXT.md and 99-DISCUSSION-LOG.md written and committed (3fbc7bd). 11 gray areas identified and auto-selected. Key decisions: new `packages/practice-profile` package, in-memory PracticeProfileStore (Protocol-based), PracticeProfileInjector for context injection, ColdStartInterviewOrchestrator for multi-round elicitation, 3 Gateway endpoints (GET/PUT/POST interview), RBAC ADMIN/OPERATOR write + all read, secret validation on write, no profiles in event log.
+Last activity: 2026-08-11 -- Phase 99 discuss-phase (auto mode). Scouted 15 CLAUDE.md files, 13 cold-start-interview skills, elicitation contract, RBAC, Gateway patterns, body_injector. 11 gray areas auto-selected. 2 files created, 1 commit.
 
-**Next command:** `/gsd-plan 99` (Phase 99: Practice Profile — CLAUDE.md 执业配置多租户化)
+**Next command:** `/gsd-plan 99` (Phase 99: Practice Profile — CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈)
 
 ## Milestone v3.0 Overview
 
@@ -110,12 +109,12 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-10T23:30:00.000Z
-Stopped at: Phase 98 COMPLETE (real-index routing — strong-signal + soft matcher + three-mode detection + decision logging)
+Last session: 2026-08-11T00:00:00.000Z
+Stopped at: Phase 99 discuss complete — context captured, 11 gray areas auto-selected
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-98 complete, Phase 99 next)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-98 complete, Phase 99 discuss complete, ready to plan)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
