@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 97 plan-phase complete (4 plans written: 97-01..97-04, 3 waves, ready for implementation)
-last_updated: "2026-08-09T22:00:00.000Z"
-last_activity: 2026-08-09 -- Phase 97 plan-phase: split into 4 plans across 3 waves. Wave 1 (97-01): materializer core — package scaffold, Hermes materializer (symlink-first), ACP materializer (Claude Code plugin format + host assumption rewriting), three-separation routing manifest. Wave 2 (97-02 + 97-03 parallel): context budget injector (section-priority deterministic trim) + skill-registry migration (index_to_descriptors) + manifest.json cleanup (remove 4 fake skills, update 7 test files). Wave 3 (97-04): gate registration (35→36), CLI, Hermes ACP integration test, e2e three-separation verification, phase completion. 97-01-PLAN.md, 97-02-PLAN.md, 97-03-PLAN.md, 97-04-PLAN.md committed.
+stopped_at: Phase 97 plan 97-01 complete (materializer core — 5 tasks, 36 tests, 36 gates green)
+last_updated: "2026-08-09T23:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 97 plan 97-01 (Wave 1): materializer core complete. packages/skill-materializer scaffolded with HermesMaterializer (symlink-first, copy for scripts/), HostAssumptionRewriter (3 deterministic regex rules), ACPMaterializer (Claude Code plugin format + rewriting), three-separation routing manifest producer (metadata-only). 36 tests passing. Gate registered (35→36). All 36 gates green. 6 commits: b53dffa, e60410d, 48e5633, 7786484, 8a1a7ad, e998ccb.
 progress:
   total_phases: 17
   completed_phases: 9
   total_plans: 47
-  completed_plans: 43
-  percent: 53
+  completed_plans: 44
+  percent: 55
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 97 — Skill Materialization (plan-phase complete, ready for implementation)
+**Current focus:** Phase 97 — Skill Materialization (plan 97-01 complete, Wave 2 next)
 
 ## Current Position
 
-Phase: 97 (skill-materialization) — PLAN COMPLETE
-Plan: 4 plans (97-01..97-04), 3 waves
-Status: Phase 97 plan-phase complete. 4 plans written across 3 waves. Wave 1 (97-01): materializer core — package scaffold, Hermes materializer (symlink-first, copy for scripts/), host assumption rewriter, ACP materializer (Claude Code plugin format + rewriting), three-separation routing manifest. Wave 2 (97-02 + 97-03, parallel): context budget injector (section-priority deterministic trim, 2K–20K token range) + skill-registry migration (index_to_descriptors) + manifest.json cleanup (remove 4 fake skills, update 7 test files). Wave 3 (97-04): gate registration (35→36), CLI, Hermes ACP integration test, e2e three-separation verification, phase completion.
-Last activity: 2026-08-09 -- Phase 97 plan-phase: 4 plans written, 3 waves, ready for implementation
+Phase: 97 (skill-materialization) — PLAN 97-01 COMPLETE
+Plan: 97-01 (Wave 1) complete. 4 plans total (97-01..97-04), 3 waves.
+Status: Phase 97 plan 97-01 (Wave 1) complete. packages/skill-materializer scaffolded with HermesMaterializer (symlink-first, copy for scripts/), HostAssumptionRewriter (3 deterministic regex rules), ACPMaterializer (Claude Code plugin format + rewriting), three-separation routing manifest producer (metadata-only). 36 tests passing. Gate registered (35→36). All 36 gates green. Wave 2 (97-02 + 97-03, parallel) next: context budget injector + skill-registry migration + manifest.json cleanup.
+Last activity: 2026-08-09 -- Phase 97 plan 97-01 (Wave 1): materializer core complete. 6 commits, 36 tests, 36 gates green.
 
-**Next command:** `/gsd-execute 97-01` for Phase 97 Plan 01 (Materializer Core)
+**Next command:** `/gsd-execute 97-02` and `/gsd-execute 97-03` can run in parallel (Wave 2)
 
 ## Milestone v3.0 Overview
 
@@ -110,19 +110,18 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-09T22:00:00.000Z
-Stopped at: Phase 97 plan-phase complete (4 plans written: 97-01..97-04, 3 waves, ready for implementation)
+Last session: 2026-08-09T23:00:00.000Z
+Stopped at: Phase 97 plan 97-01 complete (materializer core — 5 tasks, 36 tests, 36 gates green)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..04 + SAFE-05 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-96 complete, Phase 97 plan complete, implementation next)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-96 complete, Phase 97 plan 97-01 complete, Wave 2 next)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute 97-01` for Phase 97 Plan 01 (Materializer Core) — Wave 1, start here
-- `/gsd-execute 97-02` and `/gsd-execute 97-03` can run in parallel after 97-01 (Wave 2)
+- `/gsd-execute 97-02` and `/gsd-execute 97-03` can run in parallel (Wave 2)
 - `/gsd-execute 97-04` after 97-02 and 97-03 (Wave 3, phase completion)
 - 或 `/gsd-autonomous` 自动推进 Phases 97-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点
