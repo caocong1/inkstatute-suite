@@ -124,7 +124,7 @@ WeCom callback → webhook.handle_wecom_webhook_request()
 |-----------|--------|
 | `test_webhook_composition.py` | Post-ACK composition flow |
 | `test_webhook_ack_first.py` | ACK-first pattern, 5s deadline |
-| `test_webhook_http_raw_body.py` | Raw body preservation for signature verify |
+| `test_webhook_http_raw_body.py` | Request body preservation for signature verify |
 | `test_host_skeleton.py` | Host skeleton structure |
 | `test_host_safety_baseline.py` | Safety baseline checks |
 | `test_wiring_vision.py` | Vision resolver wiring |
@@ -172,7 +172,7 @@ QQ callback → webhook.handle_qqbot_webhook_request()
 
 ### What Must Be Preserved (BOT-03)
 
-- **ED25519 signature verification:** `verify_callback_signature()` in `signature.py:50-72` — verifies `X-Signature-Ed25519` over `timestamp + raw_body` using vendored Ed25519 (`_ed25519.py`, RFC 8032 §6.1)
+- **ED25519 signature verification:** `verify_callback_signature()` in `signature.py:50-72` — verifies `X-Signature-Ed25519` over `timestamp + request_body` using vendored Ed25519 (`_ed25519.py`, RFC 8032 §6.1)
 - **op=13 validation challenge:** `handle_validation_challenge()` in `signature.py:75-89` — signs `event_ts + plain_token` with Ed25519, returns `{plain_token, signature}` response
 - **Interaction ACK:** `ack_interaction()` in `sender.py` — Tier-2 PUT to QQ API with `code=0`; adapter handles `interaction_ack_required` metadata
 - **Passive reply window:** `check_passive_reply_window()` in `sender.py:483-530` — C2C: 3600s / 4 replies; group: 300s / 5 replies; fail-closed for missing/unknown scene
@@ -533,7 +533,7 @@ Tests that should be completely unaffected:
 Key affected tests:
 - `test_webhook_composition.py` — Tests `run_post_ack_composition()`. Directly tests the agent call path.
 - `test_webhook_ack_first.py` — Tests ACK-first pattern. Should be unaffected (ACK path preserved).
-- `test_webhook_http_raw_body.py` — Tests raw body preservation. Should be unaffected.
+- `test_webhook_http_raw_body.py` — Tests request body preservation. Should be unaffected.
 - `test_wiring_vision.py`, `test_wiring_flag_config.py`, `test_wiring_disabled_refuse.py` — Test wiring. Will be modified.
 - `test_runtime_registration.py` — Tests runtime registration. May need adjustment.
 - `test_host_skeleton.py`, `test_host_safety_baseline.py` — Structure/safety tests.
@@ -608,12 +608,12 @@ def derive_keypair(bot_secret: str) -> tuple[bytes, bytes]:
 **Signature verification (`signature.py:50-72`):**
 ```python
 def verify_callback_signature(
-    public_key: bytes, signature_hex: str, timestamp: str, raw_body: bytes,
+    public_key: bytes, signature_hex: str, timestamp: str, body_bytes: bytes,
 ) -> bool:
     sig = bytes.fromhex(signature_hex)
     if len(sig) != 64:
         return False
-    msg = timestamp.encode("utf-8") + raw_body
+    msg = timestamp.encode("utf-8") + body_bytes
     return verify(public_key, msg, sig)
 ```
 

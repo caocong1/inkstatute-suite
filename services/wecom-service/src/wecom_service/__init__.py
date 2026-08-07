@@ -5,6 +5,16 @@ from .agent_backend import (
     AgentBackendSelectionError,
     select_agent_backend,
 )
+from .event_consumer import (
+    WeComEventConsumer,
+    is_terminal_event,
+    solution_to_dict,
+)
+from .gateway_client import (
+    GatewayClient,
+    GatewayClientConfig,
+    GatewayClientError,
+)
 from .active_task_router import (
     ActiveTaskRoute,
     ActiveTaskRoutingDecision,
@@ -73,6 +83,9 @@ __all__ = [
     "AgentBackendSelectionError",
     "AdapterTaskCapabilities",
     "DeliveryCompletionAssessment",
+    "GatewayClient",
+    "GatewayClientConfig",
+    "GatewayClientError",
     "OutputPolicyDecision",
     "OWNED_NOTICE_TEMPLATES",
     "RawPayloadForbiddenError",
@@ -86,6 +99,7 @@ __all__ = [
     "WeComSessionRuntime",
     "WeComSessionRuntimeAction",
     "WeComSessionRuntimeOutcome",
+    "WeComEventConsumer",
     "WeComRuntimeIngress",
     "WeComWiredRuntime",
     "ack_response",
@@ -101,6 +115,7 @@ __all__ = [
     "build_wecom_wired_runtime",
     "create_task_flow",
     "deadline_exceeded",
+    "is_terminal_event",
     "load_wecom_channel_config",
     "normalize_wecom_feedback_callback",
     "normalize_wecom_turn",
@@ -110,6 +125,7 @@ __all__ = [
     "record_stage",
     "route_active_task_turn",
     "select_agent_backend",
+    "solution_to_dict",
     "summarize_task_input",
     "task_snapshot",
     "task_stage_idempotency_key",
