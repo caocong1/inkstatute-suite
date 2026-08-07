@@ -11,6 +11,8 @@ from contract_test_suite.event_stream_replay import (
     assert_event_stream_integrity,
     load_event_stream,
     replay_event_streams,
+    resume_from_seq,
+    sort_events_by_seq,
 )
 from contract_test_suite.paths import LOCAL_FIXTURE_ROOT
 
@@ -111,6 +113,107 @@ class EventStreamReplayTests(unittest.TestCase):
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["reply_type"], "status_update")
 
+    def test_out_of_order_events_replay_correctly_by_seq(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "out-of-order-run-events.jsonl"
+            seq_order = [0, 2, 1, 4, 3]
+            records = [_make_run_event_record(seq=s) for s in seq_order]
+            _write_raw_records(path, records)
+
+            loaded = _load_raw_records(path)
+            sorted_events = sort_events_by_seq(loaded)
+
+            self.assertEqual([e["seq"] for e in sorted_events], [0, 1, 2, 3, 4])
+            self.assertEqual(len(sorted_events), 5)
+            self.assertEqual(len({e["event_id"] for e in sorted_events}), 5)
+
+    def test_resume_from_seq_no_duplicates_no_loss(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ten-run-events.jsonl"
+            records = [_make_run_event_record(seq=s) for s in range(10)]
+            _write_raw_records(path, records)
+
+            events = _load_raw_records(path)
+
+            resumed = resume_from_seq(events, 4)
+            self.assertEqual([e["seq"] for e in resumed], [5, 6, 7, 8, 9])
+            self.assertEqual(len(resumed), 5)
+
+            resumed_all = resume_from_seq(events, -1)
+            self.assertEqual(len(resumed_all), 10)
+
+            resumed_none = resume_from_seq(events, 9)
+            self.assertEqual(len(resumed_none), 0)
+
+    def test_resume_from_arbitrary_breakpoints(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "breakpoint-run-events.jsonl"
+            records = [_make_run_event_record(seq=s) for s in range(10)]
+            _write_raw_records(path, records)
+
+            events = _load_raw_records(path)
+
+            for bp in range(-1, 10):
+                resumed = resume_from_seq(events, bp)
+                if bp == -1:
+                    self.assertEqual(len(resumed), 10)
+                else:
+                    self.assertEqual(len(resumed), 10 - (bp + 1))
+                    for e in resumed:
+                        self.assertGreater(e["seq"], bp)
+
+    def test_ingested_at_preserved_through_replay(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ingested-at-events.jsonl"
+            records = [
+                _make_run_event_record(seq=s, occurred_at=f"2026-08-07T10:00:0{s}Z", ingested_at=f"2026-08-07T10:00:0{s}Z")
+                for s in [0, 2, 1, 4, 3]
+            ]
+            _write_raw_records(path, records)
+
+            loaded = _load_raw_records(path)
+            sorted_events = sort_events_by_seq(loaded)
+            resumed = resume_from_seq(sorted_events, 1)
+
+            for e in resumed:
+                self.assertIn("occurred_at", e)
+                self.assertIn("ingested_at", e)
+                self.assertIsNotNone(e["occurred_at"])
+                self.assertIsNotNone(e["ingested_at"])
+
+            self.assertEqual(
+                [(e["seq"], e["occurred_at"], e["ingested_at"]) for e in resumed],
+                [
+                    (2, "2026-08-07T10:00:02Z", "2026-08-07T10:00:02Z"),
+                    (3, "2026-08-07T10:00:03Z", "2026-08-07T10:00:03Z"),
+                    (4, "2026-08-07T10:00:04Z", "2026-08-07T10:00:04Z"),
+                ],
+            )
+
+    def test_occurred_at_and_ingested_at_semantics(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "semantics-events.jsonl"
+            records = [
+                _make_run_event_record(seq=0, occurred_at="2026-08-07T10:00:00Z", ingested_at="2026-08-07T10:00:05Z"),
+                _make_run_event_record(seq=1, occurred_at="2026-08-07T10:00:10Z", ingested_at="2026-08-07T10:00:15Z"),
+            ]
+            _write_raw_records(path, records)
+
+            loaded = _load_raw_records(path)
+            sorted_events = sort_events_by_seq(loaded)
+            resumed = resume_from_seq(sorted_events, -1)
+
+            self.assertEqual(len(resumed), 2)
+            for e in resumed:
+                self.assertIn("occurred_at", e)
+                self.assertIn("ingested_at", e)
+                self.assertNotEqual(e["occurred_at"], e["ingested_at"])
+
+            self.assertEqual(resumed[0]["occurred_at"], "2026-08-07T10:00:00Z")
+            self.assertEqual(resumed[0]["ingested_at"], "2026-08-07T10:00:05Z")
+            self.assertEqual(resumed[1]["occurred_at"], "2026-08-07T10:00:10Z")
+            self.assertEqual(resumed[1]["ingested_at"], "2026-08-07T10:00:15Z")
+
     def assert_no_exact_raw_payload_key(self, value: Any) -> None:
         if isinstance(value, dict):
             self.assertNotIn("raw_payload", value)
@@ -130,6 +233,24 @@ def _write_raw_records(path: Path, records: list[dict[str, Any]]) -> None:
         "".join(json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n" for record in records),
         encoding="utf-8",
     )
+
+
+def _make_run_event_record(
+    seq: int,
+    *,
+    occurred_at: str = "2026-08-07T00:00:00Z",
+    ingested_at: str = "2026-08-07T00:00:01Z",
+    event_type: str = "session.started",
+) -> dict[str, Any]:
+    """Build a minimal RunEvent dict for replay/resume tests."""
+    return {
+        "event_id": f"evt-{seq}",
+        "run_id": "run-test",
+        "event_type": event_type,
+        "occurred_at": occurred_at,
+        "ingested_at": ingested_at,
+        "seq": seq,
+    }
 
 
 if __name__ == "__main__":
