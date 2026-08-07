@@ -24,7 +24,7 @@
 - [x] **ACP-02**: `hermes acp` 后端可用，含能力探测与 Hermes 版本兼容矩阵；替代 `packages/backends/hermes` 的自定义 HTTP runs API
 - [x] **ACP-03**: 至少一个额外 ACP 后端（`codex-acp` 或 `claude-agent-acp`）跑通同一契约，证明后端可替换性
 - [ ] **ACP-04**: ACP `session/update` ⟷ 统一事件双向映射（含 `tool_call_update` / `plan` / `elicitation` / `request_permission`），往返语义无损
-- [ ] **ACP-05**: 输出边界在事件桥上强制执行——后端 meta / gateway / system / update / command / help / `available_commands_update` / `terminal` 类内容不得到达普通用户
+- [x] **ACP-05**: 输出边界在事件桥上强制执行——后端 meta / gateway / system / update / command / help / `available_commands_update` / `terminal` 类内容不得到达普通用户
 - [x] **ACP-06**: ACP 会话与子进程生命周期管理（new / resume / cancel / close、超时回收、崩溃重启），契约预留 `backend_process_mode`（`per_session` / `pooled` / `remote`）
 - [ ] **ACP-07**: 权限请求安全默认——`terminal` / `execute_code` 类权限请求必须显式拒绝或上抛用户审批，服务端不得默认 allow
 
@@ -95,7 +95,7 @@
 
 - [ ] **SAFE-01**: 高风险法律结论保持人审——不自动合成 skill、不自动修改法律结论类 skill、`skill_candidate.requires_human_review` 恒为 true
 - [ ] **SAFE-02**: 契约日志 reference-first（`raw_payload_ref`），不存敏感全文；secrets 不入仓 / 不入日志 / 不入契约事件；ACP 子进程凭据经环境注入
-- [ ] **SAFE-03**: 输出边界贯穿事件桥与 Gateway 两处，后端 meta / gateway / system 噪声不得到达普通律师用户
+- [x] **SAFE-03**: 输出边界贯穿事件桥与 Gateway 两处，后端 meta / gateway / system 噪声不得到达普通律师用户
 - [ ] **SAFE-04**: research-gate 与 citation 审计不可绕过——法律结论必须有依据来源标注
 - [ ] **SAFE-05**: skill 语料以只读 vendoring 引用，平台不写回 skill 仓
 - [ ] **SAFE-06**: 可组合性保持——非法律合成任务（`solutions/demo_non_legal`）必须跑通契约层，法律专用字段只在 `industry_context`
@@ -162,7 +162,7 @@
 | ACP-03 | Phase 89 | Complete |
 | ACP-06 | Phase 89 | Complete |
 | ACP-04 | Phase 90 | Pending |
-| ACP-05 | Phase 90 | Pending |
+| ACP-05 | Phase 90 | Complete |
 | ACP-07 | Phase 90 | Pending |
 | GW-01 | Phase 91 | Pending |
 | GW-02 | Phase 91 | Pending |
@@ -208,7 +208,7 @@
 | CONV-05 | Phase 104 | Pending |
 | SAFE-01 | Phase 102 | Pending |
 | SAFE-02 | Phase 90 | Pending |
-| SAFE-03 | Phase 90 | Pending |
+| SAFE-03 | Phase 90 | Complete |
 | SAFE-04 | Phase 102 | Pending |
 | SAFE-05 | Phase 96 | Pending |
 | SAFE-06 | Phase 104 | Pending |
