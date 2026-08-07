@@ -34,8 +34,9 @@ from platform_contract.events import (
 
 from .auth import AuthContext, GatewayAuth, GatewayAuthError
 from .config import GatewayConfig
+from .event_buffer import RunEventBuffer
 from .sessions import GatewaySessionManager, build_set_cookie_header
-from .sse import GatewaySseStream
+from .sse import GatewaySseStream, parse_last_event_id
 
 JsonObject = dict[str, Any]
 
@@ -109,12 +110,14 @@ class GatewayApp:
         auth: GatewayAuth,
         session_manager: GatewaySessionManager,
         sse_stream: GatewaySseStream,
+        event_buffer: RunEventBuffer | None = None,
     ) -> None:
         self._config = config
         self._runtime = runtime
         self._auth = auth
         self._session_manager = session_manager
         self._sse_stream = sse_stream
+        self._event_buffer = event_buffer
 
     @property
     def config(self) -> GatewayConfig:
@@ -123,6 +126,10 @@ class GatewayApp:
     @property
     def runtime(self) -> object:
         return self._runtime
+
+    @property
+    def event_buffer(self) -> RunEventBuffer | None:
+        return self._event_buffer
 
     async def dispatch(
         self,
@@ -186,7 +193,14 @@ class GatewayApp:
         path: str,
         headers: Mapping[str, str],
     ) -> AsyncIterator[str]:
-        """SSE streaming dispatch. Auth is applied BEFORE yielding frames."""
+        """SSE streaming dispatch. Auth is applied BEFORE yielding frames.
+
+        When a ``Last-Event-ID`` header is present and an event buffer is
+        configured, buffered events with ``seq > last_event_id`` are replayed
+        first (through the output boundary), then live streaming continues.
+        Every live event is appended to the event buffer for future
+        reconnections.
+        """
         if not self._config.enabled:
             raise GatewayDisabledError()
 
@@ -204,8 +218,21 @@ class GatewayApp:
         # Auth is applied BEFORE yielding any SSE frames.
         ctx = self._auth.require_auth(headers)
 
+        # Parse Last-Event-ID for reconnection replay.
+        last_seq = parse_last_event_id(headers) if self._event_buffer is not None else None
+
+        # Replay buffered events when Last-Event-ID is present.
+        if last_seq is not None and self._event_buffer is not None:
+            for event in self._event_buffer.replay(run_id, last_seq):
+                frame = self._sse_stream.encode_event(event)
+                if frame is not None:
+                    yield frame
+
         _assert_runtime_callable(self._runtime, "stream")
         async for event in self._runtime.stream(run_id):  # type: ignore[attr-defined]
+            # Append every live event to the buffer for future reconnections.
+            if self._event_buffer is not None:
+                self._event_buffer.append(run_id, event)
             frame = self._sse_stream.encode_event(event)
             if frame is not None:
                 yield frame
