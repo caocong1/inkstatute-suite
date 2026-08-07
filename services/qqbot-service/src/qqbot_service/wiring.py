@@ -21,6 +21,7 @@ from platform_runtime.protocols import BackendAdapter
 from platform_runtime.runtime import DefaultRunRuntime
 
 from qqbot_service.config import QQBotHostConfig, load_qqbot_host_config
+from qqbot_service.gateway_client import GatewayClient, GatewayClientConfig
 from qqbot_service.secrets import resolve_secret_ref
 
 __all__ = [
@@ -32,14 +33,21 @@ __all__ = [
 
 @dataclass(frozen=True, slots=True)
 class QQBotWiredRuntime:
-    """Composed QQBot host runtime bundle (flag, config, adapter, run runtime)."""
+    """Composed QQBot host runtime bundle (flag, config, adapter, run runtime).
+
+    When ``gateway_client`` is not ``None``, the post-ACK composition path in
+    ``webhook.py`` uses the Gateway event consumer instead of direct agent
+    calls (BOT-02). When ``None``, the old ingress path is used (backward
+    compat during transition).
+    """
 
     feature_flags: RuntimeFeatureFlags
     host_config: QQBotHostConfig
     channel_config: QQBotChannelConfig
     adapter: QQBotChannelAdapter
     runtime: DefaultRunRuntime
-    live_io_ready: bool
+    gateway_client: GatewayClient | None = None
+    live_io_ready: bool = False
     # Read-only live-IO deps for host composition (interaction ACK, etc.).
     # Prefer these over reaching into adapter private attributes.
     message_transport: object | None = None
@@ -79,6 +87,7 @@ def build_qqbot_wired_runtime(
     transport: object | None = None,
     token_transport: object | None = None,
     vision_runner: object | None = None,
+    gateway_config: GatewayClientConfig | None = None,
 ) -> QQBotWiredRuntime:
     """Compose channel config, adapter, and ``DefaultRunRuntime`` with explicit DI.
 
@@ -98,6 +107,12 @@ def build_qqbot_wired_runtime(
       explicit ``token_transport``, the factory fails closed (no TokenManager).
       Production callers must pass ``UrllibTokenTransport()`` (or equivalent)
       deliberately; Fake paths must inject ``FakeTokenTransport``.
+
+    When ``gateway_config`` is provided, a :class:`GatewayClient` is constructed
+    and stored in ``QQBotWiredRuntime.gateway_client``. The post-ACK composition
+    path in ``webhook.py`` uses the Gateway event consumer when
+    ``gateway_client`` is not ``None`` (BOT-02). When ``None``, the old direct
+    agent path is used (backward compat).
     """
     feature_flags = flags if flags is not None else RuntimeFeatureFlags()
     if host_config is not None:
@@ -155,12 +170,18 @@ def build_qqbot_wired_runtime(
         vision_runner=vision_runner,
     )
     live_io_ready = adapter._live_io_ready()
+
+    gateway_client: GatewayClient | None = None
+    if gateway_config is not None:
+        gateway_client = GatewayClient(gateway_config)
+
     return QQBotWiredRuntime(
         feature_flags=feature_flags,
         host_config=host,
         channel_config=channel_config,
         adapter=adapter,
         runtime=runtime,
+        gateway_client=gateway_client,
         live_io_ready=live_io_ready,
         message_transport=injected_transport,
         token_manager=injected_token_manager,
