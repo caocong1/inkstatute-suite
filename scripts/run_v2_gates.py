@@ -60,6 +60,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     lawfirm_solution_src = repo_root / "solutions" / "lawfirm" / "src"
     demo_non_legal_solution_src = repo_root / "solutions" / "demo_non_legal" / "src"
     skill_registry_src = repo_root / "packages" / "skill-registry" / "src"
+    skill_index_src = repo_root / "packages" / "skill-index" / "src"
     router_service_src = repo_root / "packages" / "router-service" / "src"
     codex_backend_src = repo_root / "packages" / "backends" / "codex" / "src"
     provider_model_backend_src = repo_root / "packages" / "backends" / "provider_model" / "src"
@@ -109,6 +110,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "skill-registry",
             (py, "-m", "unittest", "discover", "-s", "packages/skill-registry/tests"),
             (skill_registry_src, platform_src, platform_runtime_src, rbac_src),
+        ),
+        Gate(
+            "skill-index",
+            (py, "-m", "unittest", "discover", "-s", "packages/skill-index/tests"),
+            (skill_index_src, platform_src),
         ),
         Gate(
             "operator-config",
@@ -271,6 +277,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/acp-client/src",
                 "packages/acp-event-bridge/src",
                 "packages/skill-registry/src",
+                "packages/skill-index/src",
                 "packages/router-service/src",
                 "packages/mcp-registry/src",
                 "packages/rbac/src",
