@@ -217,7 +217,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 同一条任务从 WeCom 发起，律师收到的内容与 Web 端最终结果语义一致（答复 + 产物 + 澄清 + 反馈卡片）
   6. 后端 meta / gateway / system 噪声在 bot 通道同样不可见（输出边界在 Gateway 与降级层双重生效）
 
-**Plans**: 3+ (95-01 Wave 1 Tracer ✅, 95-02 WeCom Full Migration ✅, 95-03+ QQ migration pending)
+**Plans**: 3 (95-01 Wave 1 Tracer ✅, 95-02 WeCom Full Migration ✅, 95-03 QQ Full Migration ✅)
 **UI hint**: no
 
 ### Phase 96: Real Skill Index
@@ -397,7 +397,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 92. Shared UI Core | B | 4/4 | Complete | 2026-08-08 |
 | 93. Web Client | B | 4/4 | Complete | 2026-08-08 |
 | 94. Desktop Client | B | 4/4 | Complete | 2026-08-09 |
-| 95. Bot Channel Degradation | B | 1/TBD | In Progress | - |
+| 95. Bot Channel Degradation | B | 3/3 | Complete | 2026-08-09 |
 | 96. Real Skill Index | C | 0/TBD | Not started | - |
 | 97. Skill Materialization | C | 0/TBD | Not started | - |
 | 98. Real-Index Routing | C | 0/TBD | Not started | - |
