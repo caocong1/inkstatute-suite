@@ -234,7 +234,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 双仓合并生效：命名空间隔离、上游 skill 加 `legal-` 前缀、四态冲突分类（`in-sync` / `upstream-changed` / `both-changed` / `local-missing`）可产出报告
   6. 索引器对上游目录结构变化容错——缺失 frontmatter、缺失 `plugin.json`、非常规嵌套都不导致崩溃，而是产出带警告的记录
 
-**Plans**: TBD (est. 3-4)
+**Plans**: 4 (96-01 scanner core ✅ | 96-02 classification+metadata ✅ | 96-03 conflict model ✅ | 96-04 gate registration + index builder + e2e pending)
 **UI hint**: no
 
 ### Phase 97: Skill Materialization
@@ -398,7 +398,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 93. Web Client | B | 4/4 | Complete | 2026-08-08 |
 | 94. Desktop Client | B | 4/4 | Complete | 2026-08-09 |
 | 95. Bot Channel Degradation | B | 4/4 | Complete | 2026-08-09 |
-| 96. Real Skill Index | C | 1/4 | In Progress | - |
+| 96. Real Skill Index | C | 3/4 | In Progress | - |
 | 97. Skill Materialization | C | 0/TBD | Not started | - |
 | 98. Real-Index Routing | C | 0/TBD | Not started | - |
 | 99. Practice Profile | C | 0/TBD | Not started | - |
