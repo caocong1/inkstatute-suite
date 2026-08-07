@@ -22,8 +22,9 @@ mod commands;
 mod security;
 mod workspace;
 
+use commands::desktop::AppSettings;
 use security::path_sandbox::PathSandbox;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use tokio::sync::RwLock;
 
@@ -63,6 +64,10 @@ pub fn run() {
             workspace::set_app_data_dir(data_dir)
                 .map_err(|e| format!("failed to set workspace data dir: {}", e))?;
 
+            // Initialize app settings (JSON file-based, for desktop-specific settings)
+            let settings = commands::desktop::AppSettings::default();
+            app.manage(Mutex::new(settings));
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -85,6 +90,8 @@ pub fn run() {
             commands::workspace::bind_workspace,
             commands::workspace::get_workspace_index_status,
             commands::workspace::search_workspace,
+            commands::desktop::get_app_setting,
+            commands::desktop::set_app_setting,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -27,6 +27,7 @@ import { desktopAdapters } from "./adapters/desktopAdapters";
 import { HomePage } from "./pages/HomePage";
 import { WorkspacePage } from "./pages/WorkspacePage";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { SettingsPanel } from "./components/SettingsPanel";
 
 const AppContent: Component = () => {
   const auth = useAuth();
@@ -85,8 +86,7 @@ const AppContent: Component = () => {
           </div>
         </div>
         <Show when={settingsOpen()} fallback={null}>
-          {/* SettingsPanel deferred to Plan 94-03 */}
-          <div />
+          <SettingsPanel open={settingsOpen()} onClose={() => setSettingsOpen(false)} />
         </Show>
       </div>
     </Show>

@@ -65,7 +65,7 @@ function extractListenCalls(content: string): string[] {
   return calls;
 }
 
-/** Desktop-specific Tauri command allowlist (from 94-CONTEXT §2 Category B). */
+/** Desktop-specific Tauri command allowlist (from 94-CONTEXT §2 Category B + 94-03 desktop settings). */
 const DESKTOP_ALLOWLIST = new Set([
   "read_file_content",
   "list_directory",
@@ -86,6 +86,8 @@ const DESKTOP_ALLOWLIST = new Set([
   "get_cached_events",
   "get_cached_artifact",
   "get_cached_artifacts_by_session",
+  "get_app_setting",
+  "set_app_setting",
 ]);
 
 /** Removed agent/session/message/skill/document/sync commands that must NOT appear. */
