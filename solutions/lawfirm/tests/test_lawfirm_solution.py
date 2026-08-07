@@ -59,12 +59,21 @@ class TestNeutralManifest(unittest.TestCase):
             self.assertNotIn(k.lower(), forbidden, f"top-level key {k!r} is legal-only")
 
     def test_skills_use_neutral_descriptors(self) -> None:
+        """Skills array has been removed from manifest (SKILL-09).
+
+        The lawfirm manifest no longer contains a ``skills`` key — the real
+        skill source is now ``skill-index.json`` consumed via
+        ``index_to_descriptors()``.  This test verifies the ``skills`` key
+        is absent and that the manifest remains valid.
+        """
         raw = json.loads(MANIFEST_PATH.read_text())
-        allowed_keys = {"name", "description", "intent", "required_tools", "risk_level"}
-        for skill in raw["skills"]:
-            self.assertTrue(set(skill.keys()) <= allowed_keys, f"non-neutral skill keys: {set(skill.keys()) - allowed_keys}")
-            self.assertIn("name", skill)
-            self.assertIn("description", skill)
+        # SKILL-09: skills array removed from lawfirm manifest
+        self.assertNotIn("skills", raw, "lawfirm manifest must not contain 'skills' key (SKILL-09)")
+        # All other expected fields are still present
+        for key in ("solution_id", "version", "manifest_ref", "metadata",
+                     "persona_ref", "mcp", "output_policy", "eval",
+                     "default_adapter_config", "secret_templates", "industry_context"):
+            self.assertIn(key, raw, f"lawfirm manifest missing key: {key}")
 
     def test_mcp_uses_secret_ref_only(self) -> None:
         raw = json.loads(MANIFEST_PATH.read_text())
@@ -185,6 +194,17 @@ class TestHermesMaterializer(unittest.TestCase):
         fresh_reg = MaterializerRegistry()
         register_into(fresh_reg, output_dir_anchor=Path("/tmp/anchor"))
         self.assertIn("hermes", fresh_reg.known_backends())
+
+    def test_skill_template_handles_missing_skills_key(self) -> None:
+        """_render_skill_template handles manifest without 'skills' key (SKILL-09).
+
+        After SKILL-09, the lawfirm manifest no longer has a 'skills' key.
+        The materializer must output '(no skills declared in manifest)'
+        instead of crashing.
+        """
+        manifest = _manifest_from_json()
+        text = LawfirmHermesMaterializer._render_skill_template(manifest)
+        self.assertIn("(no skills declared in manifest)", text)
 
 
 if __name__ == "__main__":
