@@ -1,0 +1,90 @@
+[
+  {
+    "event_id": "evt-001",
+    "run_id": "run-fake-1",
+    "event_type": "session.started",
+    "seq": 1,
+    "occurred_at": "2026-08-09T10:00:00Z",
+    "payload": {"session_id": "sess-fake-1", "tenant_id": "default-tenant"}
+  },
+  {
+    "event_id": "evt-002",
+    "run_id": "run-fake-1",
+    "event_type": "plan.updated",
+    "seq": 2,
+    "occurred_at": "2026-08-09T10:00:01Z",
+    "payload": {"plan": [{"step": 1, "title": "分析合同条款"}, {"step": 2, "title": "检索相关法规"}]}
+  },
+  {
+    "event_id": "evt-003",
+    "run_id": "run-fake-1",
+    "event_type": "tool_call.started",
+    "seq": 3,
+    "occurred_at": "2026-08-09T10:00:02Z",
+    "payload": {"tool_call_id": "tc-1", "tool_name": "search_statutes", "status": "started"}
+  },
+  {
+    "event_id": "evt-004",
+    "run_id": "run-fake-1",
+    "event_type": "message.delta",
+    "seq": 4,
+    "occurred_at": "2026-08-09T10:00:03Z",
+    "payload": {"delta": "根据"}
+  },
+  {
+    "event_id": "evt-005",
+    "run_id": "run-fake-1",
+    "event_type": "message.delta",
+    "seq": 5,
+    "occurred_at": "2026-08-09T10:00:04Z",
+    "payload": {"delta": "《合同法》"}
+  },
+  {
+    "event_id": "evt-006",
+    "run_id": "run-fake-1",
+    "event_type": "message.delta",
+    "seq": 6,
+    "occurred_at": "2026-08-09T10:00:05Z",
+    "payload": {"delta": "相关规定"}
+  },
+  {
+    "event_id": "evt-007",
+    "run_id": "run-fake-1",
+    "event_type": "message.completed",
+    "seq": 7,
+    "occurred_at": "2026-08-09T10:00:06Z",
+    "payload": {"content": "合同审查完成。根据《合同法》相关规定，该合同条款存在以下风险：1. 违约责任条款不明确；2. 争议解决方式需补充约定。"}
+  },
+  {
+    "event_id": "evt-008",
+    "run_id": "run-fake-1",
+    "event_type": "citation.recorded",
+    "seq": 8,
+    "occurred_at": "2026-08-09T10:00:07Z",
+    "payload": {"citations": [{"source": "《中华人民共和国合同法》第107条", "status": "verified"}, {"source": "《最高人民法院关于适用〈中华人民共和国合同法〉若干问题的解释（二）》第10条", "status": "retrieved"}]}
+  },
+  {
+    "event_id": "evt-009",
+    "run_id": "run-fake-1",
+    "event_type": "artifact.created",
+    "seq": 9,
+    "occurred_at": "2026-08-09T10:00:08Z",
+    "payload": {"artifact_id": "art-001", "kind": "document", "name": "合同审查报告.docx", "uri": "gateway://artifacts/art-001"}
+  },
+  {
+    "event_id": "evt-010",
+    "run_id": "run-fake-1",
+    "event_type": "elicitation.requested",
+    "seq": 10,
+    "occurred_at": "2026-08-09T10:00:09Z",
+    "payload": {"interrupt_id": "int-001", "questions": [{"id": "q1", "question": "该合同是否涉及涉外因素？", "allow_multiple": false, "options": [{"label": "是", "value": "yes"}, {"label": "否", "value": "no"}]}]}
+  },
+  {
+    "event_id": "evt-011",
+    "run_id": "run-fake-1",
+    "event_type": "run.state_changed",
+    "seq": 11,
+    "occurred_at": "2026-08-09T10:00:10Z",
+    "payload": {"status": "succeeded", "run_id": "run-fake-1"}
+  }
+]
