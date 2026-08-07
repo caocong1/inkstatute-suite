@@ -20,7 +20,11 @@ _DIGEST_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 def _load_skills():
-    """Load skills from both solution-pack manifests (8 total)."""
+    """Load skills from both solution-pack manifests (4 total, demo_non_legal only).
+
+    After SKILL-09, lawfirm manifest no longer has a 'skills' key, so
+    only demo_non_legal contributes skills (4).
+    """
     return load_skills_from_manifests([LAWFIRM_MANIFEST, DEMO_MANIFEST])
 
 
@@ -46,7 +50,7 @@ class DiscoveryIndexTests(unittest.TestCase):
     def test_discovery_index_has_skills_array(self) -> None:
         self.assertIn("skills", self.index)
         self.assertIsInstance(self.index["skills"], list)
-        self.assertEqual(len(self.index["skills"]), 8)
+        self.assertEqual(len(self.index["skills"]), 4)
 
     # ------------------------------------------------------------------
     # Per-entry field requirements
@@ -61,8 +65,8 @@ class DiscoveryIndexTests(unittest.TestCase):
 
     def test_discovery_skill_name_is_normalized(self) -> None:
         names = [entry["name"] for entry in self.index["skills"]]
-        self.assertIn("case-qa", names)
-        self.assertNotIn("case_qa", names)
+        self.assertIn("lesson-qa", names)
+        self.assertNotIn("lesson_qa", names)
         # All names should be lowercase with hyphens (no underscores)
         for name in names:
             self.assertNotIn("_", name)

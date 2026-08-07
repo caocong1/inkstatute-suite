@@ -19,7 +19,11 @@ _WRITE_PREFIXES = ("add_", "create_", "update_", "delete_", "remove_", "put_", "
 
 
 def _build_registry() -> SkillRegistry:
-    """Build a SkillRegistry loaded from both solution-pack manifests."""
+    """Build a SkillRegistry loaded from both solution-pack manifests.
+
+    After SKILL-09, lawfirm manifest no longer has a 'skills' key, so
+    only demo_non_legal contributes skills (4).
+    """
     skills = load_skills_from_manifests([LAWFIRM_MANIFEST, DEMO_MANIFEST])
     return SkillRegistry(skills)
 
@@ -28,17 +32,17 @@ class SkillRegistryListGetTests(unittest.TestCase):
     """Tests for ``list_skills`` and ``get_skill``."""
 
     def test_list_skills_returns_all_descriptors(self) -> None:
-        """``list_skills()`` must return all 8 descriptors."""
+        """``list_skills()`` must return all 4 descriptors (demo_non_legal only)."""
         registry = _build_registry()
         skills = registry.list_skills()
-        self.assertEqual(len(skills), 8)
+        self.assertEqual(len(skills), 4)
 
     def test_get_skill_returns_descriptor_by_id(self) -> None:
-        """``get_skill("lawfirm/case_qa")`` must return the correct descriptor."""
+        """``get_skill("demo_non_legal/lesson_qa")`` must return the correct descriptor."""
         registry = _build_registry()
-        skill = registry.get_skill("lawfirm/case_qa")
+        skill = registry.get_skill("demo_non_legal/lesson_qa")
         self.assertIsNotNone(skill)
-        self.assertEqual(skill.name, "case_qa")
+        self.assertEqual(skill.name, "lesson_qa")
 
     def test_get_skill_returns_none_for_unknown_id(self) -> None:
         """``get_skill`` must return ``None`` for an unknown skill id."""
@@ -50,39 +54,39 @@ class SkillRegistrySearchTests(unittest.TestCase):
     """Tests for ``search`` with tag, category, and name_substring filters."""
 
     def test_search_by_tag_risk_level(self) -> None:
-        """``search(tag="high")`` returns skills with ``risk_level == "high"``."""
+        """``search(tag="low")`` returns skills with ``risk_level == "low"``."""
         registry = _build_registry()
-        results = registry.search(tag="high")
+        results = registry.search(tag="low")
         names = {s.name for s in results}
-        self.assertEqual(names, {"contract_draft", "litigation_summary"})
+        self.assertEqual(names, {"lesson_qa", "homework_review", "syllabus_lookup"})
 
     def test_search_by_category_intent(self) -> None:
         """``search(category="factual_qa")`` returns skills with ``intent == "factual_qa"``."""
         registry = _build_registry()
         results = registry.search(category="factual_qa")
         names = {s.name for s in results}
-        self.assertEqual(names, {"case_qa", "lesson_qa"})
+        self.assertEqual(names, {"lesson_qa"})
 
     def test_search_by_name_substring(self) -> None:
-        """``search(name_substring="case")`` returns skills containing "case" in name."""
+        """``search(name_substring="lesson")`` returns skills containing "lesson" in name."""
         registry = _build_registry()
-        results = registry.search(name_substring="case")
+        results = registry.search(name_substring="lesson")
         self.assertTrue(len(results) >= 1)
         for s in results:
-            self.assertIn("case", s.name.lower())
+            self.assertIn("lesson", s.name.lower())
 
     def test_search_with_no_filters_returns_all(self) -> None:
-        """``search()`` with no filters must return all 8 skills."""
+        """``search()`` with no filters must return all 4 skills."""
         registry = _build_registry()
         results = registry.search()
-        self.assertEqual(len(results), 8)
+        self.assertEqual(len(results), 4)
 
     def test_search_with_multiple_filters(self) -> None:
-        """``search(tag="medium", category="review")`` applies AND logic."""
+        """``search(tag="medium", category="generation")`` applies AND logic."""
         registry = _build_registry()
-        results = registry.search(tag="medium", category="review")
+        results = registry.search(tag="medium", category="generation")
         names = {s.name for s in results}
-        self.assertEqual(names, {"compliance_review"})
+        self.assertEqual(names, {"quiz_generator"})
 
 
 class SkillRegistryReadOnlyTests(unittest.TestCase):
@@ -106,7 +110,7 @@ class SkillRegistryReadOnlyTests(unittest.TestCase):
             NeutralSkillDescriptor(skill_id="fake/skill", name="fake")
         )
         second = registry.list_skills()
-        self.assertEqual(len(second), 8)
+        self.assertEqual(len(second), 4)
 
 
 if __name__ == "__main__":

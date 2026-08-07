@@ -18,7 +18,11 @@ DEMO_MANIFEST = REPO_ROOT / "solutions" / "demo_non_legal" / "manifest.json"
 
 
 def _build_registry() -> SkillRegistry:
-    """Build a SkillRegistry loaded from both solution-pack manifests."""
+    """Build a SkillRegistry loaded from both solution-pack manifests.
+
+    After SKILL-09, lawfirm manifest no longer has a 'skills' key, so
+    only demo_non_legal contributes skills (4).
+    """
     skills = load_skills_from_manifests([LAWFIRM_MANIFEST, DEMO_MANIFEST])
     return SkillRegistry(skills)
 
@@ -40,8 +44,8 @@ class SkillRegistryApiTests(unittest.TestCase):
         self.assertIn("items", body)
         self.assertIn("count", body)
         self.assertIsInstance(body["items"], list)
-        self.assertEqual(body["count"], 8)
-        self.assertEqual(len(body["items"]), 8)
+        self.assertEqual(body["count"], 4)
+        self.assertEqual(len(body["items"]), 4)
         self.assertTrue(body["metadata"]["read_only"])
 
     # ------------------------------------------------------------------
@@ -49,11 +53,11 @@ class SkillRegistryApiTests(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_get_skill_by_id_returns_200(self) -> None:
-        status, body = handle_get("/skills/lawfirm/case_qa", "", self.registry)
+        status, body = handle_get("/skills/demo_non_legal/lesson_qa", "", self.registry)
 
         self.assertEqual(status, 200)
-        self.assertEqual(body["skill_id"], "lawfirm/case_qa")
-        self.assertEqual(body["name"], "case_qa")
+        self.assertEqual(body["skill_id"], "demo_non_legal/lesson_qa")
+        self.assertEqual(body["name"], "lesson_qa")
 
     def test_get_skill_unknown_id_returns_404(self) -> None:
         status, body = handle_get("/skills/unknown", "", self.registry)
@@ -67,12 +71,12 @@ class SkillRegistryApiTests(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_search_skills_returns_200(self) -> None:
-        status, body = handle_get("/skills/search?tag=high", "", self.registry)
+        status, body = handle_get("/skills/search?tag=low", "", self.registry)
 
         self.assertEqual(status, 200)
         self.assertGreaterEqual(body["count"], 1)
         for item in body["items"]:
-            self.assertEqual(item["metadata"]["risk_level"], "high")
+            self.assertEqual(item["metadata"]["risk_level"], "low")
 
     def test_search_skills_with_category_filter(self) -> None:
         status, body = handle_get(
@@ -85,12 +89,12 @@ class SkillRegistryApiTests(unittest.TestCase):
             self.assertEqual(item["metadata"]["intent"], "factual_qa")
 
     def test_search_skills_with_name_filter(self) -> None:
-        status, body = handle_get("/skills/search?name=case", "", self.registry)
+        status, body = handle_get("/skills/search?name=lesson", "", self.registry)
 
         self.assertEqual(status, 200)
         self.assertGreaterEqual(body["count"], 1)
         for item in body["items"]:
-            self.assertIn("case", item["name"].lower())
+            self.assertIn("lesson", item["name"].lower())
 
     # ------------------------------------------------------------------
     # /.well-known/agent-skills/index.json — discovery endpoint
@@ -108,7 +112,7 @@ class SkillRegistryApiTests(unittest.TestCase):
             body["$schema"],
             "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
         )
-        self.assertEqual(len(body["skills"]), 8)
+        self.assertEqual(len(body["skills"]), 4)
 
     # ------------------------------------------------------------------
     # Unknown route
@@ -135,13 +139,13 @@ class SkillRegistryApiTests(unittest.TestCase):
         status, body = handle_get("/skills", "", self.registry, flags=flags)
 
         self.assertEqual(status, 200)
-        self.assertEqual(body["count"], 8)
+        self.assertEqual(body["count"], 4)
 
     def test_no_flags_allows_request(self) -> None:
         status, body = handle_get("/skills", "", self.registry, flags=None)
 
         self.assertEqual(status, 200)
-        self.assertEqual(body["count"], 8)
+        self.assertEqual(body["count"], 4)
 
     # ------------------------------------------------------------------
     # Read-only enforcement

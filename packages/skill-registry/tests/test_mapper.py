@@ -26,35 +26,43 @@ class ManifestSkillToDescriptorTests(unittest.TestCase):
     def test_manifest_skill_to_descriptor_maps_fields(self) -> None:
         """Verify all manifest fields map to the correct descriptor fields."""
         descriptor = manifest_skill_to_descriptor(
-            "lawfirm",
+            "demo_non_legal",
             {
-                "name": "case_qa",
-                "description": "Answer factual legal questions with citations.",
+                "name": "lesson_qa",
+                "description": "Answer student questions about lesson material with citations.",
                 "intent": "factual_qa",
-                "required_tools": ["law_search"],
-                "risk_level": "medium",
+                "required_tools": ["curriculum_db"],
+                "risk_level": "low",
             },
         )
         self.assertIsInstance(descriptor, NeutralSkillDescriptor)
-        self.assertEqual(descriptor.name, "case_qa")
-        self.assertEqual(descriptor.description, "Answer factual legal questions with citations.")
-        self.assertEqual(descriptor.required_tool_refs, ["law_search"])
+        self.assertEqual(descriptor.name, "lesson_qa")
+        self.assertEqual(descriptor.description, "Answer student questions about lesson material with citations.")
+        self.assertEqual(descriptor.required_tool_refs, ["curriculum_db"])
         self.assertEqual(descriptor.metadata["intent"], "factual_qa")
-        self.assertEqual(descriptor.metadata["risk_level"], "medium")
-        self.assertEqual(descriptor.metadata["solution_id"], "lawfirm")
+        self.assertEqual(descriptor.metadata["risk_level"], "low")
+        self.assertEqual(descriptor.metadata["solution_id"], "demo_non_legal")
 
     def test_skill_id_includes_solution_id(self) -> None:
         """``skill_id`` must be ``{solution_id}/{name}``."""
         descriptor = manifest_skill_to_descriptor(
-            "lawfirm",
-            {"name": "case_qa", "description": "test", "intent": "factual_qa", "risk_level": "medium"},
+            "demo_non_legal",
+            {"name": "lesson_qa", "description": "test", "intent": "factual_qa", "risk_level": "low"},
         )
-        self.assertEqual(descriptor.skill_id, "lawfirm/case_qa")
+        self.assertEqual(descriptor.skill_id, "demo_non_legal/lesson_qa")
 
     def test_load_skills_from_manifests_loads_all_packs(self) -> None:
-        """Loading both manifests must produce 8 descriptors (4 + 4)."""
+        """Loading demo_non_legal manifest produces 4 descriptors.
+
+        After SKILL-09, lawfirm manifest no longer has a 'skills' key, so
+        only demo_non_legal contributes skills (4).  Loading both manifests
+        still produces 4 (lawfirm contributes 0).
+        """
         descriptors = load_skills_from_manifests([LAWFIRM_MANIFEST, DEMO_MANIFEST])
-        self.assertEqual(len(descriptors), 8)
+        self.assertEqual(len(descriptors), 4)
+        # All descriptors come from demo_non_legal
+        for d in descriptors:
+            self.assertTrue(d.skill_id.startswith("demo_non_legal/"))
 
     def test_descriptor_input_output_schema_refs_are_none(self) -> None:
         """``input_schema_ref`` and ``output_schema_ref`` must be ``None``."""
