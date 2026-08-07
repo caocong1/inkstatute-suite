@@ -168,11 +168,14 @@ def _validate_schema(
     *,
     path: tuple[str, ...],
     is_event_top_level: bool = False,
+    root_schema: Mapping[str, Any] | None = None,
 ) -> None:
-    resolved = _resolve_schema(schema, schemas)
+    if root_schema is None:
+        root_schema = schema
+    resolved = _resolve_schema(schema, schemas, root_schema=root_schema)
 
     if "oneOf" in resolved:
-        _validate_one_of(resolved["oneOf"], value, schemas, path=path)
+        _validate_one_of(resolved["oneOf"], value, schemas, path=path, root_schema=root_schema)
         return
 
     if "type" in resolved:
@@ -192,9 +195,9 @@ def _validate_schema(
             raise ContractValidationError(f"{_path(path)}: value {value!r} above maximum {resolved['maximum']}")
 
     if isinstance(value, dict):
-        _validate_object(resolved, value, schemas, path=path, is_event_top_level=is_event_top_level)
+        _validate_object(resolved, value, schemas, path=path, is_event_top_level=is_event_top_level, root_schema=root_schema)
     elif isinstance(value, list):
-        _validate_array(resolved, value, schemas, path=path)
+        _validate_array(resolved, value, schemas, path=path, root_schema=root_schema)
 
 
 def _validate_object(
@@ -204,6 +207,7 @@ def _validate_object(
     *,
     path: tuple[str, ...],
     is_event_top_level: bool,
+    root_schema: Mapping[str, Any] | None = None,
 ) -> None:
     properties = schema.get("properties", {})
     if not isinstance(properties, dict):
@@ -229,7 +233,7 @@ def _validate_object(
     for field_name, field_value in value.items():
         field_schema = properties.get(field_name)
         if isinstance(field_schema, dict):
-            _validate_schema(field_schema, field_value, schemas, path=path + (field_name,))
+            _validate_schema(field_schema, field_value, schemas, path=path + (field_name,), root_schema=root_schema)
 
 
 def _validate_array(
@@ -238,13 +242,14 @@ def _validate_array(
     schemas: Mapping[str, Mapping[str, Any]],
     *,
     path: tuple[str, ...],
+    root_schema: Mapping[str, Any] | None = None,
 ) -> None:
     items_schema = schema.get("items")
     if not isinstance(items_schema, dict):
         return
 
     for index, item in enumerate(value):
-        _validate_schema(items_schema, item, schemas, path=path[:-1] + (f"{path[-1]}[{index}]",))
+        _validate_schema(items_schema, item, schemas, path=path[:-1] + (f"{path[-1]}[{index}]",), root_schema=root_schema)
 
 
 def _validate_one_of(
@@ -253,12 +258,13 @@ def _validate_one_of(
     schemas: Mapping[str, Mapping[str, Any]],
     *,
     path: tuple[str, ...],
+    root_schema: Mapping[str, Any] | None = None,
 ) -> None:
     failures: list[str] = []
     matches = 0
     for option in options:
         try:
-            _validate_schema(option, value, schemas, path=path)
+            _validate_schema(option, value, schemas, path=path, root_schema=root_schema)
         except ContractValidationError as exc:
             failures.append(str(exc))
         else:
@@ -314,12 +320,19 @@ def _matches_type(type_name: str, value: Any) -> bool:
 def _resolve_schema(
     schema: Mapping[str, Any],
     schemas: Mapping[str, Mapping[str, Any]],
+    *,
+    root_schema: Mapping[str, Any] | None = None,
 ) -> Mapping[str, Any]:
     ref = schema.get("$ref")
     if not isinstance(ref, str):
         return schema
 
     if ref.startswith("#/$defs/"):
+        # Try local $defs first (root_schema), then fall back to common.
+        local_defs = root_schema.get("$defs") if root_schema is not None else None
+        def_name = ref.removeprefix("#/$defs/")
+        if local_defs is not None and def_name in local_defs:
+            return _resolve_schema(local_defs[def_name], schemas, root_schema=root_schema)
         return _resolve_schema(_resolve_pointer(schemas["common"], ref.removeprefix("#")), schemas)
 
     if "#" in ref:
