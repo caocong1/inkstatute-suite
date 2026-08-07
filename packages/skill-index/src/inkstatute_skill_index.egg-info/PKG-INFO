@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: inkstatute-skill-index
-Version: 1.0.0
-Summary: Read-only scanner that indexes real SKILL.md files from ai-for-china-legal and legal-skills repos into a machine-readable skill-index.json.
-Requires-Python: >=3.11
