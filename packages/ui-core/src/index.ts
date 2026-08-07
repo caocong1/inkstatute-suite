@@ -25,3 +25,16 @@ export type {
   EventStreamStore,
   EventStreamOptions,
 } from "./stores/eventStream";
+
+export { AdapterContext, useAdapters } from "./adapters";
+export type {
+  FileAdapter,
+  DropAdapter,
+  DroppedPath,
+  AppInfoAdapter,
+  UpdateInfo,
+  WorkspaceAdapter,
+  WorkspaceFile,
+  DocumentParser,
+  AdapterContextValue,
+} from "./adapters";
