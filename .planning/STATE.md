@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 97 discuss-phase complete (97-CONTEXT.md + 97-DISCUSSION-LOG.md written, 11 gray areas auto-selected, ready for plan-phase)
-last_updated: "2026-08-09T21:00:00.000Z"
-last_activity: 2026-08-09 -- Phase 97 discuss-phase (auto mode): loaded 96 context, scouted Hermes profile layout (68 symlinks + 33 copies in lawfirm profile), ACP skills layout, manifest.json (4 fake skills), skill-registry, router-service, lawfirm-profile scripts, context_assembler budget pattern. Identified 11 gray areas, all auto-selected with recommended options. 97-CONTEXT.md and 97-DISCUSSION-LOG.md committed.
+stopped_at: Phase 97 plan-phase complete (4 plans written: 97-01..97-04, 3 waves, ready for implementation)
+last_updated: "2026-08-09T22:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 97 plan-phase: split into 4 plans across 3 waves. Wave 1 (97-01): materializer core — package scaffold, Hermes materializer (symlink-first), ACP materializer (Claude Code plugin format + host assumption rewriting), three-separation routing manifest. Wave 2 (97-02 + 97-03 parallel): context budget injector (section-priority deterministic trim) + skill-registry migration (index_to_descriptors) + manifest.json cleanup (remove 4 fake skills, update 7 test files). Wave 3 (97-04): gate registration (35→36), CLI, Hermes ACP integration test, e2e three-separation verification, phase completion. 97-01-PLAN.md, 97-02-PLAN.md, 97-03-PLAN.md, 97-04-PLAN.md committed.
 progress:
   total_phases: 17
   completed_phases: 9
-  total_plans: 43
+  total_plans: 47
   completed_plans: 43
   percent: 53
 ---
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 97 — Skill Materialization (discuss-phase complete, ready for plan-phase)
+**Current focus:** Phase 97 — Skill Materialization (plan-phase complete, ready for implementation)
 
 ## Current Position
 
-Phase: 97 (skill-materialization) — DISCUSS COMPLETE
-Plan: TBD (est. 3-4 plans)
-Status: Phase 97 discuss-phase complete. 97-CONTEXT.md and 97-DISCUSSION-LOG.md written with 11 gray areas auto-selected. Key decisions: (1) new `packages/skill-materializer` package, (2) symlink-first Hermes materialization matching production pattern, (3) Claude Code plugin format for ACP with host assumption rewriting, (4) no materialization for self-built core, (5) section-priority deterministic budget trim, (6) remove `skills` array from manifest.json, (7) add `index_to_descriptors()` to skill-registry, (8) new gate (35→36).
-Last activity: 2026-08-09 -- Phase 97 discuss-phase (auto mode): 11 gray areas identified and auto-selected
+Phase: 97 (skill-materialization) — PLAN COMPLETE
+Plan: 4 plans (97-01..97-04), 3 waves
+Status: Phase 97 plan-phase complete. 4 plans written across 3 waves. Wave 1 (97-01): materializer core — package scaffold, Hermes materializer (symlink-first, copy for scripts/), host assumption rewriter, ACP materializer (Claude Code plugin format + rewriting), three-separation routing manifest. Wave 2 (97-02 + 97-03, parallel): context budget injector (section-priority deterministic trim, 2K–20K token range) + skill-registry migration (index_to_descriptors) + manifest.json cleanup (remove 4 fake skills, update 7 test files). Wave 3 (97-04): gate registration (35→36), CLI, Hermes ACP integration test, e2e three-separation verification, phase completion.
+Last activity: 2026-08-09 -- Phase 97 plan-phase: 4 plans written, 3 waves, ready for implementation
 
-**Next command:** `/gsd-plan 97` for Phase 97 (Skill Materialization)
+**Next command:** `/gsd-execute 97-01` for Phase 97 Plan 01 (Materializer Core)
 
 ## Milestone v3.0 Overview
 
@@ -110,17 +110,19 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-09T21:00:00.000Z
-Stopped at: Phase 97 discuss-phase complete (97-CONTEXT.md + 97-DISCUSSION-LOG.md written, 11 gray areas auto-selected, ready for plan-phase)
+Last session: 2026-08-09T22:00:00.000Z
+Stopped at: Phase 97 plan-phase complete (4 plans written: 97-01..97-04, 3 waves, ready for implementation)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..04 + SAFE-05 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-96 complete, Phase 97 discuss complete, plan-phase next)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-96 complete, Phase 97 plan complete, implementation next)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-plan 97` for Phase 97 (Skill Materialization) — discuss-phase complete, ready for planning
+- `/gsd-execute 97-01` for Phase 97 Plan 01 (Materializer Core) — Wave 1, start here
+- `/gsd-execute 97-02` and `/gsd-execute 97-03` can run in parallel after 97-01 (Wave 2)
+- `/gsd-execute 97-04` after 97-02 and 97-03 (Wave 3, phase completion)
 - 或 `/gsd-autonomous` 自动推进 Phases 97-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点
