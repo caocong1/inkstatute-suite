@@ -37,6 +37,7 @@ from .auth import AuthContext, GatewayAuth, GatewayAuthError
 from .config import GatewayConfig
 from .event_buffer import RunEventBuffer
 from .feedback import GatewayFeedbackHandler, handle_submit_feedback_request
+from .login import GatewayLoginHandler
 from .sessions import GatewaySessionManager, build_set_cookie_header
 from .skills import GatewaySkillsHandler, handle_skills_request
 from .sse import GatewaySseStream, parse_last_event_id
@@ -49,6 +50,7 @@ JsonObject = dict[str, Any]
 # ---------------------------------------------------------------------------
 
 OPERATION_CREATE_SESSION = "create_session"
+OPERATION_LOGIN = "login"
 OPERATION_GET_SESSION = "get_session"
 OPERATION_LIST_SESSION_RUNS = "list_session_runs"
 OPERATION_CREATE_RUN = "create_run"
@@ -119,6 +121,7 @@ class GatewayApp:
         artifact_store: GatewayArtifactStore | None = None,
         feedback_handler: GatewayFeedbackHandler | None = None,
         skills_handler: GatewaySkillsHandler | None = None,
+        login_handler: GatewayLoginHandler | None = None,
     ) -> None:
         self._config = config
         self._runtime = runtime
@@ -130,6 +133,7 @@ class GatewayApp:
         self._artifact_store = artifact_store or GatewayArtifactStore()
         self._feedback_handler = feedback_handler or GatewayFeedbackHandler()
         self._skills_handler = skills_handler
+        self._login_handler = login_handler
 
     @property
     def config(self) -> GatewayConfig:
@@ -159,6 +163,10 @@ class GatewayApp:
     def skills_handler(self) -> GatewaySkillsHandler | None:
         return self._skills_handler
 
+    @property
+    def login_handler(self) -> GatewayLoginHandler | None:
+        return self._login_handler
+
     async def dispatch(
         self,
         method: str,
@@ -176,13 +184,24 @@ class GatewayApp:
 
         operation, path_params = route
 
+        body_dict = dict(body) if body is not None else {}
+
+        # The login endpoint is the ONLY route that bypasses require_auth.
+        # It is checked BEFORE the auth call — all other routes continue
+        # to require authentication.
+        if operation == OPERATION_LOGIN:
+            if self._login_handler is None:
+                return _not_implemented("login")
+            try:
+                return self._login_handler.handle_login(body_dict)
+            except GatewayError as exc:
+                return _error_response(exc.code, str(exc), status=exc.status, details=exc.details)
+
         # Auth is applied BEFORE routing to any handler — no bypass.
         try:
             ctx = self._auth.require_auth(headers)
         except GatewayAuthError as exc:
             return _error_response(exc.code, exc.message, status=exc.status)
-
-        body_dict = dict(body) if body is not None else {}
 
         try:
             if operation == OPERATION_CREATE_SESSION:
@@ -421,6 +440,10 @@ def _parse_route(method: str, path: str, base_path: str) -> tuple[str, dict[str,
     # POST /v1/sessions
     if method == "POST" and parts == ["sessions"]:
         return OPERATION_CREATE_SESSION, {}
+
+    # POST /v1/auth/login — unauthenticated login endpoint
+    if method == "POST" and parts == ["auth", "login"]:
+        return OPERATION_LOGIN, {}
 
     # GET /v1/sessions/{session_id}
     if method == "GET" and len(parts) == 2 and parts[0] == "sessions":
@@ -733,6 +756,7 @@ __all__ = [
     "OPERATION_GET_SESSION",
     "OPERATION_LIST_SESSION_RUNS",
     "OPERATION_LIST_SKILLS",
+    "OPERATION_LOGIN",
     "OPERATION_STREAM_RUN",
     "OPERATION_SUBMIT_APPROVAL",
     "OPERATION_SUBMIT_ELICITATION",
@@ -743,6 +767,7 @@ __all__ = [
     "GatewayDisabledError",
     "GatewayError",
     "GatewayFeedbackHandler",
+    "GatewayLoginHandler",
     "GatewaySkillsHandler",
     "GatewayUploadHandler",
 ]

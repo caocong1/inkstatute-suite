@@ -28,6 +28,7 @@ class GatewayConfig:
     max_run_create_bytes: int = 16 * 1024
     secret_refs: tuple[str, ...] = field(default_factory=tuple)
     default_tenant_id: str = "default"
+    rbac_enabled: bool = False
     metadata: JsonObject = field(default_factory=dict)
 
     @classmethod
