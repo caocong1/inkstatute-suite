@@ -4,9 +4,8 @@
  * Provides conversations signal + createConversation/refreshConversations.
  * Uses PlatformApiClient (gateway) for all Gateway calls.
  *
- * Tracer simplification: The full conversation list comes from the
- * Gateway's session list (to be implemented in Plan 93-03). For now,
- * conversations are tracked from createConversation() calls.
+ * refreshConversations() calls gateway.listSessionRuns() for the current
+ * session to load real conversation history (implemented in Plan 93-03).
  */
 import {
   createContext,
@@ -65,11 +64,30 @@ export const ConversationProvider: ParentComponent = (props) => {
 
   /**
    * Refresh conversations from the Gateway.
-   * Tracer: no-op (conversation list is built from createConversation calls).
-   * Plan 93-03 will implement this via gateway.getSession() or a session listing endpoint.
+   *
+   * If we have a current session, calls gateway.listSessionRuns() to get
+   * the run history for the session and maps runs to Conversation objects.
+   * This enables the home page's "最近对话" section to show real history.
    */
   async function refreshConversations(): Promise<void> {
-    // No-op for tracer
+    const sessionId = auth.sessionId();
+    if (!sessionId) return;
+    try {
+      const result = await gateway.listSessionRuns(sessionId) as {
+        runs?: Array<{ run_id?: string; turn_id?: string; created_at?: string }>;
+      };
+      if (result?.runs && Array.isArray(result.runs)) {
+        const convs: Conversation[] = result.runs.map((run) => ({
+          id: run.run_id ?? "",
+          title: run.turn_id ?? run.run_id ?? "",
+          created_at: run.created_at ?? new Date().toISOString(),
+          updated_at: run.created_at ?? new Date().toISOString(),
+        }));
+        setConversations(convs);
+      }
+    } catch {
+      // Gateway may not have the session or listSessionRuns may fail — keep existing list
+    }
   }
 
   const value: ConversationContextValue = {

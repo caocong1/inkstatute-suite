@@ -9,6 +9,10 @@
  * DocPreview is driven by state().artifacts. CitationPanel is driven by
  * state().citations (via groupCitations).
  *
+ * File upload: ChatPanel's onSend with attachments → uploadFile() → sendMessage(prompt, [attachment])
+ * Artifact download: DocPreview shows a download button when artifacts exist →
+ *   gateway.getArtifact() → webFileAdapter.saveFile()
+ *
  * SSE connection status indicators:
  * - isStreaming() → "正在思考…" pulsing indicator
  * - streamError() → "连接中断，正在重连…" error indicator
@@ -23,15 +27,49 @@ import {
   type CitationGroups,
 } from "@inkstatute/ui-core";
 import { SessionProvider, useSession } from "../contexts/SessionContext";
+import { gateway } from "../config/gateway";
+import { uploadFile } from "../lib/upload";
+import { webFileAdapter } from "../adapters/webFileAdapter";
 
 export const WorkspaceContent: Component = () => {
   const session = useSession();
   const [citeOpen, setCiteOpen] = createSignal(false);
+  const [downloadError, setDownloadError] = createSignal<string | null>(null);
 
   const artifact = () => session.state().artifacts[0] ?? null;
   const citationGroups = (): CitationGroups =>
     groupCitations(session.state().citations);
   const hasCitations = () => session.state().citations.length > 0;
+
+  /**
+   * Handle file attachment: upload via gateway, then send message with attachment.
+   */
+  async function handleSendWithAttachment(text: string, files: File[]): Promise<void> {
+    if (files.length === 0) {
+      await session.sendMessage(text);
+      return;
+    }
+    const attachments = await Promise.all(files.map((f) => uploadFile(f)));
+    await session.sendMessage(text, attachments);
+  }
+
+  /**
+   * Handle artifact download: call gateway.getArtifact(), then saveFile().
+   */
+  async function handleDownload(artifactId: string, name: string): Promise<void> {
+    try {
+      setDownloadError(null);
+      const result = await gateway.getArtifact(artifactId) as {
+        uri_ref?: string;
+        name?: string;
+      };
+      const uri = result.uri_ref ?? "";
+      const filename = result.name ?? name;
+      await webFileAdapter.save({ defaultPath: filename });
+    } catch {
+      setDownloadError("下载失败，请重试");
+    }
+  }
 
   return (
     <div class="ws">
@@ -68,6 +106,20 @@ export const WorkspaceContent: Component = () => {
           document={null}
           isStreaming={session.isStreaming()}
         />
+        <Show when={artifact()}>
+          <button
+            class="ws-download-btn"
+            type="button"
+            onClick={() => void handleDownload(artifact()!.artifact_id, artifact()!.name)}
+          >
+            下载文书
+          </button>
+        </Show>
+        <Show when={downloadError()}>
+          <div class="ws-download-error" role="alert">
+            {downloadError()}
+          </div>
+        </Show>
       </div>
       <Show when={hasCitations() && citeOpen()}>
         <CitationPanel
