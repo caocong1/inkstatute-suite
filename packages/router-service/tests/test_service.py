@@ -109,5 +109,52 @@ class TestRouterServiceRuleStrategy(unittest.TestCase):
         self.assertEqual(decision.metadata["router_service_version"], "0.1.0")
 
 
+class TestRouterServiceRealIndex(unittest.TestCase):
+    """Verify RouterService works with a real-index SkillRegistry."""
+
+    def test_real_index_strong_signal_produces_valid_decision(self) -> None:
+        """RouterService with a real-index SkillRegistry produces valid RouteDecision.
+
+        The primary_skill must be a real skill_id from the index (not a fake
+        name like 'case_qa' or 'contract_draft').
+        """
+        from _real_index_fixture import build_real_index_registry
+
+        registry = build_real_index_registry()
+        service = RouterService(
+            strategy=RouterStrategy.RULE,
+            skill_registry=registry,
+        )
+        # Strong-signal: court SMS → legal-court-sms
+        decision = service.decide(
+            {"message": "[法院短信] 您有新的送达文书，案号 (2025)京0105民初1234号"}
+        )
+        self.assertIsInstance(decision, RouteDecision)
+        self.assertEqual(decision.mode, "matched")
+        self.assertEqual(decision.primary_skill, "legal-court-sms")
+        self.assertEqual(decision.matched_rule, "court_sms")
+        self.assertAlmostEqual(decision.confidence, 0.95)
+
+    def test_real_index_skill_lookup(self) -> None:
+        """Real-index SkillRegistry can look up a skill by skill_id."""
+        from _real_index_fixture import build_real_index_registry
+
+        registry = build_real_index_registry()
+        # legal-court-sms is a real skill in the index
+        descriptor = registry.get_skill("legal-court-sms")
+        self.assertIsNotNone(descriptor)
+        self.assertEqual(descriptor.skill_id, "legal-court-sms")
+
+    def test_real_index_does_not_use_fake_names(self) -> None:
+        """The 4 fake skill names must NOT appear in real-index assertions."""
+        from _real_index_fixture import build_real_index_registry
+
+        registry = build_real_index_registry()
+        fake_names = {"case_qa", "contract_draft", "litigation_summary", "compliance_review"}
+        for skill in registry.list_skills():
+            # The fake names should not be skill_ids in the real index
+            self.assertNotIn(skill.skill_id, fake_names)
+
+
 if __name__ == "__main__":
     unittest.main()

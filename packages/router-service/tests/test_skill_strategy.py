@@ -208,5 +208,37 @@ class SkillStrategyFrozenModeTests(unittest.TestCase):
         self.assertIn(decision.mode, valid_modes)
 
 
+class SkillStrategyRealIndexTests(unittest.TestCase):
+    """Verify SKILL strategy works with real-index descriptors."""
+
+    def test_real_index_skill_lookup_by_id(self) -> None:
+        """SKILL strategy with real-index registry: get_skill returns a descriptor.
+
+        Verifies that ``get_skill('legal-court-sms')`` returns a real
+        descriptor from the index (not a fake name).
+        """
+        from _real_index_fixture import build_real_index_registry
+
+        registry = build_real_index_registry()
+        descriptor = registry.get_skill("legal-court-sms")
+        self.assertIsNotNone(descriptor)
+        self.assertEqual(descriptor.skill_id, "legal-court-sms")
+
+    def test_real_index_skill_strategy_decision(self) -> None:
+        """SKILL strategy with real-index registry produces a valid decision."""
+        from _real_index_fixture import build_real_index_registry
+
+        registry = build_real_index_registry()
+        service = RouterService(
+            strategy=RouterStrategy.SKILL,
+            skill_registry=registry,
+        )
+        decision = service.decide({"skill_id": "legal-court-sms"})
+        self.assertEqual(decision.mode, "matched")
+        self.assertEqual(decision.primary_skill, "legal-court-sms")
+        self.assertEqual(decision.confidence, 1.0)
+        self.assertEqual(decision.metadata["router_strategy"], "skill")
+
+
 if __name__ == "__main__":
     unittest.main()
