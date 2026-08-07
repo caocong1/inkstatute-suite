@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 100 discuss complete — context captured, 12 gray areas auto-selected, ready for plan
+stopped_at: Phase 100 plan complete — 4 plans written, 3 waves, ready for implementation
 last_updated: "2026-08-11T00:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 100 discuss-phase (auto mode). Loaded prior context (97-CONTEXT, 97-RESEARCH, 97-04-SUMMARY). Scouted codebase: lawyer-desktop Rust agent core (chat.rs turn loop, chat_tools.rs tool execution, llm/provider.rs LlmProvider trait, llm/openai_compat.rs streaming), packages/model-gateway (circuit_breaker, rate_limiter, cost_tracker, gateway), packages/backends/provider_model (openai/anthropic/ollama runners, transport abstraction, error normalization), packages/platform-runtime/context_assembler.py (budget trimming), packages/platform-contract/unified_events.py (Phase 88 event vocabulary). Identified 12 gray areas, all auto-selected with recommended options. Key decisions: async generator turn loop yielding unified events, always-stream with interleaved tool_call events (fixing 整轮静默), EventEmitter with seq+silence threshold, unified LlmProvider Protocol with StreamDelta union, AgentContextAssembler combining context_assembler+body_injector, scripted FixtureProvider, configurable max_turns (default 10), error recovery via tool_call.completed with error status, merge provider_model runners into agent-core, import model-gateway components directly, usage data in message.completed+run.state_changed, new packages/agent-core/ with dedicated gate. Created 100-CONTEXT.md and 100-DISCUSSION-LOG.md.
+last_activity: 2026-08-11 -- Phase 100 plan-phase. Read 100-CONTEXT.md, 100-RESEARCH.md, REQUIREMENTS.md (CORE-01/04/09), ROADMAP.md (Phase 100 success criteria), STATE.md, AGENTS.md, scripts/run_v2_gates.py (gate registration pattern), packages/model-gateway/src/ (circuit_breaker, rate_limiter, cost_tracker), packages/backends/provider_model/src/ (openai/anthropic/ollama runners, adapter, error_normalization), packages/platform-runtime/context_assembler.py, packages/platform-contract/unified_events.py + events.py + enums.py, packages/skill-materializer/body_injector.py. Created 4 plan files: 100-01-PLAN.md (Wave 1: scaffold+EventEmitter+config+gate 37→38), 100-02-PLAN.md (Wave 2: LlmProvider Protocol+StreamDelta+FixtureProvider+3 provider runners with streaming+tool calls+gateway integration), 100-03-PLAN.md (Wave 2: AgentContextAssembler+async turn loop with always-streaming+tool_call events+heartbeat+error recovery), 100-04-PLAN.md (Wave 3: e2e tests+silence threshold verification+phase completion). 3 waves: Wave 1 (100-01), Wave 2 (100-02, 100-03 parallel), Wave 3 (100-04). 27 tasks total across 4 plans.
 progress:
   total_phases: 17
   completed_phases: 12
-  total_plans: 54
+  total_plans: 58
   completed_plans: 54
   percent: 71
 ---
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 100 discuss complete — ready for plan
+**Current focus:** Phase 100 plan complete — ready for implementation
 
 ## Current Position
 
-Phase: 100 (agent-core-skeleton) — DISCUSS COMPLETE
-Status: Phase 100 discuss-phase completed (auto mode). 12 gray areas identified and auto-selected. 100-CONTEXT.md and 100-DISCUSSION-LOG.md created and committed. Ready for `/gsd-plan 100`.
-Last activity: 2026-08-11 -- Phase 100 discuss-phase (auto mode). Scouted lawyer-desktop Rust agent core, model-gateway, provider_model, context_assembler, unified events. 12 gray areas auto-selected.
+Phase: 100 (agent-core-skeleton) — PLAN COMPLETE
+Status: Phase 100 plan-phase completed. 4 plans written across 3 waves. 100-CONTEXT.md, 100-RESEARCH.md, 100-DISCUSSION-LOG.md, and 4 plan files (100-01 through 100-04) created and committed. Ready for implementation.
+Last activity: 2026-08-11 -- Phase 100 plan-phase. Created 4 plan files with 27 tasks total. Wave 1: 100-01 (scaffold+EventEmitter+config+gate). Wave 2: 100-02 (model layer) + 100-03 (context+turn loop) in parallel. Wave 3: 100-04 (e2e+completion).
 
-**Next command:** `/gsd-plan 100` (Phase 100: Agent Core Skeleton — Python async streaming turn loop)
+**Next command:** `/gsd-implement 100-01` (Wave 1: scaffold + EventEmitter + config + gate registration)
 
 ## Milestone v3.0 Overview
 
@@ -110,16 +110,16 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 ## Session Continuity
 
 Last session: 2026-08-11T00:00:00.000Z
-Stopped at: Phase 100 discuss complete — context captured, 12 gray areas auto-selected, ready for plan
+Stopped at: Phase 100 plan complete — 4 plans written, 3 waves, ready for implementation
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-99 complete, Phase 100 next)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-99 complete, Phase 100 plan complete)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-plan 100` (Phase 100: Agent Core Skeleton — Python async streaming turn loop)
+- `/gsd-implement 100-01` (Wave 1: scaffold + EventEmitter + config + gate registration)
+- 或 `/gsd-implement 100` 自动推进全部 4 plans (Wave 1 → Wave 2 parallel → Wave 3)
 - 或 `/gsd-autonomous` 自动推进 Phases 100-104
-- 或 `/gsd-autonomous --to 100` 只跑到"自研核心"阶段起点
