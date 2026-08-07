@@ -13,6 +13,12 @@ from .legal_risk import (
     LegalRiskLevel,
 )
 from .model_classifier import ModelClassificationResult, ModelClassifierPort
+from .mode_classifier import (
+    AgentMode,
+    ClassifyContext,
+    ClassifyResult,
+    ModeClassifierPort,
+)
 from .port import RouterPort
 from .service import RouterService
 from .soft_matcher import (
@@ -31,10 +37,14 @@ from .strong_signal import (
 from .tool_resolver import ToolResolutionMap, resolve_all_tool_refs, resolve_tool_refs
 
 __all__ = [
+    "AgentMode",
+    "ClassifyContext",
+    "ClassifyResult",
     "KeywordLegalRiskClassifier",
     "LegalRiskAssessment",
     "LegalRiskClassifierPort",
     "LegalRiskLevel",
+    "ModeClassifierPort",
     "ModelClassificationResult",
     "ModelClassifierPort",
     "RouterPort",
