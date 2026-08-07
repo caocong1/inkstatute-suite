@@ -2,346 +2,406 @@
 
 ## Milestones
 
-- Complete **V2 PRD Foundation** - Phases 1-8 completed by 2026-06-30; live Phase 5/8 human gates remain carried.
-- Complete **v1.1 Platform Foundation** - Phases 09-13 shipped 2026-06-30.
-- Complete **v1.2 Conversational Context and Memory Foundation** - Phases 14-19 shipped 2026-07-02 with accepted validation/operational tech debt.
-- Complete **v1.3 Production Memory System and Evaluation Spikes** - Phases 20-25 and 25.1 shipped 2026-07-02.
-  - Archive: [v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) | [v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md) | [v1.3-MILESTONE-AUDIT.md](milestones/v1.3-MILESTONE-AUDIT.md)
-- Complete **v1.4 Long-Term Memory Productization** - Phases 26-32 shipped 2026-07-03. Productized long-term memory with Hindsight backend, singleton wiring, and contract event observability. Audit passed (20/20 requirements).
-  - Archive: [v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md) | [v1.4-REQUIREMENTS.md](milestones/v1.4-REQUIREMENTS.md) | [v1.4-MILESTONE-AUDIT.md](milestones/v1.4-MILESTONE-AUDIT.md)
-- Complete **v1.5 V2 Acceptance Closure** - Phases 33-35 shipped 2026-07-03. Audited all unchecked V2 Active requirements, closed code gaps, produced acceptance readiness report. Audit passed (23/23 requirements). Autonomous closure READY; V2 acceptance BLOCKED ON HUMAN GATES (Phase 5 live WeCom UAT + Phase 8 five-workday lawyer trial).
-  - Archive: [v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md) | [v1.5-REQUIREMENTS.md](milestones/v1.5-REQUIREMENTS.md) | [v1.5-MILESTONE-AUDIT.md](milestones/v1.5-MILESTONE-AUDIT.md) | [v1.5-V2-ACCEPTANCE-READINESS.md](milestones/v1.5-V2-ACCEPTANCE-READINESS.md)
-- Complete **v1.6 M2 Multi-Backend & Platform Extensions** - Phases 36-44 shipped 2026-07-04. Codex + provider_model adapter prototypes, independent Router Service, Skill Registry read, conversation-read-view completion, Admin Console API, QQBot channel loop, and gate coverage meta-test. Audit passed (22/22 requirements, 19/19 gates green, 969 tests).
-  - Archive: [v1.6-ROADMAP.md](milestones/v1.6-ROADMAP.md) | [v1.6-REQUIREMENTS.md](milestones/v1.6-REQUIREMENTS.md) | [v1.6-MILESTONE-AUDIT.md](milestones/v1.6-MILESTONE-AUDIT.md)
-- Complete **v1.7 M3 Platform Extensions** - Phases 45-57 + 57.1 gap closure shipped 2026-07-06. Promoted adapter prototypes to production-grade, extended platform surface (MCP, model gateway, multi-agent, skill write + hybrid routing), added operator and lawyer-facing Web UI, and introduced RBAC + multi-tenant isolation. Audit passed (38/38 requirements, 24/24 gates green, 1,547+ tests).
-  - Archive: [v1.7-ROADMAP.md](milestones/v1.7-ROADMAP.md) | [v1.7-REQUIREMENTS.md](milestones/v1.7-REQUIREMENTS.md) | [v1.7-MILESTONE-AUDIT.md](milestones/v1.7-MILESTONE-AUDIT.md)
-- Complete **v1.8 QQBot Channel Production** - Phases 58-67 shipped 2026-07-09. Promoted QQBot from fixture-only proof to production-grade channel loop (signature, normalize, token, egress, rich media, session/ingress, adapter real IO, feedback+wakeup, smoke toolkit). Audit: gaps_found (host composition deferred; package-level 28/28 + 321 tests green). Live QQ smoke remains a human gate.
-  - Archive: [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
-- Complete **v1.9 QQBot Host Composition** - Phases 68-72 shipped 2026-07-10. Thin production webhook host, runtime registration, Protocol-path smoke hardening, controlled live HUMAN GATE. Audit passed (11/11 requirements).
-  - Archive: [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md)
-- Complete **v1.10 Operator Config Console** - Phases 73-78.1 shipped 2026-07-12. InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes.
-  - Audit: [v1.10-MILESTONE-AUDIT.md](v1.10-MILESTONE-AUDIT.md)
-- Complete **v1.11 Product Console** - Phases 79-87 shipped 2026-07-15. Product-grade operations control plane: runnable entry points, process orchestration, reports/logs/audit/health dashboards, session auth, product polish, and end-to-end smoke verification. Audit: tech_debt (27/27 requirements, 9/9 phases, 8/8 integration; no blockers).
-  - Archive: [v1.11-ROADMAP.md](milestones/v1.11-ROADMAP.md) | [v1.11-REQUIREMENTS.md](milestones/v1.11-REQUIREMENTS.md) | [v1.11-MILESTONE-AUDIT.md](milestones/v1.11-MILESTONE-AUDIT.md)
-
-## Phases
-
-- [x] **Phase 79: Entry Points & Threading Foundation** - Runnable `__main__.py` entry points + ThreadingHTTPServer decision/audit (ENTRY-01, ENTRY-02, ENTRY-03)
-- [x] **Phase 80: WeCom HTTP Host + Process Orchestration** - WeCom `http_server.py` + ProcessSupervisor control plane (ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05) (completed 2026-07-13)
-- [x] **Phase 81: Reports Dashboard** - ReportsAggregator over existing read models (OBS-01, OBS-02, OBS-03) (completed 2026-07-14)
-- [x] **Phase 82: Log Viewing** - Byte-offset tail-follow log viewer with privacy scrubbing (OBS-04, OBS-05, OBS-06) (completed 2026-07-14)
-- [x] **Phase 83: Contract Event Audit** - Paginated audit trail + trace_id reconstruction (OBS-07, OBS-08) (completed 2026-07-14)
-- [x] **Phase 84: Health & Gate Dashboard Enhancement** - Unified health/gate/flag dashboard with gate honesty (OBS-09, OBS-10) (completed 2026-07-14)
-- [x] **Phase 85: Login Session Auth** - HMAC-signed session cookies coexisting with Bearer auth (AUTH-01, AUTH-02, AUTH-03, AUTH-04) (completed 2026-07-14)
-- [x] **Phase 86: Product Polish** - Error pages, nav, responsive layout, one-click startup, env docs (POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05) (completed 2026-07-15)
-- [x] **Phase 87: Integration, Smoke & Gate Honesty** - Cross-phase verification, end-to-end smoke, gate-honesty audit (no direct requirement mapping; verifies all) (completed 2026-07-15)
-
-## Phase Details
-
-### Phase 79: Entry Points & Threading Foundation
-
-**Goal**: Every service is runnable as `python -m <pkg>` with configurable host/port, signal-handling graceful shutdown, and a ThreadingHTTPServer threading model that has been explicitly decided and audited for thread-safety of all shared mutable state before any feature work begins
-**Depends on**: Nothing new (existing pure handlers + env); first v1.11 phase
-**Requirements**: ENTRY-01, ENTRY-02, ENTRY-03
-**Success Criteria** (what must be TRUE):
-
-  1. Operator can start `admin-web-ui` and `admin-console-api` as standalone HTTP servers via `python -m <pkg>` (or entry script) with configurable host/port, SIGINT/SIGTERM graceful shutdown, and a feature-flag gate that refuses to boot when the service flag is OFF
-  2. Both services bind `ThreadingHTTPServer` (not single-threaded `HTTPServer`) so blocking operations (log reads, report aggregation, subprocess waits) do not freeze the UI; a socket-level integration test boots each service on an ephemeral port and asserts concurrent requests do not serialize
-  3. A threading-model decision artifact documents the ThreadingHTTPServer choice, and a thread-safety audit guards every shared mutable store (`OperatorConfigStore`, `feedback_queue`, `ContractLogReadModel`, process table) with per-store `threading.Lock` or copy-on-rebuild semantics — no unguarded read-modify-write cycle remains
-
-**Plans**: [79-PLAN.md](.planning/phases/79-entry-points-threading-foundation/79-PLAN.md)
-**UI hint**: no
-
-### Phase 80: WeCom HTTP Host + Process Orchestration
-
-**Goal**: WeCom service has a runnable HTTP host mirroring qqbot-service, and operators can start/stop/restart/inspect WeCom and QQBot host subprocesses from the console with graceful shutdown, config-save→restart wiring, and live health probes
-**Depends on**: Phase 79 (runnable entry points + threading model)
-**Requirements**: ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05
-**Success Criteria** (what must be TRUE):
-
-  1. WeCom service has a runnable HTTP host entry point (`http_server.py` + `__main__.py`) mirroring qqbot-service (POST callback + GET `/health`), so it can be orchestrated as a subprocess
-  2. Operator can view a process status panel showing WeCom and QQBot host state (running/stopped/unknown, PID, uptime, last exit code) in real time, and can start/stop/restart each host subprocess with SIGTERM→wait→SIGKILL escalation; secrets are passed to children via environment (never argv)
-  3. Saving channel config from the console orchestrates a restart of only the affected channel host (config-save atomic commit → graceful restart → apply), consistent with `apply_semantics=restart_required`; a half-written config is never applied to the child
-  4. Console probes each channel host's `/health` endpoint via urllib and displays live/unreachable status; process registry state persists across console restarts (re-attach to running children via PID file reconciliation, warning on orphaned entries without auto-killing unknown PIDs)
-
-**Plans**: TBD (plan-phase will define)
-**UI hint**: yes
-
-### Phase 81: Reports Dashboard
-
-**Goal**: Operators can view aggregate report statistics over a selectable time range, aggregated on-demand from existing data sources with bounded scanning and no new database
-**Depends on**: Phase 79 (flags/matrix + threading model)
-**Requirements**: OBS-01, OBS-02, OBS-03
-**Success Criteria** (what must be TRUE):
-
-  1. Operator can view a reports dashboard with aggregate statistics — session count, task completion rate, long-task success rate, and feedback distribution (up/down/none) — over a selectable time range (today/7d/30d)
-  2. Reports aggregate on-demand from existing data sources (`ContractLogReadModel`, feedback queue, gate summary) without introducing a new database or time-series store; a "last built at" timestamp and explicit refresh action document staleness
-  3. Report aggregation uses bounded scanning (tail-read with limits / reverse-iterate from EOF with early-exit for recent windows, not full-file in-memory load) to avoid OOM on large event logs; a perf test with a large fixture asserts bounded memory and sub-second response
-
-**Plans**: TBD (plan-phase will define)
-**UI hint**: yes
-
-### Phase 82: Log Viewing
-
-**Goal**: Operators can view runtime logs in the console with level filtering and keyword search via byte-offset HTTP polling, with every line privacy-scrubbed and no full-file reads
-**Depends on**: Phase 79 (flags/matrix + threading model), Phase 80 (host logging config)
-**Requirements**: OBS-04, OBS-05, OBS-06
-**Success Criteria** (what must be TRUE):
-
-  1. Operator can view runtime logs (contract events, runtime audit, feedback, child-process stdout/stderr) in the console with level filtering (DEBUG/INFO/WARN/ERROR) and keyword search, with a per-host source selector
-  2. Log viewing uses byte-offset tail-follow polling (seek + read-to-end + next_offset) so the browser refreshes without re-reading the full file; respects CSP (no EventSource/WebSocket, HTTP polling only); rotation-aware cursor resets on file shrink/inode change
-  3. Log viewer passes every line through existing privacy scrubbing (`scrub_contract_payload`) so secrets and raw legal payloads never appear in the console; a path-traversal guard validates service/file names against a fixed allowlist and rejects `..`/absolute/symlink paths
-
-**Plans**: TBD (plan-phase will define)
-**UI hint**: yes
-
-### Phase 83: Contract Event Audit
-
-**Goal**: Operators can browse AgentTurn and FeedbackEvent contract events in a paginated audit trail and reconstruct full traces by trace_id using existing conversation-read-view primitives
-**Depends on**: Phase 79 (flags/matrix); Phases 81/82 (trace_id cross-link)
-**Requirements**: OBS-07, OBS-08
-**Success Criteria** (what must be TRUE):
-
-  1. Operator can browse AgentTurn and FeedbackEvent contract events in a paginated audit trail view with timestamp, event type, session_id, and trace_id columns (reverse-chronological, cursor pagination, event-type filter)
-  2. Operator can click a trace_id to see the full trace reconstruction (all events sharing that trace_id) using existing conversation-read-view trace reconstruction primitives; a field allowlist displays refs (not resolved secrets) and every value passes through `scrub_contract_payload`/`html.escape`
-
-**Plans**: TBD (plan-phase will define)
-**UI hint**: yes
-
-### Phase 84: Health & Gate Dashboard Enhancement
-
-**Goal**: Operators see a unified health/gate/flag dashboard with service health from child `/health` endpoints, gate pass rate, feature flag states, and carried human gate status — preserving gate honesty
-**Depends on**: Phase 79 (flags/matrix), Phase 80 (health probes)
-**Requirements**: OBS-09, OBS-10
-**Success Criteria** (what must be TRUE):
-
-  1. Operator can view an enhanced health/gate dashboard showing service health (admin API, WeCom host, QQBot host), gate pass rate, feature flag states, and carried human gate status in one unified view
-  2. Health/gate dashboard preserves gate honesty — automated gate results and probe/smoke evidence never claim Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ live acceptance; human-gate rows render with a distinct non-green visual state ("HUMAN GATE — carried, not auto-closed") and no "mark human gate passed" control exists
-
-**Plans**: TBD (plan-phase will define)
-**UI hint**: yes
-
-### Phase 85: Login Session Auth
-
-**Goal**: Operators can log in via username/password (env-credential MVP) and receive an HMAC-signed session cookie that coexists with existing Bearer token auth through the same RBAC guard pipeline
-**Depends on**: Phase 79 (flags/matrix)
-**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04
-**Success Criteria** (what must be TRUE):
-
-  1. Operator can log in to the console via username/password (env-based credentials for MVP) and receive a signed session cookie that authenticates subsequent requests; logout invalidates the session
-  2. Session cookie auth coexists with existing Bearer token auth — Bearer header takes priority (API path unchanged), cookie auth is fallback for browser sessions; both paths resolve to a single `Identity` and pass through the same `RbacGuard` (no route bypasses the guard)
-  3. Session cookies are HMAC-signed with `RBAC_TOKEN_SECRET`, have configurable TTL, use `HttpOnly` + `SameSite` attributes, and rotate the session ID on successful login (session fixation prevention); the session store interface is extensible (env-credential MVP, future cred store swappable)
-  4. Login/logout flows are CSRF-protected (login CSRF prevention — CSRF token issued on GET `/login`, validated on POST, both session cookie and CSRF token rotated after login)
-
-**Plans**: TBD (plan-phase will define)
-**UI hint**: yes
-
-### Phase 86: Product Polish
-
-**Goal**: The console is product-grade — proper error pages, consistent navigation, responsive layout, one-click startup, and complete env documentation
-**Depends on**: Phases 79–85 (all pages must exist before polish)
-**Requirements**: POLISH-01, POLISH-02, POLISH-03, POLISH-04, POLISH-05
-**Success Criteria** (what must be TRUE):
-
-  1. Console has proper 404 and 500 error pages (SSR, escaped, with navigation back to dashboard) instead of raw stack traces or blank responses; no stack trace or secret leaks to the browser
-  2. Console navigation is consistent across all pages — dashboard, config, observability, and auth pages share a common nav header with active-state indication
-  3. Console layout is responsive and readable on common laptop/desktop widths (no horizontal scroll on 1280px; mobile not required)
-  4. A one-click startup script (`start-console.sh` or equivalent) launches admin-web-ui + admin-console-api with sensible defaults, env loading, and PID tracking
-  5. `.env.example` documents all new environment variables (ports, flags, credentials, log paths, session TTL) with inline comments explaining each variable
-
-**Plans**: 3 plansPlans:
-**Wave 1**
-
-- [ ] 86-01-PLAN.md — Error pages (404/500/413) + responsive CSS fixes
-- [ ] 86-03-PLAN.md — One-click startup script + .env.example auth var docs
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [ ] 86-02-PLAN.md — Nav active-state indication + auth-state-aware Login/Logout
-
-**UI hint**: yes
-
-### Phase 87: Integration, Smoke & Gate Honesty
-
-**Goal**: Cross-phase verification confirms the console works end-to-end as a product-grade operations control plane and that gate honesty, privacy, and stdlib-only constraints hold across all new surfaces
-**Depends on**: Phases 79–86 (all feature phases complete)
-**Requirements**: (no direct requirement mapping — verifies ENTRY-01..POLISH-05 end-to-end)
-**Success Criteria** (what must be TRUE):
-
-  1. An end-to-end smoke boots the console via the one-click startup script, logs in via session auth, starts a channel host subprocess, views its logs, browses the reports dashboard, and audits a contract event trace — all without errors and within stdlib-only constraints
-  2. Gate-honesty audit confirms no new page, report, or dashboard auto-claims Phase 5 WeCom UAT, Phase 8 lawyer trial, or QQ `--live` acceptance (`not_live_acceptance` preserved across all new surfaces)
-  3. Privacy/XSS audit confirms every new rendering path passes through `html.escape`/`scrub_contract_payload`, no token/secret/bearer literal appears in log files under tests, and every new state-changing route carries CSRF protection
-  4. Stdlib-only constraint audit confirms no new third-party dependency, no new DB/queue/SPA, and every new feature flag defaults OFF
-
-**Plans**: TBD (plan-phase will define)
-**UI hint**: no
-
-## Progress
-
-| Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|-----------|
-| 79. Entry Points & Threading Foundation | v1.11 | 0/1 | Planned    |  |
-| 80. WeCom HTTP Host + Process Orchestration | v1.11 | 1/1 | Complete    | 2026-07-13 |
-| 81. Reports Dashboard | v1.11 | 1/1 | Complete    | 2026-07-14 |
-| 82. Log Viewing | v1.11 | 3/3 | Complete | 2026-07-14 |
-| 83. Contract Event Audit | v1.11 | 3/3 | Complete | 2026-07-14 |
-| 84. Health & Gate Dashboard Enhancement | v1.11 | 2/2 | Complete | 2026-07-14 |
-| 85. Login Session Auth | v1.11 | 2/2 | Complete | 2026-07-14 |
-| 86. Product Polish | v1.11 | 3/3 | Complete | 2026-07-15 |
-| 87. Integration, Smoke & Gate Honesty | v1.11 | 1/1 | Complete    | 2026-07-15 |
-
-## Completed Milestones
+- 🚧 **v3.0 Unified Legal Core** — Phases 88-104 (in progress, started 2026-08-06)
+- ✅ **V2 PRD Foundation** — Phases 1-8 (2026-06-30; Phase 5/8 human gates carried)
+- ✅ **v1.1 Platform Foundation** — Phases 09-13 (2026-06-30)
+- ✅ **v1.2 Conversational Context and Memory Foundation** — Phases 14-19 (2026-07-02)
+- ✅ **v1.3 Production Memory System and Evaluation Spikes** — Phases 20-25.1 (2026-07-02)
+- ✅ **v1.4 Long-Term Memory Productization** — Phases 26-32 (2026-07-03)
+- ✅ **v1.5 V2 Acceptance Closure** — Phases 33-35 (2026-07-03)
+- ✅ **v1.6 M2 Multi-Backend & Platform Extensions** — Phases 36-44 (2026-07-04)
+- ✅ **v1.7 M3 Platform Extensions** — Phases 45-57.1 (2026-07-06)
+- ✅ **v1.8 QQBot Channel Production** — Phases 58-67 (2026-07-09)
+- ✅ **v1.9 QQBot Host Composition** — Phases 68-72 (2026-07-10)
+- ✅ **v1.10 Operator Config Console** — Phases 73-78.1 (2026-07-12)
+- ✅ **v1.11 Product Console** — Phases 79-87 (2026-07-15)
 
 <details>
-<summary>✅ v1.11 Product Console (Phases 79-87) — SHIPPED 2026-07-15</summary>
+<summary>✅ v1.x archives (Phases 1-87) — SHIPPED</summary>
 
-- [x] Phase 79: Entry Points & Threading Foundation (1/1 plans) — completed 2026-07-13
-- [x] Phase 80: WeCom HTTP Host + Process Orchestration (1/1 plans) — completed 2026-07-13
-- [x] Phase 81: Reports Dashboard (1/1 plans) — completed 2026-07-14
-- [x] Phase 82: Log Viewing (1/1 plans) — completed 2026-07-14
-- [x] Phase 83: Contract Event Audit (1/1 plans) — completed 2026-07-14
-- [x] Phase 84: Health & Gate Dashboard Enhancement (1/1 plans) — completed 2026-07-14
-- [x] Phase 85: Login Session Auth (1/1 plans) — completed 2026-07-14
-- [x] Phase 86: Product Polish (3/3 plans) — completed 2026-07-15
-- [x] Phase 87: Integration, Smoke & Gate Honesty (1/1 plans) — completed 2026-07-15
+All v1.x phase details, requirements, and audits are archived under `.planning/milestones/`.
+See `.planning/MILESTONES.md` for the consolidated history.
 
-**Full archive:** [v1.11-ROADMAP.md](milestones/v1.11-ROADMAP.md) | [v1.11-REQUIREMENTS.md](milestones/v1.11-REQUIREMENTS.md) | [v1.11-MILESTONE-AUDIT.md](milestones/v1.11-MILESTONE-AUDIT.md)
-
-**Key accomplishments:** Runnable `python -m` entry points with ThreadingHTTPServer; WeCom/QQBot process orchestration via admin console; reports/logs/audit/health dashboards reading from existing data sources (no new DB); HMAC-signed session auth coexisting with Bearer tokens; product polish (error pages, responsive nav, one-click startup); end-to-end smoke test with gate-honesty stamping. Stdlib-only constraint maintained throughout.
-
-**Carried human gates (not closed):** Phase 5 WeCom UAT, Phase 8 lawyer trial, QQ --live acceptance.
-
-</details>
-
-<details>
-<summary>✅ v1.10 Operator Config Console (Phases 73-78.1) — SHIPPED 2026-07-12</summary>
-
-- [x] Phase 73: Operator Config Foundation (3/3 plans) — completed 2026-07-10
-- [x] Phase 74: Admin Config API + RBAC (3/3 plans) — completed 2026-07-10
-- [x] Phase 75: Channel Config Apply (5/5 plans) — completed 2026-07-10
-- [x] Phase 76: Provider Registry + Model Catalog (4/4 plans) — completed 2026-07-11
-- [x] Phase 77: Vision Routing Runtime (4/4 plans) — completed 2026-07-11
-- [x] Phase 78: Console SSR, Docs & Gate Honesty (4/4 plans) — completed 2026-07-12
-- [x] Phase 78.1: Close gap — wire VisionRouter into turn runtime (3/3 plans) — completed 2026-07-12
-
-**Full archive:** [v1.10-MILESTONE-AUDIT.md](v1.10-MILESTONE-AUDIT.md)
-
-**Key accomplishments:** InkStatute-owned operator config for channels, providers/catalog, and vision routing without editing Hermes; refs-only store with Hermes filesystem ban; dual-knob channel enablement; SSRF-safe provider probe; vision routing runtime wired into `DefaultRunRuntime`; CSRF-protected SSR config pages; gate-honesty banners.
-
-</details>
-
-<details>
-<summary>✅ v1.9 QQBot Host Composition (Phases 68-72) — SHIPPED 2026-07-10</summary>
-
-- [x] Phase 68: Host Skeleton + Safety Baseline (3/3 plans) — completed 2026-07-10
-- [x] Phase 69: Runtime Registration / Wiring (3/3 plans) — completed 2026-07-10
-- [x] Phase 70: Webhook Composition Path (3/3 plans) — completed 2026-07-10
-- [x] Phase 71: Smoke Protocol-Path Hardening (3/3 plans) — completed 2026-07-10
-- [x] Phase 72: Controlled Live Integration (2/2 plans) — completed 2026-07-10
-
-**Full archive:** [v1.9-ROADMAP.md](milestones/v1.9-ROADMAP.md) | [v1.9-REQUIREMENTS.md](milestones/v1.9-REQUIREMENTS.md) | [v1.9-MILESTONE-AUDIT.md](milestones/v1.9-MILESTONE-AUDIT.md) | [v1.9-phases](milestones/v1.9-phases/)
-
-**Closed v1.8 accepted gaps:** production host webhook composition; smoke Protocol-path hardening; controlled live path (acceptance remains HUMAN GATE).
-
-</details>
-
-<details>
-<summary>✅ v1.8 QQBot Channel Production (Phases 58-67) — SHIPPED 2026-07-09</summary>
-
-- [x] Phase 58: v1.8 Pre-Implementation Safety — completed 2026-07-07
-- [x] Phase 59: Ed25519 Signature Verification + Validation Challenge — completed 2026-07-07
-- [x] Phase 60: QQ Event Normalization — completed 2026-07-07
-- [x] Phase 61: Access Token Manager — completed 2026-07-09
-- [x] Phase 62: QQ Egress Sender — Text + Markdown + Keyboard — completed 2026-07-09
-- [x] Phase 63: QQ Rich Media Inbound + Egress (P2) — completed 2026-07-09
-- [x] Phase 64: QQBotSessionRuntime + QQBotIngressRuntime — completed 2026-07-09
-- [x] Phase 65: Adapter Integration — Promote to Real IO — completed 2026-07-09
-- [x] Phase 66: Feedback Loop Parity + Interaction Recall — completed 2026-07-09
-- [x] Phase 67: One-Click Smoke-Test Toolkit — completed 2026-07-09
-
-**Full archive:** [v1.8-ROADMAP.md](milestones/v1.8-ROADMAP.md) | [v1.8-REQUIREMENTS.md](milestones/v1.8-REQUIREMENTS.md) | [v1.8-MILESTONE-AUDIT.md](milestones/v1.8-MILESTONE-AUDIT.md)
-
-</details>
-
-<details>
-<summary>✅ v1.7 M3 Platform Extensions (Phases 45-57.1) — SHIPPED 2026-07-06</summary>
-
-- [x] Phase 45: M3 Pre-Implementation Safety (4/4 plans) — completed 2026-07-06
-- [x] Phase 46: Streaming Events (A1) (1/1 plan) — completed 2026-07-06
-- [x] Phase 47: Artifact Return (A2) (3/3 plans) — completed 2026-07-06
-- [x] Phase 48: Multi-Provider Runners (A3) (3/3 plans) — completed 2026-07-06
-- [x] Phase 49: Session Memory Wiring (A4) (3/3 plans) — completed 2026-07-06
-- [x] Phase 50: MCP Connector Registry (B1) (3/3 plans) — completed 2026-07-06
-- [x] Phase 51: RBAC (C1) (3/3 plans) — completed 2026-07-06
-- [x] Phase 52: Skill Registry Write (B2) (2/2 plans) — completed 2026-07-06
-- [x] Phase 53: Hybrid Routing (B3) (2/2 plans) — completed 2026-07-06
-- [x] Phase 54: Model Provider Gateway (B4) (3/3 plans) — completed 2026-07-06
-- [x] Phase 55: Multi-Agent Runtime Adapter (B5) (1/1 plan) — completed 2026-07-06
-- [x] Phase 56: Multi-Tenant Isolation (C2) (2/2 plans) — completed 2026-07-06
-- [x] Phase 57: Admin Web UI + Lawyer Web Chat (C3 + C4) (1/1 plan) — completed 2026-07-06
-- [x] Phase 57.1: Gap Closure — TenantGuard wiring (1/1 plan) — completed 2026-07-07
-
-</details>
-
-<details>
-<summary>✅ v1.6 M2 Multi-Backend & Platform Extensions (Phases 36-44) — SHIPPED 2026-07-04</summary>
-
-- [x] Phase 36: M2 Pre-Implementation Safety
-- [x] Phase 37: Skill Registry Read
-- [x] Phase 38: Router Service
-- [x] Phase 39: Codex Adapter Prototype
-- [x] Phase 40: Provider Model Adapter Prototype
-- [x] Phase 41: Conversation Read View
-- [x] Phase 42: Admin Console API
-- [x] Phase 43: QQBot Channel Loop
-- [x] Phase 44: Gate Coverage Meta-Test
-
-**Full archive:** [v1.6-ROADMAP.md](milestones/v1.6-ROADMAP.md) | [v1.6-REQUIREMENTS.md](milestones/v1.6-REQUIREMENTS.md) | [v1.6-MILESTONE-AUDIT.md](milestones/v1.6-MILESTONE-AUDIT.md)
-
-</details>
-
-<details>
-<summary>✅ v1.5 V2 Acceptance Closure (Phases 33-35) — SHIPPED 2026-07-03</summary>
-
-- [x] Phase 33: V2 Acceptance Audit
-- [x] Phase 34: Gap Closure
-- [x] Phase 35: Acceptance Readiness Report
-
-**Full archive:** [v1.5-ROADMAP.md](milestones/v1.5-ROADMAP.md) | [v1.5-REQUIREMENTS.md](milestones/v1.5-REQUIREMENTS.md) | [v1.5-MILESTONE-AUDIT.md](milestones/v1.5-MILESTONE-AUDIT.md) | [v1.5-V2-ACCEPTANCE-READINESS.md](milestones/v1.5-V2-ACCEPTANCE-READINESS.md)
-
-</details>
-
-<details>
-<summary>✅ v1.4 Long-Term Memory Productization (Phases 26-32) — SHIPPED 2026-07-03</summary>
-
-**Full archive:** [v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md) | [v1.4-REQUIREMENTS.md](milestones/v1.4-REQUIREMENTS.md) | [v1.4-MILESTONE-AUDIT.md](milestones/v1.4-MILESTONE-AUDIT.md)
-
-</details>
-
-<details>
-<summary>✅ v1.3 Production Memory System and Evaluation Spikes (Phases 20-25.1) — SHIPPED 2026-07-02</summary>
-
-**Full archive:** [v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md) | [v1.3-REQUIREMENTS.md](milestones/v1.3-REQUIREMENTS.md) | [v1.3-MILESTONE-AUDIT.md](milestones/v1.3-MILESTONE-AUDIT.md)
-
-</details>
-
-<details>
-<summary>✅ v1.2 Conversational Context and Memory Foundation (Phases 14-19) — SHIPPED 2026-07-02</summary>
-
-</details>
-
-<details>
-<summary>✅ v1.1 Platform Foundation (Phases 09-13) — SHIPPED 2026-06-30</summary>
-
-</details>
-
-<details>
-<summary>✅ V2 PRD Foundation (Phases 1-8) — COMPLETED 2026-06-30</summary>
-
-Live Phase 5 WeCom UAT and Phase 8 five-workday lawyer trial remain carried human gates.
+Carried human gates from v1.x (NOT closed by v3.0):
+- Phase 5 live WeCom UAT operator confirmation
+- Phase 8 five-workday lawyer trial acceptance
+- Operator `--live` QQ OpenAPI acceptance evidence
 
 </details>
 
 ---
 
-*Roadmap updated: 2026-07-15 — v1.11 Product Console shipped (Phases 79–87)*
+## 🚧 v3.0 Unified Legal Core (In Progress)
+
+**Milestone Goal:** 一套法律能力核心，通过同一套事件词汇同时服务所有客户端（web / 桌面 / 移动浏览器 / WeCom / QQ）和所有 agent 后端（Hermes / Codex / Claude Code / 墨律自研），并让 396 个真实法律 skill 首次进入平台。
+
+**Source:** `docs/requirements/V3-PRD.md` · **Evidence:** `.planning/research/V3-SELECTION.md`
+
+**Stages:**
+
+| 阶段 | Phases | 完成后的状态 |
+|---|---|---|
+| A 协议底座 | 88-90 | Hermes 可通过 ACP 被平台驱动 |
+| B 通道统一 | 91-95 | **律师可在 web / 桌面 / WeCom / QQ 四处用同一套能力** |
+| C 能力层 | 96-99 | **396 个真实法律 skill 首次进入平台** |
+| D 自研核心 | 100-104 | 心脏换成自研，通道层零改动 |
+
+**关键路径：** 88 → 89 → 90 → 91 → 92 → 93（走完即有可用 Web 产品）
+
+## Phases
+
+### 阶段 A — 协议底座
+
+- [ ] **Phase 88: Unified Event Contract** - ACP 同构的统一事件词汇 + Schema/绑定 + 降级规则 + V2 契约保持 (EVT-01..06)
+- [ ] **Phase 89: ACP Backend Client** - Python ACP client 驱动 hermes acp 与第二后端，子进程生命周期 (ACP-01, ACP-02, ACP-03, ACP-06)
+- [ ] **Phase 90: ACP Event Bridge & Output Boundary** - 双向映射 + 输出边界 + 权限安全默认 (ACP-04, ACP-05, ACP-07, SAFE-02, SAFE-03)
+
+### 阶段 B — 通道统一
+
+- [ ] **Phase 91: Unified Gateway** - 多租户 HTTP+SSE 网关，取代 platform_api 与 lawyer-web-chat 的重叠 (GW-01..06)
+- [ ] **Phase 92: Shared UI Core** - 从 lawyer-desktop 抽取 @inkstatute/ui-core，chat UI 单一实现 (UI-01, UI-02, UI-03, UI-06)
+- [ ] **Phase 93: Web Client** - 响应式 Web 客户端（桌面 + 移动浏览器） (UI-04)
+- [ ] **Phase 94: Desktop Client** - Tauri 外壳复用，invoke() → Gateway，离线只读 (UI-05)
+- [ ] **Phase 95: Bot Channel Degradation** - WeCom/QQ 改为 Gateway 消费者 + 非流式降级 (BOT-01, BOT-02, BOT-03)
+
+### 阶段 C — 能力层
+
+- [ ] **Phase 96: Real Skill Index** - 真实索引 396 个 SKILL.md，双仓合并与冲突模型 (SKILL-01..04, SAFE-05)
+- [ ] **Phase 97: Skill Materialization** - 按后端物化，三分离，废弃假 manifest skill 源 (SKILL-05, SKILL-06, SKILL-09)
+- [ ] **Phase 98: Real-Index Routing** - 路由换真实索引 + 移植强信号规则与三模式判定 (SKILL-07, SKILL-08)
+- [ ] **Phase 99: Practice Profile** - CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈 (PROF-01, PROF-02, PROF-03)
+
+### 阶段 D — 自研核心
+
+- [ ] **Phase 100: Agent Core Skeleton** - Python async 流式 turn loop（工具轮也流式）+ 上下文预算 + 模型层 (CORE-01, CORE-04, CORE-09)
+- [ ] **Phase 101: Agent Core Tools** - 工具层 + Word 原生修订 docx (CORE-02, CORE-03)
+- [ ] **Phase 102: Legal Guardrail Port** - prompt 装配 / tool_leak / citation 审计 / 四护栏移植 (CORE-05..08, SAFE-01, SAFE-04)
+- [ ] **Phase 103: Dual Entry Points** - in-process BackendAdapter + inkstatute-agent acp (CORE-10)
+- [ ] **Phase 104: Legacy Convergence** - 退役 ~5,465 行存量 + gate 体系更新 (CONV-01..05, SAFE-06)
+
+---
+
+## Phase Details
+
+### Phase 88: Unified Event Contract
+
+**Goal**: 平台有一套与 ACP v1 `session/update` 同构的统一事件词汇，能同时承载客户端 SSE 与后端 ACP 两条链路，且每类事件都定义了 bot 非流式降级行为；V2 的 5 个落库 schema 与 28 个 gate 完全不受影响
+**Depends on**: Nothing (first v3.0 phase)
+**Requirements**: EVT-01, EVT-02, EVT-03, EVT-04, EVT-05, EVT-06
+**Success Criteria** (what must be TRUE):
+
+  1. `packages/platform-contract` 导出 13 类统一事件（`session.started` / `message.delta` / `message.completed` / `thought.delta` / `tool_call.started|delta|completed` / `plan.updated` / `phase.changed` / `elicitation.requested` / `permission.requested` / `artifact.created` / `citation.recorded` / `run.state_changed` / `error`），每类都有 JSON Schema、Python 绑定、TypeScript 绑定，且 schema 校验测试全过
+  2. `RunEvent` 被重新规格化为统一事件的承载体，保留 `occurred_at` / `ingested_at` / `seq`；乱序回放测试与"按 `seq` 从任意断点续传不重复不丢失"测试通过
+  3. 澄清提问契约支持 2-4 题、单选 / 多选 / 自由文本，字段语义与 `ai-for-china-legal/shared/inkstatute-integration/ASK-USER-PROTOCOL.md` 一致（含 `allow_multiple`），并能与 V2 `RunInterrupt` 的 `interrupt_id` / `resume_state_ref` 互转
+  4. 五相进度（research → intake → retrieval → draft → review）契约存在，且有到 thinking / tool / streaming / review 的映射表与测试
+  5. 每类事件的 bot 降级行为（缓冲 / 投递 / 丢弃 / 折叠为业务化提示）在代码中声明且可测——给定一串事件，聚合器产出确定的最终投递内容
+  6. 现有 28 个 gate 全绿，V2 的 5 个 schema 字段无一改动或删除
+
+**Plans**: TBD (est. 3-4)
+**UI hint**: no
+
+### Phase 89: ACP Backend Client
+
+**Goal**: 平台能以 Python ACP client 驱动任意 ACP agent 作为后端，`hermes acp` 生产可用，并有第二个 ACP 后端跑通同一契约以证明可替换性；子进程生命周期受控
+**Depends on**: Phase 88
+**Requirements**: ACP-01, ACP-02, ACP-03, ACP-06
+**Success Criteria** (what must be TRUE):
+
+  1. `packages/acp-client` 实现 `BackendAdapter` 的 9 方法 Protocol，基于 PyPI `agent-client-protocol`，锁定协议 v1 并在 `initialize` 做版本与能力协商；不满足所需能力的 agent 被明确拒绝而非静默降级
+  2. `backend_id="hermes"` 通过 `hermes acp` 可用：能创建会话、发送 prompt、收到流式 `session/update`、取消、关闭；含 Hermes 版本兼容矩阵与 `bootstrap_check`
+  3. 第二个 ACP 后端（`codex-acp` 或 `claude-agent-acp`）跑通同一条测试路径，证明换 `backend_id` 不需要改任何调用方代码
+  4. 子进程生命周期受控：会话结束回收、超时回收、崩溃可重启且不泄漏进程；有测试断言无孤儿进程
+  5. 契约暴露 `backend_process_mode`（`per_session` / `pooled` / `remote`），当前实现 `per_session`，其余枚举值存在但未实现且被显式标记
+  6. 无网络/无外部 agent 的 CI 环境下，用 fixture ACP agent（本仓自带的 echo agent）跑通全部测试
+
+**Plans**: TBD (est. 3-4)
+**UI hint**: no
+
+### Phase 90: ACP Event Bridge & Output Boundary
+
+**Goal**: ACP 事件与统一事件之间双向无损映射，且输出边界与权限安全默认在这个桥上强制执行——后端噪声与危险权限请求不可能穿过
+**Depends on**: Phase 89
+**Requirements**: ACP-04, ACP-05, ACP-07, SAFE-02, SAFE-03
+**Success Criteria** (what must be TRUE):
+
+  1. ACP `session/update` 的每个变体（`agent_message_chunk` / `agent_thought_chunk` / `tool_call_update` / `plan` / `usage_update` 等）与统一事件双向映射，往返测试语义无损
+  2. ACP `elicitation/create` 与 `session/request_permission` 正确映射为 `elicitation.requested` / `permission.requested`，用户答复能正确回注到 ACP 侧
+  3. 输出边界在桥上强制执行：给定一组后端 meta / gateway / system / update / command / help / `available_commands_update` / `terminal` 类内容的 fixture，全部被阻断或改写为 InkStatute 业务化提示，无一到达普通用户事件流
+  4. 权限安全默认：`terminal` / `execute_code` 类权限请求被显式拒绝或上抛为用户审批，**服务端不得默认 allow**；有测试断言不存在自动 `allow_once` 路径
+  5. secrets 不出现在任何契约事件、日志或落库记录中；ACP 子进程凭据仅经环境注入；有隐私扫描测试
+  6. 契约日志保持 reference-first（`raw_payload_ref`），不存敏感全文
+
+**Plans**: TBD (est. 3)
+**UI hint**: no
+
+### Phase 91: Unified Gateway
+
+**Goal**: 全项目只有一个面向客户端的入口——多租户 HTTP + SSE Gateway，`apps/platform_api` 与 `services/lawyer-web-chat` 的职责重叠被消除
+**Depends on**: Phase 90
+**Requirements**: GW-01, GW-02, GW-03, GW-04, GW-05, GW-06
+**Success Criteria** (what must be TRUE):
+
+  1. `services/gateway`（由 `apps/platform_api` 升级而来）提供全部端点：`/v1/sessions`、`/v1/sessions/{id}`、`/v1/sessions/{id}/runs`、`/v1/runs/{id}`、`/v1/runs/{id}/events`(SSE)、`/v1/runs/{id}/elicitation`、`/v1/runs/{id}/approvals`、`/v1/artifacts/{id}`、`/v1/uploads`、`/v1/feedback`、`/v1/skills`，且有 OpenAPI 文档
+  2. SSE 流式传输统一事件；客户端带 `Last-Event-ID` 重连后从正确 `seq` 续传，集成测试断言不重复不丢失
+  3. 鉴权可用：RBAC + 会话 cookie（web/桌面）与 Bearer token（bot/程序化）；租户校验生效；自用形态可用单租户默认值但契约字段不省略
+  4. 附件上传返回 `attachment_ref`、产物下载经 `artifact_id`，均 reference-first 且需鉴权 + 租户校验；跨租户访问被拒
+  5. `services/lawyer-web-chat` 的能力（SSE 编码、会话鉴权、多设备会话列表、上传、反馈）已在 Gateway 中等价可用，旧服务标记 deprecated
+  6. `ChannelAdapter.verify_and_ack` 已降级为可选 capability，不实现它的通道适配器仍能通过 Protocol 校验与 gate
+
+**Plans**: TBD (est. 4-5)
+**UI hint**: no
+
+### Phase 92: Shared UI Core
+
+**Goal**: 存在一个共享 SolidJS 组件包，chat 相关 UI 在全项目只有一份实现，且它消费统一事件流而不是任何平台专属 IPC
+**Depends on**: Phase 91
+**Requirements**: UI-01, UI-02, UI-03, UI-06
+**Success Criteria** (what must be TRUE):
+
+  1. `packages/ui-core` 存在，包含从 `lawyer-desktop` 迁入的组件与墨律三主题（`molv-tokens.css` / `molv-base.css`，`data-theme="a|b|c"`），且不依赖任何 `@tauri-apps/*` 包
+  2. 统一事件流客户端（SSE consumer + 渲染状态机）在 `ui-core` 内实现一次，能消费 Phase 88 定义的全部 13 类事件；有 fixture 事件流驱动的渲染测试
+  3. 流式对话、ask_user 澄清卡片（单选/多选/自由文本）、文书预览、引用面板、五相进度全部在 `ui-core` 内实现并可独立测试
+  4. `packages/platform-sdk-ts` 生成统一事件词汇的 TS 绑定，`ui-core` 使用它而非手写类型
+  5. 全项目 grep 不到第二份 chat 消息列表 / 流式渲染 / ask_user 卡片实现；`apps/web_chat` 原型渲染器被标记 deprecated
+  6. `ui-core` 有构建产物与类型声明，可被 `apps/web` 与 `apps/desktop` 同时依赖
+
+**Plans**: TBD (est. 4)
+**UI hint**: yes
+
+### Phase 93: Web Client
+
+**Goal**: 律师可以打开浏览器（桌面或手机）登录墨律，完成一轮完整的法律任务，看到流式回复、澄清卡片、文书产物与引用
+**Depends on**: Phase 92
+**Requirements**: UI-04
+**Success Criteria** (what must be TRUE):
+
+  1. `apps/web` 存在并可构建运行，使用 `packages/ui-core`，通过 Gateway HTTP/SSE 与平台通信，零自有 chat UI 代码
+  2. 桌面浏览器下可完成：登录 → 新建会话 → 发送任务（含附件上传）→ 看到流式回复与五相进度 → 回答澄清卡片 → 下载产物 → 提交反馈
+  3. 移动浏览器下同一流程可用，布局响应式（无横向滚动、触摸目标可点、澄清卡片可用）
+  4. 断线重连后事件流从正确位置续传，界面不重复渲染已收到的内容
+  5. 会话在多设备间可见（同一租户/用户在另一浏览器登录能看到会话列表与历史）
+  6. 端到端测试覆盖上述主流程（可用 fixture 后端，不依赖真实 LLM）
+
+**Plans**: TBD (est. 3-4)
+**UI hint**: yes
+
+### Phase 94: Desktop Client
+
+**Goal**: 桌面 App 复用同一份 UI 与同一个 Gateway，不再持有自己的 agent 逻辑；离线时可只读历史与已生成文书
+**Depends on**: Phase 92
+**Requirements**: UI-05
+**Success Criteria** (what must be TRUE):
+
+  1. `apps/desktop` 存在，由 `lawyer-desktop` 的 Tauri 外壳迁入，使用 `packages/ui-core`，Windows 与 macOS 可构建
+  2. 原 57 个 `invoke()` 调用点中，凡属于 agent / 会话 / 消息 / 技能 / 文档生成的，全部改为 Gateway HTTP/SSE；仅保留桌面专属能力（文件对话框、拖放、自动更新、本地工作区索引）为 Tauri 命令
+  3. 桌面端不再包含 agent loop、LLM provider 调用、skill 加载或 MCP client——这些能力全部来自平台
+  4. 离线状态下应用可启动，能查看历史会话与已下载的产物文件，发起新任务时给出明确的"需要联网"提示而非静默失败
+  5. 本地工作区 FTS5 索引作为桌面专属增强保留，其检索结果可作为附件引用提交给平台
+  6. 桌面端与 Web 端在同一任务上表现一致（同样的事件、同样的澄清卡片、同样的产物）
+
+**Plans**: TBD (est. 4)
+**UI hint**: yes
+
+### Phase 95: Bot Channel Degradation
+
+**Goal**: WeCom 与 QQ 通道复用同一事件流并正确降级为非流式，现有生产行为一步不退
+**Depends on**: Phase 91
+**Requirements**: BOT-01, BOT-02, BOT-03
+**Success Criteria** (what must be TRUE):
+
+  1. 事件降级层存在：给定一串统一事件，产出 (a) 一条最终投递消息、(b) 若干"仍在处理"业务化中间推送、(c) 产物文件投递、(d) 澄清与审批的模板卡片；降级规则来自 Phase 88 的声明且有测试
+  2. `services/wecom-service` 与 `services/qqbot-service` 改为 Gateway 事件流消费者，源码中不再存在直接的 agent/backend 调用
+  3. WeCom 现有行为不回退：5 秒 ACK、AES-CBC 验签解密、模板卡片、媒体上传下载、幂等与重试——现有测试全绿
+  4. QQ 现有行为不回退：ED25519 验签、回调校验 op=13、webhook 端口约束、幂等——现有 28 个 qqbot 测试文件全绿
+  5. 同一条任务从 WeCom 发起，律师收到的内容与 Web 端最终结果语义一致（答复 + 产物 + 澄清 + 反馈卡片）
+  6. 后端 meta / gateway / system 噪声在 bot 通道同样不可见（输出边界在 Gateway 与降级层双重生效）
+
+**Plans**: TBD (est. 3-4)
+**UI hint**: no
+
+### Phase 96: Real Skill Index
+
+**Goal**: 396 个真实法律 SKILL.md 首次进入平台视野——平台能在不修改任一 skill 仓的前提下生成机器可读索引
+**Depends on**: Phase 90
+**Requirements**: SKILL-01, SKILL-02, SKILL-03, SKILL-04, SAFE-05
+**Success Criteria** (what must be TRUE):
+
+  1. `packages/skill-index` 能扫描 vendored 的 `ai-for-china-legal`（345 个 SKILL.md）与 `legal-skills`（51 个 SKILL.md），产出 `skill-index.json`，总数与实测一致
+  2. 索引过程**只读**——有测试断言扫描前后 skill 仓文件的 mtime 与内容哈希不变
+  3. 索引正确区分约 60 个编排入口与约 285 个叶子子技能，父子关系正确（从目录结构 + `plugin.json` + 编排入口正文三方交叉验证）
+  4. 每条索引记录含 `token_estimate`、`declared_gates`、`referenced_resources`、`practice_profile_dependency`、`host_assumptions`、`required_scripts`、`source_repo`、`license`
+  5. 双仓合并生效：命名空间隔离、上游 skill 加 `legal-` 前缀、四态冲突分类（`in-sync` / `upstream-changed` / `both-changed` / `local-missing`）可产出报告
+  6. 索引器对上游目录结构变化容错——缺失 frontmatter、缺失 `plugin.json`、非常规嵌套都不导致崩溃，而是产出带警告的记录
+
+**Plans**: TBD (est. 3-4)
+**UI hint**: no
+
+### Phase 97: Skill Materialization
+
+**Goal**: 一份 skill 语料能被三种后端各自消费——平台建的是索引 + 物化器，而不是第四份 skill 拷贝
+**Depends on**: Phase 96
+**Requirements**: SKILL-05, SKILL-06, SKILL-09
+**Success Criteria** (what must be TRUE):
+
+  1. 物化器能把语料落到 Hermes profile 布局（symlink 优先、脚本类 copy），且 `hermes acp` 能加载物化产物中的 skill（实测验证，不是推断）
+  2. 物化器能把语料落到 ACP agent skills 布局，并按目标后端改写宿主假设（`/plugin:skill` → 自然语言触发、`ask_user` → `elicitation`）
+  3. 自研 core 路径不需物化——直接读索引 + 按需读正文
+  4. 元数据 / 正文 / 工具依赖三分离在代码中体现：路由只用索引，正文只在执行时按需注入，工具依赖由各后端各自满足
+  5. 正文注入受上下文预算约束——给定预算，注入器能在 2K–20K token 的 skill 正文中做出确定性取舍并记录被裁剪的部分
+  6. `solutions/lawfirm/manifest.json` 不再包含 4 条手写 skill 元数据；manifest 只保留 persona / output_policy / MCP / industry_context / secret_templates，且 `solution-loader` 与 `skill-registry` 的测试相应更新后全绿
+
+**Plans**: TBD (est. 3-4)
+**UI hint**: no
+
+### Phase 98: Real-Index Routing
+
+**Goal**: 路由基于 396 个真实 skill 而非 4 条假元数据，且继承两处已在生产验证过的路由产品知识
+**Depends on**: Phase 97
+**Requirements**: SKILL-07, SKILL-08
+**Success Criteria** (what must be TRUE):
+
+  1. `packages/router-service` 的数据源换成真实 skill 索引；RULE / SKILL / HYBRID 三策略与法律风险分级保留且测试全绿
+  2. `lawfirm-profile/scripts/router.py` 的 12 条强信号确定性正则（法院短信、判决书、新案件、docx 合同等）已移植，且用原 router 的输入输出作为对拍集验证行为不回退
+  3. 触发短语软匹配阈值 0.4、置信度 <0.6 标歧义、`gate_before` = ask-user-enforcement、`gate_after` = legal-de-ai-polish 的语义保留
+  4. `lawyer-desktop` 的 Chat / Draft / Evidence 三模式判定与 continue / switch / aside 动作已移植，含 LLM 分类失败时的规则兜底
+  5. 路由决策产出 `RouteDecision` 契约事件并写决策日志，可用于后续 `route_mismatch` 反馈关联
+  6. 给定一组真实律师任务样本，路由能命中具体的叶子子技能（而不是只能命中 4 个假 skill 名）
+
+**Plans**: TBD (est. 3)
+**UI hint**: no
+
+### Phase 99: Practice Profile
+
+**Goal**: 约 50 个依赖 `CLAUDE.md` 执业配置的 skill 能在平台上正确工作，配置成为平台侧的多租户数据而非文件系统里的模板
+**Depends on**: Phase 98
+**Requirements**: PROF-01, PROF-02, PROF-03
+**Success Criteria** (what must be TRUE):
+
+  1. 执业配置在平台侧建模并按租户存储：审查立场（甲方/乙方各自的责任限制、违约金、知识产权、数据保护、期限终止、管辖、交易破坏者）、升级矩阵（金额阈值 + 审批层级 + 自动升级触发）、文书风格、管辖识别
+  2. 执行时执业配置被注入 skill 上下文，覆盖索引中标记了 `practice_profile_dependency` 的全部 skill
+  3. 未配置时降级"临时模式"：使用通用默认值，且每个输出被标记 `[临时模式]`，有测试断言标记不会遗漏
+  4. 冷启动访谈可通过 `elicitation.requested` 完成——多轮 2-4 题采集，答案写回租户执业配置
+  5. 执业配置的读写经 RBAC 授权，跨租户访问被拒
+  6. 执业配置不含 secrets，且不进入契约事件日志
+
+**Plans**: TBD (est. 3)
+**UI hint**: no
+
+### Phase 100: Agent Core Skeleton
+
+**Goal**: 存在一个 Python 自研 agent 核心骨架，其流式表现优于被移植的 Rust 原版——工具轮期间客户端不会经历整轮静默
+**Depends on**: Phase 97
+**Requirements**: CORE-01, CORE-04, CORE-09
+**Success Criteria** (what must be TRUE):
+
+  1. `packages/agent-core` 存在，实现 async 流式 turn loop，产出 Phase 88 的统一事件；有多轮工具编排与轮次上限
+  2. **工具轮流式**：工具调用期间持续产出 `thought.delta` 与 `tool_call.started|delta|completed`，测试断言从提交到最终回复之间不存在超过阈值的事件静默期（这是对 `lawyer-desktop` 现状缺陷的修复）
+  3. 上下文预算与裁剪策略生效：给定 token 预算与一组 skill 正文（2K–20K token）+ 历史，装配器产出确定性的上下文并记录被裁剪内容
+  4. 模型层由 `packages/backends/provider_model` 归并而来，支持 OpenAI 兼容 / Anthropic / Ollama，流式与工具调用在各 provider 间归一
+  5. 模型层复用 `packages/model-gateway` 的熔断 / 限流 / 成本追踪，`usage` 数据进入事件流
+  6. 全部测试可在无外部 LLM 的情况下用 fixture provider 运行
+
+**Plans**: TBD (est. 4)
+**UI hint**: no
+
+### Phase 101: Agent Core Tools
+
+**Goal**: 自研核心具备完成真实法律任务所需的工具，包括墨律最难也最值钱的产出——带 Word 原生修订的合同审查稿
+**Depends on**: Phase 100
+**Requirements**: CORE-02, CORE-03
+**Success Criteria** (what must be TRUE):
+
+  1. 工具层实现并可被 turn loop 调用：澄清提问（映射 `elicitation.requested`）、法规检索、文件读取、文档生成、MCP client（复用 `packages/mcp-registry`）
+  2. 工具结果正确回注 turn loop，多轮工具编排可用；工具失败不导致整轮崩溃而是产出 `error` 事件并可恢复
+  3. Word 原生修订 docx 产出成功：直接复用 `lawfirm-profile/scripts/contract_review_trackchanges.py`（41,185 字节）的能力，**不重写**；产出的 docx 在 Word 中显示为原生修订标记
+  4. 产物以 `artifact.created` 事件发出，`kind` 正确区分 `docx` 与 `trackchanges_docx`，并可经 Gateway `/v1/artifacts/{id}` 下载
+  5. MCP 工具（`law-database`、`wenshu`）可被发现与调用，调用摘要进入 `tool_call.*` 事件与 `ExecutionTrace.tool_calls`
+  6. 工具权限遵守 Phase 90 的安全默认——不存在未经审批的 shell / 代码执行路径
+
+**Plans**: TBD (est. 4)
+**UI hint**: no
+
+### Phase 102: Legal Guardrail Port
+
+**Goal**: `lawyer-desktop` 里最有价值的法律产品知识被完整移植进 Python 核心，且四条法律护栏在代码级不可绕过
+**Depends on**: Phase 101, Phase 99
+**Requirements**: CORE-05, CORE-06, CORE-07, CORE-08, SAFE-01, SAFE-04
+**Success Criteria** (what must be TRUE):
+
+  1. `skills/router.rs`（627 行）的中文法律 prompt 装配已移植：三模式基础 prompt、research-gate 注入、检索工具映射（只承诺实际可用的工具）、引用书写规范、skill 描述清单与激活 skill 正文注入
+  2. `llm/tool_leak.rs`（392 行）的工具调用泄漏检测与解析已移植：DSML / XML 变体识别、全角字符（`｜`、`▁`）归一、泄漏重试；**用 Rust 侧现有测试用例作为 Python 侧对拍集，逐条通过**
+  3. citation 审计已移植：引用抽取、对照本地法规库与检索证据核验、标注 verified / retrieved / unverified，产出 `citation.recorded` 事件
+  4. 四条法律护栏代码级强制且有测试：research-gate 前置（未检索不得给法律结论）、ask-user-enforcement（关键事实缺失时阻断起草）、citation 审计、de-AI polish
+  5. 高风险法律安全保持：不自动合成 skill、不自动修改法律结论类 skill、`skill_candidate.requires_human_review` 恒为 true，有测试断言
+  6. 建立 golden fixture 对拍集——同一输入在移植前后的 prompt 装配结果可比对，差异需被显式解释
+
+**Plans**: TBD (est. 4-5)
+**UI hint**: no
+**Human gate**: HG-1 法律质量（律师抽样确认输出质量不低于现有 lawyer-desktop / Hermes）—— 不得由自动化声称通过
+
+### Phase 103: Dual Entry Points
+
+**Goal**: 自研核心以一份实现提供两个入口，并在架构上与其他后端完全平等——换 `backend_id` 不需要改任何通道层或 UI 代码
+**Depends on**: Phase 102
+**Requirements**: CORE-10
+**Success Criteria** (what must be TRUE):
+
+  1. in-process 入口：`backend_id="inkstatute"` 实现 `BackendAdapter` 9 方法，被 Gateway 直接调用，无 IPC 开销，完整可观测
+  2. ACP 入口：`inkstatute-agent acp` 可启动，`inkstatute-agent acp --check` 通过，能被标准 ACP 宿主（用本仓的 fixture ACP client 验证）连接并完成一轮对话
+  3. 两个入口共享同一份核心实现，无重复逻辑；有测试断言两条路径在同一输入下产生等价事件流
+  4. **后端可替换性验收通过**：同一条律师任务分别用 `backend_id=hermes`（ACP）与 `backend_id=inkstatute`（in-process）跑通，通道层与 UI 代码零改动，事件流形状一致
+  5. ACP 入口正确声明能力（不声明 `fs/*` / `terminal/*`），并正确实现 `elicitation` 与 `request_permission` 的 agent 侧
+  6. 后端选择可经 `packages/operator-config` 配置，默认值可切换
+
+**Plans**: TBD (est. 3)
+**UI hint**: no
+
+### Phase 104: Legacy Convergence
+
+**Goal**: V3 承诺的存量收敛全部执行到位，仓库不再携带被取代的重复实现，且质量体系完整覆盖新结构
+**Depends on**: Phase 103, Phase 95
+**Requirements**: CONV-01, CONV-02, CONV-03, CONV-04, CONV-05, SAFE-06
+**Success Criteria** (what must be TRUE):
+
+  1. `packages/backends/hermes`（1,843 行）与 `packages/backends/codex`（2,032 行）已退役；其兼容矩阵与 `bootstrap_check` 逻辑已确认存在于 ACP adapter 中，无能力丢失
+  2. `packages/channels/web_sse`（259 行）与 `apps/web_chat` 已退役
+  3. `services/lawyer-web-chat`（1,331 行）已归并进 Gateway 并移除；`services/hermes-contract-layer`（1,205 行）已缩减为 Hermes 专属配置
+  4. `packages/multi-agent-adapter` 标记 experimental 冻结（保留代码与测试，文档标注无生产消费者）
+  5. gate 体系更新：新增包（`acp-client` / `skill-index` / `agent-core` / `ui-core` / `gateway`）都有 gate；已退役包的 gate 已移除；`gate-coverage` meta-test 断言每个 `packages/*/src` 与 `services/*/src` 都被覆盖且全绿
+  6. 可组合性保持：`solutions/demo_non_legal` 的非法律合成任务跑通契约层，无法律专用字段泄漏到顶层 required
+  7. 全量 gate 运行通过（`python scripts/run_v2_gates.py`），且 WeCom / QQ 现有生产行为回归测试全绿
+
+**Plans**: TBD (est. 4)
+**UI hint**: no
+
+---
+
+## Progress
+
+**Execution Order:** 88 → 89 → 90 → 91 → 92 → 93 → 94 → 95 → 96 → 97 → 98 → 99 → 100 → 101 → 102 → 103 → 104
+
+**Parallelization opportunities** (for wave-based execution):
+- After 92: Phases 93 and 94 can run in parallel
+- After 91: Phase 95 can run in parallel with 92/93/94
+- After 90: Phase 96 can start in parallel with the 91-95 branch
+- 100 depends on 97 (skill index/materialization), not on the B-stage channel work
+
+| Phase | Stage | Plans Complete | Status | Completed |
+|-------|-------|----------------|--------|-----------|
+| 88. Unified Event Contract | A | 0/TBD | Not started | - |
+| 89. ACP Backend Client | A | 0/TBD | Not started | - |
+| 90. ACP Event Bridge & Output Boundary | A | 0/TBD | Not started | - |
+| 91. Unified Gateway | B | 0/TBD | Not started | - |
+| 92. Shared UI Core | B | 0/TBD | Not started | - |
+| 93. Web Client | B | 0/TBD | Not started | - |
+| 94. Desktop Client | B | 0/TBD | Not started | - |
+| 95. Bot Channel Degradation | B | 0/TBD | Not started | - |
+| 96. Real Skill Index | C | 0/TBD | Not started | - |
+| 97. Skill Materialization | C | 0/TBD | Not started | - |
+| 98. Real-Index Routing | C | 0/TBD | Not started | - |
+| 99. Practice Profile | C | 0/TBD | Not started | - |
+| 100. Agent Core Skeleton | D | 0/TBD | Not started | - |
+| 101. Agent Core Tools | D | 0/TBD | Not started | - |
+| 102. Legal Guardrail Port | D | 0/TBD | Not started | - |
+| 103. Dual Entry Points | D | 0/TBD | Not started | - |
+| 104. Legacy Convergence | D | 0/TBD | Not started | - |
