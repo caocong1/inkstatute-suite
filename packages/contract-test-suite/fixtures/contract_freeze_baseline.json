@@ -1,8 +1,8 @@
 {
   "algorithm": "sha256",
   "files": {
-    "packages/platform-contract/src/platform_contract/__init__.py": "c58ff43e0098c620cdf26c24274a0485071b20a18cf812f39dcec6183c0d2aef",
-    "packages/platform-contract/src/platform_contract/agent_adapter.py": "e6c88fb0e2f5c6b059df8fc97f0994f92945be68ef793496824e6898e1054e0d",
+    "packages/platform-contract/src/platform_contract/__init__.py": "912d690fc161a1f24900df4252183d533c04da533f19acc6107115ea951d462f",
+    "packages/platform-contract/src/platform_contract/agent_adapter.py": "295d30324dcb0c682e02bc02c9d8816d4d49b8fefe936eeb3cdfc19071dc24b0",
     "packages/platform-contract/src/platform_contract/enums.py": "6d175194b0dd073297f0368b9e07448fcfca224c9a44ed89d3e1f3c1a2e104d3",
     "packages/platform-contract/src/platform_contract/events.py": "51352e1843fcae1e70e692a613a5e9613693cad200c54f2370fd083e5c7c0c93",
     "packages/platform-contract/src/platform_contract/schemas/agent_adapter_manifest.schema.json": "f11307fbf5c19a6e2b79bd69c88f038d5efca73a389db99ddbffb130c6472bab",
