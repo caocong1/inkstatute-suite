@@ -59,7 +59,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 ### 阶段 B — 通道统一
 
-- [ ] **Phase 91: Unified Gateway** - 多租户 HTTP+SSE 网关，取代 platform_api 与 lawyer-web-chat 的重叠 (GW-01..06)
+- [x] **Phase 91: Unified Gateway** - 多租户 HTTP+SSE 网关，取代 platform_api 与 lawyer-web-chat 的重叠 (GW-01..06)
 - [ ] **Phase 92: Shared UI Core** - 从 lawyer-desktop 抽取 @inkstatute/ui-core，chat UI 单一实现 (UI-01, UI-02, UI-03, UI-06)
 - [ ] **Phase 93: Web Client** - 响应式 Web 客户端（桌面 + 移动浏览器） (UI-04)
 - [ ] **Phase 94: Desktop Client** - Tauri 外壳复用，invoke() → Gateway，离线只读 (UI-05)
@@ -135,21 +135,21 @@ Carried human gates from v1.x (NOT closed by v3.0):
 **Plans**: TBD (est. 3)
 **UI hint**: no
 
-### Phase 91: Unified Gateway
+### Phase 91: Unified Gateway ✅ COMPLETE
 
 **Goal**: 全项目只有一个面向客户端的入口——多租户 HTTP + SSE Gateway，`apps/platform_api` 与 `services/lawyer-web-chat` 的职责重叠被消除
 **Depends on**: Phase 90
-**Requirements**: GW-01, GW-02, GW-03, GW-04, GW-05, GW-06
+**Requirements**: GW-01, GW-02, GW-03, GW-04, GW-05, GW-06 (all complete)
 **Success Criteria** (what must be TRUE):
 
-  1. `services/gateway`（由 `apps/platform_api` 升级而来）提供全部端点：`/v1/sessions`、`/v1/sessions/{id}`、`/v1/sessions/{id}/runs`、`/v1/runs/{id}`、`/v1/runs/{id}/events`(SSE)、`/v1/runs/{id}/elicitation`、`/v1/runs/{id}/approvals`、`/v1/artifacts/{id}`、`/v1/uploads`、`/v1/feedback`、`/v1/skills`，且有 OpenAPI 文档
-  2. SSE 流式传输统一事件；客户端带 `Last-Event-ID` 重连后从正确 `seq` 续传，集成测试断言不重复不丢失
-  3. 鉴权可用：RBAC + 会话 cookie（web/桌面）与 Bearer token（bot/程序化）；租户校验生效；自用形态可用单租户默认值但契约字段不省略
-  4. 附件上传返回 `attachment_ref`、产物下载经 `artifact_id`，均 reference-first 且需鉴权 + 租户校验；跨租户访问被拒
+  1. ✅ `services/gateway`（由 `apps/platform_api` 升级而来）提供全部端点：`/v1/sessions`、`/v1/sessions/{id}`、`/v1/sessions/{id}/runs`、`/v1/runs/{id}`、`/v1/runs/{id}/events`(SSE)、`/v1/runs/{id}/elicitation`、`/v1/runs/{id}/approvals`、`/v1/artifacts/{id}`、`/v1/uploads`、`/v1/feedback`、`/v1/skills`，且有 OpenAPI 文档 (GW-01 complete, Plan 91-05)
+  2. ✅ SSE 流式传输统一事件；客户端带 `Last-Event-ID` 重连后从正确 `seq` 续传，集成测试断言不重复不丢失 (GW-02 complete, Plan 91-02)
+  3. ✅ 鉴权可用：RBAC + 会话 cookie（web/桌面）与 Bearer token（bot/程序化）；租户校验生效；自用形态可用单租户默认值但契约字段不省略 (GW-03 complete, Plan 91-05)
+  4. ✅ 附件上传返回 `attachment_ref`、产物下载经 `artifact_id`，均 reference-first 且需鉴权 + 租户校验；跨租户访问被拒 (GW-04 complete, Plan 91-03)
   5. ✅ `services/lawyer-web-chat` 的能力（SSE 编码、会话鉴权、多设备会话列表、上传、反馈）已在 Gateway 中等价可用，旧服务标记 deprecated (GW-05 complete, Plan 91-04)
   6. ✅ `ChannelAdapter.verify_and_ack` 已降级为可选 capability，不实现它的通道适配器仍能通过 Protocol 校验与 gate (GW-06 complete, Plan 91-04)
 
-**Plans**: TBD (est. 4-5)
+**Plans**: 5 (91-01 Gateway Tracer + 91-02 SSE Replay + 91-03 Upload/Artifact/Feedback + 91-04 Skills/verify_and_ack/Deprecation + 91-05 OpenAPI/Integration/Verification)
 **UI hint**: no
 
 ### Phase 92: Shared UI Core

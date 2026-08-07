@@ -164,12 +164,12 @@
 | ACP-04 | Phase 90 | Complete |
 | ACP-05 | Phase 90 | Complete |
 | ACP-07 | Phase 90 | Complete |
-| GW-01 | Phase 91 | Pending |
+| GW-01 | Phase 91 | Complete |
 | GW-02 | Phase 91 | Complete |
-| GW-03 | Phase 91 | Pending |
+| GW-03 | Phase 91 | Complete |
 | GW-04 | Phase 91 | Complete |
-| GW-05 | Phase 91 | Pending |
-| GW-06 | Phase 91 | Pending |
+| GW-05 | Phase 91 | Complete |
+| GW-06 | Phase 91 | Complete |
 | UI-01 | Phase 92 | Pending |
 | UI-02 | Phase 92 | Pending |
 | UI-03 | Phase 92 | Pending |
