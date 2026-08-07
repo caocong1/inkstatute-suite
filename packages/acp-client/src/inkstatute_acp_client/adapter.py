@@ -44,11 +44,13 @@ JsonObject = dict[str, Any]
 
 
 # ---------------------------------------------------------------------------
-# Hermes compatibility matrix (simple version — expanded in task 02-05)
+# Hermes compatibility matrix — maps Hermes version to supported ACP capabilities
 # ---------------------------------------------------------------------------
 
-HERMES_COMPATIBILITY_MATRIX: dict[str, str] = {
-    "0.19.0": "streaming,session_update,elicitation_unstable",
+HERMES_COMPATIBILITY_MATRIX: dict[str, list[str]] = {
+    "0.19.0": ["streaming", "session_update", "session_cancel", "session_close"],
+    "0.18.0": ["streaming", "session_update", "session_cancel"],
+    "0.17.0": ["streaming", "session_update"],
 }
 
 
@@ -90,7 +92,7 @@ class ACPBackendConfig:
         default_factory=lambda: RequiredCapabilities(streaming=True)
     )
     hermes_home: str | None = None
-    compatibility_matrix: dict[str, str] = field(default_factory=dict)
+    compatibility_matrix: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -537,7 +539,7 @@ def _parse_semver(version: str) -> tuple[int, ...]:
 
 
 def _check_version_compatibility(
-    agent_version: str, matrix: dict[str, str]
+    agent_version: str, matrix: dict[str, Any]
 ) -> tuple[bool, list[str]]:
     """Check agent version against a compatibility matrix.
 
@@ -562,8 +564,92 @@ def _check_version_compatibility(
     return True, []
 
 
+def check_hermes_compatibility(
+    agent_version: str,
+    matrix: dict[str, list[str]] | None = None,
+) -> tuple[bool, list[str]]:
+    """Check Hermes agent version against the compatibility matrix.
+
+    Parameters
+    ----------
+    agent_version
+        The Hermes agent version string (e.g. ``"0.19.0"``).
+    matrix
+        The compatibility matrix to check against. Defaults to
+        :data:`HERMES_COMPATIBILITY_MATRIX`.
+
+    Returns
+    -------
+    tuple[bool, list[str]]
+        ``(is_compatible, issues)``. The agent version must be >= the
+        minimum key in the matrix. If below minimum, an issue with
+        ``"below_minimum"`` is added and ``is_compatible`` is ``False``.
+        If the version is not in the matrix, an issue with
+        ``"untested"`` is added but ``is_compatible`` remains ``True``
+        (untested != incompatible).
+    """
+    if matrix is None:
+        matrix = HERMES_COMPATIBILITY_MATRIX
+
+    if not matrix:
+        return True, []
+
+    min_version = min(matrix.keys(), key=_parse_semver)
+    agent_tuple = _parse_semver(agent_version)
+    min_tuple = _parse_semver(min_version)
+
+    issues: list[str] = []
+
+    if agent_tuple < min_tuple:
+        issues.append(f"hermes_version_below_minimum: {agent_version} < {min_version}")
+        return False, issues
+
+    if agent_version not in matrix:
+        issues.append(f"hermes_version_untested: {agent_version}")
+
+    return True, issues
+
+
+def create_hermes_adapter(
+    hermes_home: str,
+    hermes_command: tuple[str, ...] = ("hermes", "acp"),
+    timeout_seconds: float = 300.0,
+) -> ACPBackendAdapter:
+    """Create an :class:`ACPBackendAdapter` configured for ``hermes acp``.
+
+    This is the production entry point for driving ``hermes acp`` as a
+    platform backend. Sets ``HERMES_HOME`` env var for profile loading.
+
+    Parameters
+    ----------
+    hermes_home
+        Path to the Hermes home directory (for profile loading).
+    hermes_command
+        The command to spawn the Hermes ACP agent. Defaults to
+        ``("hermes", "acp")``.
+    timeout_seconds
+        Subprocess/streaming timeout in seconds.
+
+    Returns
+    -------
+    ACPBackendAdapter
+        A configured adapter ready for ``bootstrap_check`` and ``submit_run``.
+    """
+    config = ACPBackendConfig(
+        backend_id="hermes",
+        command=hermes_command,
+        env={"HERMES_HOME": hermes_home},
+        process_mode=BackendProcessMode.PER_SESSION,
+        timeout_seconds=timeout_seconds,
+        compatibility_matrix=dict(HERMES_COMPATIBILITY_MATRIX),
+    )
+    return ACPBackendAdapter(config)
+
+
 __all__ = [
     "ACPBackendAdapter",
     "ACPBackendConfig",
     "HERMES_COMPATIBILITY_MATRIX",
+    "check_hermes_compatibility",
+    "create_hermes_adapter",
 ]
