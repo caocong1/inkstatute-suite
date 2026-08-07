@@ -88,6 +88,35 @@ class WeComWiringTests(unittest.TestCase):
         self.assertIsNotNone(WeComWiredRuntime)
         self.assertIsNotNone(build_wecom_wired_runtime)
 
+    def test_wiring_with_gateway_config(self) -> None:
+        """When gateway_config is provided, gateway_client is not None."""
+        from wecom_service.gateway_client import GatewayClient, GatewayClientConfig
+
+        backend = _FakeBackendAdapter()
+        gateway_config = GatewayClientConfig(
+            base_url="http://127.0.0.1:8081",
+            bearer_token="test-token",
+            tenant_id="test-tenant",
+        )
+        wired = build_wecom_wired_runtime(
+            backend=backend,
+            flags=RuntimeFeatureFlags(wecom_channel_enabled=True),
+            gateway_config=gateway_config,
+        )
+
+        self.assertIsNotNone(wired.gateway_client)
+        self.assertIsInstance(wired.gateway_client, GatewayClient)
+
+    def test_wiring_without_gateway_config_has_none_gateway_client(self) -> None:
+        """When gateway_config is not provided, gateway_client is None (backward compat)."""
+        backend = _FakeBackendAdapter()
+        wired = build_wecom_wired_runtime(
+            backend=backend,
+            flags=RuntimeFeatureFlags(wecom_channel_enabled=True),
+        )
+
+        self.assertIsNone(wired.gateway_client)
+
 
 if __name__ == "__main__":
     unittest.main()
