@@ -74,7 +74,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 ### 阶段 D — 自研核心
 
-- [ ] **Phase 100: Agent Core Skeleton** - Python async 流式 turn loop（工具轮也流式）+ 上下文预算 + 模型层 (CORE-01, CORE-04, CORE-09)
+- [ ] **Phase 100: Agent Core Skeleton** - Python async 流式 turn loop（工具轮也流式）+ 上下文预算 + 模型层 (CORE-01, CORE-04, CORE-09) — Plan 100-01 complete (scaffold + EventEmitter + config + gate)
 - [ ] **Phase 101: Agent Core Tools** - 工具层 + Word 原生修订 docx (CORE-02, CORE-03)
 - [ ] **Phase 102: Legal Guardrail Port** - prompt 装配 / tool_leak / citation 审计 / 四护栏移植 (CORE-05..08, SAFE-01, SAFE-04)
 - [ ] **Phase 103: Dual Entry Points** - in-process BackendAdapter + inkstatute-agent acp (CORE-10)
