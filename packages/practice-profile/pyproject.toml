@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-practice-profile"
+version = "0.1.0"
+description = "Multi-tenant practice profile data model, store, secret guard, temporary mode, and RBAC helpers."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.inkstatute]
+subsystem = "practice-profile"
+default_off_flag = "practice_profile_enabled"
