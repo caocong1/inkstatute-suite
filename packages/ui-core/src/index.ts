@@ -119,7 +119,7 @@ export {
 
 export { groupCitations } from "./utils/groupCitations";
 
-export { Icon } from "./components/Icons";
+export { Icon, Icons } from "./components/Icons";
 export type { IconName } from "./components/Icons";
 
 export { CitationPanel } from "./components/CitationPanel";
