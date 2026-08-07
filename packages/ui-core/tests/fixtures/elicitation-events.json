@@ -1,0 +1,35 @@
+{
+  "event_id": "evt-elicitation-001",
+  "run_id": "run-clar-001",
+  "event_type": "elicitation.requested",
+  "occurred_at": "2026-08-08T11:00:00Z",
+  "seq": 1,
+  "payload": {
+    "interrupt_id": "int-clar-001",
+    "intro": "为了更准确地拟定文书，请补充以下信息：",
+    "questions": [
+      {
+        "id": "q1",
+        "question": "合同类型是什么？",
+        "allow_multiple": false,
+        "options": [
+          { "label": "买卖合同", "value": "sale" },
+          { "label": "租赁合同", "value": "lease" },
+          { "label": "服务合同", "value": "service" }
+        ]
+      },
+      {
+        "id": "q2",
+        "question": "涉及哪些风险点？",
+        "allow_multiple": true,
+        "options": [
+          { "label": "付款风险", "value": "payment" },
+          { "label": "违约风险", "value": "breach" },
+          { "label": "知识产权风险", "value": "ip" },
+          { "label": "交割风险", "value": "delivery" }
+        ]
+      }
+    ],
+    "resume_state_ref": "state-clar-001"
+  }
+}

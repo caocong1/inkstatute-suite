@@ -41,3 +41,6 @@ export type {
 
 export { ChatPanel } from "./components/ChatPanel";
 export type { ChatPanelProps } from "./components/ChatPanel";
+
+export { ClarificationCard } from "./components/ClarificationCard";
+export type { ClarificationCardProps } from "./components/ClarificationCard";
