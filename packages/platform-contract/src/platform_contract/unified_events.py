@@ -174,6 +174,8 @@ EVENT_TYPE_TO_PAYLOAD_CLASS: dict[str, type] = {
     RunEventType.ARTIFACT_CREATED_V3.value: ArtifactCreatedPayload,
     RunEventType.CITATION_RECORDED.value: CitationRecordedPayload,
     RunEventType.RUN_STATE_CHANGED.value: RunStateChangedPayload,
+    # "error" is shared between V2 and V3 — mapped to the V3 typed payload.
+    RunEventType.ERROR.value: ErrorEventPayload,
 }
 
 
@@ -236,16 +238,47 @@ def _coerce_field(annotation: Any, value: Any) -> Any:
     return value
 
 
+_NESTED_TYPE_MAP = {
+    "ErrorInfo": ErrorInfo,
+    "Artifact": Artifact,
+    "ElicitationQuestion": ElicitationQuestion,
+    "ElicitationOption": ElicitationOption,
+    "CitationRecord": CitationRecord,
+}
+
+
 def _resolve_annotation(name: str) -> Any:
-    """Resolve a forward-reference string to the actual type object."""
-    mapping = {
-        "ErrorInfo": ErrorInfo,
-        "Artifact": Artifact,
-        "ElicitationQuestion": ElicitationQuestion,
-        "ElicitationOption": ElicitationOption,
-        "CitationRecord": CitationRecord,
-    }
-    return mapping.get(name, str)
+    """Resolve a forward-reference string to the actual type object.
+
+    Handles simple names (``"ErrorInfo"``), generic aliases
+    (``"list[CitationRecord]"``), and union-with-None forms
+    (``"ErrorInfo | None"``).
+    """
+    # Simple name lookup
+    if name in _NESTED_TYPE_MAP:
+        return _NESTED_TYPE_MAP[name]
+
+    # list[SomeDataclass] — parse the inner type
+    if name.startswith("list[") and name.endswith("]"):
+        inner = name[5:-1].strip()
+        inner_type = _NESTED_TYPE_MAP.get(inner, str)
+        return list[inner_type]  # type: ignore[valid-type]
+
+    # X | None  or  None | X  — extract the non-None type
+    if " | " in name:
+        parts = [p.strip() for p in name.split("|")]
+        for part in parts:
+            if part == "None":
+                continue
+            if part in _NESTED_TYPE_MAP:
+                return _NESTED_TYPE_MAP[part]
+            if part.startswith("list[") and part.endswith("]"):
+                inner = part[5:-1].strip()
+                inner_type = _NESTED_TYPE_MAP.get(inner, str)
+                return list[inner_type]  # type: ignore[valid-type]
+
+    # Optional / Union forms — treat as opaque
+    return str
 
 
 def deserialize_payload(event_type: str, data: JsonObject) -> Any:
