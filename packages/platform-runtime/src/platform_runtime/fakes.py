@@ -280,6 +280,7 @@ class FakeChannelAdapter:
             supports_cards=True,
             supports_streaming=False,
             idempotency_strategy="in_memory",
+            verify_and_ack_support=False,
         )
 
     async def verify_and_ack(self, raw: RawInbound) -> AckResponse:

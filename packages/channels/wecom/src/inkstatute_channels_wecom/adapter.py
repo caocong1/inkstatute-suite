@@ -52,6 +52,7 @@ class WeComChannelAdapter:
             supports_streaming=False,
             ack_deadline_ms=5000,
             idempotency_strategy="wecom_callback_metadata",
+            verify_and_ack_support=True,
             metadata={
                 "enabled": self._config.enabled,
                 "network_io": False,

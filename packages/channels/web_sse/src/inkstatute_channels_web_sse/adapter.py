@@ -41,6 +41,7 @@ class WebSseChannelAdapter:
             supports_streaming=True,
             ack_deadline_ms=1000,
             idempotency_strategy="web_payload_ref",
+            verify_and_ack_support=False,
             metadata={"enabled": self._config.enabled, "fixture_only": True, "network_io": False},
         )
 

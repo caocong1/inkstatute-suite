@@ -97,6 +97,7 @@ class QQBotChannelAdapter:
             supports_streaming=False,
             ack_deadline_ms=3000,
             idempotency_strategy="qqbot_callback_metadata",
+            verify_and_ack_support=True,
             metadata={
                 "enabled": self._config.enabled,
                 "fixture_only": not live,
