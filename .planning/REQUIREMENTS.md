@@ -31,7 +31,7 @@
 ### GW — 统一网关与通道层
 
 - [ ] **GW-01**: 统一 Gateway HTTP API（`/v1/sessions`、`/v1/runs`、`/v1/runs/{id}/events` SSE、`/v1/runs/{id}/elicitation`、`/v1/runs/{id}/approvals`、`/v1/artifacts/{id}`、`/v1/uploads`、`/v1/feedback`、`/v1/skills`）
-- [ ] **GW-02**: SSE 流式传输统一事件，支持 `Last-Event-ID` 按 `seq` 断线续传，不重复不丢失
+- [x] **GW-02**: SSE 流式传输统一事件，支持 `Last-Event-ID` 按 `seq` 断线续传，不重复不丢失
 - [ ] **GW-03**: 多租户鉴权与会话（延续 RBAC + 会话 cookie + Bearer token）；自用形态可用单租户默认值，但契约字段不省略
 - [ ] **GW-04**: 附件上传与产物下载 reference-first（返回 `attachment_ref` / `artifact_id`，不落敏感全文），下载需鉴权 + 租户校验
 - [ ] **GW-05**: 取代 `apps/platform_api` 与 `services/lawyer-web-chat` 的职责重叠，全项目单一网关
@@ -165,7 +165,7 @@
 | ACP-05 | Phase 90 | Complete |
 | ACP-07 | Phase 90 | Complete |
 | GW-01 | Phase 91 | Pending |
-| GW-02 | Phase 91 | Pending |
+| GW-02 | Phase 91 | Complete |
 | GW-03 | Phase 91 | Pending |
 | GW-04 | Phase 91 | Pending |
 | GW-05 | Phase 91 | Pending |
