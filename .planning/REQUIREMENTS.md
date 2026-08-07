@@ -66,9 +66,9 @@
 
 ### PROF — 执业配置
 
-- [ ] **PROF-01**: per-plugin `CLAUDE.md` 执业配置机制升级为平台侧多租户配置（审查立场、升级矩阵、文书风格、管辖识别、交易破坏者），覆盖约 50 个依赖它的 skill
-- [ ] **PROF-02**: 未配置时降级"临时模式"，并在每个输出上标记
-- [ ] **PROF-03**: 冷启动访谈可通过统一事件词汇的 `elicitation.requested` 完成配置采集
+- [x] **PROF-01**: per-plugin `CLAUDE.md` 执业配置机制升级为平台侧多租户配置（审查立场、升级矩阵、文书风格、管辖识别、交易破坏者），覆盖约 50 个依赖它的 skill ✅ Phase 99
+- [x] **PROF-02**: 未配置时降级"临时模式"，并在每个输出上标记 ✅ Phase 99
+- [x] **PROF-03**: 冷启动访谈可通过统一事件词汇的 `elicitation.requested` 完成配置采集 ✅ Phase 99
 
 ### CORE — 自研 agent 核心（Python）
 
@@ -188,9 +188,9 @@
 | SKILL-09 | Phase 97 | Complete ✅ |
 | SKILL-07 | Phase 98 | Complete ✅ |
 | SKILL-08 | Phase 98 | Complete ✅ |
-| PROF-01 | Phase 99 | Pending |
-| PROF-02 | Phase 99 | Pending |
-| PROF-03 | Phase 99 | Pending |
+| PROF-01 | Phase 99 | Complete ✅ |
+| PROF-02 | Phase 99 | Complete ✅ |
+| PROF-03 | Phase 99 | Complete ✅ |
 | CORE-01 | Phase 100 | Pending |
 | CORE-04 | Phase 100 | Pending |
 | CORE-09 | Phase 100 | Pending |

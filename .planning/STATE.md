@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 99 plan 99-02 complete — PracticeProfileInjector + ColdStartInterviewOrchestrator created, 146 tests, 37 gates green
+stopped_at: Phase 99 COMPLETE — Practice Profile fully implemented, 3 plans executed, 37 gates green, PROF-01/02/03 complete
 last_updated: "2026-08-11T00:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 99 plan 99-02 executed. Created PracticeProfileInjector (injector.py, renders profile as ## 执业配置 section prepended to skill body, checks practice_profile_dependency flag, generates temporary mode with [临时模式] tag when no profile), ColdStartInterviewOrchestrator (interview.py, sequential elicitation.requested events, 5 steps × 2-4 questions, writes answers back to PracticeProfileStore), COMMERCIAL_LEGAL_INTERVIEW_STEPS (interview_definitions.py, 5 steps: identity-team/review-stance/escalation-rules/document-style/jurisdiction-profile). 76 new unit tests (test_injector.py 33, test_interview.py 34, test_coverage.py 9). 146 total tests in practice-profile package. All 37 gates green. 5 commits.
+last_activity: 2026-08-11 -- Phase 99 plan 99-03 executed. Created GatewayPracticeProfileHandler (practice_profile.py, 3 endpoints: GET/PUT /v1/practice-profile, POST /v1/practice-profile/interview), registered 4 routes in Gateway app.py, added practice_profile_src to gateway gate PYTHONPATH, 16 handler unit tests + 4 e2e interview flow tests + 6 success criteria verification tests. Updated OpenAPI document with 3 new paths (15 total). Updated test counts (18 operations, 15 paths, 37 gates). All 37 gates green. Phase 99 COMPLETE. PROF-01, PROF-02, PROF-03 marked complete.
 progress:
   total_phases: 17
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 54
-  completed_plans: 52
-  percent: 66
+  completed_plans: 54
+  percent: 71
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 99 — Practice Profile (plan 99-02 complete, 99-03 next)
+**Current focus:** Phase 99 COMPLETE — ready for Phase 100
 
 ## Current Position
 
-Phase: 99 (practice-profile) — PLAN 99-02 COMPLETE
-Status: Phase 99 plan 99-02 executed. PracticeProfileInjector (injector.py) + ColdStartInterviewOrchestrator (interview.py) + COMMERCIAL_LEGAL_INTERVIEW_STEPS (interview_definitions.py) created. 146 total tests in practice-profile package. All 37 gates green. 5 commits.
-Last activity: 2026-08-11 -- Phase 99 plan 99-02 executed. Created injector + interview orchestrator + definitions + 76 new tests. All 37 gates green.
+Phase: 99 (practice-profile) — COMPLETE ✅
+Status: Phase 99 fully executed. 3 plans completed (99-01 core, 99-02 injection+interview, 99-03 Gateway endpoints+e2e+completion). 152 tests in practice-profile package + 20 new Gateway tests. All 37 gates green. PROF-01, PROF-02, PROF-03 marked complete.
+Last activity: 2026-08-11 -- Phase 99 plan 99-03 executed. Created GatewayPracticeProfileHandler + 4 routes + OpenAPI paths + 26 new tests. All 37 gates green. Phase 99 COMPLETE.
 
-**Next command:** `/gsd-execute 99-03` (Wave 3: Gateway endpoints + e2e + phase completion — depends on 99-02)
+**Next command:** `/gsd-plan 100` (Phase 100: Agent Core Skeleton — Python async streaming turn loop)
 
 ## Milestone v3.0 Overview
 
@@ -110,16 +110,16 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 ## Session Continuity
 
 Last session: 2026-08-11T00:00:00.000Z
-Stopped at: Phase 99 plan 99-02 complete — PracticeProfileInjector + ColdStartInterviewOrchestrator created, 146 tests, 37 gates green
+Stopped at: Phase 99 COMPLETE — Practice Profile fully implemented, 3 plans executed, 37 gates green, PROF-01/02/03 complete
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-98 complete, Phase 99 plan complete, ready to execute)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-99 complete, Phase 100 next)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute 99-03` (Wave 3: Gateway endpoints + e2e + phase completion — depends on 99-02)
-- 或 `/gsd-autonomous` 自动推进 Phases 99-104
-- 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点
+- `/gsd-plan 100` (Phase 100: Agent Core Skeleton — Python async streaming turn loop)
+- 或 `/gsd-autonomous` 自动推进 Phases 100-104
+- 或 `/gsd-autonomous --to 100` 只跑到"自研核心"阶段起点

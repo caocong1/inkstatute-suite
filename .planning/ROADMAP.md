@@ -70,7 +70,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 - [x] **Phase 96: Real Skill Index** - 真实索引 396 个 SKILL.md，双仓合并与冲突模型 (SKILL-01..04, SAFE-05) ✅
 - [x] **Phase 97: Skill Materialization** - 按后端物化，三分离，废弃假 manifest skill 源 (SKILL-05, SKILL-06, SKILL-09) ✅ COMPLETE
 - [x] **Phase 98: Real-Index Routing** - 路由换真实索引 + 移植强信号规则与三模式判定 (SKILL-07, SKILL-08) ✅ COMPLETE
-- [ ] **Phase 99: Practice Profile** - CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈 (PROF-01, PROF-02, PROF-03)
+- [x] **Phase 99: Practice Profile** - CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈 (PROF-01, PROF-02, PROF-03) ✅ COMPLETE
 
 ### 阶段 D — 自研核心
 
@@ -285,7 +285,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 执业配置的读写经 RBAC 授权，跨租户访问被拒
   6. 执业配置不含 secrets，且不进入契约事件日志
 
-**Plans**: 3 (99-01 ✅ complete, 99-02 ✅ complete, 99-03 pending)
+**Plans**: 3 (99-01 ✅ complete, 99-02 ✅ complete, 99-03 ✅ complete) ✅ COMPLETE
 **UI hint**: no
 
 ### Phase 100: Agent Core Skeleton
