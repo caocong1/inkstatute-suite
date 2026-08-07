@@ -569,9 +569,9 @@ The core uses:
 def read_skill_body(skill_id: str, index: SkillIndex, budget_tokens: int) -> SkillBodyInjectionResult:
     record = index.get(skill_id)  # IndexRecord
     source_path = resolve_source_path(record)  # absolute path to SKILL.md
-    raw_body = Path(source_path).read_text(encoding="utf-8")
+    skill_text = Path(source_path).read_text(encoding="utf-8")
     injector = SkillBodyInjector(budget_tokens=budget_tokens)
-    return injector.inject(raw_body)
+    return injector.inject(skill_text)
 ```
 
 The `SkillBodyInjector` (from `packages/skill-materializer/body_injector.py`) is shared between:

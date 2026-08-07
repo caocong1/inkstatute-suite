@@ -456,7 +456,8 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("web", gate_names)
         self.assertIn("desktop", gate_names)
         self.assertIn("skill-index", gate_names)
-        self.assertEqual(len(gate_names), 35)
+        self.assertIn("skill-materializer", gate_names)
+        self.assertEqual(len(gate_names), 36)
 
 
 if __name__ == "__main__":
