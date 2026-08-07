@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 100 plan 100-01 complete — agent-core scaffold + EventEmitter + AgentCoreConfig + gate registration (38 gates green)
+stopped_at: Phase 100 plans 100-02 + 100-03 complete — model layer + context assembler + async turn loop (38 gates green, 260 agent-core tests)
 last_updated: "2026-08-11T00:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 100 plan 100-01 implementation. Created packages/agent-core/ package scaffold (pyproject.toml with dependencies=[], src/inkstatute_agent_core/ with __init__.py, model/ and tools/ sub-packages). Implemented AgentCoreConfig frozen dataclass (max_turns=10, silence_threshold_seconds=5.0, response_max_tokens=8192, temperature=0.3, context_budget_tokens=32768, chars_per_token=4, heartbeat_metadata_key='heartbeat'). Implemented EventEmitter with monotonic seq from 0, silence threshold tracking, maybe_heartbeat() emitting thought.delta with metadata={'heartbeat': true}, injectable clocks for deterministic testing, 9 convenience methods producing RunEvent objects with serialized payloads. Registered agent-core gate (37 → 38 gates) in run_v2_gates.py with PYTHONPATH: agent_core_src, platform_src, platform_runtime_src, model_gateway_src. Updated test_audit_v2_requirements.py (gate count 38, agent-core assertion) and test_integration.py (test_gate_count_is_38). All 38 gates green. 61 tests in agent-core gate (18 config + 43 event_emitter). 4 commits: 7491e91 (scaffold), 74b9f66 (config), 40c92c0 (event_emitter), 4156cdc (gate registration).
+last_activity: 2026-08-11 -- Phase 100 plans 100-02 and 100-03 implementation (Wave 2 parallel). Plan 100-02: model layer — LlmProvider Protocol, StreamDelta union types (ContentDelta, ReasoningDelta, ToolCallDelta, UsageDelta, FinishDelta), ChatRequest, UsageAccumulator, FixtureProvider with TurnScript, OpenAI/Anthropic/Ollama stream providers, gateway components wrapper. Plan 100-03: AgentContextAssembler (history trim + skill body injection, CJK-aware, deterministic), async turn loop (always-streaming, tool_call.started|delta|completed, thought.delta heartbeats, error recovery, turn limit max_turns=10), message building helpers (build_tool_result_message, build_assistant_message, append_tool_results, extract_tool_calls_from_deltas). 260 tests in agent-core gate. 38 gates green. 3 commits for 100-03: 06f6db9 (context assembler), 1dcf9bb (turn loop), 689198e (messages).
 progress:
   total_phases: 17
   completed_phases: 12
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 100 plan 100-01 complete — agent-core scaffold + EventEmitter + AgentCoreConfig + gate registration
+**Current focus:** Phase 100 plans 100-02 + 100-03 complete — model layer + context assembler + async turn loop
 
 ## Current Position
 
-Phase: 100 (agent-core-skeleton) — IMPLEMENTING (Plan 100-01 complete)
-Status: Plan 100-01 (Wave 1) completed. packages/agent-core/ scaffolded with AgentCoreConfig, EventEmitter (monotonic seq + silence threshold + heartbeat), and agent-core gate registered (38 gates green). Ready for Wave 2 (100-02 model layer + 100-03 context+turn loop in parallel).
-Last activity: 2026-08-11 -- Plan 100-01 implementation. 4 commits, 61 tests, 38 gates green.
+Phase: 100 (agent-core-skeleton) — IMPLEMENTING (Plans 100-01, 100-02, 100-03 complete)
+Status: Plans 100-02 (Wave 2) and 100-03 (Wave 2) completed. packages/agent-core/ now has: AgentCoreConfig, EventEmitter, LlmProvider Protocol + StreamDelta types + FixtureProvider (100-02), AgentContextAssembler + async turn loop + message helpers (100-03). 260 tests in agent-core gate, 38 gates green. Ready for Wave 3 (100-04: e2e integration + phase completion).
+Last activity: 2026-08-11 -- Plans 100-02 + 100-03 implementation. 260 agent-core tests, 38 gates green.
 
-**Next command:** `/gsd-implement 100-02` and `/gsd-implement 100-03` (Wave 2: model layer + context/turn loop, parallel)
+**Next command:** `/gsd-implement 100-04` (Wave 3: e2e integration + phase completion)
 
 ## Milestone v3.0 Overview
 
@@ -110,7 +110,7 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 ## Session Continuity
 
 Last session: 2026-08-11T00:00:00.000Z
-Stopped at: Phase 100 plan 100-01 complete — agent-core scaffold + EventEmitter + AgentCoreConfig + gate registration (38 gates green)
+Stopped at: Phase 100 plans 100-02 + 100-03 complete — model layer + context assembler + async turn loop (38 gates green, 260 agent-core tests)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 complete)
@@ -120,7 +120,6 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-implement 100-02` (Wave 2: model layer — LlmProvider Protocol + StreamDelta + FixtureProvider + 3 provider runners)
-- `/gsd-implement 100-03` (Wave 2: context assembler + async turn loop — parallel with 100-02)
-- 或 `/gsd-implement 100` 自动推进全部 4 plans (Wave 1 → Wave 2 parallel → Wave 3)
+- `/gsd-implement 100-04` (Wave 3: e2e integration + phase completion — FixtureProvider + turn loop e2e, silence threshold assertion, phase completion)
+- 或 `/gsd-implement 100` 自动推进剩余 plans (Wave 3)
 - 或 `/gsd-autonomous` 自动推进 Phases 100-104
