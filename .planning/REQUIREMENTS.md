@@ -11,7 +11,7 @@
 
 ### EVT — 统一事件契约
 
-- [ ] **EVT-01**: 定义与 ACP v1 `session/update` 同构的统一事件词汇（`session.started` / `message.delta` / `message.completed` / `thought.delta` / `tool_call.*` / `plan.updated` / `phase.changed` / `elicitation.requested` / `permission.requested` / `artifact.created` / `citation.recorded` / `run.state_changed` / `error`），产出 JSON Schema + Python 绑定 + TypeScript 绑定
+- [x] **EVT-01**: 定义与 ACP v1 `session/update` 同构的统一事件词汇（`session.started` / `message.delta` / `message.completed` / `thought.delta` / `tool_call.*` / `plan.updated` / `phase.changed` / `elicitation.requested` / `permission.requested` / `artifact.created` / `citation.recorded` / `run.state_changed` / `error`），产出 JSON Schema + Python 绑定 + TypeScript 绑定
 - [ ] **EVT-02**: `RunEvent` 重新规格化为统一事件词汇的承载体，保留 `occurred_at` / `ingested_at` / `seq` 语义，支持乱序回放与按 `seq` 断线续传
 - [ ] **EVT-03**: 澄清提问契约（2-4 题、单选 / 多选 / 自由文本），与 `ai-for-china-legal/shared/inkstatute-integration/ASK-USER-PROTOCOL.md` 语义一致，并与 V2 `RunInterrupt` 对齐
 - [ ] **EVT-04**: 五相进度契约（research → intake → retrieval → draft → review）及其与 thinking / tool / streaming / review 的映射
@@ -105,20 +105,24 @@
 ## v4 Requirements（本期不做，已登记）
 
 ### MOBILE — 移动原生 App
+
 - **MOBILE-01**: Android APK / 厂商商店分发
 - **MOBILE-02**: iOS App Store 中国区上架（需 ICP 备案）
 - **MOBILE-03**: Tauri 2 mobile 或 Capacitor 打包路径选型与验证
 
 ### SCALE — SaaS 规模化
+
 - **SCALE-01**: ACP agent 进程池 / daemon 模型（替代每会话一子进程）
 - **SCALE-02**: 远程 ACP 传输（等 v2 Streamable HTTP / WebSocket 稳定）
 - **SCALE-03**: 水平扩容与租户级资源隔离
 
 ### OFFLINE — 桌面端完全离线
+
 - **OFFLINE-01**: 桌面端嵌入本地 agent runtime
 - **OFFLINE-02**: 本地模型推理与本地 skill 执行
 
 ### FUTURE — 其他候选
+
 - **FUTURE-01**: `managed-agent-cookbooks` 定时监控 agent（案例 / 工商变更 / 期限 / 法规监控）
 - **FUTURE-02**: WeChat 小程序通道
 - **FUTURE-03**: 向量检索 / embedding RAG（当前沿用 SQLite FTS5）
@@ -147,7 +151,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVT-01 | Phase 88 | Pending |
+| EVT-01 | Phase 88 | Complete |
 | EVT-02 | Phase 88 | Pending |
 | EVT-03 | Phase 88 | Pending |
 | EVT-04 | Phase 88 | Pending |
@@ -210,6 +214,7 @@
 | SAFE-06 | Phase 104 | Pending |
 
 **Coverage:**
+
 - v3.0 requirements: 61 total
 - Mapped to phases: 61
 - Unmapped: 0 ✓

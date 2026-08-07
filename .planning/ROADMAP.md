@@ -23,6 +23,7 @@ All v1.x phase details, requirements, and audits are archived under `.planning/m
 See `.planning/MILESTONES.md` for the consolidated history.
 
 Carried human gates from v1.x (NOT closed by v3.0):
+
 - Phase 5 live WeCom UAT operator confirmation
 - Phase 8 five-workday lawyer trial acceptance
 - Operator `--live` QQ OpenAPI acceptance evidence
@@ -381,6 +382,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 **Execution Order:** 88 → 89 → 90 → 91 → 92 → 93 → 94 → 95 → 96 → 97 → 98 → 99 → 100 → 101 → 102 → 103 → 104
 
 **Parallelization opportunities** (for wave-based execution):
+
 - After 92: Phases 93 and 94 can run in parallel
 - After 91: Phase 95 can run in parallel with 92/93/94
 - After 90: Phase 96 can start in parallel with the 91-95 branch
@@ -388,7 +390,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 | Phase | Stage | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
-| 88. Unified Event Contract | A | 0/TBD | Not started | - |
+| 88. Unified Event Contract | A | 1/6 | In Progress|  |
 | 89. ACP Backend Client | A | 0/TBD | Not started | - |
 | 90. ACP Event Bridge & Output Boundary | A | 0/TBD | Not started | - |
 | 91. Unified Gateway | B | 0/TBD | Not started | - |
