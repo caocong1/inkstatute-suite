@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 99 discuss complete — context captured, 11 gray areas auto-selected
+stopped_at: Phase 99 plan complete — 3 plans written, 3 waves (profile core → injection+interview → gateway+e2e)
 last_updated: "2026-08-11T00:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 99 discuss-phase (auto mode). Loaded prior context (98-CONTEXT, 98-RESEARCH, 98-03-SUMMARY). Scouted codebase: 15 CLAUDE.md files in ai-for-china-legal (13 plugin-level + 1 root + 1 shared), 13 cold-start-interview SKILL.md files, practice_profile_dependency detection in metadata_extractor.py, elicitation contract in platform-contract, RBAC roles/identity in packages/rbac, Gateway auth/sessions/elicitation handlers, body_injector.py from Phase 97, host_assumption_rewriter.py CLAUDE.md flagging. Identified 11 gray areas, all auto-selected with recommended options. Created 99-CONTEXT.md (11 scout findings + 11 key decisions) and 99-DISCUSSION-LOG.md (11 gray areas with options + rationale). Committed as 3fbc7bd.
+last_activity: 2026-08-11 -- Phase 99 plan-phase. Read 99-CONTEXT.md, 99-RESEARCH.md, REQUIREMENTS.md (PROF-01/02/03), ROADMAP.md (Phase 99 success criteria), STATE.md, AGENTS.md, scripts/run_v2_gates.py (gate registration pattern), platform-contract/elicitation.py, skill-materializer/body_injector.py, rbac/session.py (SessionStore Protocol pattern). Created 3 plan files: 99-01-PLAN.md (Wave 1: package scaffold + PracticeProfile data model + PracticeProfileStore + secret_guard + temporary mode defaults + RBAC helpers, 8 tasks), 99-02-PLAN.md (Wave 2: PracticeProfileInjector + ColdStartInterviewOrchestrator + commercial-legal interview definitions + coverage test, 5 tasks), 99-03-PLAN.md (Wave 3: Gateway handler + 3 endpoints + gate registration 36→37 + e2e tests + success criteria verification + phase completion, 8 tasks). Total: 3 plans, 21 tasks, 3 waves.
 progress:
   total_phases: 17
   completed_phases: 11
-  total_plans: 51
+  total_plans: 54
   completed_plans: 51
   percent: 65
 ---
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 99 — Practice Profile (discuss complete, ready to plan)
+**Current focus:** Phase 99 — Practice Profile (plan complete, ready to execute)
 
 ## Current Position
 
-Phase: 99 (practice-profile) — DISCUSS COMPLETE
-Status: Phase 99 discuss-phase complete (auto mode). 99-CONTEXT.md and 99-DISCUSSION-LOG.md written and committed (3fbc7bd). 11 gray areas identified and auto-selected. Key decisions: new `packages/practice-profile` package, in-memory PracticeProfileStore (Protocol-based), PracticeProfileInjector for context injection, ColdStartInterviewOrchestrator for multi-round elicitation, 3 Gateway endpoints (GET/PUT/POST interview), RBAC ADMIN/OPERATOR write + all read, secret validation on write, no profiles in event log.
-Last activity: 2026-08-11 -- Phase 99 discuss-phase (auto mode). Scouted 15 CLAUDE.md files, 13 cold-start-interview skills, elicitation contract, RBAC, Gateway patterns, body_injector. 11 gray areas auto-selected. 2 files created, 1 commit.
+Phase: 99 (practice-profile) — PLAN COMPLETE
+Status: Phase 99 plan-phase complete. 3 plan files written: 99-01-PLAN.md (Wave 1, 8 tasks), 99-02-PLAN.md (Wave 2, 5 tasks), 99-03-PLAN.md (Wave 3, 8 tasks). Total 21 tasks across 3 waves. Wave 1: packages/practice-profile scaffold + PracticeProfile data model + PracticeProfileStore (Protocol + InMemory) + secret_guard + temporary mode defaults + RBAC helpers. Wave 2: PracticeProfileInjector (## 执业配置 context injection) + ColdStartInterviewOrchestrator (5-step elicitation, 2-4 questions/round) + commercial-legal interview definitions + coverage test for 337 dependent skills. Wave 3: Gateway handler (GET/PUT/POST interview endpoints) + gate registration (36→37) + e2e tests + 6 success criteria verification + PROF-01/02/03 marked complete + phase completion.
+Last activity: 2026-08-11 -- Phase 99 plan-phase. Read 8 source/context files. Created 3 plan files. Updated STATE.md.
 
-**Next command:** `/gsd-plan 99` (Phase 99: Practice Profile — CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈)
+**Next command:** `/gsd-execute 99-01` (Wave 1: Practice profile core — package scaffold, data model, store, secret guard, temp mode, RBAC)
 
 ## Milestone v3.0 Overview
 
@@ -110,16 +110,18 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 ## Session Continuity
 
 Last session: 2026-08-11T00:00:00.000Z
-Stopped at: Phase 99 discuss complete — context captured, 11 gray areas auto-selected
+Stopped at: Phase 99 plan complete — 3 plans written, 3 waves (profile core → injection+interview → gateway+e2e)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-98 complete, Phase 99 discuss complete, ready to plan)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-98 complete, Phase 99 plan complete, ready to execute)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-plan 99` (Phase 99: Practice Profile — CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈)
+- `/gsd-execute 99-01` (Wave 1: Practice profile core — package scaffold, data model, store, secret guard, temp mode, RBAC)
+- `/gsd-execute 99-02` (Wave 2: Context injection + cold-start interview — depends on 99-01)
+- `/gsd-execute 99-03` (Wave 3: Gateway endpoints + gate registration + e2e + phase completion — depends on 99-02)
 - 或 `/gsd-autonomous` 自动推进 Phases 99-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点
