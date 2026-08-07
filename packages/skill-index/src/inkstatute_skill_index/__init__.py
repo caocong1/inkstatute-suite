@@ -5,6 +5,7 @@ model for discovering and indexing real legal SKILL.md files from
 ai-for-china-legal (345 skills) and legal-skills (51 skills).
 """
 
+from .cli import main as cli_main
 from .conflict_model import (
     ConflictEntry,
     MergeReport,
@@ -20,6 +21,13 @@ from .frontmatter_parser import (
     extract_name,
     extract_version,
     parse_frontmatter,
+)
+from .index_builder import (
+    IndexRecord,
+    SkillIndex,
+    build_index,
+    serialize_index,
+    write_index,
 )
 from .metadata_extractor import SkillMetadata, extract_metadata
 from .orchestration_classifier import (
@@ -37,15 +45,19 @@ __all__ = [
     "ClassificationResult",
     "ConflictEntry",
     "FrontmatterResult",
+    "IndexRecord",
     "MergeReport",
     "ScanResult",
     "ScannedSkill",
+    "SkillIndex",
     "SkillMetadata",
+    "build_index",
     "build_merge_report",
     "build_namespace_mappings",
     "classify_all_skills",
     "classify_conflicts",
     "classify_skill",
+    "cli_main",
     "compute_content_hash",
     "estimate_tokens",
     "estimate_tokens_for_file",
@@ -57,4 +69,6 @@ __all__ = [
     "is_cjk",
     "parse_frontmatter",
     "scan_repo",
+    "serialize_index",
+    "write_index",
 ]

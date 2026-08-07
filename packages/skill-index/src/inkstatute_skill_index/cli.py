@@ -17,7 +17,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import SCANNER_VERSION
 from .index_builder import build_index, write_index
 
 
@@ -94,6 +93,8 @@ def main(argv: list[str] | None = None) -> int:
 
 def _run_scan(args: argparse.Namespace) -> int:
     """Execute the scan subcommand."""
+    from . import SCANNER_VERSION  # late import to avoid circular
+
     repos = args.repo or []
     repo_names = args.repo_name or []
 
