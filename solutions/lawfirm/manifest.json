@@ -9,36 +9,6 @@
     "privacy_profile": "reference_first_only"
   },
   "persona_ref": "personas/lawfirm_persona.md",
-  "skills": [
-    {
-      "name": "case_qa",
-      "description": "Answer factual legal questions with citations.",
-      "intent": "factual_qa",
-      "required_tools": ["law_search"],
-      "risk_level": "medium"
-    },
-    {
-      "name": "contract_draft",
-      "description": "Draft contract clauses with citation hooks.",
-      "intent": "drafting",
-      "required_tools": ["docx_writer"],
-      "risk_level": "high"
-    },
-    {
-      "name": "litigation_summary",
-      "description": "Summarize case materials for litigation strategy.",
-      "intent": "analysis",
-      "required_tools": ["law_search"],
-      "risk_level": "high"
-    },
-    {
-      "name": "compliance_review",
-      "description": "Review contract or policy for compliance issues.",
-      "intent": "review",
-      "required_tools": ["law_search"],
-      "risk_level": "medium"
-    }
-  ],
   "mcp": [
     {"name": "law_search", "transport": "stdio", "secret_ref": "LAW_SEARCH_TOKEN"}
   ],
