@@ -6,6 +6,13 @@ from .agent_adapter import (
     AgentBackendMode,
     validate_agent_backend_manifest,
 )
+from .bot_degradation import (
+    BotDelivery,
+    DEGRADATION_RULES,
+    DegradationCategory,
+    aggregate_events,
+    get_degradation_category,
+)
 from .enums import (
     AgentResultStatus,
     ApprovalStatus,
@@ -109,6 +116,7 @@ from .unified_events import (
 
 __all__ = [
     "AdapterCapabilitySet",
+    "aggregate_events",
     "AgentResult",
     "AgentResultStatus",
     "AgentTurn",
@@ -122,6 +130,7 @@ __all__ = [
     "ArtifactKind",
     "AsyncTaskState",
     "AttachmentRef",
+    "BotDelivery",
     "BotInstance",
     "Channel",
     "ChannelBinding",
@@ -130,6 +139,8 @@ __all__ = [
     "ChannelMessage",
     "CitationRecord",
     "CitationRecordedPayload",
+    "DEGRADATION_RULES",
+    "DegradationCategory",
     "ErrorCategory",
     "ErrorEventPayload",
     "ErrorInfo",
@@ -145,6 +156,7 @@ __all__ = [
     "format_answer_display",
     "get_phase_for_event_type",
     "get_ui_concept_for_phase",
+    "get_degradation_category",
     "is_valid_transition",
     "FeedbackEvent",
     "FeedbackEventType",
