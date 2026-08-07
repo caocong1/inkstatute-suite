@@ -181,11 +181,13 @@ class TestGatewayTracer(unittest.TestCase):
         self.assertIn("run_id", result)
         self.assertIn("status", result)
 
-    def test_get_run_stub(self) -> None:
+    def test_get_run_not_found(self) -> None:
+        """GET /v1/runs/{id} now returns 404 (not 501) — stub replaced by real handler."""
         result = asyncio.run(self.app.dispatch(
             "GET", "/v1/runs/run-1", AUTH_HEADERS, None,
         ))
-        self.assertEqual(result["status"], 501)
+        self.assertEqual(result["status"], 404)
+        self.assertEqual(result["error"]["code"], "not_found")
 
     def test_cancel_run(self) -> None:
         create_result = asyncio.run(self.app.dispatch(
@@ -252,13 +254,12 @@ class TestGatewayTracer(unittest.TestCase):
 
     def test_stubbed_endpoints_return_501(self) -> None:
         # Upload, artifact, feedback (Plan 91-03), and skills (Plan 91-04)
-        # are now implemented. The remaining stubs still return 501.
+        # are now implemented. get_session, list_session_runs, get_run
+        # (Plan 93-03-01) are now implemented.
+        # The remaining stubs still return 501: submit_elicitation, submit_approval.
         # Note: /v1/skills returns 501 only when no skills_handler is injected
         # (as in _make_app); with a handler it returns 200/404.
         stubbed = [
-            ("GET", "/v1/sessions/sess-1", None),
-            ("GET", "/v1/sessions/sess-1/runs", None),
-            ("GET", "/v1/runs/run-1", None),
             ("POST", "/v1/runs/run-1/elicitation", {}),
             ("POST", "/v1/runs/run-1/approvals", {}),
         ]

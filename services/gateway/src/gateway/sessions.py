@@ -142,8 +142,38 @@ def build_set_cookie_header(cookie_value: str, *, max_age: int = DEFAULT_SESSION
     return f"{SESSION_COOKIE_NAME}={cookie_value}; Max-Age={max_age}; HttpOnly; Secure; SameSite=Strict"
 
 
+def serialize_session(session: GatewaySession) -> dict:
+    """Serialize a ``GatewaySession`` to a JSON-compatible dict.
+
+    Returns ``{ session_id, tenant_id, user_id, conversation_id,
+    created_at, expires_at, devices }``.
+    """
+    return {
+        "session_id": session.session_id,
+        "tenant_id": session.tenant_id,
+        "user_id": session.user_id,
+        "conversation_id": session.conversation_id,
+        "created_at": session.created_at,
+        "expires_at": session.expires_at,
+        "devices": list(session.devices),
+    }
+
+
+def serialize_session_list(sessions: list[GatewaySession]) -> dict:
+    """Serialize a list of ``GatewaySession`` objects to a JSON-compatible dict.
+
+    Returns ``{ sessions: [...], count: N }``.
+    """
+    return {
+        "sessions": [serialize_session(s) for s in sessions],
+        "count": len(sessions),
+    }
+
+
 __all__ = [
     "GatewaySession",
     "GatewaySessionManager",
     "build_set_cookie_header",
+    "serialize_session",
+    "serialize_session_list",
 ]

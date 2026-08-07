@@ -38,7 +38,8 @@ from .config import GatewayConfig
 from .event_buffer import RunEventBuffer
 from .feedback import GatewayFeedbackHandler, handle_submit_feedback_request
 from .login import GatewayLoginHandler
-from .sessions import GatewaySessionManager, build_set_cookie_header
+from .runs import handle_get_run_request, handle_list_session_runs_request
+from .sessions import GatewaySessionManager, build_set_cookie_header, serialize_session
 from .skills import GatewaySkillsHandler, handle_skills_request
 from .sse import GatewaySseStream, parse_last_event_id
 from .upload import GatewayUploadHandler, handle_upload_request
@@ -211,11 +212,11 @@ class GatewayApp:
             if operation == OPERATION_CANCEL_RUN:
                 return await self._handle_cancel_run(ctx, path_params)
             if operation == OPERATION_GET_SESSION:
-                return _not_implemented("get_session")
+                return self._handle_get_session(ctx, path_params)
             if operation == OPERATION_LIST_SESSION_RUNS:
-                return _not_implemented("list_session_runs")
+                return self._handle_list_session_runs(ctx, path_params)
             if operation == OPERATION_GET_RUN:
-                return _not_implemented("get_run")
+                return self._handle_get_run(ctx, path_params)
             if operation == OPERATION_SUBMIT_ELICITATION:
                 return _not_implemented("submit_elicitation")
             if operation == OPERATION_SUBMIT_APPROVAL:
@@ -360,6 +361,50 @@ class GatewayApp:
         result = _serialize_run(run)
         result["tenant_id"] = ctx.tenant_id
         return result
+
+    def _handle_get_session(
+        self,
+        ctx: AuthContext,
+        path_params: dict[str, str],
+    ) -> JsonObject:
+        """Handle GET /v1/sessions/{session_id} — return session info."""
+        session_id = path_params.get("session_id", "")
+        if not session_id:
+            raise GatewayError(
+                "session_id is required",
+                code="invalid_request",
+                details={"field": "session_id"},
+            )
+        session = self._session_manager.get_session(session_id)
+        if session is None:
+            raise GatewayError(
+                "Session not found",
+                code="not_found",
+                status=404,
+            )
+        # Cross-tenant check
+        self._auth.check_tenant(ctx, session.tenant_id)
+        return serialize_session(session)
+
+    def _handle_list_session_runs(
+        self,
+        ctx: AuthContext,
+        path_params: dict[str, str],
+    ) -> JsonObject:
+        """Handle GET /v1/sessions/{session_id}/runs — list runs for a session."""
+        session_id = path_params.get("session_id", "")
+        return handle_list_session_runs_request(
+            self._runtime, ctx, self._session_manager, session_id,
+        )
+
+    def _handle_get_run(
+        self,
+        ctx: AuthContext,
+        path_params: dict[str, str],
+    ) -> JsonObject:
+        """Handle GET /v1/runs/{run_id} — return run info."""
+        run_id = path_params.get("run_id", "")
+        return handle_get_run_request(self._runtime, ctx, run_id)
 
     # -----------------------------------------------------------------------
     # Upload / Artifact / Feedback handlers (Plan 91-03)
