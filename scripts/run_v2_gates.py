@@ -77,6 +77,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     admin_web_ui_src = repo_root / "services" / "admin-web-ui" / "src"
     lawyer_web_chat_src = repo_root / "services" / "lawyer-web-chat" / "src"
     operator_config_src = repo_root / "packages" / "operator-config" / "src"
+    acp_client_src = repo_root / "packages" / "acp-client" / "src"
 
     return (
         Gate(
@@ -108,6 +109,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "operator-config",
             (py, "-m", "unittest", "discover", "-s", "packages/operator-config/tests"),
             (operator_config_src, platform_runtime_src),
+        ),
+        Gate(
+            "acp-client",
+            (py, "-m", "unittest", "discover", "-s", "packages/acp-client/tests"),
+            (acp_client_src, platform_src, platform_runtime_src),
         ),
         Gate(
             "router-service",
@@ -232,6 +238,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/contract-test-suite/src",
                 "packages/platform-runtime/src",
                 "packages/operator-config/src",
+                "packages/acp-client/src",
                 "packages/skill-registry/src",
                 "packages/router-service/src",
                 "packages/mcp-registry/src",
