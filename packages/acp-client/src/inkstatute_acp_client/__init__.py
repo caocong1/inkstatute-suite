@@ -16,6 +16,7 @@ from .capability_negotiation import (
 )
 from .client import ACPClient, ACPTransport, StdioACPTransport
 from .event_mapping import map_acp_update_to_run_event
+from .lifecycle import SubprocessInfo, SubprocessLifecycleManager, assert_no_orphans
 from .process_mode import (
     IMPLEMENTED_MODES,
     ProcessModeConfig,
@@ -36,7 +37,10 @@ __all__ = [
     "ProcessModeConfig",
     "RequiredCapabilities",
     "StdioACPTransport",
+    "SubprocessInfo",
+    "SubprocessLifecycleManager",
     "UNIMPLEMENTED_MODES",
+    "assert_no_orphans",
     "build_required_capabilities",
     "check_hermes_compatibility",
     "create_hermes_adapter",
