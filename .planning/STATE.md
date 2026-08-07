@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: in_progress
-stopped_at: Phase 91 Plan 02 complete; ready for Plan 91-03
-last_updated: "2026-08-07T20:00:00.000Z"
-last_activity: "2026-08-07 -- Phase 91 Plan 02 complete (SSE Last-Event-ID Replay: in-memory event buffer, seq-based reconnection, 28 new tests, 31 gates green, GW-02 complete)"
+stopped_at: Phase 91 Plan 03 complete; ready for Plan 91-04
+last_updated: "2026-08-07T21:00:00.000Z"
+last_activity: "2026-08-07 -- Phase 91 Plan 03 complete (Upload/Artifact/Feedback endpoints: reference-first upload, auth+tenant artifact download, feedback normalization, 29 new tests, 103 total, 31 gates green, GW-04 complete)"
 progress:
   total_phases: 17
   completed_phases: 3
   total_plans: 19
-  completed_plans: 16
-  percent: 84
+  completed_plans: 17
+  percent: 89
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 91 — Unified Gateway (Plan 02 complete)
+**Current focus:** Phase 91 — Unified Gateway (Plan 03 complete)
 
 ## Current Position
 
 Phase: 91 (unified-gateway) — IN PROGRESS
-Plan: 2 complete (91-01 Gateway Tracer + 91-02 SSE Last-Event-ID Replay)
-Status: Phase 91 Plan 02 complete, ready for Plan 91-03
-Last activity: 2026-08-07 -- Phase 91 Plan 02 complete (SSE Last-Event-ID Replay: in-memory event buffer, seq-based reconnection, 28 new tests, 31 gates green, GW-02 complete)
+Plan: 3 complete (91-01 Gateway Tracer + 91-02 SSE Last-Event-ID Replay + 91-03 Upload/Artifact/Feedback)
+Status: Phase 91 Plan 03 complete, ready for Plan 91-04
+Last activity: 2026-08-07 -- Phase 91 Plan 03 complete (Upload/Artifact/Feedback endpoints: reference-first upload, auth+tenant artifact download, feedback normalization, 29 new tests, 103 total, 31 gates green, GW-04 complete)
 
-**Next command:** `/gsd-execute-plan 91-03` （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-execute-plan 91-04` （或 `/gsd-autonomous` 自动推进）
 
 ## Milestone v3.0 Overview
 
@@ -110,17 +110,17 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-07 — Phase 91 Plan 02 complete (SSE Last-Event-ID Replay: in-memory event buffer, seq-based reconnection, 28 new tests, 31 gates green, GW-02 complete)
-Stopped at: Phase 91 Plan 02 complete; ready for Plan 91-03
+Last session: 2026-08-07 — Phase 91 Plan 03 complete (Upload/Artifact/Feedback endpoints: reference-first upload, auth+tenant artifact download, feedback normalization, 29 new tests, 103 total, 31 gates green, GW-04 complete)
+Stopped at: Phase 91 Plan 03 complete; ready for Plan 91-04
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-02 complete)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-02 + GW-04 complete)
 Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-90 complete, Phase 91 in progress)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute-plan 91-03` — 继续 Phase 91 (Unified Gateway Plan 03)
+- `/gsd-execute-plan 91-04` — 继续 Phase 91 (Unified Gateway Plan 04)
 - 或 `/gsd-autonomous` 自动推进 Phases 91-104
 - 或 `/gsd-autonomous --to 93` 只跑到"可用 Web 产品"这个里程碑点

@@ -393,7 +393,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 88. Unified Event Contract | A | 6/6 | Complete    | 2026-08-07 |
 | 89. ACP Backend Client | A | 3/4 | In Progress|  |
 | 90. ACP Event Bridge & Output Boundary | A | 4/4 | Complete | 2026-08-07 |
-| 91. Unified Gateway | B | 2/5 | In Progress|  |
+| 91. Unified Gateway | B | 3/5 | In Progress|  |
 | 92. Shared UI Core | B | 0/TBD | Not started | - |
 | 93. Web Client | B | 0/TBD | Not started | - |
 | 94. Desktop Client | B | 0/TBD | Not started | - |
