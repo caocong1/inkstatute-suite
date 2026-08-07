@@ -146,8 +146,8 @@ Carried human gates from v1.x (NOT closed by v3.0):
   2. SSE 流式传输统一事件；客户端带 `Last-Event-ID` 重连后从正确 `seq` 续传，集成测试断言不重复不丢失
   3. 鉴权可用：RBAC + 会话 cookie（web/桌面）与 Bearer token（bot/程序化）；租户校验生效；自用形态可用单租户默认值但契约字段不省略
   4. 附件上传返回 `attachment_ref`、产物下载经 `artifact_id`，均 reference-first 且需鉴权 + 租户校验；跨租户访问被拒
-  5. `services/lawyer-web-chat` 的能力（SSE 编码、会话鉴权、多设备会话列表、上传、反馈）已在 Gateway 中等价可用，旧服务标记 deprecated
-  6. `ChannelAdapter.verify_and_ack` 已降级为可选 capability，不实现它的通道适配器仍能通过 Protocol 校验与 gate
+  5. ✅ `services/lawyer-web-chat` 的能力（SSE 编码、会话鉴权、多设备会话列表、上传、反馈）已在 Gateway 中等价可用，旧服务标记 deprecated (GW-05 complete, Plan 91-04)
+  6. ✅ `ChannelAdapter.verify_and_ack` 已降级为可选 capability，不实现它的通道适配器仍能通过 Protocol 校验与 gate (GW-06 complete, Plan 91-04)
 
 **Plans**: TBD (est. 4-5)
 **UI hint**: no
