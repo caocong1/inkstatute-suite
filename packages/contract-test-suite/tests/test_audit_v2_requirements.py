@@ -451,7 +451,8 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("gate-coverage-meta-test", gate_names)
         self.assertIn("acp-client", gate_names)
         self.assertIn("acp-event-bridge", gate_names)
-        self.assertEqual(len(gate_names), 30)
+        self.assertIn("gateway", gate_names)
+        self.assertEqual(len(gate_names), 31)
 
 
 if __name__ == "__main__":

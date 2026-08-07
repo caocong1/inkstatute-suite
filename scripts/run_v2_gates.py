@@ -79,6 +79,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     operator_config_src = repo_root / "packages" / "operator-config" / "src"
     acp_client_src = repo_root / "packages" / "acp-client" / "src"
     acp_event_bridge_src = repo_root / "packages" / "acp-event-bridge" / "src"
+    gateway_src = repo_root / "services" / "gateway" / "src"
 
     return (
         Gate(
@@ -120,6 +121,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "acp-event-bridge",
             (py, "-m", "unittest", "discover", "-s", "packages/acp-event-bridge/tests"),
             (acp_event_bridge_src, acp_client_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
+            "gateway",
+            (py, "-m", "unittest", "discover", "-s", "services/gateway/tests"),
+            (gateway_src, platform_src, platform_runtime_src, rbac_src, web_sse_src, skill_registry_src, acp_event_bridge_src, acp_client_src),
         ),
         Gate(
             "router-service",
@@ -256,6 +262,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/multi-agent-adapter/src",
                 "services/admin-web-ui/src",
                 "services/lawyer-web-chat/src",
+                "services/gateway/src",
                 "services/wecom-service/src",
                 "services/hermes-contract-layer/src",
                 "services/feedback-service/src",
