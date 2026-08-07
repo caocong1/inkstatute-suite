@@ -94,7 +94,7 @@ All acceptance criteria for all 4 tasks PASS:
 
 ## Deviations
 
-1. **Pre-existing privacy gate failure fixed** — The `phase7-privacy-boundary` gate was failing due to `api_key=abc123secret` (13 chars, above the 12-char scanner threshold) in `90-02-SUMMARY.md` line 86. Shortened the reference to avoid including the secret-like value. This was a pre-existing issue from Plan 90-02's deviation note, not caused by this plan.
+1. **Pre-existing privacy gate failure fixed** — The `phase7-privacy-boundary` gate was failing due to a long secret-like value in `90-02-SUMMARY.md` line 86 (above the 12-char scanner threshold). Shortened the reference to avoid including the secret-like value. This was a pre-existing issue from Plan 90-02's deviation note, not caused by this plan.
 
 ## Self-Check: PASSED
 
