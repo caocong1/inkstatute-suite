@@ -256,9 +256,15 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
         content,
         completed: true,
       };
+      // Idempotency: if a message with the same ID already exists, replace it
+      const existingIdx = state.messages.findIndex((m) => m.id === messageId);
+      const messages =
+        existingIdx >= 0
+          ? state.messages.map((m, i) => (i === existingIdx ? message : m))
+          : [...state.messages, message];
       return {
         ...base,
-        messages: [...state.messages, message],
+        messages,
         streamingBuffer: "",
         streamingMessageId: null,
       };
@@ -374,6 +380,11 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
         { artifact: Artifact }
       > | undefined;
       if (!p) return base;
+      // Idempotency: don't duplicate artifacts with the same artifact_id
+      const exists = state.artifacts.some(
+        (a) => a.artifact_id === p.artifact.artifact_id,
+      );
+      if (exists) return base;
       return { ...base, artifacts: [...state.artifacts, p.artifact] };
     }
 
@@ -383,7 +394,12 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
         { citations: CitationRecord[] }
       > | undefined;
       if (!p) return base;
-      return { ...base, citations: [...state.citations, ...p.citations] };
+      // Idempotency: don't duplicate citations with the same source
+      const existingSources = new Set(state.citations.map((c) => c.source));
+      const newCitations = p.citations.filter(
+        (c) => !existingSources.has(c.source),
+      );
+      return { ...base, citations: [...state.citations, ...newCitations] };
     }
 
     case "run.state_changed": {

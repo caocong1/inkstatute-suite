@@ -252,7 +252,7 @@ export function ChatPanel(props: ChatPanelProps) {
 
       <div class="thread scroll" ref={threadRef}>
         <Show
-          when={props.state.messages.length > 0 || props.state.streamingBuffer}
+          when={props.state.messages.length > 0 || props.state.streamingBuffer || props.state.clarification || props.state.workflow.steps.length > 0}
           fallback={
             <div class="msg msg-agent">
               <div class="ava">墨</div>

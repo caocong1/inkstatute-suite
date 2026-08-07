@@ -1,0 +1,8 @@
+{
+  "name": "inkstatute-suite",
+  "private": true,
+  "workspaces": [
+    "packages/platform-sdk-ts",
+    "packages/ui-core"
+  ]
+}
