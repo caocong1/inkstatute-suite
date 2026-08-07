@@ -450,7 +450,8 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("lawyer-web-chat", gate_names)
         self.assertIn("gate-coverage-meta-test", gate_names)
         self.assertIn("acp-client", gate_names)
-        self.assertEqual(len(gate_names), 29)
+        self.assertIn("acp-event-bridge", gate_names)
+        self.assertEqual(len(gate_names), 30)
 
 
 if __name__ == "__main__":
