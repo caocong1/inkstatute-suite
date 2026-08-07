@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-skill-index"
+version = "1.0.0"
+description = "Read-only scanner that indexes real SKILL.md files from ai-for-china-legal and legal-skills repos into a machine-readable skill-index.json."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.inkstatute]
+subsystem = "skill-index"
+default_off_flag = "skill_index_enabled"
