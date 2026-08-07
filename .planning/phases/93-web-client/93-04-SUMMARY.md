@@ -68,3 +68,16 @@ The `useEventStream` hook used a plain `let store` variable instead of a signal,
 - Chat UI single implementation: ✅ All components imported from `@inkstatute/ui-core`, not redefined
 - Gateway single entry point: ✅ All communication via Gateway through Vite proxy / `VITE_GATEWAY_URL`
 - No `@tauri-apps/*` dependencies: ✅ grep returns zero results
+
+## Self-Check: PASSED
+
+- [x] All tasks executed and committed (4 commits)
+- [x] All acceptance_criteria PASS
+- [x] Responsive mobile layout implemented (768px breakpoint, tab toggle, drawer)
+- [x] Mobile tab toggle (对话/文书/引用) works
+- [x] Drawer navigation on mobile works
+- [x] Playwright E2E tests pass (10 scenarios: 9 desktop + 1 mobile)
+- [x] All 6 success criteria from ROADMAP.md verified
+- [x] 33 gates green
+- [x] UI-04 marked complete
+- [x] Phase 93 marked complete in STATE.md and ROADMAP.md
