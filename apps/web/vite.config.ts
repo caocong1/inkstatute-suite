@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       debug: path.resolve(__dirname, "src/shims/debug.ts"),
+      extend: path.resolve(__dirname, "src/shims/extend.ts"),
     },
   },
   server: {
@@ -18,6 +19,9 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: [],
+  },
   build: {
     outDir: "dist",
   },
@@ -25,5 +29,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["tests/setup.ts"],
     globals: true,
+    poolTimeout: 10000,
+    teardownTimeout: 5000,
   },
 });

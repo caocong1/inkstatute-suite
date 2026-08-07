@@ -76,6 +76,7 @@ export const LoginPage: Component = () => {
               用户名
               <input
                 type="text"
+                name="username"
                 class="login-input"
                 value={username()}
                 onInput={(e) => setUsername(e.currentTarget.value)}
@@ -87,6 +88,7 @@ export const LoginPage: Component = () => {
               密码
               <input
                 type="password"
+                name="password"
                 class="login-input"
                 value={password()}
                 onInput={(e) => setPassword(e.currentTarget.value)}

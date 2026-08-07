@@ -71,3 +71,5 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+apps/web/test-results/
+apps/web/playwright-report/
