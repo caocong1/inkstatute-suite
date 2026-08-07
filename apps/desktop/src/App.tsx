@@ -28,6 +28,7 @@ import { HomePage } from "./pages/HomePage";
 import { WorkspacePage } from "./pages/WorkspacePage";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { AppUpdateBanner } from "./components/AppUpdateBanner";
 
 const AppContent: Component = () => {
   const auth = useAuth();
@@ -61,6 +62,7 @@ const AppContent: Component = () => {
           }}
           onOpenSettings={() => setSettingsOpen(true)}
         />
+        <AppUpdateBanner />
         <Show when={conn.isOffline()}>
           <OfflineBanner />
         </Show>
