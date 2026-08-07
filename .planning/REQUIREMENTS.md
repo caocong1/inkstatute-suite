@@ -20,7 +20,7 @@
 
 ### ACP — 后端层
 
-- [ ] **ACP-01**: Python ACP client（stdio，锁定协议 v1，`initialize` 版本与能力协商），实现 `BackendAdapter` 9 方法 Protocol
+- [x] **ACP-01**: Python ACP client（stdio，锁定协议 v1，`initialize` 版本与能力协商），实现 `BackendAdapter` 9 方法 Protocol
 - [ ] **ACP-02**: `hermes acp` 后端可用，含能力探测与 Hermes 版本兼容矩阵；替代 `packages/backends/hermes` 的自定义 HTTP runs API
 - [ ] **ACP-03**: 至少一个额外 ACP 后端（`codex-acp` 或 `claude-agent-acp`）跑通同一契约，证明后端可替换性
 - [ ] **ACP-04**: ACP `session/update` ⟷ 统一事件双向映射（含 `tool_call_update` / `plan` / `elicitation` / `request_permission`），往返语义无损
@@ -157,7 +157,7 @@
 | EVT-04 | Phase 88 | Complete |
 | EVT-05 | Phase 88 | Complete |
 | EVT-06 | Phase 88 | Complete |
-| ACP-01 | Phase 89 | Pending |
+| ACP-01 | Phase 89 | Complete |
 | ACP-02 | Phase 89 | Pending |
 | ACP-03 | Phase 89 | Pending |
 | ACP-06 | Phase 89 | Pending |

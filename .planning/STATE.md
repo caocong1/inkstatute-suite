@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 88 complete (all 6 plans done); ready for Phase 89
-last_updated: "2026-08-07T06:08:18.757Z"
-last_activity: 2026-08-07 -- Phase 89 execution started
+stopped_at: Phase 89 Plan 01 complete (ACP client core); ready for Plan 02
+last_updated: "2026-08-07T07:00:00.000Z"
+last_activity: 2026-08-07 -- Phase 89 Plan 01 complete (ACP-01)
 progress:
   total_phases: 17
   completed_phases: 1
   total_plans: 10
-  completed_plans: 6
-  percent: 6
+  completed_plans: 7
+  percent: 7
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 ## Current Position
 
 Phase: 89 (acp-backend-client) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 89
-Last activity: 2026-08-07 -- Phase 89 execution started
+Plan: 1 of 4 complete (ACP-01 done)
+Status: Executing Phase 89 — Plan 01 complete
+Last activity: 2026-08-07 -- Phase 89 Plan 01 complete (ACP client core)
 
 **Next command:** `/gsd-plan-phase 89` （或 `/gsd-autonomous` 自动推进）
 
@@ -110,12 +110,12 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-07 — Plan 88-06 complete (V2 schema preservation + composability + all 28 gates green)
-Stopped at: Phase 88 complete (all 6 plans done); ready for Phase 89
+Last session: 2026-08-07 — Plan 89-01 complete (ACP client core: stdio transport, capability negotiation, event mapping, echo agent fixture)
+Stopped at: Phase 89 Plan 01 complete; ready for Plan 02
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 all complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88 complete)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88 complete, Phase 89 Plan 01 complete)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
