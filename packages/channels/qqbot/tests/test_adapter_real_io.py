@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -125,7 +126,7 @@ def _text_delivery() -> ChannelDelivery:
             "scene": "c2c",
             "user_openid": "FIXTURE_USER_OPENID_C2C_001",
             "msg_id": "ROBOT1.0_fixture_c2c_msg_001",
-            "received_at": "2026-07-09T11:59:00Z",
+            "received_at": (datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "reply_count": 0,
         },
     )

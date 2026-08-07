@@ -52,7 +52,19 @@ from .task_flow import (
     task_stage_idempotency_key,
 )
 from .channel_wiring import build_wecom_channel_config, load_wecom_channel_config
-from .wiring import WeComWiredRuntime, build_wecom_wired_runtime
+
+# Lazy import for wiring to avoid circular import:
+# wecom_service.__init__ → wiring → inkstatute_channels_wecom.adapter →
+# wecom_service.normalization → wecom_service.__init__
+# The wiring module imports the channel adapter, which imports back into
+# wecom_service.  Deferring this import breaks the cycle when both
+# packages are on PYTHONPATH simultaneously (e.g. wecom-channel gate).
+def __getattr__(name: str):  # type: ignore[no-redef]
+    if name in ("WeComWiredRuntime", "build_wecom_wired_runtime"):
+        from .wiring import WeComWiredRuntime, build_wecom_wired_runtime
+
+        return {"WeComWiredRuntime": WeComWiredRuntime, "build_wecom_wired_runtime": build_wecom_wired_runtime}[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     "ActiveTaskRoute",

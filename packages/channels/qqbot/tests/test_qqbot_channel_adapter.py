@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import unittest
 from dataclasses import asdict
+from datetime import datetime, timedelta, timezone
 
 from inkstatute_channels_qqbot import QQBotChannelAdapter, QQBotChannelConfig
 from platform_contract.events import AgentTurn, FeedbackEvent
@@ -11,6 +12,16 @@ from platform_runtime.protocols import ChannelDelivery, RawInbound
 
 def run(coro):
     return asyncio.run(coro)
+
+
+def _recent_received_at() -> str:
+    """Return an ISO 8601 timestamp 5 minutes ago — always within the C2C
+    passive-reply window (max age 3600s).  Tests that exercise file/image
+    delivery need a valid window so the adapter reaches the upload stage
+    instead of being short-circuited by the window gate.
+    """
+    now = datetime.now(timezone.utc)
+    return (now - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def text_raw() -> RawInbound:
@@ -470,7 +481,7 @@ class QQBotChannelAdapterTests(unittest.TestCase):
                 "scene": "c2c",
                 "user_openid": "user-openid-1",
                 "msg_id": "inbound-file-1",
-                "received_at": "2026-07-09T11:55:00Z",
+                "received_at": _recent_received_at(),
                 "reply_count": 0,
             },
         )
@@ -530,7 +541,7 @@ class QQBotChannelAdapterTests(unittest.TestCase):
                 "scene": "c2c",
                 "user_openid": "user-openid-1",
                 "msg_id": "inbound-file-missing-url",
-                "received_at": "2026-07-09T11:55:00Z",
+                "received_at": _recent_received_at(),
                 "reply_count": 0,
             },
         )
@@ -575,7 +586,7 @@ class QQBotChannelAdapterTests(unittest.TestCase):
                 "scene": "c2c",
                 "user_openid": "user-openid-1",
                 "msg_id": "inbound-file-missing-info",
-                "received_at": "2026-07-09T11:55:00Z",
+                "received_at": _recent_received_at(),
                 "reply_count": 0,
             },
         )
@@ -680,7 +691,7 @@ class QQBotChannelAdapterTests(unittest.TestCase):
                 "scene": "c2c",
                 "user_openid": "user-openid-1",
                 "msg_id": "inbound-image-1",
-                "received_at": "2026-07-09T11:55:00Z",
+                "received_at": _recent_received_at(),
                 "reply_count": 0,
             },
         )
