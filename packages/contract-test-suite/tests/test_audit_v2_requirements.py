@@ -449,7 +449,7 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("admin-web-ui", gate_names)
         self.assertIn("lawyer-web-chat", gate_names)
         self.assertIn("gate-coverage-meta-test", gate_names)
-        self.assertEqual(len(gate_names), 26)
+        self.assertEqual(len(gate_names), 28)
 
 
 if __name__ == "__main__":

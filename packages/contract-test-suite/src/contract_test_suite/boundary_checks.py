@@ -106,6 +106,14 @@ class BoundaryAllowlistPolicy:
         )
     )
     architecture_doc_roots: tuple[Path, ...] = field(default_factory=lambda: (Path("docs/architecture"),))
+    wecom_payload_allowlist_paths: tuple[Path, ...] = field(
+        default_factory=lambda: (
+            Path("packages/platform-contract/src/platform_contract/unified_events.py"),
+            Path("packages/platform-contract/src/platform_contract/five_phase.py"),
+            Path("packages/platform-contract/src/platform_contract/elicitation.py"),
+            Path("packages/platform-contract/src/platform_contract/bot_degradation.py"),
+        )
+    )
     concrete_package_roots: tuple[Path, ...] = field(
         default_factory=lambda: (
             Path("packages/channels"),
@@ -142,6 +150,15 @@ class BoundaryAllowlistPolicy:
         }:
             return True
         return False
+
+    def is_wecom_payload_allowed(self, path: Path, repo_root: Path) -> bool:
+        """Return True if *path* may legitimately use words that coincide with
+        WeCom callback payload field names (e.g. ``Event``, ``Format``) in a
+        non-WeCom context — typically docstrings or comments in unified event
+        contract modules.
+        """
+        relative = _relative_path(path, repo_root)
+        return relative in self.wecom_payload_allowlist_paths
 
     def _iter_text_files(self, root: Path) -> Iterable[Path]:
         if not root.exists():
@@ -349,9 +366,11 @@ def _neutral_text_issues(
     policy: BoundaryAllowlistPolicy,
 ) -> list[BoundaryIssue]:
     issues: list[BoundaryIssue] = []
+    wecom_allowed = policy.is_wecom_payload_allowed(path, repo_root)
     for line_number, line in enumerate(text.splitlines(), start=1):
         issues.extend(_private_hermes_issues(path, line, line=line_number))
-        issues.extend(_wecom_payload_field_issues(path, line, line=line_number))
+        if not wecom_allowed:
+            issues.extend(_wecom_payload_field_issues(path, line, line=line_number))
         issues.extend(_secret_and_runtime_line_issues(path, line, line=line_number))
         issues.extend(_concrete_name_issues(path, line, line=line_number, repo_root=repo_root, policy=policy))
     return issues

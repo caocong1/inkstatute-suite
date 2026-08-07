@@ -108,7 +108,7 @@ Secrets are stored and edited as refs only (`env:…`, `secret://…`); values a
 
 当前交付以 **库 + 可组合宿主 + 门禁** 为主，不是单一「一键安装包」：
 
-1. **CI / 本地门禁**：`python scripts/run_v2_gates.py`
+1. **CI / 本地门禁**：`python scripts/run_v2_gates.py`（V2 Contract Gates — 28 gates, all must stay green throughout V3）
 2. **QQ 宿主**：`services/qqbot-service`（stdlib webhook，`POST /qqbot/callback`）；启用前双开关必须显式打开
 3. **WeCom 服务**：`services/wecom-service` 边界与策略已具备；完整企微后台对接与日常试运行仍有人工门禁（Phase 5 / Phase 8）
 4. **运营看板**：`admin-web-ui`（`admin_web_ui_enabled`，默认 OFF）
