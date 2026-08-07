@@ -318,7 +318,8 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 ## Current State
 
 - **Last shipped:** v1.11 Product Console (Phases 79–87) — product-grade operations control plane with process orchestration, observability dashboards, session auth, and end-to-end smoke verification.
-- **Active milestone:** None — planning next milestone via `/gsd-new-milestone`.
+- **Active milestone:** v3.0 Unified Legal Core (Phases 88–104) — Stage A 协议底座 in progress.
+- **Phase 88 complete:** Unified Event Contract — 13-category unified event vocabulary (15 JSON Schemas, Python + TypeScript bindings) isomorphic to ACP v1 session/update, with RunEvent respecification, elicitation contract, five-phase progress, bot degradation aggregator, and V2 schema preservation. 6/6 EVT requirements satisfied, 28 gates green.
 - **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
 - **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
 - **Tech debt (v1.11):** Missing SUMMARY.md for phases 82-85; unchecked REQUIREMENTS.md checkboxes for OBS-04..10; incomplete Nyquist validation for 7/9 phases. All non-blocking.
@@ -344,4 +345,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-07-15 — milestone v1.11 Product Console shipped*
+*Last updated: 2026-08-07 — Phase 88 (Unified Event Contract) complete, milestone v3.0 in progress*
