@@ -46,11 +46,17 @@
     "occurred_at": {
       "$ref": "common.schema.json#/$defs/datetime"
     },
+    "ingested_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
     "seq": {
       "type": "integer",
       "minimum": 0
     },
     "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    },
+    "payload": {
       "$ref": "common.schema.json#/$defs/metadata"
     }
   }

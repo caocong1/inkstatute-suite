@@ -292,6 +292,8 @@ class RunEvent:
     event_type: RunEventType | str
     occurred_at: str
     seq: int
+    ingested_at: str | None = None
+    payload: JsonObject | None = None
     status: AsyncTaskState | str | None = None
     step_id: str | None = None
     tool_call_id: str | None = None
