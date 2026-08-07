@@ -33,6 +33,7 @@ import { uploadFile } from "../lib/upload";
 import { desktopFileAdapter } from "../adapters/desktopFileAdapter";
 import { classifyTauriPaths } from "../adapters/desktopDropAdapter";
 import { pathToRefAlias } from "@inkstatute/ui-core";
+import { FTS5SearchPanel } from "../components/FTS5SearchPanel";
 
 export const WorkspaceContent: Component = () => {
   const session = useSession();
@@ -40,6 +41,7 @@ export const WorkspaceContent: Component = () => {
   const [citeOpen, setCiteOpen] = createSignal(false);
   const [downloadError, setDownloadError] = createSignal<string | null>(null);
   const [pendingRefs, setPendingRefs] = createSignal<ContextRefPayload[]>([]);
+  const [ftsOpen, setFtsOpen] = createSignal(false);
 
   const artifact = () => session.state().artifacts[0] ?? null;
   const citationGroups = (): CitationGroups =>
@@ -184,6 +186,27 @@ export const WorkspaceContent: Component = () => {
           onClick={() => setCiteOpen(true)}
         >
           引用（{citationCount()}）
+        </button>
+      </Show>
+      <Show when={ftsOpen()}>
+        <div class="ws-fts-overlay">
+          <FTS5SearchPanel onAttachRef={addContextRef} />
+          <button
+            class="ws-fts-close"
+            type="button"
+            onClick={() => setFtsOpen(false)}
+          >
+            关闭
+          </button>
+        </div>
+      </Show>
+      <Show when={!ftsOpen()}>
+        <button
+          class="ws-fts-toggle"
+          type="button"
+          onClick={() => setFtsOpen(true)}
+        >
+          🔍 搜索工作区
         </button>
       </Show>
     </div>
