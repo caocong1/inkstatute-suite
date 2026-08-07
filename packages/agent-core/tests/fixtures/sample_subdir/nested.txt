@@ -1,0 +1,2 @@
+This is a nested file inside a subdirectory.
+It tests that the file_read tool can access files in nested directories.

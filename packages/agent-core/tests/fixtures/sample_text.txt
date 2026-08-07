@@ -1,0 +1,4 @@
+Hello, this is a sample text file for testing the file_read tool.
+It contains multiple lines of text.
+Line 3: 欢迎来到墨律 (InkStatute).
+Line 4: This file is used in unit tests.
