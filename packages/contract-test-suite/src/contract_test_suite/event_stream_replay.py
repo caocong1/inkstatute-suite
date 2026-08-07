@@ -299,3 +299,35 @@ def _format_issue(issue: EventStreamIssue) -> str:
         f"{issue.stream_path} {event_key} {issue.relationship} {issue.field_path} "
         f"expected={issue.expected!r} actual={issue.actual!r}"
     )
+
+
+def sort_events_by_seq(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Sort RunEvent dicts by ``seq`` ascending for out-of-order replay.
+
+    Events may arrive non-monotonically by ``seq`` (e.g. due to network
+    reordering or multi-source fan-in). This pure function returns a new list
+    sorted by ``seq`` ascending so that replay produces the correct temporal
+    order. The input list is not mutated.
+
+    Each event dict is expected to carry an integer ``seq`` field (as defined
+    by the ``RunEvent`` contract). No other fields are inspected or modified.
+    """
+    return sorted(events, key=lambda event: event["seq"])
+
+
+def resume_from_seq(events: list[dict[str, Any]], last_seen_seq: int) -> list[dict[str, Any]]:
+    """Return events with ``seq`` strictly greater than ``last_seen_seq``.
+
+    This enables seq-based resume: from any ``last_seen_seq`` breakpoint, the
+    client receives exactly the events it has not yet seen — no duplicates, no
+    loss. The input list order is preserved in the output.
+
+    Semantics:
+    - ``last_seen_seq = -1`` returns all events (the client has seen nothing).
+    - ``last_seen_seq >= max(seq)`` returns an empty list (everything seen).
+    - For any breakpoint ``b``, the result contains exactly the events with
+      ``seq > b``, in their original relative order.
+
+    The input list is not mutated.
+    """
+    return [event for event in events if event["seq"] > last_seen_seq]
