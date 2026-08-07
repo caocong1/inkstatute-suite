@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 97 plan 97-02 complete (context budget injector — 3 tasks, 56 new tests, 92 total in package, 36 gates green)
-last_updated: "2026-08-10T00:00:00.000Z"
-last_activity: 2026-08-10 -- Phase 97 plan 97-02 (Wave 2): context budget injector complete. SkillBodyInjector with section-priority deterministic trim (protected/high/medium/low), CJK-aware token estimation, SkillBodyInjectionResult with trim report, read_skill_body() on-demand API, three-separation enforcement tests. 56 new tests (92 total in package). All 36 gates green. 5 commits: 6866736, b37a183, 3cc461c, 704ba3f.
+stopped_at: Phase 97 plans 97-02 and 97-03 complete (Wave 2 — context budget injector + skill-registry migration + manifest.json cleanup)
+last_updated: "2026-08-10T00:30:00.000Z"
+last_activity: 2026-08-10 -- Phase 97 plan 97-03 (Wave 2): skill-registry migration + manifest.json cleanup complete. Added index_to_descriptors() to skill-registry mapper (consumes skill-index.json, three-separation: metadata only). Removed 4 fake skills from solutions/lawfirm/manifest.json (SKILL-09). Updated 7 test files (skill-registry tests, router-service fixtures, lawfirm tests). All affected gates green. 5 commits: a849ee8, f608431, 4f10dd4, df66aa5, 78a1433. Wave 2 complete (97-02 + 97-03), Wave 3 (97-04) next.
 progress:
   total_phases: 17
   completed_phases: 9
   total_plans: 47
-  completed_plans: 45
-  percent: 57
+  completed_plans: 46
+  percent: 58
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 97 — Skill Materialization (plan 97-02 complete, Wave 2 in progress)
+**Current focus:** Phase 97 — Skill Materialization (plans 97-02 and 97-03 complete, Wave 3 next)
 
 ## Current Position
 
-Phase: 97 (skill-materialization) — PLAN 97-02 COMPLETE
-Plan: 97-02 (Wave 2) complete. 4 plans total (97-01..97-04), 3 waves.
-Status: Phase 97 plan 97-02 (Wave 2) complete. SkillBodyInjector with section-priority deterministic trim (protected/high/medium/low), CJK-aware token estimation, SkillBodyInjectionResult with trim report, read_skill_body() on-demand API for self-built core, three-separation enforcement tests. 56 new tests (92 total in package). All 36 gates green. Wave 2 plan 97-03 (skill-registry migration + manifest cleanup) may run in parallel.
-Last activity: 2026-08-10 -- Phase 97 plan 97-02 (Wave 2): context budget injector complete. 5 commits, 56 new tests, 36 gates green.
+Phase: 97 (skill-materialization) — PLANS 97-02 AND 97-03 COMPLETE
+Plan: 97-03 (Wave 2) complete. 4 plans total (97-01..97-04), 3 waves.
+Status: Phase 97 plans 97-02 and 97-03 (Wave 2) complete. 97-02: SkillBodyInjector with section-priority deterministic trim, CJK-aware token estimation, read_skill_body() on-demand API. 97-03: index_to_descriptors() added to skill-registry, 4 fake skills removed from lawfirm manifest.json (SKILL-09), 7 test files updated. All affected gates green. Wave 3 (97-04) next: CLI + e2e + phase completion.
+Last activity: 2026-08-10 -- Phase 97 plan 97-03 (Wave 2): skill-registry migration + manifest.json cleanup complete. 5 commits.
 
-**Next command:** `/gsd-execute 97-03` (Wave 2, parallel) or `/gsd-execute 97-04` (Wave 3, after 97-02 and 97-03)
+**Next command:** `/gsd-execute 97-04` (Wave 3, phase completion)
 
 ## Milestone v3.0 Overview
 
@@ -110,18 +110,17 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-10T00:00:00.000Z
-Stopped at: Phase 97 plan 97-02 complete (context budget injector — 3 tasks, 56 new tests, 92 total in package, 36 gates green)
+Last session: 2026-08-10T00:30:00.000Z
+Stopped at: Phase 97 plans 97-02 and 97-03 complete (Wave 2 — context budget injector + skill-registry migration + manifest.json cleanup)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..04 + SAFE-05 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-96 complete, Phase 97 plans 97-01 and 97-02 complete, 97-03 next)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-96 complete, Phase 97 plans 97-01, 97-02, 97-03 complete, 97-04 next)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute 97-03` (Wave 2, parallel — skill-registry migration + manifest cleanup)
-- `/gsd-execute 97-04` after 97-03 (Wave 3, phase completion)
+- `/gsd-execute 97-04` (Wave 3, phase completion — CLI + e2e + phase completion)
 - 或 `/gsd-autonomous` 自动推进 Phases 97-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点
