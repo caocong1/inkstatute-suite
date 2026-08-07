@@ -1,0 +1,168 @@
+{
+  "agent_message_chunk": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "agent_message_chunk",
+        "content": "Hello, ",
+        "messageId": "msg-1"
+      }
+    }
+  },
+  "agent_message": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "agent_message",
+        "content": "Hello, world!",
+        "messageId": "msg-1"
+      }
+    }
+  },
+  "agent_thought_chunk": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "agent_thought_chunk",
+        "content": "Analyzing the question..."
+      }
+    }
+  },
+  "tool_call_update_pending": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "tool_call_update",
+        "toolCallId": "tc-1",
+        "toolName": "search_law",
+        "status": "pending"
+      }
+    }
+  },
+  "tool_call_update_in_progress": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "tool_call_update",
+        "toolCallId": "tc-1",
+        "toolName": "search_law",
+        "status": "in_progress",
+        "content": "searching..."
+      }
+    }
+  },
+  "tool_call_update_completed": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "tool_call_update",
+        "toolCallId": "tc-1",
+        "toolName": "search_law",
+        "status": "completed",
+        "content": "found 3 results"
+      }
+    }
+  },
+  "plan": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "plan",
+        "plan": [
+          {
+            "id": "step-1",
+            "title": "Research",
+            "status": "in_progress"
+          }
+        ]
+      }
+    }
+  },
+  "elicitation_create": {
+    "jsonrpc": "2.0",
+    "id": "elic-1",
+    "method": "elicitation/create",
+    "params": {
+      "id": "elic-1",
+      "intro": "Please provide case details",
+      "questions": [
+        {
+          "id": "q1",
+          "question": "What is the case number?",
+          "allow_multiple": false,
+          "options": []
+        }
+      ],
+      "resume_state_ref": "state-ref-1"
+    }
+  },
+  "request_permission": {
+    "jsonrpc": "2.0",
+    "id": "perm-1",
+    "method": "session/request_permission",
+    "params": {
+      "id": "perm-1",
+      "tool_call_id": "tc-2",
+      "description": "Run shell command",
+      "kind": "terminal"
+    }
+  },
+  "status": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "status",
+        "status": "idle"
+      }
+    }
+  },
+  "artifact": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "artifact",
+        "artifact": {
+          "id": "art-1",
+          "kind": "docx",
+          "name": "review.docx"
+        }
+      }
+    }
+  },
+  "citation": {
+    "jsonrpc": "2.0",
+    "method": "session/update",
+    "params": {
+      "sessionId": "session-1",
+      "update": {
+        "type": "citation",
+        "_meta": {
+          "citation": [
+            {
+              "source": "Civil Code Art. 1",
+              "status": "verified"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

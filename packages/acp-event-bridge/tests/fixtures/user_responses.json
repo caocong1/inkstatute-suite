@@ -1,0 +1,25 @@
+{
+  "elicitation_accept": {
+    "action": "accept",
+    "content": {
+      "user_provided_data": "case-2026-001"
+    }
+  },
+  "elicitation_decline": {
+    "action": "decline"
+  },
+  "elicitation_cancel": {
+    "action": "cancel"
+  },
+  "permission_selected": {
+    "outcome": "selected",
+    "option_id": "allow-once"
+  },
+  "permission_cancelled": {
+    "outcome": "cancelled"
+  },
+  "permission_dangerous_terminal": {
+    "outcome": "selected",
+    "option_id": "deny"
+  }
+}
