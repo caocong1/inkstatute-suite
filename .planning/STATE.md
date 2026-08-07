@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
-status: completed
+status: executing
 stopped_at: Phase 88 complete (all 6 plans done); ready for Phase 89
-last_updated: "2026-08-07T05:43:28.419Z"
-last_activity: 2026-08-07
+last_updated: "2026-08-07T06:08:18.757Z"
+last_activity: 2026-08-07 -- Phase 89 execution started
 progress:
   total_phases: 17
   completed_phases: 1
-  total_plans: 6
+  total_plans: 10
   completed_plans: 6
   percent: 6
 ---
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 88 — unified-event-contract (COMPLETE)
+**Current focus:** Phase 89 — acp-backend-client
 
 ## Current Position
 
-Phase: 89
-Plan: Not started
-Status: Phase 88 complete; ready for Phase 89 (ACP Backend Client)
-Last activity: 2026-08-07
+Phase: 89 (acp-backend-client) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 89
+Last activity: 2026-08-07 -- Phase 89 execution started
 
 **Next command:** `/gsd-plan-phase 89` （或 `/gsd-autonomous` 自动推进）
 
