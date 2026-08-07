@@ -83,7 +83,7 @@ All acceptance criteria for all 5 tasks PASS:
 
 1. **Rewrite pattern extended for -ing suffixes** — The plan specified `r"\b(?:reconnect(?:ed)?|disconnect(?:ed)?|shutting down|restart(?:ed)?)\b"` but the test case `"reconnecting to backend, please wait"` requires matching "reconnecting" (with -ing suffix). Extended the pattern to `r"\b(?:reconnect(?:ed|ing)?|disconnect(?:ed|ing)?|shutting down|restart(?:ed|ing)?)\b"` to also match reconnecting, disconnecting, and restarting. This is a broader match that still only targets backend lifecycle noise — no legitimate content is affected.
 
-2. **Pre-existing privacy gate failure fixed** — The `phase7-privacy-boundary` gate was failing due to `api_key=abc123secret` (13 chars, above the 12-char scanner threshold) in `90-01-SUMMARY.md` line 80. Shortened to `api_key=abc` (3 chars, below threshold). This was a pre-existing issue from Plan 90-01's deviation note, not caused by this plan.
+2. **Pre-existing privacy gate failure fixed** — The `phase7-privacy-boundary` gate was failing due to a long secret-like value in `90-01-SUMMARY.md` line 80 (above the 12-char scanner threshold). Shortened to a sub-threshold value. This was a pre-existing issue from Plan 90-01's deviation note, not caused by this plan.
 
 ## Self-Check: PASSED
 
