@@ -25,7 +25,7 @@
 - [ ] **ACP-03**: 至少一个额外 ACP 后端（`codex-acp` 或 `claude-agent-acp`）跑通同一契约，证明后端可替换性
 - [ ] **ACP-04**: ACP `session/update` ⟷ 统一事件双向映射（含 `tool_call_update` / `plan` / `elicitation` / `request_permission`），往返语义无损
 - [ ] **ACP-05**: 输出边界在事件桥上强制执行——后端 meta / gateway / system / update / command / help / `available_commands_update` / `terminal` 类内容不得到达普通用户
-- [ ] **ACP-06**: ACP 会话与子进程生命周期管理（new / resume / cancel / close、超时回收、崩溃重启），契约预留 `backend_process_mode`（`per_session` / `pooled` / `remote`）
+- [x] **ACP-06**: ACP 会话与子进程生命周期管理（new / resume / cancel / close、超时回收、崩溃重启），契约预留 `backend_process_mode`（`per_session` / `pooled` / `remote`）
 - [ ] **ACP-07**: 权限请求安全默认——`terminal` / `execute_code` 类权限请求必须显式拒绝或上抛用户审批，服务端不得默认 allow
 
 ### GW — 统一网关与通道层
@@ -160,7 +160,7 @@
 | ACP-01 | Phase 89 | Complete |
 | ACP-02 | Phase 89 | Complete |
 | ACP-03 | Phase 89 | Pending |
-| ACP-06 | Phase 89 | Pending |
+| ACP-06 | Phase 89 | Complete |
 | ACP-04 | Phase 90 | Pending |
 | ACP-05 | Phase 90 | Pending |
 | ACP-07 | Phase 90 | Pending |

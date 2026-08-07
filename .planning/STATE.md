@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 89 Plan 02 complete (BackendAdapter 9-method + process_mode + Hermes integration); ready for Plan 03
-last_updated: "2026-08-07T08:00:00.000Z"
-last_activity: 2026-08-07 -- Phase 89 Plan 02 complete (ACP-02)
+stopped_at: Phase 89 Plan 03 complete; ready for Plan 04
+last_updated: "2026-08-07T06:45:52.071Z"
+last_activity: 2026-08-07 -- Phase 89 Plan 03 complete (SubprocessLifecycleManager + orphan detection)
 progress:
   total_phases: 17
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
-  percent: 8
+  completed_plans: 9
+  percent: 6
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 ## Current Position
 
 Phase: 89 (acp-backend-client) — EXECUTING
-Plan: 2 of 4 complete (ACP-01, ACP-02 done)
-Status: Executing Phase 89 — Plan 02 complete
-Last activity: 2026-08-07 -- Phase 89 Plan 02 complete (BackendAdapter + process_mode + Hermes)
+Plan: 4 of 4 complete (ACP-01, ACP-02, ACP-06 done)
+Status: Ready to execute
+Last activity: 2026-08-07 -- Phase 89 Plan 03 complete (SubprocessLifecycleManager + orphan detection)
 
 **Next command:** `/gsd-plan-phase 89` （或 `/gsd-autonomous` 自动推进）
 
@@ -110,12 +110,12 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-07 — Plan 89-02 complete (BackendAdapter 9-method Protocol, process_mode enum, Hermes compatibility matrix)
-Stopped at: Phase 89 Plan 02 complete; ready for Plan 03
+Last session: 2026-08-07 — Plan 89-03 complete (SubprocessLifecycleManager, orphan detection, 13 lifecycle tests)
+Stopped at: Phase 89 Plan 03 complete; ready for Plan 04
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01 + ACP-02 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88 complete, Phase 89 Plan 02 complete)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01 + ACP-02 + ACP-06 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88 complete, Phase 89 Plan 03 complete)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
