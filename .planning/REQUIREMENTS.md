@@ -12,7 +12,7 @@
 ### EVT — 统一事件契约
 
 - [x] **EVT-01**: 定义与 ACP v1 `session/update` 同构的统一事件词汇（`session.started` / `message.delta` / `message.completed` / `thought.delta` / `tool_call.*` / `plan.updated` / `phase.changed` / `elicitation.requested` / `permission.requested` / `artifact.created` / `citation.recorded` / `run.state_changed` / `error`），产出 JSON Schema + Python 绑定 + TypeScript 绑定
-- [ ] **EVT-02**: `RunEvent` 重新规格化为统一事件词汇的承载体，保留 `occurred_at` / `ingested_at` / `seq` 语义，支持乱序回放与按 `seq` 断线续传
+- [x] **EVT-02**: `RunEvent` 重新规格化为统一事件词汇的承载体，保留 `occurred_at` / `ingested_at` / `seq` 语义，支持乱序回放与按 `seq` 断线续传
 - [ ] **EVT-03**: 澄清提问契约（2-4 题、单选 / 多选 / 自由文本），与 `ai-for-china-legal/shared/inkstatute-integration/ASK-USER-PROTOCOL.md` 语义一致，并与 V2 `RunInterrupt` 对齐
 - [ ] **EVT-04**: 五相进度契约（research → intake → retrieval → draft → review）及其与 thinking / tool / streaming / review 的映射
 - [ ] **EVT-05**: 每类事件定义 bot 非流式降级行为（缓冲 / 投递 / 丢弃 / 折叠为业务化提示），降级规则可测
@@ -152,7 +152,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | EVT-01 | Phase 88 | Complete |
-| EVT-02 | Phase 88 | Pending |
+| EVT-02 | Phase 88 | Complete |
 | EVT-03 | Phase 88 | Pending |
 | EVT-04 | Phase 88 | Pending |
 | EVT-05 | Phase 88 | Pending |
