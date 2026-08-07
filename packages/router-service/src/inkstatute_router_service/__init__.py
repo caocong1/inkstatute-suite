@@ -15,6 +15,12 @@ from .legal_risk import (
 from .model_classifier import ModelClassificationResult, ModelClassifierPort
 from .port import RouterPort
 from .service import RouterService
+from .soft_matcher import (
+    SOFT_MATCH_THRESHOLD,
+    SKIP_CLARIFICATION_THRESHOLD,
+    best_soft_match,
+    score_skill,
+)
 from .strategies import RouterStrategy
 from .strong_signal import (
     StrongSignalRule,
@@ -34,12 +40,16 @@ __all__ = [
     "RouterPort",
     "RouterService",
     "RouterStrategy",
+    "SOFT_MATCH_THRESHOLD",
+    "SKIP_CLARIFICATION_THRESHOLD",
     "StrongSignalRule",
     "ToolResolutionMap",
+    "best_soft_match",
     "build_strong_signal_rules",
     "classify_intent",
     "is_simple_factual",
     "match_strong_signal",
     "resolve_all_tool_refs",
     "resolve_tool_refs",
+    "score_skill",
 ]
