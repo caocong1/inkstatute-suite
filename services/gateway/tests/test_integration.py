@@ -713,14 +713,14 @@ class TestGatewayIntegration(unittest.TestCase):
         self.assertTrue(summary.get("passed"), f"Gates not all green: {summary}")
 
     # ------------------------------------------------------------------
-    # Gate count is 31
+    # Gate count is 38
     # ------------------------------------------------------------------
 
     @unittest.skipIf(
         os.environ.get("INKSTATUTE_GATE_RUNNING") == "1",
         "Skipping nested gate execution (already running inside gate runner)",
     )
-    def test_gate_count_is_37(self) -> None:
+    def test_gate_count_is_38(self) -> None:
         """Run python scripts/run_v2_gates.py --list and count gates."""
         result = subprocess.run(
             [sys.executable, "scripts/run_v2_gates.py", "--list"],
@@ -729,7 +729,7 @@ class TestGatewayIntegration(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip()]
-        self.assertEqual(len(lines), 37, f"Expected 37 gates, got {len(lines)}")
+        self.assertEqual(len(lines), 38, f"Expected 38 gates, got {len(lines)}")
 
     # ------------------------------------------------------------------
     # No external dependencies

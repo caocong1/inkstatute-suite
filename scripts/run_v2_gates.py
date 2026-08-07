@@ -84,6 +84,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     gateway_src = repo_root / "services" / "gateway" / "src"
     ui_core_src = repo_root / "packages" / "ui-core" / "src"
     practice_profile_src = repo_root / "packages" / "practice-profile" / "src"
+    agent_core_src = repo_root / "packages" / "agent-core" / "src"
     web_src = repo_root / "apps" / "web" / "src"
     desktop_src = repo_root / "apps" / "desktop" / "src"
 
@@ -252,6 +253,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (practice_profile_src, platform_src, rbac_src),
         ),
         Gate(
+            "agent-core",
+            (py, "-m", "unittest", "discover", "-s", "packages/agent-core/tests"),
+            (agent_core_src, platform_src, platform_runtime_src, model_gateway_src),
+        ),
+        Gate(
             "phase7-privacy-boundary",
             (
                 py,
@@ -299,6 +305,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/model-gateway/src",
                 "packages/multi-agent-adapter/src",
                 "packages/practice-profile/src",
+                "packages/agent-core/src",
                 "services/admin-web-ui/src",
                 "services/lawyer-web-chat/src",
                 "services/gateway/src",
