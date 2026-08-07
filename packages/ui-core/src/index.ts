@@ -20,6 +20,17 @@ export type {
   ChatMessage,
 } from "./event-reducer";
 
+// Workflow types — used by channel-layer contexts (SessionContext, etc.)
+export type {
+  ClarificationAnswer,
+  ClarificationRequest,
+  ClarificationQuestion,
+  ClarificationOption,
+  WorkflowState,
+  WorkflowStep,
+  WorkflowStepState,
+} from "./types/workflow";
+
 export { createEventStream } from "./stores/eventStream";
 export type {
   EventStreamStore,
