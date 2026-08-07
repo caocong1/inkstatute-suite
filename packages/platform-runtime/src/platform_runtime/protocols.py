@@ -63,6 +63,7 @@ class ChannelCapabilitySet:
     supports_streaming: bool = False
     ack_deadline_ms: int | None = None
     idempotency_strategy: str | None = None
+    verify_and_ack_support: bool = False
     metadata: JsonObject = field(default_factory=dict)
 
 
