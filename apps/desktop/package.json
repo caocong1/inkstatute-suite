@@ -1,0 +1,40 @@
+{
+  "name": "@inkstatute/desktop",
+  "version": "0.1.0",
+  "description": "Desktop client for 墨律 InkStatute — Tauri 2 shell with ui-core + Gateway.",
+  "license": "Proprietary",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@inkstatute/ui-core": "workspace:*",
+    "@inkstatute/platform-sdk-ts": "workspace:*",
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
+    "@tauri-apps/plugin-updater": "^2.9.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-opener": "^2.5.4",
+    "solid-js": "^1.9.0",
+    "solid-markdown": "^2.1.0",
+    "remark-gfm": "^4.0.0",
+    "highlight.js": "^11.0.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.0",
+    "vite-plugin-solid": "^2.11.0",
+    "vitest": "^3.0.0",
+    "@testing-library/dom": "^10.0.0",
+    "jsdom": "^25.0.0"
+  }
+}

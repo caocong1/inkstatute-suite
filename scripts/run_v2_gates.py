@@ -82,6 +82,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     gateway_src = repo_root / "services" / "gateway" / "src"
     ui_core_src = repo_root / "packages" / "ui-core" / "src"
     web_src = repo_root / "apps" / "web" / "src"
+    desktop_src = repo_root / "apps" / "desktop" / "src"
 
     return (
         Gate(
@@ -221,6 +222,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "web",
             (py, "-m", "unittest", "discover", "-s", "apps/web/tests"),
             (web_src, ui_core_src, sdk_ts_src, platform_src, contract_src, platform_runtime_src),
+        ),
+        Gate(
+            "desktop",
+            (py, "-m", "unittest", "discover", "-s", "apps/desktop/tests"),
+            (desktop_src, ui_core_src, sdk_ts_src, platform_src, contract_src, platform_runtime_src),
         ),
         Gate(
             "feedback-service",
