@@ -80,6 +80,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     acp_client_src = repo_root / "packages" / "acp-client" / "src"
     acp_event_bridge_src = repo_root / "packages" / "acp-event-bridge" / "src"
     gateway_src = repo_root / "services" / "gateway" / "src"
+    ui_core_src = repo_root / "packages" / "ui-core" / "src"
 
     return (
         Gate(
@@ -209,6 +210,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "platform-sdk-ts",
             (py, "-m", "unittest", "discover", "-s", "packages/platform-sdk-ts/tests"),
             (sdk_ts_src, platform_src, contract_src, platform_runtime_src),
+        ),
+        Gate(
+            "ui-core",
+            (py, "-m", "unittest", "discover", "-s", "packages/ui-core/tests"),
+            (ui_core_src, sdk_ts_src, platform_src, contract_src, platform_runtime_src),
         ),
         Gate(
             "feedback-service",
