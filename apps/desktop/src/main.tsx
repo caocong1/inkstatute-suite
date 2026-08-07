@@ -1,11 +1,9 @@
 /**
- * Desktop app entry — minimal placeholder for scaffold task.
- * Full App wiring is added in Task 94-01-04.
+ * Desktop app entry — renders the full App with theme CSS imports.
  */
+import { render } from "solid-js/web";
 import "@inkstatute/ui-core/themes";
 import "./desktop-shell.css";
+import App from "./App";
 
-const root = document.getElementById("root");
-if (root) {
-  root.innerHTML = "<div>墨律 Desktop Client</div>";
-}
+render(() => <App />, document.getElementById("root")!);
