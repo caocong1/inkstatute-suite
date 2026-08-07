@@ -168,7 +168,9 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "qqbot-channel",
             (py, "-m", "unittest", "discover", "-s", "packages/channels/qqbot/tests"),
             # feedback_src: Phase 66 e2e tests import feedback_service.queue (not a new gate).
-            (qqbot_src, channel_core_src, platform_src, contract_src, platform_runtime_src, feedback_src),
+            # qqbot_service_src + operator_config_src: smoke toolkit imports qqbot_service.config
+            #   which imports inkstatute_operator_config.vision_resolver.
+            (qqbot_src, qqbot_service_src, channel_core_src, platform_src, contract_src, platform_runtime_src, feedback_src, operator_config_src),
         ),
         Gate(
             "qqbot-service",
