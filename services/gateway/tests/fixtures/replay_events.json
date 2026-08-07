@@ -1,0 +1,92 @@
+[
+  {
+    "event_id": "replay-evt-001",
+    "run_id": "run-replay-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-01-01T00:00:01Z",
+    "seq": 1,
+    "payload": {"message_delta": "Hello"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-002",
+    "run_id": "run-replay-001",
+    "event_type": "thought.delta",
+    "occurred_at": "2026-01-01T00:00:02Z",
+    "seq": 2,
+    "payload": {"text": "Analyzing the legal question..."},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-003",
+    "run_id": "run-replay-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-01-01T00:00:03Z",
+    "seq": 3,
+    "payload": {"message_delta": "Based on"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-004",
+    "run_id": "run-replay-001",
+    "event_type": "tool_call.started",
+    "occurred_at": "2026-01-01T00:00:04Z",
+    "seq": 4,
+    "payload": {"tool_name": "law_search", "tool_call_id": "tc-replay-001"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-005",
+    "run_id": "run-replay-001",
+    "event_type": "tool_call.completed",
+    "occurred_at": "2026-01-01T00:00:05Z",
+    "seq": 5,
+    "payload": {"tool_name": "law_search", "tool_call_id": "tc-replay-001", "result_ref": "ref://search/001"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-006",
+    "run_id": "run-replay-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-01-01T00:00:06Z",
+    "seq": 6,
+    "payload": {"message_delta": "the relevant statute"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-007",
+    "run_id": "run-replay-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-01-01T00:00:07Z",
+    "seq": 7,
+    "payload": {"message_delta": "provides that"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-008",
+    "run_id": "run-replay-001",
+    "event_type": "message.completed",
+    "occurred_at": "2026-01-01T00:00:08Z",
+    "seq": 8,
+    "payload": {"message_delta": "the contract is valid"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-009",
+    "run_id": "run-replay-001",
+    "event_type": "artifact.created",
+    "occurred_at": "2026-01-01T00:00:09Z",
+    "seq": 9,
+    "payload": {"artifact_id": "art-replay-001", "kind": "docx", "uri": "ref://artifacts/art-replay-001"},
+    "metadata": {"source": "replay-fixture"}
+  },
+  {
+    "event_id": "replay-evt-010",
+    "run_id": "run-replay-001",
+    "event_type": "run.state_changed",
+    "occurred_at": "2026-01-01T00:00:10Z",
+    "seq": 10,
+    "payload": {"status": "succeeded"},
+    "metadata": {"source": "replay-fixture"}
+  }
+]
