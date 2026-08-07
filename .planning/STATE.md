@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 96 Plans 96-01/96-02/96-03 complete (scanner + classification + conflict model, 100 tests pass)
-last_updated: "2026-08-09T16:00:00.000Z"
-last_activity: 2026-08-09 -- Phase 96 Plan 96-03 executed: conflict_model.py (namespace isolation + 4-state conflict classification + merge report) + 19 tests. 100 tests pass total (50 scanner + 31 classification/metadata + 19 conflict model). 33 gates green, gate-coverage expected failure deferred to 96-04.
+stopped_at: Phase 96 complete (all 4 plans executed, 135 tests, 35 gates green, all 6 success criteria verified)
+last_updated: "2026-08-09T20:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 96 Plan 96-04 executed: index_builder.py + cli.py + __main__.py + gate registration (34→35) + 35 e2e tests. 135 tests pass total (50 scanner + 31 classification/metadata + 19 conflict model + 16 index builder + 10 CLI + 9 e2e). 35 gates green. All 6 success criteria verified. SKILL-01..04 + SAFE-05 complete. Phase 96 COMPLETE.
 progress:
   total_phases: 17
-  completed_phases: 8
-  total_plans: 39
-  completed_plans: 39
-  percent: 51
+  completed_phases: 9
+  total_plans: 43
+  completed_plans: 43
+  percent: 53
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 96 — Real Skill Index (Plans 96-01/96-02/96-03 complete, 96-04 pending)
+**Current focus:** Phase 96 — Real Skill Index (COMPLETE, 135 tests, 35 gates green)
 
 ## Current Position
 
-Phase: 96 (real-skill-index) — EXECUTING
-Plan: 96-01 COMPLETE (scanner core), 96-02 COMPLETE (classification+metadata), 96-03 COMPLETE (conflict model), 96-04 pending (gate registration + e2e index builder)
-Status: Phase 96 Plans 96-01/96-02/96-03 executed — packages/skill-index has scanner, frontmatter parser, token estimator, orchestration classifier (three-way cross-validation), metadata extractor (8 SKILL-03 fields), conflict model (4-state classification). 100 tests pass. 33 existing gates green (gate-coverage expected failure deferred to 96-04). Wave 3 (96-04 gate registration + index builder) ready to execute.
-Last activity: 2026-08-09 -- Plan 96-03 executed: conflict model (19 new tests, 100 total pass)
+Phase: 96 (real-skill-index) — COMPLETE
+Plan: 96-01 COMPLETE (scanner core), 96-02 COMPLETE (classification+metadata), 96-03 COMPLETE (conflict model), 96-04 COMPLETE (gate registration + index builder + CLI + e2e)
+Status: Phase 96 COMPLETE — packages/skill-index has scanner, frontmatter parser, token estimator, orchestration classifier (three-way cross-validation), metadata extractor (8 SKILL-03 fields), conflict model (4-state classification), index builder (assembles skill-index.json), CLI entry point. 135 tests pass. 35 gates green (34 pre-existing + 1 new skill-index). All 6 success criteria verified. SKILL-01..04 + SAFE-05 complete.
+Last activity: 2026-08-09 -- Plan 96-04 executed: index builder + CLI + gate registration + 35 e2e tests (135 total pass, 35 gates green)
 
-**Next command:** Execute Wave 3: Plan 96-04 (gate registration + index builder + e2e) for Phase 96
+**Next command:** `/gsd-execute-plan 97` for Phase 97 (Skill Materialization)
 
 ## Milestone v3.0 Overview
 
@@ -110,17 +110,17 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-09T16:00:00.000Z
-Stopped at: Phase 96 Plans 96-01/96-02/96-03 complete (scanner + classification + conflict model, 100 tests pass)
+Last session: 2026-08-09T20:00:00.000Z
+Stopped at: Phase 96 complete (all 4 plans executed, 135 tests, 35 gates green, all 6 success criteria verified)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-95 complete, Phase 96 Plans 96-01/02/03 complete)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..04 + SAFE-05 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-96 complete, Phase 97 next)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Execute Wave 3: Plan 96-04 (gate registration + index builder + e2e) for Phase 96
-- 或 `/gsd-autonomous` 自动推进 Phases 96-104
-- 或 `/gsd-autonomous --to 96` 只跑到"能力层"这个里程碑点
+- `/gsd-execute-plan 97` for Phase 97 (Skill Materialization)
+- 或 `/gsd-autonomous` 自动推进 Phases 97-104
+- 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点

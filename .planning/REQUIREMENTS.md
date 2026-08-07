@@ -54,10 +54,10 @@
 
 ### SKILL — 能力层
 
-- [ ] **SKILL-01**: 真实扫描并索引 `ai-for-china-legal`（345 个 SKILL.md）与 `legal-skills`（51 个 SKILL.md），产出机器可读 `skill-index.json`
-- [ ] **SKILL-02**: 索引在**不修改任一 skill 仓**的前提下生成；正确区分约 60 个编排入口与约 285 个叶子子技能；正确解析 frontmatter、父子关系、`plugin.json`
-- [ ] **SKILL-03**: 索引记录 `token_estimate`、`declared_gates`、`referenced_resources`、`practice_profile_dependency`、`host_assumptions`、`required_scripts`，供路由、可观测与上下文预算使用
-- [ ] **SKILL-04**: 双仓合并与冲突模型——命名空间隔离、`legal-` 前缀、四态冲突分类（`in-sync` / `upstream-changed` / `both-changed` / `local-missing`），继承 `lawfirm-profile/scripts/sync_legal_skills.py` 语义
+- [x] **SKILL-01**: 真实扫描并索引 `ai-for-china-legal`（345 个 SKILL.md）与 `legal-skills`（51 个 SKILL.md），产出机器可读 `skill-index.json` ✅ Phase 96
+- [x] **SKILL-02**: 索引在**不修改任一 skill 仓**的前提下生成；正确区分约 60 个编排入口与约 285 个叶子子技能；正确解析 frontmatter、父子关系、`plugin.json` ✅ Phase 96
+- [x] **SKILL-03**: 索引记录 `token_estimate`、`declared_gates`、`referenced_resources`、`practice_profile_dependency`、`host_assumptions`、`required_scripts`，供路由、可观测与上下文预算使用 ✅ Phase 96
+- [x] **SKILL-04**: 双仓合并与冲突模型——命名空间隔离、`legal-` 前缀、四态冲突分类（`in-sync` / `upstream-changed` / `both-changed` / `local-missing`），继承 `lawfirm-profile/scripts/sync_legal_skills.py` 语义 ✅ Phase 96
 - [ ] **SKILL-05**: skill 物化器——把语料按每个后端期望的布局落地（Hermes profile / ACP agent skills / 自研 core），一份 skill 三处可用；宿主假设按目标后端改写
 - [ ] **SKILL-06**: 元数据 / 正文 / 工具依赖三分离；正文按需注入且受上下文预算约束（实测正文 2K–20K token）
 - [ ] **SKILL-07**: `packages/router-service` 数据源从 4 条手写元数据换成真实索引；移植 `lawfirm-profile/scripts/router.py` 的 12 条强信号正则与 0.4 软匹配阈值，行为不回退
@@ -97,7 +97,7 @@
 - [x] **SAFE-02**: 契约日志 reference-first（`raw_payload_ref`），不存敏感全文；secrets 不入仓 / 不入日志 / 不入契约事件；ACP 子进程凭据经环境注入
 - [x] **SAFE-03**: 输出边界贯穿事件桥与 Gateway 两处，后端 meta / gateway / system 噪声不得到达普通律师用户
 - [ ] **SAFE-04**: research-gate 与 citation 审计不可绕过——法律结论必须有依据来源标注
-- [ ] **SAFE-05**: skill 语料以只读 vendoring 引用，平台不写回 skill 仓
+- [x] **SAFE-05**: skill 语料以只读 vendoring 引用，平台不写回 skill 仓 ✅ Phase 96
 - [ ] **SAFE-06**: 可组合性保持——非法律合成任务（`solutions/demo_non_legal`）必须跑通契约层，法律专用字段只在 `industry_context`
 
 ---
@@ -179,10 +179,10 @@
 | BOT-01 | Phase 95 | Complete |
 | BOT-02 | Phase 95 | Complete |
 | BOT-03 | Phase 95 | Complete |
-| SKILL-01 | Phase 96 | Pending |
-| SKILL-02 | Phase 96 | Pending |
-| SKILL-03 | Phase 96 | Pending |
-| SKILL-04 | Phase 96 | Pending |
+| SKILL-01 | Phase 96 | Complete ✅ |
+| SKILL-02 | Phase 96 | Complete ✅ |
+| SKILL-03 | Phase 96 | Complete ✅ |
+| SKILL-04 | Phase 96 | Complete ✅ |
 | SKILL-05 | Phase 97 | Pending |
 | SKILL-06 | Phase 97 | Pending |
 | SKILL-09 | Phase 97 | Pending |
@@ -210,7 +210,7 @@
 | SAFE-02 | Phase 90 | Complete |
 | SAFE-03 | Phase 90 | Complete |
 | SAFE-04 | Phase 102 | Pending |
-| SAFE-05 | Phase 96 | Pending |
+| SAFE-05 | Phase 96 | Complete ✅ |
 | SAFE-06 | Phase 104 | Pending |
 
 **Coverage:**

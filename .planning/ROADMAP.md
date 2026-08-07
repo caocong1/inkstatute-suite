@@ -67,7 +67,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 ### 阶段 C — 能力层
 
-- [ ] **Phase 96: Real Skill Index** - 真实索引 396 个 SKILL.md，双仓合并与冲突模型 (SKILL-01..04, SAFE-05)
+- [x] **Phase 96: Real Skill Index** - 真实索引 396 个 SKILL.md，双仓合并与冲突模型 (SKILL-01..04, SAFE-05) ✅
 - [ ] **Phase 97: Skill Materialization** - 按后端物化，三分离，废弃假 manifest skill 源 (SKILL-05, SKILL-06, SKILL-09)
 - [ ] **Phase 98: Real-Index Routing** - 路由换真实索引 + 移植强信号规则与三模式判定 (SKILL-07, SKILL-08)
 - [ ] **Phase 99: Practice Profile** - CLAUDE.md 执业配置多租户化 + 临时模式 + 冷启动访谈 (PROF-01, PROF-02, PROF-03)
@@ -234,7 +234,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 双仓合并生效：命名空间隔离、上游 skill 加 `legal-` 前缀、四态冲突分类（`in-sync` / `upstream-changed` / `both-changed` / `local-missing`）可产出报告
   6. 索引器对上游目录结构变化容错——缺失 frontmatter、缺失 `plugin.json`、非常规嵌套都不导致崩溃，而是产出带警告的记录
 
-**Plans**: 4 (96-01 scanner core ✅ | 96-02 classification+metadata ✅ | 96-03 conflict model ✅ | 96-04 gate registration + index builder + e2e pending)
+**Plans**: 4 (96-01 scanner core ✅ | 96-02 classification+metadata ✅ | 96-03 conflict model ✅ | 96-04 gate registration + index builder + CLI + e2e ✅) ✅ COMPLETE
 **UI hint**: no
 
 ### Phase 97: Skill Materialization
