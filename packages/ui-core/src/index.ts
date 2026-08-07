@@ -165,3 +165,22 @@ export { pathToRefAlias, extractDirectoryPaths, mergeDirectoryRefs } from "./uti
 
 // WindowAdapter — for desktop window controls
 export type { WindowAdapter } from "./adapters";
+
+// ConversationDrawer — conversation list with search, rename, delete
+export { ConversationDrawer } from "./components/ConversationDrawer";
+export type { ConversationDrawerProps } from "./components/ConversationDrawer";
+
+// AgentTracePanel — developer trace panel for agent execution visualization
+export { AgentTracePanel } from "./components/AgentTracePanel";
+export type { AgentTracePanelProps } from "./components/AgentTracePanel";
+
+// Trace store and types
+export { useTrace } from "./stores/trace";
+export type { Conversation, ConversationStore } from "./types/conversation";
+export type { TraceKind, AgentTraceEvent, TraceUsage, TraceEntry, TraceTurn } from "./types/trace";
+
+// JSON syntax highlighting utility
+export { highlightJson, looksLikeJson, prettyJson } from "./utils/jsonHighlight";
+
+// Conversation title validation
+export { validateConversationTitle, CONVERSATION_TITLE_MIN, CONVERSATION_TITLE_MAX } from "./utils/conversationTitle";
