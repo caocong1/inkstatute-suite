@@ -94,7 +94,7 @@
 ### SAFE — 安全与法律安全
 
 - [ ] **SAFE-01**: 高风险法律结论保持人审——不自动合成 skill、不自动修改法律结论类 skill、`skill_candidate.requires_human_review` 恒为 true
-- [ ] **SAFE-02**: 契约日志 reference-first（`raw_payload_ref`），不存敏感全文；secrets 不入仓 / 不入日志 / 不入契约事件；ACP 子进程凭据经环境注入
+- [x] **SAFE-02**: 契约日志 reference-first（`raw_payload_ref`），不存敏感全文；secrets 不入仓 / 不入日志 / 不入契约事件；ACP 子进程凭据经环境注入
 - [x] **SAFE-03**: 输出边界贯穿事件桥与 Gateway 两处，后端 meta / gateway / system 噪声不得到达普通律师用户
 - [ ] **SAFE-04**: research-gate 与 citation 审计不可绕过——法律结论必须有依据来源标注
 - [ ] **SAFE-05**: skill 语料以只读 vendoring 引用，平台不写回 skill 仓
@@ -207,7 +207,7 @@
 | CONV-04 | Phase 104 | Pending |
 | CONV-05 | Phase 104 | Pending |
 | SAFE-01 | Phase 102 | Pending |
-| SAFE-02 | Phase 90 | Pending |
+| SAFE-02 | Phase 90 | Complete |
 | SAFE-03 | Phase 90 | Complete |
 | SAFE-04 | Phase 102 | Pending |
 | SAFE-05 | Phase 96 | Pending |
