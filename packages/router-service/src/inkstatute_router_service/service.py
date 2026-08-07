@@ -14,11 +14,13 @@ is injected.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping
 
 from platform_contract import RouteDecision, RouteMode
 
 from .classifier import classify_intent
+from .decision_log import append_decision_log
 from .legal_risk import LegalRiskAssessment, LegalRiskClassifierPort
 from .mode_classifier import ClassifyContext, ModeClassifierPort
 from .model_classifier import ModelClassifierPort
@@ -70,6 +72,13 @@ class RouterService:
     (keys: ``agent_mode``, ``mode_action``, ``mode_label``, ``mode_source``,
     ``mode_fallback_reason``).  When ``None`` (the default), no mode-related
     metadata keys are present (backward compatible).
+
+    An optional ``log_dir`` (``Path | None``) can be injected to enable
+    JSONL decision logging.  When set, ``decide()`` calls
+    ``append_decision_log()`` after computing the decision, writing a
+    JSON line to ``{log_dir}/{session_id}.jsonl``.  When ``None`` (the
+    default), no logging occurs (backward compatible — existing tests
+    unaffected).  Logging is a no-op when ``session_id`` is empty.
     """
 
     def __init__(
@@ -79,12 +88,14 @@ class RouterService:
         legal_risk_classifier: LegalRiskClassifierPort | None = None,
         model_classifier: ModelClassifierPort | None = None,
         mode_classifier: ModeClassifierPort | None = None,
+        log_dir: Path | None = None,
     ) -> None:
         self._registry = skill_registry
         self._strategy = strategy
         self._legal_risk_classifier = legal_risk_classifier
         self._model_classifier = model_classifier
         self._mode_classifier = mode_classifier
+        self._log_dir = log_dir
 
     def decide(self, context: Mapping[str, Any]) -> RouteDecision:
         """Produce a ``RouteDecision`` from *context* using the active strategy.
@@ -114,6 +125,14 @@ class RouterService:
         # Mode detection runs AFTER the routing decision (orthogonal to skill routing).
         if self._mode_classifier is not None:
             decision = self._merge_mode_metadata(decision, context)
+
+        # Decision logging — JSONL append per session.
+        # No-op when log_dir is None or session_id is empty.
+        if self._log_dir is not None:
+            message = context.get("message")
+            user_msg = message if isinstance(message, str) else ""
+            session_id = context.get("session_id", "")
+            append_decision_log(decision, user_msg, self._log_dir, session_id)
 
         return decision
 

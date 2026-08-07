@@ -6,6 +6,7 @@ the legal-risk classifier, and the model classifier port.
 """
 
 from .classifier import classify_intent
+from .decision_log import append_decision_log, record_routing_error
 from .legal_risk import (
     KeywordLegalRiskClassifier,
     LegalRiskAssessment,
@@ -41,6 +42,7 @@ __all__ = [
     "ClassifyContext",
     "ClassifyResult",
     "KeywordLegalRiskClassifier",
+    "append_decision_log",
     "LegalRiskAssessment",
     "LegalRiskClassifierPort",
     "LegalRiskLevel",
@@ -59,6 +61,7 @@ __all__ = [
     "classify_intent",
     "is_simple_factual",
     "match_strong_signal",
+    "record_routing_error",
     "resolve_all_tool_refs",
     "resolve_tool_refs",
     "score_skill",
