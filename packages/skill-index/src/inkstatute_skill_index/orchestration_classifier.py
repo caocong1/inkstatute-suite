@@ -263,11 +263,18 @@ def classify_skill(
     body_leaf = _check_body_text_leaf(skill.body)
 
     # --- Classification decision ---
-    is_orchestration = bool(signals)
-    # A nested skill (depth >= 1) is normally a leaf, but orchestration signals
-    # take precedence (a skill can be both nested and have children).
-    if not is_orchestration and skill.depth >= 1:
-        is_orchestration = False  # leaf with parent
+    # For nested skills (depth >= 1), body text alone is NOT sufficient to
+    # classify as orchestration — many leaf sub-skills mention "编排入口" or
+    # "子技能" when referencing their parent.  Only structural signals
+    # (directory has children, plugin.json parent) can override nesting.
+    structural_signals = {
+        "directory_has_children",
+        "plugin_json_parent",
+    }
+    if skill.depth >= 1:
+        is_orchestration = any(s in structural_signals for s in signals)
+    else:
+        is_orchestration = bool(signals)
 
     if is_orchestration:
         child_skills = _extract_children_from_path(skill, all_skills)
