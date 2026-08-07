@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
-status: completed
-stopped_at: Phase 92 context gathered
-last_updated: "2026-08-07T11:31:29.550Z"
-last_activity: 2026-08-07 -- Phase 91 complete (Full OpenAPI 3.1 document, 18 OpenAPI tests, 17 e2e integration tests, 160 gateway total, 31 gates green, all 6 GW requirements complete)
+status: in_progress
+stopped_at: Phase 92 plan 01 complete (ui-core tracer slice)
+last_updated: "2026-08-08T20:10:00.000Z"
+last_activity: 2026-08-08 -- Phase 92 plan 01 complete (ui-core scaffold + theme + event reducer + ChatPanel + fixture tests, 32 gates green)
 progress:
   total_phases: 17
   completed_phases: 4
-  total_plans: 19
-  completed_plans: 19
-  percent: 24
+  total_plans: 20
+  completed_plans: 20
+  percent: 25
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 91 — Unified Gateway (COMPLETE)
+**Current focus:** Phase 92 — Shared UI Core (IN PROGRESS)
 
 ## Current Position
 
-Phase: 91 (unified-gateway) — COMPLETE
-Plan: 5 complete (91-01 Gateway Tracer + 91-02 SSE Last-Event-ID Replay + 91-03 Upload/Artifact/Feedback + 91-04 Skills/verify_and_ack/Deprecation + 91-05 OpenAPI/Integration/Verification)
-Status: Phase 91 complete, ready for Phase 92
-Last activity: 2026-08-07 -- Phase 91 complete (Full OpenAPI 3.1 document, 18 OpenAPI tests, 17 e2e integration tests, 160 gateway total, 31 gates green, all 6 GW requirements complete)
+Phase: 92 (shared-ui-core) — IN PROGRESS
+Plan: 01 complete (92-01 ui-core tracer: scaffold + theme + event reducer + ChatPanel + fixture tests)
+Status: Phase 92 plan 01 complete, 32 gates green, ready for plan 92-02
+Last activity: 2026-08-08 -- Phase 92 plan 01 complete (ui-core scaffold + theme + event reducer + ChatPanel + fixture tests, 32 gates green)
 
-**Next command:** `/gsd-execute-plan 92-01` （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-execute-plan 92-02` （或 `/gsd-autonomous` 自动推进）
 
 ## Milestone v3.0 Overview
 
