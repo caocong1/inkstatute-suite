@@ -47,3 +47,6 @@ export type { ClarificationCardProps } from "./components/ClarificationCard";
 
 export { DraftingProgressSteps, DRAFTING_STEPS, phaseToActiveIndex, stepState } from "./components/DraftingProgressSteps";
 export type { DraftingProgressStepsProps } from "./components/DraftingProgressSteps";
+
+export { MessageFeedback } from "./components/MessageFeedback";
+export type { MessageFeedbackProps } from "./components/MessageFeedback";
