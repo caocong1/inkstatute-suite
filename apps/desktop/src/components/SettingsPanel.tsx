@@ -29,6 +29,7 @@ import { workspacePath, setWorkspacePath } from "../adapters/desktopWorkspaceAda
 export interface SettingsPanelProps {
   open: boolean;
   onClose: () => void;
+  initialTab?: TabName;
 }
 
 type TabName = "workspace" | "autoupdate" | "files" | "about";
@@ -42,7 +43,7 @@ interface WorkspaceIndexStatus {
 }
 
 export const SettingsPanel: Component<SettingsPanelProps> = (props) => {
-  const [activeTab, setActiveTab] = createSignal<TabName>("workspace");
+  const [activeTab, setActiveTab] = createSignal<TabName>(props.initialTab ?? "workspace");
   const [wsPath, setWsPath] = createSignal("");
   const [indexStatus, setIndexStatus] = createSignal<WorkspaceIndexStatus | null>(null);
   const [reindexing, setReindexing] = createSignal(false);

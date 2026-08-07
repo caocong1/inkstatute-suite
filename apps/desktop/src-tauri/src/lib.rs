@@ -19,6 +19,7 @@
 )]
 
 mod commands;
+mod menu;
 mod security;
 mod workspace;
 
@@ -68,7 +69,14 @@ pub fn run() {
             let settings = commands::desktop::AppSettings::default();
             app.manage(Mutex::new(settings));
 
+            // Build and register the native menu bar
+            let menu = menu::build_menu(app.handle())?;
+            app.set_menu(menu)?;
+
             Ok(())
+        })
+        .on_menu_event(|app, event| {
+            menu::on_menu_event(app.handle(), &event);
         })
         .invoke_handler(tauri::generate_handler![
             commands::files::read_file_content,

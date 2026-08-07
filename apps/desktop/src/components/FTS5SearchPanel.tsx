@@ -46,6 +46,7 @@ export interface WorkspaceIndexStatus {
 
 export interface FTS5SearchPanelProps {
   onAttachRef?: (ref: ContextRefPayload) => void;
+  onClose?: () => void;
 }
 
 export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
@@ -134,6 +135,11 @@ export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
     <div class="fts-panel">
       <div class="fts-header">
         <span class="fts-title">🔍 搜索工作区文件</span>
+        <Show when={props.onClose}>
+          <button class="fts-close" type="button" onClick={() => props.onClose?.()}>
+            ✕
+          </button>
+        </Show>
       </div>
       <input
         class="fts-input"
