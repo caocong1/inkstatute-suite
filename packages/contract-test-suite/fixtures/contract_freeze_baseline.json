@@ -47,6 +47,6 @@
     "packages/platform-contract/src/platform_contract/schemas/tool_call_delta.schema.json": "4b4e5c3d547818597567406b2d69703fcbeb5e60c9037f1bcc542e986610fa0e",
     "packages/platform-contract/src/platform_contract/schemas/tool_call_started.schema.json": "7f3d7b16333a0037933879b208352e8cec117415c0d80b4a99012f4347cca3e6",
     "packages/platform-contract/src/platform_contract/schemas/workspace.schema.json": "b08467d915843c9652a40eb5668c66c4addd49f8aa467ef7de125581f14038d7",
-    "packages/platform-runtime/src/platform_runtime/protocols.py": "d18baa148c7baf04d6165e6574a1f35caeb5787abf64e83f48e04744e7ecb06e"
+    "packages/platform-runtime/src/platform_runtime/protocols.py": "8ed7769e69aae75cfda77fae871092fc7d4c382720071685841cb52f51a0824c"
   }
 }

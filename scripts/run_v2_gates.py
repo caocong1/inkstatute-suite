@@ -125,7 +125,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "gateway",
             (py, "-m", "unittest", "discover", "-s", "services/gateway/tests"),
-            (gateway_src, platform_src, platform_runtime_src, rbac_src, web_sse_src, skill_registry_src, acp_event_bridge_src, acp_client_src),
+            (gateway_src, platform_src, platform_runtime_src, rbac_src, web_sse_src, skill_registry_src, acp_event_bridge_src, acp_client_src, channel_core_src, qqbot_src, wecom_channel_src, wecom_src),
         ),
         Gate(
             "router-service",
