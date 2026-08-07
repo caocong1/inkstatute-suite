@@ -147,3 +147,21 @@ export {
   validateMentionPaths,
   serializeEditor,
 } from "./utils/mentions";
+
+// TitleBar — top bar with theme switch, window controls via WindowAdapter
+export { TitleBar } from "./components/TitleBar";
+export type { TitleBarProps } from "./components/TitleBar";
+
+// HomePage — landing page with greeting, starter prompt, doc type cards
+export { HomePage } from "./components/HomePage";
+export type { HomePageProps } from "./components/HomePage";
+
+// Doc types — document type cards and icon inference
+export { DOC_TYPES, iconForConversationTitle } from "./utils/docTypes";
+export type { DocType } from "./utils/docTypes";
+
+// Evidence flow utilities
+export { pathToRefAlias, extractDirectoryPaths, mergeDirectoryRefs } from "./utils/evidenceFlow";
+
+// WindowAdapter — for desktop window controls
+export type { WindowAdapter } from "./adapters";

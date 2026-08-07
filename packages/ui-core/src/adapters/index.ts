@@ -79,6 +79,20 @@ export interface DocumentParser {
 }
 
 // ---------------------------------------------------------------------------
+// WindowAdapter — replaces Tauri window controls (minimize/maximize/close/drag)
+// Only used in desktop mode; web consumers omit it.
+// ---------------------------------------------------------------------------
+
+export interface WindowAdapter {
+  minimize(): Promise<void>;
+  toggleMaximize(): Promise<void>;
+  close(): Promise<void>;
+  isMaximized(): Promise<boolean>;
+  onResized?(cb: () => void): Promise<() => void>;
+  startDragging?(): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
 // AdapterContext — SolidJS context for adapter injection
 // ---------------------------------------------------------------------------
 
@@ -88,6 +102,7 @@ export interface AdapterContextValue {
   appInfo: AppInfoAdapter;
   workspace: WorkspaceAdapter;
   documentParser: DocumentParser;
+  window?: WindowAdapter;
 }
 
 export const AdapterContext = createContext<AdapterContextValue>();
