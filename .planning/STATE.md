@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 97 complete (skill-materialization — all 4 plans done, 36 gates green)
-last_updated: "2026-08-10T01:30:00.000Z"
-last_activity: 2026-08-10 -- Phase 97 plan 97-04 (Wave 3): CLI + e2e tests + three-separation verification + phase completion. Implemented CLI (materialize, inject-body, routing-manifest subcommands, 17 smoke tests). Hermes ACP integration test (materialize → hermes acp --check, exit 0). Three-separation e2e verification (15 tests). Fixed gateway test_gate_count 31→36. All 36 gates green, 127 tests in skill-materializer gate. SKILL-05, SKILL-06, SKILL-09 marked complete. Phase 97 COMPLETE. 4 commits: ffba975, 7b3cd6c, 0e5aad6, 585d6ea.
+stopped_at: Phase 98 discuss complete (real-index-routing — context captured, 11 gray areas auto-selected)
+last_updated: "2026-08-10T02:30:00.000Z"
+last_activity: 2026-08-10 -- Phase 98 discuss-phase (--auto mode): Loaded Phase 97 context (97-CONTEXT, 97-RESEARCH, 97-04-SUMMARY). Scouted router-service (service.py 482 lines, classifier.py 4 generic intents, legal_risk.py 3 levels, HYBRID cascade), lawfirm-profile/scripts/router.py (498 lines, 11 strong-signal regex rules + factual short-circuit, soft matching 0.4 threshold, gate_before/gate_after semantics, JSONL decision logging), lawyer-desktop agent_classifier.rs (691 lines, Chat/Draft/Evidence 3-mode detection, continue/switch/aside actions, LLM fallback structural-only), RouteDecision contract (frozen, 15 fields), skill-index IndexRecord (21 fields), Phase 97 index_to_descriptors() + routing manifest. Identified 11 gray areas, all auto-selected. Key decisions: (1) new strong_signal.py module for 12 regex rules, (2) new mode_classifier.py for 3-mode detection, (3) new soft_matcher.py for 0.4 threshold matching, (4) golden fixture tests from lawfirm-profile 15+8 cases, (5) RouteDecision.metadata for mode/action, (6) JSONL decision logging with configurable dir, (7) no changes to legal_risk.py. Wrote 98-CONTEXT.md and 98-DISCUSSION-LOG.md. Committed.
 progress:
   total_phases: 17
   completed_phases: 10
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 98 — Real-Index Routing (next phase, depends on Phase 97)
+**Current focus:** Phase 98 — Real-Index Routing (discuss complete, ready for plan)
 
 ## Current Position
 
-Phase: 97 (skill-materialization) — COMPLETE
-Plan: 97-04 (Wave 3) complete. 4 plans total (97-01..97-04), 3 waves. All complete.
-Status: Phase 97 COMPLETE. All 4 plans executed (97-01 materializer core, 97-02 context budget injector, 97-03 skill-registry migration + manifest cleanup, 97-04 CLI + e2e + phase completion). 36 gates green, 127 tests in skill-materializer gate. SKILL-05, SKILL-06, SKILL-09 complete. Success criteria 1-6 all verified.
-Last activity: 2026-08-10 -- Phase 97 plan 97-04 (Wave 3): CLI + e2e tests + three-separation verification + phase completion. 4 commits.
+Phase: 98 (real-index-routing) — DISCUSS COMPLETE
+Plan: None yet (next: /gsd-plan 98)
+Status: Phase 98 discuss-phase complete in --auto mode. 11 gray areas identified and auto-selected. 98-CONTEXT.md and 98-DISCUSSION-LOG.md written and committed. Ready for plan phase.
+Last activity: 2026-08-10 -- Phase 98 discuss-phase (--auto): Scouted router-service, lawfirm-profile/scripts/router.py, lawyer-desktop agent_classifier.rs, RouteDecision contract, skill-index. 11 gray areas auto-selected. Key new modules: strong_signal.py, mode_classifier.py, soft_matcher.py. Golden fixture from lawfirm-profile 15+8 cases.
 
 **Next command:** `/gsd-plan 98` (Phase 98: Real-Index Routing)
 
@@ -110,8 +110,8 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-10T01:30:00.000Z
-Stopped at: Phase 97 complete (skill-materialization — all 4 plans done, 36 gates green)
+Last session: 2026-08-10T02:30:00.000Z
+Stopped at: Phase 98 discuss complete (real-index-routing — 11 gray areas auto-selected, context captured)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..06 + SKILL-09 + SAFE-05 complete)
