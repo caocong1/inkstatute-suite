@@ -1,0 +1,20 @@
+[
+  {
+    "filename": "notes.txt",
+    "content": "SGVsbG8sIOS4lueVjA==",
+    "mime_type": "text/plain",
+    "conversation_id": "conv-upload-001"
+  },
+  {
+    "filename": "contract.docx",
+    "content": "UEsDBBQAAAAIAA==",
+    "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "conversation_id": "conv-upload-001"
+  },
+  {
+    "filename": "evidence.png",
+    "content": "iVBORw0KGgoAAAANSUhEUg==",
+    "mime_type": "image/png",
+    "conversation_id": "conv-upload-002"
+  }
+]

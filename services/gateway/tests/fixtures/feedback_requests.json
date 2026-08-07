@@ -1,0 +1,37 @@
+[
+  {
+    "conversation_id": "conv-fb-001",
+    "user_id": "lawyer-001",
+    "action": "up",
+    "feedback_target": "turn-001",
+    "message": "Great answer"
+  },
+  {
+    "conversation_id": "conv-fb-001",
+    "user_id": "lawyer-001",
+    "action": "down",
+    "feedback_target": "turn-002",
+    "message": "Not helpful"
+  },
+  {
+    "conversation_id": "conv-fb-001",
+    "user_id": "lawyer-001",
+    "action": "needs_fix",
+    "feedback_target": "turn-003",
+    "message": "Citation missing"
+  },
+  {
+    "conversation_id": "conv-fb-001",
+    "user_id": "lawyer-001",
+    "action": "route_wrong",
+    "feedback_target": "turn-004",
+    "message": "Should have routed to contract review"
+  },
+  {
+    "conversation_id": "conv-fb-001",
+    "user_id": "lawyer-001",
+    "action": "invalid_action",
+    "feedback_target": "turn-005",
+    "message": "This should fail"
+  }
+]
