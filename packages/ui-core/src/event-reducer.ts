@@ -12,14 +12,25 @@
 
 import type { RunEventEnvelope } from "@inkstatute/platform-sdk-ts/events";
 import type {
+  SessionStartedPayload,
+  MessageDeltaPayload,
+  MessageCompletedPayload,
+  ThoughtDeltaPayload,
+  ToolCallStartedPayload,
+  ToolCallDeltaPayload,
+  ToolCallCompletedPayload,
+  PlanUpdatedPayload,
+  PhaseChangedPayload,
   ElicitationRequestedPayload,
-  ElicitationOption,
-  ElicitationQuestion,
+  PermissionRequestedPayload,
+  ArtifactCreatedPayload,
+  CitationRecordedPayload,
+  RunStateChangedPayload,
+  ErrorEventPayload,
   FivePhase,
   Artifact,
   CitationRecord,
   ErrorInfo,
-  PermissionRequestedPayload,
 } from "@inkstatute/platform-sdk-ts/events";
 import type {
   WorkflowState,
@@ -217,10 +228,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
 
   switch (event.event_type) {
     case "session.started": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { backend_id: string }
-      > | undefined;
+      const p = event.payload as SessionStartedPayload | undefined;
       return {
         ...base,
         runId: event.run_id,
@@ -231,10 +239,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "message.delta": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { delta: string }
-      > | undefined;
+      const p = event.payload as MessageDeltaPayload | undefined;
       const delta = p?.delta ?? "";
       return {
         ...base,
@@ -244,10 +249,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "message.completed": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { content: string }
-      > | undefined;
+      const p = event.payload as MessageCompletedPayload | undefined;
       const content = p?.content ?? state.streamingBuffer;
       const messageId = p?.message_id ?? state.streamingMessageId ?? `msg-${event.seq}`;
       const message: ChatMessage = {
@@ -271,10 +273,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "thought.delta": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { delta: string }
-      > | undefined;
+      const p = event.payload as ThoughtDeltaPayload | undefined;
       return {
         ...base,
         thinking: state.thinking + (p?.delta ?? ""),
@@ -282,10 +281,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "tool_call.started": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { tool_call_id: string; tool_name: string }
-      > | undefined;
+      const p = event.payload as ToolCallStartedPayload | undefined;
       if (!p) return base;
       const label = traceToolLabel(p.tool_name);
       const workflow = upsertStep(
@@ -301,10 +297,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "tool_call.delta": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { tool_call_id: string; content?: string }
-      > | undefined;
+      const p = event.payload as ToolCallDeltaPayload | undefined;
       if (!p) return base;
       // Update tool step detail with delta content
       const workflow = upsertStep(
@@ -320,10 +313,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "tool_call.completed": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { tool_call_id: string; status: string }
-      > | undefined;
+      const p = event.payload as ToolCallCompletedPayload | undefined;
       if (!p) return base;
       const stepState: WorkflowStepState =
         p.status === "error" || p.status === "failed" ? "error" : "done";
@@ -332,10 +322,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "plan.updated": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { plan: Array<{ title: string; status: string; steps?: string[] }> }
-      > | undefined;
+      const p = event.payload as PlanUpdatedPayload | undefined;
       if (!p) return base;
       const steps: WorkflowStep[] = p.plan.map((item, i) => ({
         id: `plan-${i}`,
@@ -348,10 +335,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "phase.changed": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { phase: FivePhase }
-      > | undefined;
+      const p = event.payload as PhaseChangedPayload | undefined;
       if (!p) return base;
       return { ...base, currentPhase: p.phase };
     }
@@ -375,10 +359,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "artifact.created": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { artifact: Artifact }
-      > | undefined;
+      const p = event.payload as ArtifactCreatedPayload | undefined;
       if (!p) return base;
       // Idempotency: don't duplicate artifacts with the same artifact_id
       const exists = state.artifacts.some(
@@ -389,10 +370,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "citation.recorded": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { citations: CitationRecord[] }
-      > | undefined;
+      const p = event.payload as CitationRecordedPayload | undefined;
       if (!p) return base;
       // Idempotency: don't duplicate citations with the same source
       const existingSources = new Set(state.citations.map((c) => c.source));
@@ -403,10 +381,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "run.state_changed": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { status: string }
-      > | undefined;
+      const p = event.payload as RunStateChangedPayload | undefined;
       const status = p?.status ?? "";
       let runStatus: RenderState["runStatus"] = state.runStatus;
       if (status === "succeeded" || status === "completed") runStatus = "completed";
@@ -431,10 +406,7 @@ export function reduce(state: RenderState, event: RunEventEnvelope): RenderState
     }
 
     case "error": {
-      const p = event.payload as Extract<
-        typeof event.payload,
-        { error: ErrorInfo }
-      > | undefined;
+      const p = event.payload as ErrorEventPayload | undefined;
       return {
         ...base,
         error: p?.error ?? null,

@@ -41,12 +41,17 @@ const mockAdapters: AdapterContextValue = {
 
 function renderChatPanel(state: RenderState, onSend?: (text: string) => void) {
   const sendFn = onSend ?? vi.fn();
-  const dispose = render(() => (
-    <AdapterContext.Provider value={mockAdapters}>
-      <ChatPanel state={state} onSend={sendFn} />
-    </AdapterContext.Provider>
-  ));
-  return { dispose, sendFn };
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const dispose = render(
+    () => (
+      <AdapterContext.Provider value={mockAdapters}>
+        <ChatPanel state={state} onSend={sendFn} />
+      </AdapterContext.Provider>
+    ),
+    container,
+  );
+  return { dispose, sendFn, container };
 }
 
 describe("ChatPanel rendering", () => {

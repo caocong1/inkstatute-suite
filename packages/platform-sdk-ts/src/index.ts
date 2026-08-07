@@ -5,6 +5,11 @@
 // This SDK is remote/thin: it makes HTTP requests against a platform API
 // host and never embeds a local runtime, queue, or database.
 
+// HTTP method constants used by generated client methods.
+const DELETE = "DELETE";
+const POST = "POST";
+const GET = "GET";
+
 export interface PlatformApiClientOptions {
   baseUrl: string;
   fetchImpl?: typeof fetch;
