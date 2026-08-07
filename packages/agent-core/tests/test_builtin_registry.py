@@ -14,7 +14,7 @@ from inkstatute_agent_core.event_emitter import EventEmitter
 from inkstatute_agent_core.tools.builtin_registry import create_builtin_registry
 from inkstatute_agent_core.tools.registry import ToolRegistry
 
-from tests.fixtures.mcp_law_fixtures import LAW_FIXTURE_RESPONSES
+from fixtures.mcp_law_fixtures import LAW_FIXTURE_RESPONSES
 
 
 class TestBuiltinRegistry(unittest.TestCase):

@@ -20,7 +20,7 @@ from inkstatute_agent_core.tools.regulation_search import (
 )
 from inkstatute_agent_core.turn_loop import ToolResult
 
-from tests.fixtures.mcp_law_fixtures import LAW_FIXTURE_RESPONSES
+from fixtures.mcp_law_fixtures import LAW_FIXTURE_RESPONSES
 
 
 class TestArgumentMapping(unittest.TestCase):
