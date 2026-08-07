@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "outDir": "dist",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "baseUrl": ".",
+    "paths": {
+      "@inkstatute/ui-core": ["../../packages/ui-core/src/index.ts"],
+      "@inkstatute/ui-core/themes": ["../../packages/ui-core/src/themes/index.ts"],
+      "@inkstatute/ui-core/events": ["../../packages/ui-core/src/types/events.ts"],
+      "@inkstatute/platform-sdk-ts": ["../../packages/platform-sdk-ts/src/index.ts"],
+      "@inkstatute/platform-sdk-ts/events": ["../../packages/platform-sdk-ts/src/events.ts"]
+    }
+  },
+  "include": ["src", "tests"],
+  "exclude": ["dist", "node_modules"]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@inkstatute/web",
+  "version": "0.1.0",
+  "description": "Responsive web client for 墨律 InkStatute — desktop + mobile browser.",
+  "license": "Proprietary",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc --noEmit",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@inkstatute/ui-core": "workspace:*",
+    "@inkstatute/platform-sdk-ts": "workspace:*",
+    "@solidjs/router": "^0.15.0",
+    "solid-js": "^1.9.0",
+    "solid-markdown": "^2.1.0",
+    "remark-gfm": "^4.0.0",
+    "highlight.js": "^11.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite": "^8.0.0",
+    "vite-plugin-solid": "^2.11.0",
+    "vitest": "^3.0.0",
+    "@testing-library/dom": "^10.0.0",
+    "jsdom": "^25.0.0"
+  }
+}

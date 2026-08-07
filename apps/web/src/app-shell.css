@@ -1,0 +1,34 @@
+/* Web app shell layout — responsive overrides on top of ui-core themes. */
+
+:root {
+  --sidebar-width: 280px;
+  --main-max-width: 1040px;
+  --app-height: 100dvh;
+}
+
+.app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  height: var(--app-height, 100vh);
+}
+
+.stage {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.sidebar {
+  flex: 0 0 var(--sidebar-width, 280px);
+  border-right: 1px solid var(--line);
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}

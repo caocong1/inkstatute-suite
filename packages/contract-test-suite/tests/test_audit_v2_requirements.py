@@ -453,7 +453,8 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("acp-event-bridge", gate_names)
         self.assertIn("gateway", gate_names)
         self.assertIn("ui-core", gate_names)
-        self.assertEqual(len(gate_names), 32)
+        self.assertIn("web", gate_names)
+        self.assertEqual(len(gate_names), 33)
 
 
 if __name__ == "__main__":

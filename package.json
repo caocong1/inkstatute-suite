@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "packages/platform-sdk-ts",
-    "packages/ui-core"
+    "packages/ui-core",
+    "apps/web"
   ]
 }
