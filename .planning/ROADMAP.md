@@ -62,7 +62,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 - [x] **Phase 91: Unified Gateway** - 多租户 HTTP+SSE 网关，取代 platform_api 与 lawyer-web-chat 的重叠 (GW-01..06)
 - [x] **Phase 92: Shared UI Core** - 从 lawyer-desktop 抽取 @inkstatute/ui-core，chat UI 单一实现 (UI-01, UI-02, UI-03, UI-06) ✅
 - [x] **Phase 93: Web Client** - 响应式 Web 客户端（桌面 + 移动浏览器） (UI-04) ✅
-- [ ] **Phase 94: Desktop Client** - Tauri 外壳复用，invoke() → Gateway，离线只读 (UI-05)
+- [ ] **Phase 94: Desktop Client** - Tauri 外壳复用，invoke() → Gateway，离线只读 (UI-05) — 94-01 tracer complete ✅
 - [ ] **Phase 95: Bot Channel Degradation** - WeCom/QQ 改为 Gateway 消费者 + 非流式降级 (BOT-01, BOT-02, BOT-03)
 
 ### 阶段 C — 能力层
@@ -200,7 +200,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 本地工作区 FTS5 索引作为桌面专属增强保留，其检索结果可作为附件引用提交给平台
   6. 桌面端与 Web 端在同一任务上表现一致（同样的事件、同样的澄清卡片、同样的产物）
 
-**Plans**: TBD (est. 4)
+**Plans**: TBD (est. 4) — 94-01 tracer complete ✅ (scaffold + Tauri 2 shell + 6 adapters + Gateway contexts + signal-based app shell, 34 gates green)
 **UI hint**: yes
 
 ### Phase 95: Bot Channel Degradation
