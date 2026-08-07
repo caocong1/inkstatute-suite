@@ -124,3 +124,6 @@ export type { IconName } from "./components/Icons";
 
 export { CitationPanel } from "./components/CitationPanel";
 export type { CitationPanelProps } from "./components/CitationPanel";
+
+export { DocPreview } from "./components/DocPreview";
+export type { DocPreviewProps } from "./components/DocPreview";
