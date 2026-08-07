@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 101 plan 101-01 complete — ToolRegistry + EventEmitter extensions + clarification tool + turn loop terminate_turn, 6/6 tasks done, all 38 gates green
-last_updated: "2026-08-11T15:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 101 exec 101-01: ToolRegistry (registry.py), dispatching ToolExecutor (executor.py), EventEmitter extensions (emit_artifact_created, emit_elicitation_requested + side-channel buffer), clarification tool (clarification.py — ask_user, emits elicitation.requested, returns terminate_turn metadata), turn loop terminate_turn check (emit run.state_changed waiting_for_user), e2e integration test (test_e2e_tool_registry.py). 65 new tests (17 tool_registry + 24 clarification + 5 e2e + 13 event_emitter + 6 turn_loop). All 405 agent-core tests pass. All 38 gates green. Commits: 9ce46ca, 877b386, 9f57679, 234e121, 5c844ff, 109476d.
+stopped_at: Phase 101 plan 101-02 complete — PathSandbox + file_read + MCP client + regulation search + builtin_registry, 6/6 tasks done, all 38 gates green
+last_updated: "2026-08-11T16:00:00.000Z"
+last_activity: 2026-08-11 -- Phase 101 exec 101-02: PathSandbox (path_sandbox.py — reject .., canonicalize, allowlist roots), file_read tool (file_read.py — read-only, sandboxed, max 50000 chars, binary rejection, UTF-8/latin-1), McpClient (mcp_client.py — JSON-RPC 2.0 over stdio, asyncio subprocess, MCP-to-OpenAI schema conversion), regulation_search tool (regulation_search.py — MCP law-database + fixture mode), builtin_registry factory (builtin_registry.py — composes all Phase 101 tools). 82 new tests (19 path_sandbox + 15 file_read + 19 mcp_client + 20 regulation_search + 9 builtin_registry). All 487 agent-core tests pass. All 38 gates green. Commits: 47a416a, dd2c72a, 04c9819, 3a3f9e6, 8cdb150, 7b0f62c, a6dcca0.
 progress:
   total_phases: 17
   completed_phases: 13
   total_plans: 62
-  completed_plans: 57
-  percent: 75
+  completed_plans: 58
+  percent: 77
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 101 plan 101-01 complete — ToolRegistry + EventEmitter extensions + clarification tool + turn loop terminate_turn
+**Current focus:** Phase 101 plan 101-02 complete — PathSandbox + file_read + MCP client + regulation search + builtin_registry
 
 ## Current Position
 
-Phase: 101 (agent-core-tools) — plan 101-01 complete, 3 plans remaining
-Status: Phase 101 plan 101-01 complete. ToolRegistry, dispatching ToolExecutor, EventEmitter extensions (emit_artifact_created, emit_elicitation_requested + side-channel buffer), clarification (ask_user) tool, and turn loop terminate_turn enhancement all implemented. 65 new tests, all 405 agent-core tests pass, all 38 gates green. Next: 101-02 (Wave 2: file_read + MCP client + regulation search) and 101-03 (Wave 2: document_generate + track-changes) can run in parallel.
-Last activity: 2026-08-11 -- Phase 101 exec 101-01. 6 tasks, 6 commits, 65 new tests.
+Phase: 101 (agent-core-tools) — plan 101-02 complete, 2 plans remaining
+Status: Phase 101 plan 101-02 complete. PathSandbox (path traversal prevention, canonicalization, allowlist roots), file_read tool (read-only, sandboxed, max 50000 chars, binary rejection, UTF-8/latin-1 fallback), McpClient (JSON-RPC 2.0 over stdio, asyncio subprocess, MCP-to-OpenAI schema conversion), regulation_search tool (MCP law-database + fixture mode), and builtin_registry factory all implemented. 82 new tests, all 487 agent-core tests pass, all 38 gates green. Next: 101-03 (Wave 2: document_generate + track-changes) and 101-04 (e2e + completion).
+Last activity: 2026-08-11 -- Phase 101 exec 101-02. 6 tasks, 7 commits, 82 new tests.
 
-**Next command:** `/gsd-exec 101-02` (Wave 2: file_read + MCP client + regulation search) or `/gsd-exec 101-03` (Wave 2: document_generate + track-changes)
+**Next command:** `/gsd-exec 101-03` (Wave 2: document_generate + track-changes) or `/gsd-exec 101-04` (e2e + completion)
 
 ## Milestone v3.0 Overview
 
@@ -109,17 +109,17 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-11T15:00:00.000Z
-Stopped at: Phase 101 plan 101-01 complete — ToolRegistry + EventEmitter extensions + clarification tool + turn loop terminate_turn, 6/6 tasks done, all 38 gates green
+Last session: 2026-08-11T16:00:00.000Z
+Stopped at: Phase 101 plan 101-02 complete — PathSandbox + file_read + MCP client + regulation search + builtin_registry, 6/6 tasks done, all 38 gates green
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01 + CORE-04 + CORE-09 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 plan 101-01 complete, next: exec 101-02 ∥ 101-03)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 plan 101-01 + 101-02 complete, next: exec 101-03 ∥ 101-04)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-exec 101-02` (Wave 2: file_read + MCP client + regulation search)
 - `/gsd-exec 101-03` (Wave 2: document_generate + track-changes)
+- `/gsd-exec 101-04` (e2e integration + phase completion)
 - 或 `/gsd-autonomous` 自动推进 Phases 101-104
