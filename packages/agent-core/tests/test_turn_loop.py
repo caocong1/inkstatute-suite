@@ -741,5 +741,273 @@ class TestAlwaysStreaming(unittest.TestCase):
         self.assertIn("Here is the result.", delta_contents)
 
 
+# ---------------------------------------------------------------------------
+# terminate_turn metadata tests
+# ---------------------------------------------------------------------------
+
+
+class TestTerminateTurn(unittest.TestCase):
+    """Tools with terminate_turn=True stop the turn loop."""
+
+    def test_tool_with_terminate_turn_stops_loop(self):
+        """A tool returning terminate_turn=True causes the loop to emit
+        run.state_changed(waiting_for_user) and return."""
+        async def terminating_executor(tool_call_id, tool_name, arguments):
+            return ToolResult(
+                content="turn terminated by tool",
+                metadata={"terminate_turn": True},
+            )
+
+        provider = FixtureProvider([
+            TurnScript(deltas=[
+                ToolCallDelta(
+                    tool_call_id="call_1",
+                    tool_name="ask_user",
+                    arguments='{"intro":"请回答","questions":[...]}',
+                ),
+                FinishDelta(finish_reason="tool_calls"),
+            ]),
+            # This second round should NOT be reached
+            TurnScript(deltas=[
+                ContentDelta(content="This should not be reached."),
+                FinishDelta(finish_reason="stop"),
+            ]),
+        ])
+        config = AgentCoreConfig()
+        emitter = _make_emitter(config=config)
+
+        events = asyncio.run(_collect_events(
+            run_turn(
+                messages=[{"role": "user", "content": "q"}],
+                tools=[{"type": "function", "function": {"name": "ask_user"}}],
+                provider=provider,
+                emitter=emitter,
+                config=config,
+                tool_executor=terminating_executor,
+                run_id="run-test",
+            )
+        ))
+
+        # Provider should have been called only once (loop stopped after round 1)
+        self.assertEqual(provider.call_count, 1)
+
+        # run.state_changed with status "waiting_for_user" should be present
+        state_events = [e for e in events if e.event_type == RunEventType.RUN_STATE_CHANGED.value]
+        self.assertEqual(len(state_events), 1)
+        self.assertEqual(state_events[0].payload["status"], "waiting_for_user")
+
+        # tool_call.completed with status "succeeded" should be present
+        completed = [e for e in events if e.event_type == RunEventType.TOOL_CALL_COMPLETED_V3.value]
+        self.assertEqual(len(completed), 1)
+        self.assertEqual(completed[0].payload["status"], "succeeded")
+
+        # No message.completed event (loop did not reach final content round)
+        msg_completed = [e for e in events if e.event_type == RunEventType.MESSAGE_COMPLETED.value]
+        self.assertEqual(len(msg_completed), 0)
+
+    def test_tool_with_terminate_turn_false_continues(self):
+        """A tool returning terminate_turn=False (or not set) continues the loop."""
+        async def normal_executor(tool_call_id, tool_name, arguments):
+            return ToolResult(content="normal result")
+
+        provider = FixtureProvider([
+            TurnScript(deltas=[
+                ToolCallDelta(
+                    tool_call_id="call_1",
+                    tool_name="search",
+                    arguments='{"query":"test"}',
+                ),
+                FinishDelta(finish_reason="tool_calls"),
+            ]),
+            TurnScript(deltas=[
+                ContentDelta(content="Final answer."),
+                FinishDelta(finish_reason="stop"),
+            ]),
+        ])
+        config = AgentCoreConfig()
+        emitter = _make_emitter(config=config)
+
+        events = asyncio.run(_collect_events(
+            run_turn(
+                messages=[{"role": "user", "content": "q"}],
+                tools=[{"type": "function", "function": {"name": "search"}}],
+                provider=provider,
+                emitter=emitter,
+                config=config,
+                tool_executor=normal_executor,
+                run_id="run-test",
+            )
+        ))
+
+        # Provider should have been called twice (round 1: tool, round 2: content)
+        self.assertEqual(provider.call_count, 2)
+
+        # run.state_changed with status "succeeded" (not "waiting_for_user")
+        state_events = [e for e in events if e.event_type == RunEventType.RUN_STATE_CHANGED.value]
+        self.assertEqual(len(state_events), 1)
+        self.assertEqual(state_events[0].payload["status"], "succeeded")
+
+    def test_multiple_tools_one_terminate_stops_loop(self):
+        """When multiple tools are called and one has terminate_turn=True,
+        the loop stops after processing all tools in the batch."""
+        async def multi_executor(tool_call_id, tool_name, arguments):
+            if tool_name == "ask_user":
+                return ToolResult(
+                    content="terminating",
+                    metadata={"terminate_turn": True},
+                )
+            return ToolResult(content="normal result")
+
+        provider = FixtureProvider([
+            TurnScript(deltas=[
+                ToolCallDelta(
+                    tool_call_id="call_1",
+                    tool_name="search",
+                    arguments='{"query":"test"}',
+                ),
+                ToolCallDelta(
+                    tool_call_id="call_2",
+                    tool_name="ask_user",
+                    arguments='{"intro":"请回答","questions":[...]}',
+                ),
+                FinishDelta(finish_reason="tool_calls"),
+            ]),
+            # This should NOT be reached
+            TurnScript(deltas=[
+                ContentDelta(content="Should not be reached."),
+                FinishDelta(finish_reason="stop"),
+            ]),
+        ])
+        config = AgentCoreConfig()
+        emitter = _make_emitter(config=config)
+
+        events = asyncio.run(_collect_events(
+            run_turn(
+                messages=[{"role": "user", "content": "q"}],
+                tools=[{"type": "function", "function": {"name": "search"}}],
+                provider=provider,
+                emitter=emitter,
+                config=config,
+                tool_executor=multi_executor,
+                run_id="run-test",
+            )
+        ))
+
+        # Provider called only once (loop stopped after round 1)
+        self.assertEqual(provider.call_count, 1)
+
+        # Both tool calls should have completed events
+        completed = [e for e in events if e.event_type == RunEventType.TOOL_CALL_COMPLETED_V3.value]
+        self.assertEqual(len(completed), 2)
+
+        # run.state_changed with status "waiting_for_user"
+        state_events = [e for e in events if e.event_type == RunEventType.RUN_STATE_CHANGED.value]
+        self.assertEqual(len(state_events), 1)
+        self.assertEqual(state_events[0].payload["status"], "waiting_for_user")
+
+    def test_no_tools_normal_final_content_unchanged(self):
+        """No tools (normal final content round) — behavior unchanged."""
+        provider = FixtureProvider([
+            TurnScript(deltas=[
+                ContentDelta(content="Hello"),
+                FinishDelta(finish_reason="stop"),
+            ]),
+        ])
+        config = AgentCoreConfig()
+        emitter = _make_emitter(config=config)
+
+        events = asyncio.run(_collect_events(
+            run_turn(
+                messages=[{"role": "user", "content": "hi"}],
+                tools=None,
+                provider=provider,
+                emitter=emitter,
+                config=config,
+                run_id="run-test",
+            )
+        ))
+
+        # Should complete normally with "succeeded"
+        state_events = [e for e in events if e.event_type == RunEventType.RUN_STATE_CHANGED.value]
+        self.assertEqual(len(state_events), 1)
+        self.assertEqual(state_events[0].payload["status"], "succeeded")
+
+    def test_terminate_tool_result_appended_to_messages(self):
+        """The tool result message is still appended to current_messages before terminating."""
+        async def terminating_executor(tool_call_id, tool_name, arguments):
+            return ToolResult(
+                content="turn terminated by tool",
+                metadata={"terminate_turn": True},
+            )
+
+        provider = FixtureProvider([
+            TurnScript(deltas=[
+                ToolCallDelta(
+                    tool_call_id="call_1",
+                    tool_name="ask_user",
+                    arguments='{}',
+                ),
+                FinishDelta(finish_reason="tool_calls"),
+            ]),
+        ])
+        config = AgentCoreConfig()
+        emitter = _make_emitter(config=config)
+
+        events = asyncio.run(_collect_events(
+            run_turn(
+                messages=[{"role": "user", "content": "q"}],
+                tools=[{"type": "function", "function": {"name": "ask_user"}}],
+                provider=provider,
+                emitter=emitter,
+                config=config,
+                tool_executor=terminating_executor,
+                run_id="run-test",
+            )
+        ))
+
+        # tool_call.completed should have status "succeeded" and the content
+        completed = [e for e in events if e.event_type == RunEventType.TOOL_CALL_COMPLETED_V3.value]
+        self.assertEqual(len(completed), 1)
+        self.assertEqual(completed[0].payload["status"], "succeeded")
+        self.assertIn("turn terminated", completed[0].payload["content"])
+
+    def test_terminate_emits_waiting_for_user_as_last_event(self):
+        """run.state_changed(waiting_for_user) is the last event when terminating."""
+        async def terminating_executor(tool_call_id, tool_name, arguments):
+            return ToolResult(
+                content="terminating",
+                metadata={"terminate_turn": True},
+            )
+
+        provider = FixtureProvider([
+            TurnScript(deltas=[
+                ToolCallDelta(
+                    tool_call_id="call_1",
+                    tool_name="ask_user",
+                    arguments='{}',
+                ),
+                FinishDelta(finish_reason="tool_calls"),
+            ]),
+        ])
+        config = AgentCoreConfig()
+        emitter = _make_emitter(config=config)
+
+        events = asyncio.run(_collect_events(
+            run_turn(
+                messages=[{"role": "user", "content": "q"}],
+                tools=[{"type": "function", "function": {"name": "ask_user"}}],
+                provider=provider,
+                emitter=emitter,
+                config=config,
+                tool_executor=terminating_executor,
+                run_id="run-test",
+            )
+        ))
+
+        # The last event should be run.state_changed
+        self.assertEqual(events[-1].event_type, RunEventType.RUN_STATE_CHANGED.value)
+        self.assertEqual(events[-1].payload["status"], "waiting_for_user")
+
+
 if __name__ == "__main__":
     unittest.main()

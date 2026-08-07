@@ -186,6 +186,9 @@ async def run_turn(
             )
             current_messages.append(assistant_msg)
 
+            # Track whether any tool requested turn termination
+            should_terminate = False
+
             # Execute each tool call
             for tc_delta in tool_call_deltas:
                 # a. tool_call.started
@@ -248,6 +251,12 @@ async def run_turn(
                                     result.content,
                                 )
                             )
+
+                            # Check terminate_turn metadata — a tool can
+                            # signal that the current turn should stop
+                            # (e.g. clarification/ask_user tool).
+                            if result.metadata.get("terminate_turn"):
+                                should_terminate = True
                     else:
                         # Phase 100 skeleton — no real tools yet
                         yield emitter.emit_tool_call_delta(
@@ -287,10 +296,17 @@ async def run_turn(
                         )
                     )
 
-            # d. Transition thought
+            # d. Check if any tool requested turn termination
+            if should_terminate:
+                # A tool (e.g. ask_user) signaled terminate_turn —
+                # emit run.state_changed to waiting_for_user and return.
+                yield emitter.emit_run_state_changed("waiting_for_user")
+                return
+
+            # e. Transition thought
             yield emitter.emit_thought_delta("工具执行完成，正在整合结果...")
 
-            # e. Continue to next round
+            # f. Continue to next round
             continue
 
         # 7. No tool calls — final content round
