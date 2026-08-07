@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
-status: verifying
-stopped_at: Phase 96 context gathered
-last_updated: "2026-08-07T18:59:07.750Z"
-last_activity: 2026-08-09 -- Phase 95 complete (Gateway client + event consumer + WeCom migration + QQ migration + cross-channel consistency + output boundary verification, BOT-01/02/03 complete, 34 gates green)
+status: planning
+stopped_at: Phase 96 plans written (4 plans, 3 waves)
+last_updated: "2026-08-09T12:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 96 plan phase complete (4 plans: 96-01 scanner core, 96-02 classification+metadata, 96-03 conflict model, 96-04 gate+e2e+completion; 3 waves: W1→W2 parallel→W3)
 progress:
   total_phases: 17
   completed_phases: 8
-  total_plans: 35
+  total_plans: 39
   completed_plans: 35
   percent: 47
 ---
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 96 — Real Skill Index (Phase 95 complete)
+**Current focus:** Phase 96 — Real Skill Index (plans written, ready for execution)
 
 ## Current Position
 
-Phase: 95 (bot-channel-degradation) — COMPLETE ✅
-Plan: 95-04 complete (3 commits: WeCom cross-channel consistency tests + QQ cross-channel consistency tests + output boundary tests + GSD artifact updates)
-Status: Phase 95 complete — Cross-channel consistency verified (WeCom and QQ produce same semantic result as Web), output boundary double-enforced (no backend noise in bot channels), all 6 success criteria verified, 34 gates green, BOT-01/BOT-02/BOT-03 marked complete
-Last activity: 2026-08-09 -- Phase 95 complete (Gateway client + event consumer + WeCom migration + QQ migration + cross-channel consistency + output boundary verification, BOT-01/02/03 complete, 34 gates green)
+Phase: 96 (real-skill-index) — PLANS WRITTEN
+Plan: 4 plans created (96-01, 96-02, 96-03, 96-04), 3 waves
+Status: Phase 96 plan phase complete — 4 plans written with wave-based parallelization (Wave 1: 96-01 scanner core; Wave 2: 96-02 classification+metadata ∥ 96-03 conflict model; Wave 3: 96-04 gate+e2e+completion). Ready for `/gsd-execute-plan 96`.
+Last activity: 2026-08-09 -- Phase 96 plan phase complete (4 plans, 3 waves, scanner core → classification+merge → gate+e2e)
 
-**Next command:** `/gsd-execute-plan 96` for Phase 96 (Real Skill Index) （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-execute-plan 96` for Phase 96 (Real Skill Index) — starts with Wave 1 (Plan 96-01)
 
 ## Milestone v3.0 Overview
 
@@ -110,12 +110,12 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-07T18:59:07.744Z
-Stopped at: Phase 96 context gathered
+Last session: 2026-08-09T12:00:00.000Z
+Stopped at: Phase 96 plans written (4 plans, 3 waves)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-95 complete, ready for Phase 96)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-95 complete, Phase 96 plans written)
 Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
 v1.x archives: .planning/milestones/
 
