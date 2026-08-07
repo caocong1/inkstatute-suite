@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: in_progress
-stopped_at: Phase 92 plan 01 complete (ui-core tracer slice)
-last_updated: "2026-08-08T20:10:00.000Z"
-last_activity: 2026-08-08 -- Phase 92 plan 01 complete (ui-core scaffold + theme + event reducer + ChatPanel + fixture tests, 32 gates green)
+stopped_at: Phase 92 plan 02 complete (chat interaction components)
+last_updated: "2026-08-08T20:22:00.000Z"
+last_activity: 2026-08-08 -- Phase 92 plan 02 complete (ClarificationCard + DraftingProgressSteps + MessageFeedback + DocDraftingLoader + WorkflowProgressSteps, 68 vitest tests, 32 gates green)
 progress:
   total_phases: 17
   completed_phases: 4
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 ## Current Position
 
 Phase: 92 (shared-ui-core) — IN PROGRESS
-Plan: 01 complete (92-01 ui-core tracer: scaffold + theme + event reducer + ChatPanel + fixture tests)
-Status: Phase 92 plan 01 complete, 32 gates green, ready for plan 92-02
-Last activity: 2026-08-08 -- Phase 92 plan 01 complete (ui-core scaffold + theme + event reducer + ChatPanel + fixture tests, 32 gates green)
+Plan: 02 complete (92-02 chat interaction components: ClarificationCard, DraftingProgressSteps, MessageFeedback, DocDraftingLoader, WorkflowProgressSteps)
+Status: Phase 92 plan 02 complete, 32 gates green, ready for plan 92-03
+Last activity: 2026-08-08 -- Phase 92 plan 02 complete (ClarificationCard + DraftingProgressSteps + MessageFeedback + DocDraftingLoader + WorkflowProgressSteps, 68 vitest tests, 32 gates green)
 
-**Next command:** `/gsd-execute-plan 92-02` （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-execute-plan 92-03` （或 `/gsd-autonomous` 自动推进）
 
 ## Milestone v3.0 Overview
 
@@ -121,6 +121,6 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-execute-plan 92-01` — 开始 Phase 92 (Unified UI)
+- `/gsd-execute-plan 92-03` — 继续 Phase 92 (Document preview + citations)
 - 或 `/gsd-autonomous` 自动推进 Phases 92-104
 - 或 `/gsd-autonomous --to 93` 只跑到"可用 Web 产品"这个里程碑点

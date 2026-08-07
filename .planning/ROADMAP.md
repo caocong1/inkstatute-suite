@@ -166,7 +166,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 全项目 grep 不到第二份 chat 消息列表 / 流式渲染 / ask_user 卡片实现；`apps/web_chat` 原型渲染器被标记 deprecated
   6. `ui-core` 有构建产物与类型声明，可被 `apps/web` 与 `apps/desktop` 同时依赖
 
-**Plans**: 4 (92-01 Tracer: scaffold+theme+reducer+ChatPanel+fixtures ✅ | 92-02 Component extraction | 92-03 Document preview + citations | 92-04 Full integration)
+**Plans**: 4 (92-01 Tracer: scaffold+theme+reducer+ChatPanel+fixtures ✅ | 92-02 Chat interaction components ✅ | 92-03 Document preview + citations | 92-04 Full integration)
 **UI hint**: yes
 
 ### Phase 93: Web Client
