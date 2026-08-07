@@ -20,6 +20,7 @@
 
 mod commands;
 mod security;
+mod workspace;
 
 use security::path_sandbox::PathSandbox;
 use std::sync::Arc;
@@ -58,6 +59,10 @@ pub fn run() {
             ));
             app.manage(sandbox);
 
+            // Set workspace index app data dir for FTS5 per-root databases
+            workspace::set_app_data_dir(data_dir)
+                .map_err(|e| format!("failed to set workspace data dir: {}", e))?;
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -77,6 +82,9 @@ pub fn run() {
             commands::offline_cache::get_cached_events,
             commands::offline_cache::get_cached_artifact,
             commands::offline_cache::get_cached_artifacts_by_session,
+            commands::workspace::bind_workspace,
+            commands::workspace::get_workspace_index_status,
+            commands::workspace::search_workspace,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

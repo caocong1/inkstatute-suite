@@ -166,6 +166,15 @@ class DesktopScaffoldTests(unittest.TestCase):
         migration = PKG_ROOT / "src-tauri" / "migrations" / "002_offline_cache.sql"
         self.assertTrue(migration.exists(), f"migration not found: {migration}")
 
+    def test_fts5_workspace_files_exist(self) -> None:
+        """FTS5 workspace index Rust modules and migration must exist."""
+        ws_dir = PKG_ROOT / "src-tauri" / "src" / "workspace"
+        for name in ["mod.rs", "scanner.rs", "parser.rs", "chunker.rs", "index_store.rs", "manager.rs"]:
+            self.assertTrue((ws_dir / name).exists(), f"workspace module not found: {name}")
+        self.assertTrue((PKG_ROOT / "src-tauri" / "src" / "commands" / "workspace.rs").exists())
+        migration = PKG_ROOT / "src-tauri" / "migrations" / "003_workspace_index.sql"
+        self.assertTrue(migration.exists(), f"FTS5 migration not found: {migration}")
+
     def test_tauri_no_agent_logic(self) -> None:
         """Tauri commands must not contain agent logic (send_message, etc.)."""
         lib_rs = (PKG_ROOT / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
@@ -190,8 +199,6 @@ class DesktopScaffoldTests(unittest.TestCase):
             "tauri-plugin-mcp-bridge",
             "reqwest",
             "aes-gcm",
-            "pdf-extract",
-            "docx-rs",
         ]:
             self.assertNotIn(
                 forbidden,
@@ -200,7 +207,7 @@ class DesktopScaffoldTests(unittest.TestCase):
             )
 
     def test_tauri_command_count(self) -> None:
-        """lib.rs must register all desktop-only commands (7 file + 9 offline cache)."""
+        """lib.rs must register all desktop-only commands (7 file + 9 cache + 3 workspace)."""
         lib_rs = (PKG_ROOT / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
         file_commands = [
             "read_file_content",
@@ -222,6 +229,11 @@ class DesktopScaffoldTests(unittest.TestCase):
             "get_cached_artifact",
             "get_cached_artifacts_by_session",
         ]
+        workspace_commands = [
+            "bind_workspace",
+            "get_workspace_index_status",
+            "search_workspace",
+        ]
         for cmd in file_commands:
             self.assertIn(
                 f"commands::files::{cmd}",
@@ -233,6 +245,12 @@ class DesktopScaffoldTests(unittest.TestCase):
                 f"commands::offline_cache::{cmd}",
                 lib_rs,
                 f"cache command '{cmd}' not registered in lib.rs",
+            )
+        for cmd in workspace_commands:
+            self.assertIn(
+                f"commands::workspace::{cmd}",
+                lib_rs,
+                f"workspace command '{cmd}' not registered in lib.rs",
             )
 
 
