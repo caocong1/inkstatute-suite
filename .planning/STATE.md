@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 98 discuss complete (real-index-routing — context captured, 11 gray areas auto-selected)
-last_updated: "2026-08-10T02:30:00.000Z"
-last_activity: 2026-08-10 -- Phase 98 discuss-phase (--auto mode): Loaded Phase 97 context (97-CONTEXT, 97-RESEARCH, 97-04-SUMMARY). Scouted router-service (service.py 482 lines, classifier.py 4 generic intents, legal_risk.py 3 levels, HYBRID cascade), lawfirm-profile/scripts/router.py (498 lines, 11 strong-signal regex rules + factual short-circuit, soft matching 0.4 threshold, gate_before/gate_after semantics, JSONL decision logging), lawyer-desktop agent_classifier.rs (691 lines, Chat/Draft/Evidence 3-mode detection, continue/switch/aside actions, LLM fallback structural-only), RouteDecision contract (frozen, 15 fields), skill-index IndexRecord (21 fields), Phase 97 index_to_descriptors() + routing manifest. Identified 11 gray areas, all auto-selected. Key decisions: (1) new strong_signal.py module for 12 regex rules, (2) new mode_classifier.py for 3-mode detection, (3) new soft_matcher.py for 0.4 threshold matching, (4) golden fixture tests from lawfirm-profile 15+8 cases, (5) RouteDecision.metadata for mode/action, (6) JSONL decision logging with configurable dir, (7) no changes to legal_risk.py. Wrote 98-CONTEXT.md and 98-DISCUSSION-LOG.md. Committed.
+stopped_at: Phase 98 plan complete (real-index-routing — 3 plans, 3 waves written)
+last_updated: "2026-08-10T03:15:00.000Z"
+last_activity: 2026-08-10 -- Phase 98 plan-phase: Split Phase 98 into 3 plans with wave-based parallelization. Plan 98-01 (Wave 1): strong_signal.py (11 regex rules + factual short-circuit ported verbatim from lawfirm-profile/scripts/router.py), soft_matcher.py (bag-of-triggers scoring, 0.4 threshold, 0.7 skip-clarification, host_assumptions as triggers), data source migration to skill-index.json via index_to_descriptors(), 15-case integration + 8-case eval golden tests (≥80%/≥75% accuracy), gate_before/gate_after → gates_before/gates_after mapping. Plan 98-02 (Wave 2): mode_classifier.py (AgentMode Chat/Draft/Evidence, ClassifyContext, ClassifyResult, ModeClassifierPort, LLMModeClassifier, fallback_classify structural-only action always continue, normalize_action, parse_mode_str, action pinning when current_mode=None), 14 unit tests ported from agent_classifier.rs, mode detection stored in RouteDecision.metadata. Plan 98-03 (Wave 3): decision_log.py (JSONL append per session, record_routing_error), complete RouteDecision field mapping (all 15 fields), route_mismatch feedback association, all 6 success criteria verified, SKILL-07/SKILL-08 marked complete, Phase 98 marked complete. Wrote 98-01-PLAN.md, 98-02-PLAN.md, 98-03-PLAN.md. Committed.
 progress:
   total_phases: 17
   completed_phases: 10
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 98 — Real-Index Routing (discuss complete, ready for plan)
+**Current focus:** Phase 98 — Real-Index Routing (plan complete, ready for execution)
 
 ## Current Position
 
-Phase: 98 (real-index-routing) — DISCUSS COMPLETE
-Plan: None yet (next: /gsd-plan 98)
-Status: Phase 98 discuss-phase complete in --auto mode. 11 gray areas identified and auto-selected. 98-CONTEXT.md and 98-DISCUSSION-LOG.md written and committed. Ready for plan phase.
-Last activity: 2026-08-10 -- Phase 98 discuss-phase (--auto): Scouted router-service, lawfirm-profile/scripts/router.py, lawyer-desktop agent_classifier.rs, RouteDecision contract, skill-index. 11 gray areas auto-selected. Key new modules: strong_signal.py, mode_classifier.py, soft_matcher.py. Golden fixture from lawfirm-profile 15+8 cases.
+Phase: 98 (real-index-routing) — PLAN COMPLETE
+Plan: 3 plans written (98-01, 98-02, 98-03), 3 waves
+Status: Phase 98 plan-phase complete. 3 plan files written: 98-01-PLAN.md (Wave 1: strong-signal + soft matcher + data source migration + golden tests), 98-02-PLAN.md (Wave 2: three-mode detection + continue/switch/aside + LLM fallback), 98-03-PLAN.md (Wave 3: decision logging + RouteDecision mapping + route_mismatch + phase completion). Wave dependencies: 98-01 → 98-02 → 98-03 (sequential). Ready for execution.
+Last activity: 2026-08-10 -- Phase 98 plan-phase: Split into 3 plans with wave-based parallelization. Read 98-CONTEXT.md, 98-RESEARCH.md, REQUIREMENTS.md (SKILL-07/08), ROADMAP.md (Phase 98 success criteria), AGENTS.md, router-service source (service.py 482 lines, __init__.py, 7 test files / 88 tests), skill-registry mapper.py (index_to_descriptors), platform-contract events.py (RouteDecision frozen schema), run_v2_gates.py (gate registration), lawfirm-profile router.py (498 lines, 11 rules + factual short-circuit), lawfirm-profile test suite (integration_test_router.py 15 cases, test_eval_router.py 8 cases), lawyer-desktop agent_classifier.rs (691 lines, 14 test cases). Wrote 3 plan files with 19 tasks total.
 
-**Next command:** `/gsd-plan 98` (Phase 98: Real-Index Routing)
+**Next command:** `/gsd-execute 98-01` (Phase 98 Wave 1: strong-signal + soft matcher + golden tests)
 
 ## Milestone v3.0 Overview
 
@@ -110,8 +110,8 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-10T02:30:00.000Z
-Stopped at: Phase 98 discuss complete (real-index-routing — 11 gray areas auto-selected, context captured)
+Last session: 2026-08-10T03:15:00.000Z
+Stopped at: Phase 98 plan complete (real-index-routing — 3 plans, 3 waves written)
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..06 + SKILL-09 + SAFE-05 complete)
@@ -121,6 +121,6 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-plan 98` (Phase 98: Real-Index Routing — SKILL-07, SKILL-08)
+- `/gsd-execute 98-01` (Phase 98 Wave 1: strong-signal + soft matcher + golden tests — SKILL-07)
 - 或 `/gsd-autonomous` 自动推进 Phases 98-104
 - 或 `/gsd-autonomous --to 99` 只跑到"能力层"这个里程碑点
