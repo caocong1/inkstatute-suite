@@ -3,4 +3,8 @@
 Re-exports are populated incrementally by later tasks in Plan 99-01.
 """
 
-__all__: list[str] = []
+from .model import PracticeProfile
+
+__all__ = [
+    "PracticeProfile",
+]
