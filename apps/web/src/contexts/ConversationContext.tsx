@@ -65,28 +65,37 @@ export const ConversationProvider: ParentComponent = (props) => {
   /**
    * Refresh conversations from the Gateway.
    *
-   * If we have a current session, calls gateway.listSessionRuns() to get
-   * the run history for the session and maps runs to Conversation objects.
-   * This enables the home page's "最近对话" section to show real history.
+   * Calls gateway.listSessions() to get all sessions for the authenticated
+   * tenant, then maps them to Conversation objects. This enables cross-device
+   * session visibility — a user logging in from another browser sees all
+   * sessions for their tenant.
    */
   async function refreshConversations(): Promise<void> {
-    const sessionId = auth.sessionId();
-    if (!sessionId) return;
     try {
-      const result = await gateway.listSessionRuns(sessionId) as {
-        runs?: Array<{ run_id?: string; turn_id?: string; created_at?: string }>;
+      const result = await gateway.listSessions() as {
+        sessions?: Array<{
+          session_id?: string;
+          conversation_id?: string;
+          created_at?: number;
+          expires_at?: number;
+        }>;
+        count?: number;
       };
-      if (result?.runs && Array.isArray(result.runs)) {
-        const convs: Conversation[] = result.runs.map((run) => ({
-          id: run.run_id ?? "",
-          title: run.turn_id ?? run.run_id ?? "",
-          created_at: run.created_at ?? new Date().toISOString(),
-          updated_at: run.created_at ?? new Date().toISOString(),
-        }));
+      if (result?.sessions && Array.isArray(result.sessions)) {
+        const convs: Conversation[] = result.sessions.map((s) => {
+          const ts = s.created_at ?? Date.now();
+          const iso = new Date(ts * 1000).toISOString();
+          return {
+            id: s.conversation_id ?? s.session_id ?? "",
+            title: s.conversation_id ?? s.session_id ?? "",
+            created_at: iso,
+            updated_at: iso,
+          };
+        });
         setConversations(convs);
       }
     } catch {
-      // Gateway may not have the session or listSessionRuns may fail — keep existing list
+      // Gateway may not be available — keep existing list
     }
   }
 

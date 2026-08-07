@@ -41,7 +41,7 @@ from .feedback import GatewayFeedbackHandler, handle_submit_feedback_request
 from .login import GatewayLoginHandler
 from .approvals import GatewayApprovalHandler
 from .runs import handle_get_run_request, handle_list_session_runs_request
-from .sessions import GatewaySessionManager, build_set_cookie_header, serialize_session
+from .sessions import GatewaySessionManager, build_set_cookie_header, serialize_session, serialize_session_list
 from .skills import GatewaySkillsHandler, handle_skills_request
 from .sse import GatewaySseStream, parse_last_event_id
 from .upload import GatewayUploadHandler, handle_upload_request
@@ -55,6 +55,7 @@ JsonObject = dict[str, Any]
 OPERATION_CREATE_SESSION = "create_session"
 OPERATION_LOGIN = "login"
 OPERATION_GET_SESSION = "get_session"
+OPERATION_LIST_SESSIONS = "list_sessions"
 OPERATION_LIST_SESSION_RUNS = "list_session_runs"
 OPERATION_CREATE_RUN = "create_run"
 OPERATION_GET_RUN = "get_run"
@@ -70,6 +71,7 @@ OPERATION_LIST_SKILLS = "list_skills"
 OPERATIONS: tuple[str, ...] = (
     OPERATION_CREATE_SESSION,
     OPERATION_GET_SESSION,
+    OPERATION_LIST_SESSIONS,
     OPERATION_LIST_SESSION_RUNS,
     OPERATION_CREATE_RUN,
     OPERATION_GET_RUN,
@@ -227,6 +229,8 @@ class GatewayApp:
                 return await self._handle_cancel_run(ctx, path_params)
             if operation == OPERATION_GET_SESSION:
                 return self._handle_get_session(ctx, path_params)
+            if operation == OPERATION_LIST_SESSIONS:
+                return self._handle_list_sessions(ctx)
             if operation == OPERATION_LIST_SESSION_RUNS:
                 return self._handle_list_session_runs(ctx, path_params)
             if operation == OPERATION_GET_RUN:
@@ -408,6 +412,18 @@ class GatewayApp:
         self._auth.check_tenant(ctx, session.tenant_id)
         return serialize_session(session)
 
+    def _handle_list_sessions(
+        self,
+        ctx: AuthContext,
+    ) -> JsonObject:
+        """Handle GET /v1/sessions — list all sessions for the authenticated tenant.
+
+        This enables cross-device session visibility: a user logging in from
+        another browser can see all sessions for their tenant.
+        """
+        sessions = self._session_manager.list_sessions(ctx.tenant_id)
+        return serialize_session_list(sessions)
+
     def _handle_list_session_runs(
         self,
         ctx: AuthContext,
@@ -511,6 +527,10 @@ def _parse_route(method: str, path: str, base_path: str) -> tuple[str, dict[str,
     # POST /v1/auth/login — unauthenticated login endpoint
     if method == "POST" and parts == ["auth", "login"]:
         return OPERATION_LOGIN, {}
+
+    # GET /v1/sessions — list all sessions for the authenticated tenant
+    if method == "GET" and parts == ["sessions"]:
+        return OPERATION_LIST_SESSIONS, {}
 
     # GET /v1/sessions/{session_id}
     if method == "GET" and len(parts) == 2 and parts[0] == "sessions":
@@ -821,6 +841,7 @@ __all__ = [
     "OPERATION_GET_ARTIFACT",
     "OPERATION_GET_RUN",
     "OPERATION_GET_SESSION",
+    "OPERATION_LIST_SESSIONS",
     "OPERATION_LIST_SESSION_RUNS",
     "OPERATION_LIST_SKILLS",
     "OPERATION_LOGIN",

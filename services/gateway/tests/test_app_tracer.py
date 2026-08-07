@@ -306,7 +306,7 @@ class TestGatewayTracer(unittest.TestCase):
 
     def test_all_operations_listed(self) -> None:
         ops = self.app.operations()
-        self.assertEqual(len(ops), 13)
+        self.assertEqual(len(ops), 14)
         for op in ops:
             self.assertIn(op, OPERATIONS)
 

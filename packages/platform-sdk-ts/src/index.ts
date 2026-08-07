@@ -113,6 +113,15 @@ export class PlatformApiClient {
   }
 
   /**
+   * List all sessions for the authenticated tenant.
+   * HTTP method GET.
+   */
+  async listSessions(): Promise<unknown> {
+    const response = await this.request<unknown>("GET", `/v1/sessions`, undefined);
+    return response as never;
+  }
+
+  /**
    * List runs for a session.
    * HTTP method GET.
    */

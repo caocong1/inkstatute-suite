@@ -301,12 +301,12 @@ class TestGatewayIntegration(unittest.TestCase):
         ))
         self.assertNotEqual(result.get("status"), 501)
 
-        # The stubbed endpoints (get_session, list_session_runs, get_run,
-        # submit_elicitation, submit_approval) return 501 — they are
-        # scaffolded but not yet fully implemented. The key requirement
-        # is that the 12 endpoint PATHS exist and are routable (not 404).
-        # Verify all 12 paths are routable by checking OPERATIONS count.
-        self.assertEqual(len(OPERATIONS), 13, "Should have 13 operations across 12 paths")
+        # All endpoints are now implemented (Plan 93-03):
+        # get_session, list_session_runs, get_run, submit_elicitation,
+        # submit_approval, and list_sessions (Plan 93-03-04).
+        # The key requirement is that all endpoint PATHS exist and are
+        # routable (not 404). Verify via OPERATIONS count.
+        self.assertEqual(len(OPERATIONS), 14, "Should have 14 operations across 13 paths")
 
     def test_success_criteria_1_openapi_document(self) -> None:
         """Verify OpenAPI document contains all 12 paths."""
