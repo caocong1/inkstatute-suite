@@ -2,7 +2,7 @@
  * App — root component with context providers and signal-based screen switching.
  *
  * Wraps everything in:
- * AuthProvider → AdapterContext.Provider → ConversationProvider → screen switcher
+ * AuthProvider → ConnectionProvider → AdapterContext.Provider → ConversationProvider → screen switcher
  *
  * NO router — uses signal-based screen switching ("home" | "workspace"),
  * matching the original lawyer-desktop architecture.
@@ -10,6 +10,8 @@
  * The TitleBar from ui-core receives windowAdapter via AdapterContext
  * (since desktopAdapters.window is defined). This is the key difference
  * from web — the TitleBar shows native window controls.
+ *
+ * OfflineBanner shows below TitleBar when connectionState() === "offline".
  */
 import { createSignal, Show, type Component } from "solid-js";
 import {
@@ -19,13 +21,16 @@ import {
   type ConversationStore,
 } from "@inkstatute/ui-core";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ConnectionProvider, useConnection } from "./contexts/ConnectionContext";
 import { ConversationProvider, useConversations } from "./contexts/ConversationContext";
 import { desktopAdapters } from "./adapters/desktopAdapters";
 import { HomePage } from "./pages/HomePage";
 import { WorkspacePage } from "./pages/WorkspacePage";
+import { OfflineBanner } from "./components/OfflineBanner";
 
 const AppContent: Component = () => {
   const auth = useAuth();
+  const conn = useConnection();
   const convs = useConversations();
   const [screen, setScreen] = createSignal<"home" | "workspace">("home");
   const [settingsOpen, setSettingsOpen] = createSignal(false);
@@ -55,6 +60,9 @@ const AppContent: Component = () => {
           }}
           onOpenSettings={() => setSettingsOpen(true)}
         />
+        <Show when={conn.isOffline()}>
+          <OfflineBanner />
+        </Show>
         <div class="stage">
           <div class="sidebar">
             <ConversationDrawer
@@ -88,11 +96,13 @@ const AppContent: Component = () => {
 const App: Component = () => {
   return (
     <AuthProvider>
-      <AdapterContext.Provider value={desktopAdapters}>
-        <ConversationProvider>
-          <AppContent />
-        </ConversationProvider>
-      </AdapterContext.Provider>
+      <ConnectionProvider>
+        <AdapterContext.Provider value={desktopAdapters}>
+          <ConversationProvider>
+            <AppContent />
+          </ConversationProvider>
+        </AdapterContext.Provider>
+      </ConnectionProvider>
     </AuthProvider>
   );
 };

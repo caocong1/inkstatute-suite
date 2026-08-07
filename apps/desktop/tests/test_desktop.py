@@ -132,8 +132,10 @@ class DesktopScaffoldTests(unittest.TestCase):
         self.assertIn("AuthProvider", text)
         self.assertIn("AdapterContext", text)
         self.assertIn("ConversationProvider", text)
+        self.assertIn("ConnectionProvider", text)
         self.assertIn("TitleBar", text)
         self.assertIn("ConversationDrawer", text)
+        self.assertIn("OfflineBanner", text)
         self.assertIn("createSignal", text)
         self.assertNotIn("@solidjs/router", text)
 
@@ -152,8 +154,17 @@ class DesktopScaffoldTests(unittest.TestCase):
         self.assertTrue((tauri / "src" / "lib.rs").exists())
         self.assertTrue((tauri / "src" / "main.rs").exists())
         self.assertTrue((tauri / "src" / "commands" / "files.rs").exists())
+        self.assertTrue((tauri / "src" / "commands" / "offline_cache.rs").exists())
         self.assertTrue((tauri / "src" / "security" / "path_sandbox.rs").exists())
         self.assertTrue((tauri / "capabilities" / "default.json").exists())
+
+    def test_offline_cache_files_exist(self) -> None:
+        """Offline cache TypeScript and migration files must exist."""
+        self.assertTrue((SRC_DIR / "contexts" / "ConnectionContext.tsx").exists())
+        self.assertTrue((SRC_DIR / "components" / "OfflineBanner.tsx").exists())
+        self.assertTrue((SRC_DIR / "lib" / "offlineCache.ts").exists())
+        migration = PKG_ROOT / "src-tauri" / "migrations" / "002_offline_cache.sql"
+        self.assertTrue(migration.exists(), f"migration not found: {migration}")
 
     def test_tauri_no_agent_logic(self) -> None:
         """Tauri commands must not contain agent logic (send_message, etc.)."""
@@ -179,7 +190,6 @@ class DesktopScaffoldTests(unittest.TestCase):
             "tauri-plugin-mcp-bridge",
             "reqwest",
             "aes-gcm",
-            "sqlx",
             "pdf-extract",
             "docx-rs",
         ]:
@@ -190,9 +200,9 @@ class DesktopScaffoldTests(unittest.TestCase):
             )
 
     def test_tauri_command_count(self) -> None:
-        """lib.rs must register exactly 7 desktop-only commands."""
+        """lib.rs must register all desktop-only commands (7 file + 9 offline cache)."""
         lib_rs = (PKG_ROOT / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
-        commands = [
+        file_commands = [
             "read_file_content",
             "list_directory",
             "prepare_attachment",
@@ -201,11 +211,28 @@ class DesktopScaffoldTests(unittest.TestCase):
             "get_allowed_file_dirs",
             "set_allowed_file_dirs",
         ]
-        for cmd in commands:
+        cache_commands = [
+            "cache_session",
+            "cache_run",
+            "cache_event",
+            "cache_artifact",
+            "get_cached_sessions",
+            "get_cached_runs",
+            "get_cached_events",
+            "get_cached_artifact",
+            "get_cached_artifacts_by_session",
+        ]
+        for cmd in file_commands:
             self.assertIn(
                 f"commands::files::{cmd}",
                 lib_rs,
-                f"command '{cmd}' not registered in lib.rs",
+                f"file command '{cmd}' not registered in lib.rs",
+            )
+        for cmd in cache_commands:
+            self.assertIn(
+                f"commands::offline_cache::{cmd}",
+                lib_rs,
+                f"cache command '{cmd}' not registered in lib.rs",
             )
 
 

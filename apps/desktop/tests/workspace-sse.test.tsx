@@ -19,6 +19,7 @@ import { SessionContext, type SessionContextValue, SessionProvider, useSession }
 import { WorkspaceContent } from "../src/pages/WorkspacePage";
 import { desktopAdapters } from "../src/adapters/desktopAdapters";
 import { AuthProvider } from "../src/contexts/AuthContext";
+import { ConnectionProvider } from "../src/contexts/ConnectionContext";
 
 // Mock Tauri APIs
 vi.mock("@tauri-apps/plugin-dialog", () => ({
@@ -105,13 +106,17 @@ function renderWithSession(
 
   const disposer = render(
     () =>
-      createComponent(AdapterContext.Provider, {
-        value: desktopAdapters,
+      createComponent(ConnectionProvider, {
         get children() {
-          return createComponent(SessionContext.Provider, {
-            value: session,
+          return createComponent(AdapterContext.Provider, {
+            value: desktopAdapters,
             get children() {
-              return createComponent(WorkspaceContent, {});
+              return createComponent(SessionContext.Provider, {
+                value: session,
+                get children() {
+                  return createComponent(WorkspaceContent, {});
+                },
+              });
             },
           });
         },
@@ -142,13 +147,17 @@ function captureSession(conversationId: string = "conv-1"): {
     };
     return createComponent(AuthProvider, {
       get children() {
-        return createComponent(AdapterContext.Provider, {
-          value: desktopAdapters,
+        return createComponent(ConnectionProvider, {
           get children() {
-            return createComponent(SessionProvider, {
-              conversationId,
+            return createComponent(AdapterContext.Provider, {
+              value: desktopAdapters,
               get children() {
-                return createComponent(Inner, {});
+                return createComponent(SessionProvider, {
+                  conversationId,
+                  get children() {
+                    return createComponent(Inner, {});
+                  },
+                });
               },
             });
           },
@@ -164,7 +173,7 @@ function flush(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 10));
 }
 
-// Mock global fetch for AuthProvider's onMount probe
+// Mock global fetch for AuthProvider's onMount probe and ConnectionProvider's health probe
 function mockAuthFetch() {
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input: any) => {
     const url = typeof input === "string" ? input : input.url;
@@ -176,6 +185,9 @@ function mockAuthFetch() {
           tenant_id: "default",
         }),
       } as any;
+    }
+    if (url.includes("/v1/health")) {
+      return { ok: true } as any;
     }
     return { ok: false, json: async () => ({}) } as any;
   });

@@ -123,3 +123,128 @@ html, body {
   color: var(--ink-soft, #999);
   font-size: 14px;
 }
+
+/* Offline banner */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--doc-risk-bg, #fff3cd);
+  border-bottom: 1px solid var(--doc-risk-line, #ffc107);
+  font-size: 13px;
+  color: var(--doc-risk-ink, #856404);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.offline-banner-icon {
+  font-size: 16px;
+  color: var(--amber, #ffc107);
+}
+
+.offline-banner-text {
+  flex: 1;
+}
+
+/* Workspace layout */
+.ws {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ws-chat {
+  flex: 0 0 500px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line, #e0e0e0);
+  overflow: hidden;
+}
+
+.ws-splitter {
+  flex: 0 0 1px;
+  background: var(--line, #e0e0e0);
+}
+
+.ws-doc {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.ws-stream-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--ink-soft, #666);
+}
+
+.ws-stream-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #4a90d9);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.ws-stream-error {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--amber, #e67e22);
+  background: var(--doc-risk-bg, #fff3cd);
+}
+
+.ws-download-btn {
+  margin: 8px 16px;
+  padding: 8px 20px;
+  border: 1px solid var(--accent, #4a90d9);
+  border-radius: 9px;
+  background: var(--accent, #4a90d9);
+  color: var(--on-accent, #fff);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ws-download-btn:hover {
+  background: var(--accent-2, #357abd);
+}
+
+.ws-download-error {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--amber, #e67e22);
+}
+
+.ws-cite-toggle {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  padding: 8px 16px;
+  border: 1px solid var(--accent, #4a90d9);
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  color: var(--accent, #4a90d9);
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: var(--shadow-pop, 0 4px 12px rgba(0,0,0,0.1));
+}
+
+.ws-offline-hint {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: var(--ink-soft, #999);
+  text-align: center;
+  background: var(--muted, #f5f5f5);
+}

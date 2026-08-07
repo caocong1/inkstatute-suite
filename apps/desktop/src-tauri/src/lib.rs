@@ -34,6 +34,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(
+            tauri_plugin_sql::Builder::default()
+                .add_migrations(
+                    "sqlite:offline-cache.db",
+                    commands::offline_cache::offline_cache_migrations(),
+                )
+                .build(),
+        )
         .setup(move |app| {
             let data_dir = app
                 .path()
@@ -60,6 +68,15 @@ pub fn run() {
             commands::files::grant_path_access,
             commands::files::get_allowed_file_dirs,
             commands::files::set_allowed_file_dirs,
+            commands::offline_cache::cache_session,
+            commands::offline_cache::cache_run,
+            commands::offline_cache::cache_event,
+            commands::offline_cache::cache_artifact,
+            commands::offline_cache::get_cached_sessions,
+            commands::offline_cache::get_cached_runs,
+            commands::offline_cache::get_cached_events,
+            commands::offline_cache::get_cached_artifact,
+            commands::offline_cache::get_cached_artifacts_by_session,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

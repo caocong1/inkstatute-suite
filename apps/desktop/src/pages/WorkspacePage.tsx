@@ -27,6 +27,7 @@ import {
 } from "@inkstatute/ui-core";
 import { SessionProvider, useSession } from "../contexts/SessionContext";
 import { useConversations } from "../contexts/ConversationContext";
+import { useConnection } from "../contexts/ConnectionContext";
 import { gateway } from "../config/gateway";
 import { uploadFile } from "../lib/upload";
 import { desktopFileAdapter } from "../adapters/desktopFileAdapter";
@@ -35,6 +36,7 @@ import { pathToRefAlias } from "@inkstatute/ui-core";
 
 export const WorkspaceContent: Component = () => {
   const session = useSession();
+  const conn = useConnection();
   const [citeOpen, setCiteOpen] = createSignal(false);
   const [downloadError, setDownloadError] = createSignal<string | null>(null);
   const [pendingRefs, setPendingRefs] = createSignal<ContextRefPayload[]>([]);
@@ -140,6 +142,11 @@ export const WorkspaceContent: Component = () => {
             void session.submitFeedback(messageId, rating, comment)
           }
         />
+        <Show when={conn.isOffline()}>
+          <div class="ws-offline-hint" role="status">
+            需要联网才能发送新任务
+          </div>
+        </Show>
       </div>
       <div class="ws-splitter" />
       <div class="ws-doc">
