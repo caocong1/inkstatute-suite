@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-08-01T00:00:00Z",
+  "scanner_version": "1.0.0",
+  "skills": [
+    {
+      "skill_id": "commercial-legal:contract-review",
+      "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "has_local_modification": false,
+      "version": null
+    },
+    {
+      "skill_id": "legal-court-sms",
+      "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "has_local_modification": false,
+      "version": "1.5.0"
+    },
+    {
+      "skill_id": "legal-de-ai-polish",
+      "content_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "has_local_modification": true,
+      "version": "2.0.0"
+    }
+  ]
+}
