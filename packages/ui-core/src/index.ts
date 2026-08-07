@@ -77,3 +77,42 @@ export type {
   ParseLegalDocumentResponse,
   CitationGroups,
 } from "./types/legal";
+
+// Utility functions — ported verbatim from lawyer-desktop/src/utils/
+export { renderSegs } from "./utils/renderSegs";
+export type { RenderSegsOptions } from "./utils/renderSegs";
+
+export {
+  cnNum,
+  extractLegalDocumentJson,
+  splitMarkdownBlocks,
+  modelToParties,
+  modelToRecital,
+  modelToArticles,
+  modelToCitationGroups,
+  modelToDocMeta,
+  extractDraftOutputEnvelope,
+  containsToolLeakage,
+  isInstructionLikeTitle,
+  sanitizeLlmDocumentContent,
+  looksLikeLegalProse,
+  isPublishableDocument,
+  stripReportPreamble,
+  markdownReportTitle,
+  markdownToLegalDocument,
+} from "./utils/legalDocument";
+export type { DraftOutputEnvelope } from "./utils/legalDocument";
+
+export {
+  auditToCitationGroups,
+  mergeAuditIntoGroups,
+  auditSummaryLine,
+  auditChecklistMarkdown,
+} from "./utils/citationAudit";
+
+export {
+  parseTimeMs,
+  shouldShowTimeDivider,
+  formatTimeDivider,
+  formatFullTime,
+} from "./utils/chatTime";
