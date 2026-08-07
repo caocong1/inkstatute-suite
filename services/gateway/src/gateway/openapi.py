@@ -23,9 +23,15 @@ API_DESCRIPTION = (
 )
 
 
+_SECURITY_REQUIREMENTS: list[dict[str, Any]] = [
+    {"BearerAuth": []},
+    {"SessionCookie": []},
+]
+
+
 def build_openapi_document(base_path: str = "/v1") -> dict[str, Any]:
     """Return the canonical Gateway OpenAPI 3.1 document."""
-    return {
+    doc: dict[str, Any] = {
         "openapi": OPENAPI_VERSION,
         "info": {
             "title": API_TITLE,
@@ -48,7 +54,14 @@ def build_openapi_document(base_path: str = "/v1") -> dict[str, Any]:
         ],
         "paths": _build_paths(base_path),
         "components": _build_components(),
+        "security": list(_SECURITY_REQUIREMENTS),
     }
+    # Apply security requirements to every operation.
+    for path_item in doc["paths"].values():
+        for method, operation in path_item.items():
+            if method in ("get", "post", "put", "delete", "patch"):
+                operation["security"] = [dict(s) for s in _SECURITY_REQUIREMENTS]
+    return doc
 
 
 def render_openapi_json(document: Mapping[str, Any]) -> str:
@@ -113,6 +126,7 @@ def _create_session_operation() -> dict[str, Any]:
     return {
         "tags": ["Sessions"],
         "summary": "Create a new session.",
+        "description": "Create a new session for a tenant. Returns a session_id and Set-Cookie header for web/desktop clients.",
         "operationId": "createSession",
         "parameters": [],
         "requestBody": _json_request_body(
@@ -130,6 +144,7 @@ def _get_session_operation() -> dict[str, Any]:
     return {
         "tags": ["Sessions"],
         "summary": "Get a session by id.",
+        "description": "Retrieve session metadata by session_id. Tenant-scoped.",
         "operationId": "getSession",
         "parameters": [_path_param("session_id", "Session identifier.")],
         "responses": {
@@ -144,6 +159,7 @@ def _list_session_runs_operation() -> dict[str, Any]:
     return {
         "tags": ["Sessions"],
         "summary": "List runs for a session.",
+        "description": "List all runs associated with a session, ordered by creation time.",
         "operationId": "listSessionRuns",
         "parameters": [_path_param("session_id", "Session identifier.")],
         "responses": {
@@ -157,6 +173,7 @@ def _create_run_operation() -> dict[str, Any]:
     return {
         "tags": ["Runs"],
         "summary": "Create a run from an AgentTurn and a SolutionBinding.",
+        "description": "Create a new run from a turn and solution binding. The run is queued and events are streamed via the streamRun endpoint.",
         "operationId": "createRun",
         "parameters": [],
         "requestBody": _json_request_body(
@@ -175,6 +192,7 @@ def _get_run_operation() -> dict[str, Any]:
     return {
         "tags": ["Runs"],
         "summary": "Get a run by id.",
+        "description": "Retrieve run metadata and status by run_id. Tenant-scoped.",
         "operationId": "getRun",
         "parameters": [_path_param("run_id", "Run identifier.")],
         "responses": {
@@ -189,6 +207,7 @@ def _cancel_run_operation() -> dict[str, Any]:
     return {
         "tags": ["Runs"],
         "summary": "Cancel a run by id.",
+        "description": "Cancel a running or queued run. The run transitions to cancelled state.",
         "operationId": "cancelRun",
         "parameters": [_path_param("run_id", "Run identifier.")],
         "responses": {
@@ -202,6 +221,7 @@ def _stream_run_operation() -> dict[str, Any]:
     return {
         "tags": ["Stream"],
         "summary": "Stream run events as Server-Sent Events.",
+        "description": "Open an SSE stream for a run. Events are delivered in seq order. When Last-Event-ID header is present, buffered events with seq > last_event_id are replayed first, then live streaming continues.",
         "operationId": "streamRun",
         "parameters": [
             _path_param("run_id", "Run identifier."),
@@ -234,6 +254,7 @@ def _submit_elicitation_operation() -> dict[str, Any]:
     return {
         "tags": ["Elicitation"],
         "summary": "Submit an elicitation response for a run.",
+        "description": "Submit user answers to an elicitation request. The run resumes from the waiting_for_user state.",
         "operationId": "submitElicitation",
         "parameters": [_path_param("run_id", "Run identifier.")],
         "requestBody": _json_request_body(
@@ -251,6 +272,7 @@ def _submit_approval_operation() -> dict[str, Any]:
     return {
         "tags": ["Approvals"],
         "summary": "Submit an approval decision for a run.",
+        "description": "Submit an approval or rejection decision for a permission request. The run resumes from the waiting_for_user state.",
         "operationId": "submitApproval",
         "parameters": [_path_param("run_id", "Run identifier.")],
         "requestBody": _json_request_body(
@@ -268,6 +290,7 @@ def _get_artifact_operation() -> dict[str, Any]:
     return {
         "tags": ["Artifacts"],
         "summary": "Download an artifact by id.",
+        "description": "Retrieve artifact metadata by artifact_id. Returns a uri_ref (not raw content). Cross-tenant access returns 404. Reference-only: no raw content is stored or returned.",
         "operationId": "getArtifact",
         "parameters": [_path_param("artifact_id", "Artifact identifier.")],
         "responses": {
@@ -283,11 +306,12 @@ def _upload_operation() -> dict[str, Any]:
     return {
         "tags": ["Uploads"],
         "summary": "Upload a file (reference-only).",
+        "description": "Upload a file with reference-only storage. Raw content is hashed and discarded; only references (payload_ref, content_ref) and metadata are kept. Cross-tenant access is denied.",
         "operationId": "upload",
         "parameters": [],
         "requestBody": _json_request_body(
             schema_ref="UploadRequest",
-            examples={"sanitized": {"summary": "Upload request", "value": {"filename": "doc.pdf", "mime_type": "application/pdf"}}},
+            examples={"sanitized": {"summary": "Upload request", "value": {"filename": "doc.pdf", "mime_type": "application/pdf", "conversation_id": "conv-example-001", "reference_only": True}}},
         ),
         "responses": {
             "200": _json_response("UploadResponse", _upload_example()),
@@ -300,6 +324,7 @@ def _submit_feedback_operation() -> dict[str, Any]:
     return {
         "tags": ["Feedback"],
         "summary": "Submit feedback for a run or conversation.",
+        "description": "Submit feedback (up/down/needs_fix/route_wrong) for a run or conversation. route_wrong feedback creates a SkillCandidate with requires_human_review=True (never auto-modified).",
         "operationId": "submitFeedback",
         "parameters": [],
         "requestBody": _json_request_body(
@@ -317,6 +342,7 @@ def _list_skills_operation() -> dict[str, Any]:
     return {
         "tags": ["Skills"],
         "summary": "List or search skills.",
+        "description": "List all skills or search by tag/category/name. Read-only endpoint (no write API exposed through the Gateway). Feature-flagged (skill_registry_enabled, default-off).",
         "operationId": "listSkills",
         "parameters": [],
         "responses": {
@@ -350,6 +376,7 @@ def _build_components() -> dict[str, Any]:
             "FeedbackResponse": _feedback_response_schema(),
             "ArtifactResponse": _artifact_response_schema(),
             "SkillsListResponse": _skills_list_response_schema(),
+            "SkillDescriptor": _skill_descriptor_schema(),
             "Run": _run_schema(),
             "RunListResponse": _run_list_response_schema(),
             "RunEventFrame": _run_event_frame_schema(),
@@ -526,6 +553,7 @@ def _upload_request_schema() -> dict[str, Any]:
             "filename": {"type": "string"},
             "mime_type": {"type": "string"},
             "conversation_id": {"type": "string"},
+            "reference_only": {"type": "boolean", "description": "Must be true — raw content is never stored."},
         },
         "additionalProperties": False,
     }
@@ -591,6 +619,7 @@ def _artifact_response_schema() -> dict[str, Any]:
             "kind": {"type": "string"},
             "uri_ref": {"type": "string"},
             "name": {"type": ["string", "null"]},
+            "reference_only": {"type": "boolean", "description": "Always true — no raw content stored or returned."},
             "metadata": {"type": "object"},
         },
         "additionalProperties": False,
@@ -603,8 +632,26 @@ def _skills_list_response_schema() -> dict[str, Any]:
         "required": ["tenant_id", "skills"],
         "properties": {
             "tenant_id": {"type": "string"},
-            "skills": {"type": "array", "items": {"type": "object"}},
+            "skills": {"type": "array", "items": {"$ref": "#/components/schemas/SkillDescriptor"}},
             "count": {"type": "integer"},
+        },
+        "additionalProperties": False,
+    }
+
+
+def _skill_descriptor_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["skill_id", "name"],
+        "properties": {
+            "skill_id": {"type": "string"},
+            "name": {"type": "string"},
+            "description": {"type": ["string", "null"]},
+            "tags": {"type": "array", "items": {"type": "string"}},
+            "category": {"type": ["string", "null"]},
+            "source_repo": {"type": ["string", "null"]},
+            "license": {"type": ["string", "null"]},
+            "metadata": {"type": "object"},
         },
         "additionalProperties": False,
     }
@@ -768,6 +815,7 @@ def _artifact_example() -> dict[str, Any]:
             "kind": "trackchanges_docx",
             "uri_ref": "fixture://artifacts/artifact-example-001",
             "name": "contract_review.docx",
+            "reference_only": True,
             "metadata": {},
         },
     }
@@ -871,6 +919,73 @@ def _error_response(code: str) -> dict[str, Any]:
     }
 
 
+def validate_openapi_document(document: Mapping[str, Any]) -> list[str]:
+    """Perform basic validation of an OpenAPI 3.1 document.
+
+    Returns a list of validation error strings. An empty list means the
+    document is valid (no errors found by this basic validator).
+    """
+    errors: list[str] = []
+
+    paths = document.get("paths")
+    if not isinstance(paths, dict) or not paths:
+        errors.append("Document must have a non-empty 'paths' object.")
+        return errors
+
+    schemas = document.get("components", {}).get("schemas", {})
+    if not isinstance(schemas, dict):
+        errors.append("Document must have 'components.schemas' object.")
+        schemas = {}
+
+    # Collect all $ref targets for resolution checking.
+    for path_str, path_item in paths.items():
+        if not isinstance(path_item, dict):
+            errors.append(f"Path '{path_str}' must be an object.")
+            continue
+        operations = {
+            k: v for k, v in path_item.items()
+            if k in ("get", "post", "put", "delete", "patch")
+        }
+        if not operations:
+            errors.append(f"Path '{path_str}' has no operations.")
+            continue
+        for method, op in operations.items():
+            if not isinstance(op, dict):
+                errors.append(f"{method.upper()} {path_str}: operation must be an object.")
+                continue
+            op_id = op.get("operationId")
+            if not op_id or not isinstance(op_id, str):
+                errors.append(f"{method.upper()} {path_str}: missing or empty operationId.")
+            responses = op.get("responses")
+            if not isinstance(responses, dict) or not responses:
+                errors.append(f"{method.upper()} {path_str}: missing or empty responses.")
+
+    # Check all $ref pointers resolve to a component schema.
+    _collect_ref_errors(document, schemas, errors)
+
+    return errors
+
+
+def _collect_ref_errors(
+    node: Any,
+    schemas: Mapping[str, Any],
+    errors: list[str],
+    _path: str = "",
+) -> None:
+    """Recursively check that every $ref points to an existing schema."""
+    if isinstance(node, dict):
+        ref = node.get("$ref")
+        if isinstance(ref, str) and ref.startswith("#/components/schemas/"):
+            schema_name = ref[len("#/components/schemas/"):]
+            if schema_name not in schemas:
+                errors.append(f"Unresolved $ref: {ref} at {_path or 'root'}")
+        for key, value in node.items():
+            _collect_ref_errors(value, schemas, errors, f"{_path}/{key}" if _path else key)
+    elif isinstance(node, list):
+        for i, item in enumerate(node):
+            _collect_ref_errors(item, schemas, errors, f"{_path}[{i}]")
+
+
 __all__ = [
     "API_DESCRIPTION",
     "API_TITLE",
@@ -878,4 +993,5 @@ __all__ = [
     "OPENAPI_VERSION",
     "build_openapi_document",
     "render_openapi_json",
+    "validate_openapi_document",
 ]
