@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: completed
-stopped_at: Plan 88-04 complete; ready for 88-05
-last_updated: "2026-08-07T05:15:09.456Z"
-last_activity: 2026-08-07 -- Plan 88-04 complete (Five-phase progress contract with event-to-phase and phase-to-UI-concept mapping)
+stopped_at: Plan 88-05 complete; ready for 88-06
+last_updated: "2026-08-07T06:00:00.000Z"
+last_activity: 2026-08-07 -- Plan 88-05 complete (Bot degradation aggregator with 8 declarative categories and deterministic BotDelivery output)
 progress:
   total_phases: 17
   completed_phases: 0
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 Phase: 88 (unified-event-contract) — EXECUTING
 Plan: 6 of 6 (next)
-Status: Plan 88-04 complete, ready for 88-05
-Last activity: 2026-08-07 -- Plan 88-04 complete (Five-phase progress contract with event-to-phase and phase-to-UI-concept mapping)
+Status: Plan 88-05 complete, ready for 88-06
+Last activity: 2026-08-07 -- Plan 88-05 complete (Bot degradation aggregator with 8 declarative categories and deterministic BotDelivery output)
 
 **Next command:** `/gsd-autonomous` （或 `/gsd-plan-phase 88` 单 phase 起步）
 
@@ -110,8 +110,8 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-07 — Plan 88-04 complete (Five-phase progress contract with event-to-phase and phase-to-UI-concept mapping)
-Stopped at: Plan 88-04 complete; ready for 88-05
+Last session: 2026-08-07 — Plan 88-05 complete (Bot degradation aggregator with 8 declarative categories and deterministic BotDelivery output)
+Stopped at: Plan 88-05 complete; ready for 88-06
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
 Requirements: .planning/REQUIREMENTS.md (61/61 mapped)
