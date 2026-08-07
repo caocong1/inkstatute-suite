@@ -32,11 +32,14 @@ from platform_contract.events import (
     OutputConstraints,
 )
 
+from .artifacts import GatewayArtifactStore, handle_get_artifact_request
 from .auth import AuthContext, GatewayAuth, GatewayAuthError
 from .config import GatewayConfig
 from .event_buffer import RunEventBuffer
+from .feedback import GatewayFeedbackHandler, handle_submit_feedback_request
 from .sessions import GatewaySessionManager, build_set_cookie_header
 from .sse import GatewaySseStream, parse_last_event_id
+from .upload import GatewayUploadHandler, handle_upload_request
 
 JsonObject = dict[str, Any]
 
@@ -111,6 +114,9 @@ class GatewayApp:
         session_manager: GatewaySessionManager,
         sse_stream: GatewaySseStream,
         event_buffer: RunEventBuffer | None = None,
+        upload_handler: GatewayUploadHandler | None = None,
+        artifact_store: GatewayArtifactStore | None = None,
+        feedback_handler: GatewayFeedbackHandler | None = None,
     ) -> None:
         self._config = config
         self._runtime = runtime
@@ -118,6 +124,9 @@ class GatewayApp:
         self._session_manager = session_manager
         self._sse_stream = sse_stream
         self._event_buffer = event_buffer
+        self._upload_handler = upload_handler or GatewayUploadHandler()
+        self._artifact_store = artifact_store or GatewayArtifactStore()
+        self._feedback_handler = feedback_handler or GatewayFeedbackHandler()
 
     @property
     def config(self) -> GatewayConfig:
@@ -130,6 +139,18 @@ class GatewayApp:
     @property
     def event_buffer(self) -> RunEventBuffer | None:
         return self._event_buffer
+
+    @property
+    def upload_handler(self) -> GatewayUploadHandler:
+        return self._upload_handler
+
+    @property
+    def artifact_store(self) -> GatewayArtifactStore:
+        return self._artifact_store
+
+    @property
+    def feedback_handler(self) -> GatewayFeedbackHandler:
+        return self._feedback_handler
 
     async def dispatch(
         self,
@@ -174,11 +195,11 @@ class GatewayApp:
             if operation == OPERATION_SUBMIT_APPROVAL:
                 return _not_implemented("submit_approval")
             if operation == OPERATION_GET_ARTIFACT:
-                return _not_implemented("get_artifact")
+                return await self._handle_get_artifact(ctx, path_params)
             if operation == OPERATION_UPLOAD:
-                return _not_implemented("upload")
+                return await self._handle_upload(ctx, body_dict)
             if operation == OPERATION_SUBMIT_FEEDBACK:
-                return _not_implemented("submit_feedback")
+                return await self._handle_submit_feedback(ctx, body_dict)
             if operation == OPERATION_LIST_SKILLS:
                 return _not_implemented("list_skills")
             return _error_response("unknown_operation", f"Unknown operation: {operation}", status=404)
@@ -313,6 +334,38 @@ class GatewayApp:
         result = _serialize_run(run)
         result["tenant_id"] = ctx.tenant_id
         return result
+
+    # -----------------------------------------------------------------------
+    # Upload / Artifact / Feedback handlers (Plan 91-03)
+    # -----------------------------------------------------------------------
+
+    async def _handle_upload(
+        self,
+        ctx: AuthContext,
+        body: Mapping[str, object],
+    ) -> JsonObject:
+        return handle_upload_request(self._upload_handler, ctx, body)
+
+    async def _handle_get_artifact(
+        self,
+        ctx: AuthContext,
+        path_params: dict[str, str],
+    ) -> JsonObject:
+        artifact_id = path_params.get("artifact_id", "")
+        if not artifact_id:
+            raise GatewayError(
+                "artifact_id is required",
+                code="invalid_request",
+                details={"field": "artifact_id"},
+            )
+        return handle_get_artifact_request(self._artifact_store, ctx, artifact_id)
+
+    async def _handle_submit_feedback(
+        self,
+        ctx: AuthContext,
+        body: Mapping[str, object],
+    ) -> JsonObject:
+        return handle_submit_feedback_request(self._feedback_handler, ctx, body)
 
 
 # ---------------------------------------------------------------------------
@@ -656,6 +709,9 @@ __all__ = [
     "OPERATION_SUBMIT_FEEDBACK",
     "OPERATION_UPLOAD",
     "GatewayApp",
+    "GatewayArtifactStore",
     "GatewayDisabledError",
     "GatewayError",
+    "GatewayFeedbackHandler",
+    "GatewayUploadHandler",
 ]

@@ -251,15 +251,14 @@ class TestGatewayTracer(unittest.TestCase):
         self.assertEqual(result["status"], 404)
 
     def test_stubbed_endpoints_return_501(self) -> None:
+        # Upload, artifact, and feedback are now implemented (Plan 91-03).
+        # The remaining 5 stubs still return 501.
         stubbed = [
             ("GET", "/v1/sessions/sess-1", None),
             ("GET", "/v1/sessions/sess-1/runs", None),
             ("GET", "/v1/runs/run-1", None),
             ("POST", "/v1/runs/run-1/elicitation", {}),
             ("POST", "/v1/runs/run-1/approvals", {}),
-            ("GET", "/v1/artifacts/art-1", None),
-            ("POST", "/v1/uploads", {}),
-            ("POST", "/v1/feedback", {}),
             ("GET", "/v1/skills", None),
         ]
         for method, path, body in stubbed:
