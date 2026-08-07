@@ -76,6 +76,9 @@ def handle_lawyer_chat_request(
         "Content-Security-Policy": CSP_HEADER,
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
+        "Deprecation": "true",
+        "Sunset": "Wed, 31 Dec 2026 23:59:59 GMT",
+        "Link": '</v1/sessions>; rel="successor-version"',
     }
 
     # Step 1 — feature flag gate
@@ -368,9 +371,11 @@ def _render_error_page(code: str, message: str) -> str:
   <style>
     body {{ font-family: system-ui, sans-serif; margin: 2rem; color: #333; }}
     .error {{ color: #c0392b; }}
+    .deprecation-notice {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem; }}
   </style>
 </head>
 <body>
+  <div class="deprecation-notice">This service is deprecated. Please use the Gateway API at /v1/ instead.</div>
   <h1>InkStatute Lawyer Chat</h1>
   <p class="error">Error [{_esc(code)}]: {_esc(message)}</p>
 </body>
@@ -390,9 +395,11 @@ def _render_login_page() -> str:
     .form { max-width: 400px; margin: 2rem auto; }
     input { display: block; width: 100%; padding: 0.5rem; margin: 0.5rem 0; box-sizing: border-box; }
     button { padding: 0.5rem 2rem; background: #1a1a2e; color: #fff; border: none; cursor: pointer; }
+    .deprecation-notice { background: #fff3cd; border: 1px solid #ffeaa7; padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
+  <div class="deprecation-notice">This service is deprecated. Please use the Gateway API at /v1/ instead.</div>
   <h1>InkStatute Lawyer Chat</h1>
   <div class="form">
     <h2>Login</h2>
@@ -423,11 +430,13 @@ def _render_chat_page(tenant_id: str) -> str:
     .input {{ display: flex; gap: 0.5rem; }}
     input {{ flex: 1; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }}
     button {{ padding: 0.5rem 1rem; background: #1a1a2e; color: #fff; border: none; border-radius: 4px; cursor: pointer; }}
+    .deprecation-notice {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem; }}
   </style>
 </head>
 <body>
   <div class="header"><h1>InkStatute Lawyer Chat</h1></div>
   <div class="chat">
+    <div class="deprecation-notice">This service is deprecated. Please use the Gateway API at /v1/ instead.</div>
     <p>Tenant: <strong>{_esc(tenant_id)}</strong></p>
     <div class="messages" id="messages"></div>
     <div class="input">
