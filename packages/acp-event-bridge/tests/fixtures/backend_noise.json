@@ -1,0 +1,45 @@
+{
+  "meta": [
+    "meta: agent version 0.19.0",
+    "meta: session initialized with config",
+    "meta: backend metadata sync complete"
+  ],
+  "gateway": [
+    "gateway: reconnecting to backend",
+    "gateway: connection established",
+    "gateway: online status changed"
+  ],
+  "system": [
+    "system: updating skill index",
+    "system: background task completed",
+    "system: health check passed"
+  ],
+  "update": [
+    "update: available commands refreshed",
+    "update: new version detected",
+    "update: configuration reloaded"
+  ],
+  "command": [
+    "command: /help executed",
+    "command: /status returned ok",
+    "command: /restart initiated"
+  ],
+  "help": [
+    "help: available commands: /status /restart /update",
+    "help: type /help for available commands"
+  ],
+  "available_commands_update": [
+    "available_commands_update: /status /restart /update /debug /memory",
+    "available_commands_update: commands list refreshed"
+  ],
+  "terminal": [
+    "terminal: shell command executed",
+    "terminal: exit code 0",
+    "terminal: /bin/bash session opened"
+  ],
+  "legitimate_content": [
+    "根据《民法典》第一编第一章的规定，民事主体从事民事活动应当遵循自愿原则。",
+    "合同审查已完成，主要风险点如下：",
+    "建议在第三条违约责任条款中增加不可抗力条款。"
+  ]
+}
