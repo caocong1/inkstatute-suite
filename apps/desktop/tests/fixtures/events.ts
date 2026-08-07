@@ -204,9 +204,17 @@ export function fixtureEventStream(): RunEventEnvelope[] {
     {
       event_id: "evt-017",
       run_id: "run-test-001",
-      event_type: "run.state_changed",
+      event_type: "phase.changed",
       occurred_at: "2026-08-08T10:00:17Z",
       seq: 17,
+      payload: { phase: "review", previous_phase: "draft" },
+    } as RunEventEnvelope,
+    {
+      event_id: "evt-018",
+      run_id: "run-test-001",
+      event_type: "run.state_changed",
+      occurred_at: "2026-08-08T10:00:18Z",
+      seq: 18,
       payload: { status: "succeeded", previous_status: "running" },
     } as RunEventEnvelope,
   ];
