@@ -9,6 +9,9 @@ Environment:
     QQBOT_HOST_PORT (default 8080)
     INKSTATUTE_OPERATOR_CONFIG_PATH (optional)
     INKSTATUTE_RUN_RUNTIME_ENABLED (auto-set if qqbot_channel_enabled)
+    INKSTATUTE_GATEWAY_URL (default http://127.0.0.1:8081 — Gateway base URL)
+    INKSTATUTE_GATEWAY_BEARER_TOKEN (default empty — when set, Gateway consumer path is used)
+    INKSTATUTE_GATEWAY_TENANT_ID (default default-tenant — tenant for Gateway runs)
 """
 
 from __future__ import annotations
@@ -43,6 +46,7 @@ from inkstatute_operator_config.store import OperatorConfigStore
 from platform_runtime import FakeBackendAdapter
 from platform_runtime.feature_flags import RuntimeFeatureFlags
 
+from qqbot_service.gateway_client import GatewayClientConfig
 from qqbot_service.http_server import QQBotWebhookServer, default_post_ack_scheduler
 from qqbot_service.wiring import QQBotWiredRuntime, build_qqbot_wired_runtime
 
@@ -76,12 +80,27 @@ def create_server(
     if backend is None:
         backend = FakeBackendAdapter()
 
+    # Gateway consumer config (BOT-02): when a bearer token is configured,
+    # the post-ACK composition uses the Gateway event consumer path.
+    gateway_bearer_token = source.get("INKSTATUTE_GATEWAY_BEARER_TOKEN", "")
+    gateway_config: GatewayClientConfig | None = None
+    if gateway_bearer_token:
+        gateway_url = source.get("INKSTATUTE_GATEWAY_URL", "http://127.0.0.1:8081")
+        gateway_tenant_id = source.get("INKSTATUTE_GATEWAY_TENANT_ID", "default-tenant")
+        gateway_config = GatewayClientConfig(
+            base_url=gateway_url,
+            bearer_token=gateway_bearer_token,
+            tenant_id=gateway_tenant_id,
+        )
+        print(f"QQBot service: Gateway consumer mode enabled (url={gateway_url})", flush=True)
+
     wired = build_qqbot_wired_runtime(
         backend=backend,
         flags=feature_flags,
         config_store=config_store,
         env=source,
         vision_runner=vision_runner,
+        gateway_config=gateway_config,
     )
 
     host = source.get("QQBOT_HOST_HOST", "127.0.0.1")
