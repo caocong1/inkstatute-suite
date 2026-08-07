@@ -687,7 +687,7 @@
     }
   },
   "info": {
-    "description": "Unified multi-tenant HTTP+SSE Gateway for InkStatute \u2014 the single client-facing entry point for all clients (web, desktop, WeCom, QQ, programmatic). Exposes sessions, runs, SSE streaming, elicitation, approvals, artifacts, uploads, feedback, and skills endpoints. Auth: RBAC Bearer token + session cookie. All examples and schema references are sanitized; no live payloads are accepted.",
+    "description": "Unified multi-tenant HTTP+SSE Gateway for InkStatute \u2014 the single client-facing entry point for all clients (web, desktop, WeCom, QQ, programmatic). Remote/thin: the gateway relays to ACP-speaking agent backends and never embeds a local runtime, queue, or database. Exposes sessions, runs, SSE streaming, elicitation, approvals, artifacts, uploads, feedback, and skills endpoints. Auth: RBAC Bearer token + session cookie. All examples and schema references are sanitized; no live payloads are accepted.",
     "title": "InkStatute Gateway API",
     "version": "0.1.0"
   },

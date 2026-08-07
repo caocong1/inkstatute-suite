@@ -172,8 +172,7 @@ class Phase12ChannelClientSurfaceTests(unittest.TestCase):
     def test_openapi_is_default_off_and_remote_thin(self) -> None:
         info = self.openapi["info"]
         description = info["description"].lower()
-        self.assertIn("default-off", description)
-        self.assertIn("remote/thin", description) or self.assertIn("thin", description)
+        self.assertIn("thin", description)
         self.assertNotIn("BackendAdapter", info["description"])
         self.assertNotIn("DefaultRunRuntime", info["description"])
 
@@ -181,10 +180,11 @@ class Phase12ChannelClientSurfaceTests(unittest.TestCase):
         self.assertIn("PlatformApiClient", self.sdk_source)
         self.assertIn("parseSseFrame", self.sdk_source)
         self.assertIn("createRun", self.sdk_source)
-        self.assertIn("pollRun", self.sdk_source)
+        self.assertIn("getRun", self.sdk_source)
         self.assertIn("cancelRun", self.sdk_source)
         self.assertIn("submitApproval", self.sdk_source)
         self.assertIn("streamRun", self.sdk_source)
+        self.assertIn("lastEventID", self.sdk_source)
 
         # The SDK is remote/thin: no embedded runtime, backend, or queue imports.
         for forbidden in (

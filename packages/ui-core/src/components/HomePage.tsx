@@ -1,7 +1,7 @@
 import { For, onMount, onCleanup, createSignal, Show } from "solid-js";
-import { Icon } from "../Icons";
-import { MentionComposer } from "../MentionComposer";
-import type { MentionComposerApi } from "../MentionComposer";
+import { Icon } from "./Icons";
+import { MentionComposer } from "./MentionComposer";
+import type { MentionComposerApi } from "./MentionComposer";
 import { useAdapters } from "../adapters";
 import { pathToRefAlias } from "../utils/evidenceFlow";
 import { DOC_TYPES } from "../utils/docTypes";
@@ -87,16 +87,16 @@ export function HomePage(props: HomePageProps) {
       }
     };
 
-    const root = document.querySelector(".home") ?? document.body;
-    root.addEventListener("dragover", onDragOver);
-    root.addEventListener("dragleave", onDragLeave);
-    root.addEventListener("drop", onDrop);
+    const root = (document.querySelector(".home") ?? document.body) as HTMLElement;
+    root.addEventListener("dragover", onDragOver as unknown as EventListener);
+    root.addEventListener("dragleave", onDragLeave as unknown as EventListener);
+    root.addEventListener("drop", onDrop as unknown as EventListener);
 
     onCleanup(() => {
       document.removeEventListener("click", onDocClick);
-      root.removeEventListener("dragover", onDragOver);
-      root.removeEventListener("dragleave", onDragLeave);
-      root.removeEventListener("drop", onDrop);
+      root.removeEventListener("dragover", onDragOver as unknown as EventListener);
+      root.removeEventListener("dragleave", onDragLeave as unknown as EventListener);
+      root.removeEventListener("drop", onDrop as unknown as EventListener);
     });
   });
 

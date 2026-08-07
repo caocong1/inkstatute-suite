@@ -1,7 +1,7 @@
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
-import { Icon } from "../Icons";
-import { useTheme, type ThemeVariant } from "../../stores/theme";
-import { useAdapters } from "../../adapters";
+import { Icon } from "./Icons";
+import { useTheme, type ThemeVariant } from "../stores/theme";
+import { useAdapters } from "../adapters";
 import "./TitleBar.css";
 
 export interface TitleBarProps {

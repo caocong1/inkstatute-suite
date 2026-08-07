@@ -14,8 +14,6 @@ import { highlightJson, looksLikeJson, prettyJson } from "../utils/jsonHighlight
 import { Icon } from "./Icons";
 import "./AgentTracePanel.css";
 
-/* ---------- formatting helpers ---------- */
-
 function fmtElapsed(ms: number): string {
   if (ms < 1000) return `+${ms}ms`;
   return `+${(ms / 1000).toFixed(2)}s`;

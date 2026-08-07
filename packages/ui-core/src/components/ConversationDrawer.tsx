@@ -1,5 +1,5 @@
 import { createEffect, createMemo, createSignal, For, Show, onCleanup, onMount } from "solid-js";
-import { Icon } from "../Icons";
+import { Icon } from "./Icons";
 import type { Conversation } from "../types/conversation";
 import type { ConversationStore } from "../types/conversation";
 import { formatFullTime, parseTimeMs } from "../utils/chatTime";

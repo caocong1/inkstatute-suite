@@ -63,7 +63,7 @@ export class PlatformApiClient {
    * HTTP method DELETE.
    */
   async cancelRun(run_id: string): Promise<unknown> {
-    const response = await this.request<unknown>(DELETE, `/v1/runs/${run_id}`, undefined);
+    const response = await this.request<unknown>("DELETE", `/v1/runs/${run_id}`, undefined);
     return response as never;
   }
 
@@ -72,7 +72,7 @@ export class PlatformApiClient {
    * HTTP method POST.
    */
   async createRun(body: unknown): Promise<unknown> {
-    const response = await this.request<unknown>(POST, `/v1/runs`, body);
+    const response = await this.request<unknown>("POST", `/v1/runs`, body);
     return response as never;
   }
 
@@ -81,7 +81,7 @@ export class PlatformApiClient {
    * HTTP method POST.
    */
   async createSession(body: unknown): Promise<unknown> {
-    const response = await this.request<unknown>(POST, `/v1/sessions`, body);
+    const response = await this.request<unknown>("POST", `/v1/sessions`, body);
     return response as never;
   }
 
@@ -90,7 +90,7 @@ export class PlatformApiClient {
    * HTTP method GET.
    */
   async getArtifact(artifact_id: string): Promise<unknown> {
-    const response = await this.request<unknown>(GET, `/v1/artifacts/${artifact_id}`, undefined);
+    const response = await this.request<unknown>("GET", `/v1/artifacts/${artifact_id}`, undefined);
     return response as never;
   }
 
@@ -99,7 +99,7 @@ export class PlatformApiClient {
    * HTTP method GET.
    */
   async getRun(run_id: string): Promise<unknown> {
-    const response = await this.request<unknown>(GET, `/v1/runs/${run_id}`, undefined);
+    const response = await this.request<unknown>("GET", `/v1/runs/${run_id}`, undefined);
     return response as never;
   }
 
@@ -108,7 +108,7 @@ export class PlatformApiClient {
    * HTTP method GET.
    */
   async getSession(session_id: string): Promise<unknown> {
-    const response = await this.request<unknown>(GET, `/v1/sessions/${session_id}`, undefined);
+    const response = await this.request<unknown>("GET", `/v1/sessions/${session_id}`, undefined);
     return response as never;
   }
 
@@ -117,7 +117,7 @@ export class PlatformApiClient {
    * HTTP method GET.
    */
   async listSessionRuns(session_id: string): Promise<unknown> {
-    const response = await this.request<unknown>(GET, `/v1/sessions/${session_id}/runs`, undefined);
+    const response = await this.request<unknown>("GET", `/v1/sessions/${session_id}/runs`, undefined);
     return response as never;
   }
 
@@ -126,7 +126,7 @@ export class PlatformApiClient {
    * HTTP method GET.
    */
   async listSkills(): Promise<unknown> {
-    const response = await this.request<unknown>(GET, "/v1/skills", undefined);
+    const response = await this.request<unknown>("GET", "/v1/skills", undefined);
     return response as never;
   }
 
@@ -137,7 +137,7 @@ export class PlatformApiClient {
   async *streamRun(run_id: string, lastEventID?: string): AsyncIterable<SseFrame> {
     const response = await this.fetchImpl(this.baseUrl + `/v1/runs/${run_id}/events`, {
       method: "GET",
-      headers: { "accept": "text/event-stream", ...this.defaultHeaders
+      headers: { "accept": "text/event-stream", ...this.defaultHeaders,
         ...(lastEventID ? { "Last-Event-ID": String(lastEventID) } : {}),
       },
     });
@@ -167,7 +167,7 @@ export class PlatformApiClient {
    * HTTP method POST.
    */
   async submitApproval(run_id: string, body: unknown): Promise<unknown> {
-    const response = await this.request<unknown>(POST, `/v1/runs/${run_id}/approvals`, body);
+    const response = await this.request<unknown>("POST", `/v1/runs/${run_id}/approvals`, body);
     return response as never;
   }
 
@@ -176,7 +176,7 @@ export class PlatformApiClient {
    * HTTP method POST.
    */
   async submitElicitation(run_id: string, body: unknown): Promise<unknown> {
-    const response = await this.request<unknown>(POST, `/v1/runs/${run_id}/elicitation`, body);
+    const response = await this.request<unknown>("POST", `/v1/runs/${run_id}/elicitation`, body);
     return response as never;
   }
 
@@ -185,7 +185,7 @@ export class PlatformApiClient {
    * HTTP method POST.
    */
   async submitFeedback(body: unknown): Promise<unknown> {
-    const response = await this.request<unknown>(POST, `/v1/feedback`, body);
+    const response = await this.request<unknown>("POST", `/v1/feedback`, body);
     return response as never;
   }
 
@@ -194,7 +194,7 @@ export class PlatformApiClient {
    * HTTP method POST.
    */
   async upload(body: unknown): Promise<unknown> {
-    const response = await this.request<unknown>(POST, `/v1/uploads`, body);
+    const response = await this.request<unknown>("POST", `/v1/uploads`, body);
     return response as never;
   }
 

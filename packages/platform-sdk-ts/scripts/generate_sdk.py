@@ -229,9 +229,9 @@ def _render_operation(op: Mapping[str, Any]) -> str:
             path_expr = path_expr.replace("{" + param + "}", expr)
         url_expr = "`" + path_expr + "`"
     if has_body:
-        body_line = "    const response = await this.request<unknown>({m}, {u}, body);".format(m=method, u=url_expr)
+        body_line = '    const response = await this.request<unknown>("{m}", {u}, body);'.format(m=method, u=url_expr)
     else:
-        body_line = "    const response = await this.request<unknown>({m}, {u}, undefined);".format(m=method, u=url_expr)
+        body_line = '    const response = await this.request<unknown>("{m}", {u}, undefined);'.format(m=method, u=url_expr)
     body_lines = [body_line, "    return response as never;"]
     summary = op["summary"]
     doc_lines = ["  /**"]
@@ -272,7 +272,7 @@ def _render_stream_operation(op: Mapping[str, Any]) -> str:
     doc_lines.append("   * Returns an async iterable of sanitized SSE frame objects.")
     doc_lines.append("   */")
     # Build headers object, including optional header params
-    header_lines = ['      headers: { "accept": "text/event-stream", ...this.defaultHeaders']
+    header_lines = ['      headers: { "accept": "text/event-stream", ...this.defaultHeaders,']
     for hp in header_params:
         header_lines.append(f'        {("..." if not hp["required"] else "")}' +
                            f'({hp["ts_name"]} ? {{ "{hp["name"]}": String({hp["ts_name"]}) }} : {{}}),')
