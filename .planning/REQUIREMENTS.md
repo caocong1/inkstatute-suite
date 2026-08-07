@@ -42,7 +42,7 @@
 - [x] **UI-01**: `packages/ui-core` 共享 SolidJS 组件包，从 `lawyer-desktop` 的 23 个组件与 21 个 CSS（`molv-tokens.css` / `molv-base.css`，墨律三主题）抽取
 - [x] **UI-02**: 统一事件流客户端（SSE consumer + 渲染状态机），一份实现供所有客户端复用
 - [x] **UI-03**: 流式对话 + ask_user 澄清卡片 + 文书预览 + 引用面板 + 五相进度，全部在 `ui-core` 内实现
-- [ ] **UI-04**: Web 客户端交付，响应式，桌面浏览器与移动浏览器均可用
+- [x] **UI-04**: Web 客户端交付，响应式，桌面浏览器与移动浏览器均可用
 - [ ] **UI-05**: 桌面客户端交付——复用 `lawyer-desktop` 的 Tauri 外壳，57 个 `invoke()` 改指 Gateway HTTP/SSE，保留本地工作区索引，离线只读历史与已生成文书
 - [x] **UI-06**: 全项目 chat 消息列表 / 流式渲染 / ask_user 卡片 / 文书预览 / 引用面板**只有一份实现**（消除 lawyer-desktop 与 lawyer-ai 之间约 80% 的重复）
 
@@ -174,7 +174,7 @@
 | UI-02 | Phase 92 | Complete |
 | UI-03 | Phase 92 | Complete |
 | UI-06 | Phase 92 | Complete |
-| UI-04 | Phase 93 | Pending |
+| UI-04 | Phase 93 | Complete |
 | UI-05 | Phase 94 | Pending |
 | BOT-01 | Phase 95 | Pending |
 | BOT-02 | Phase 95 | Pending |
