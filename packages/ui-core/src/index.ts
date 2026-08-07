@@ -116,3 +116,11 @@ export {
   formatTimeDivider,
   formatFullTime,
 } from "./utils/chatTime";
+
+export { groupCitations } from "./utils/groupCitations";
+
+export { Icon } from "./components/Icons";
+export type { IconName } from "./components/Icons";
+
+export { CitationPanel } from "./components/CitationPanel";
+export type { CitationPanelProps } from "./components/CitationPanel";

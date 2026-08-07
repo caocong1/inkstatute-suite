@@ -1,0 +1,16 @@
+{
+  "event_id": "evt-cite-001",
+  "run_id": "run-test-001",
+  "event_type": "citation.recorded",
+  "occurred_at": "2026-08-08T10:00:13Z",
+  "seq": 13,
+  "payload": {
+    "citations": [
+      { "source": "《合同法》第107条", "status": "verified" },
+      { "source": "《民法典》第585条", "status": "retrieved" },
+      { "source": "《民事诉讼法》第119条", "status": "verified" },
+      { "source": "案例：(2023)京01民终123号", "status": "unverified" },
+      { "source": "判决书：(2022)沪02民终456号", "status": "retrieved" }
+    ]
+  }
+}
