@@ -5,11 +5,6 @@
 // This SDK is remote/thin: it makes HTTP requests against a platform API
 // host and never embeds a local runtime, queue, or database.
 
-// HTTP method constants used by generated client methods.
-const DELETE = "DELETE";
-const POST = "POST";
-const GET = "GET";
-
 export interface PlatformApiClientOptions {
   baseUrl: string;
   fetchImpl?: typeof fetch;
@@ -82,22 +77,69 @@ export class PlatformApiClient {
   }
 
   /**
-   * Poll a run by id.
+   * Create a new session.
+   * HTTP method POST.
+   */
+  async createSession(body: unknown): Promise<unknown> {
+    const response = await this.request<unknown>(POST, `/v1/sessions`, body);
+    return response as never;
+  }
+
+  /**
+   * Download an artifact by id.
    * HTTP method GET.
    */
-  async pollRun(run_id: string): Promise<unknown> {
+  async getArtifact(artifact_id: string): Promise<unknown> {
+    const response = await this.request<unknown>(GET, `/v1/artifacts/${artifact_id}`, undefined);
+    return response as never;
+  }
+
+  /**
+   * Get a run by id.
+   * HTTP method GET.
+   */
+  async getRun(run_id: string): Promise<unknown> {
     const response = await this.request<unknown>(GET, `/v1/runs/${run_id}`, undefined);
     return response as never;
   }
 
   /**
-   * Stream run events as Server-Sent Events frames.
+   * Get a session by id.
+   * HTTP method GET.
+   */
+  async getSession(session_id: string): Promise<unknown> {
+    const response = await this.request<unknown>(GET, `/v1/sessions/${session_id}`, undefined);
+    return response as never;
+  }
+
+  /**
+   * List runs for a session.
+   * HTTP method GET.
+   */
+  async listSessionRuns(session_id: string): Promise<unknown> {
+    const response = await this.request<unknown>(GET, `/v1/sessions/${session_id}/runs`, undefined);
+    return response as never;
+  }
+
+  /**
+   * List or search skills.
+   * HTTP method GET.
+   */
+  async listSkills(): Promise<unknown> {
+    const response = await this.request<unknown>(GET, "/v1/skills", undefined);
+    return response as never;
+  }
+
+  /**
+   * Stream run events as Server-Sent Events.
    * Returns an async iterable of sanitized SSE frame objects.
    */
-  async *streamRun(run_id: string): AsyncIterable<SseFrame> {
+  async *streamRun(run_id: string, lastEventID?: string): AsyncIterable<SseFrame> {
     const response = await this.fetchImpl(this.baseUrl + `/v1/runs/${run_id}/events`, {
       method: "GET",
-      headers: { "accept": "text/event-stream", ...this.defaultHeaders },
+      headers: { "accept": "text/event-stream", ...this.defaultHeaders
+        ...(lastEventID ? { "Last-Event-ID": String(lastEventID) } : {}),
+      },
     });
     if (!response.body) {
       throw new PlatformApiError("stream body missing", { status: response.status, code: "stream_missing" });
@@ -126,6 +168,33 @@ export class PlatformApiClient {
    */
   async submitApproval(run_id: string, body: unknown): Promise<unknown> {
     const response = await this.request<unknown>(POST, `/v1/runs/${run_id}/approvals`, body);
+    return response as never;
+  }
+
+  /**
+   * Submit an elicitation response for a run.
+   * HTTP method POST.
+   */
+  async submitElicitation(run_id: string, body: unknown): Promise<unknown> {
+    const response = await this.request<unknown>(POST, `/v1/runs/${run_id}/elicitation`, body);
+    return response as never;
+  }
+
+  /**
+   * Submit feedback for a run or conversation.
+   * HTTP method POST.
+   */
+  async submitFeedback(body: unknown): Promise<unknown> {
+    const response = await this.request<unknown>(POST, `/v1/feedback`, body);
+    return response as never;
+  }
+
+  /**
+   * Upload a file (reference-only).
+   * HTTP method POST.
+   */
+  async upload(body: unknown): Promise<unknown> {
+    const response = await this.request<unknown>(POST, `/v1/uploads`, body);
     return response as never;
   }
 

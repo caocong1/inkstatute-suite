@@ -134,15 +134,14 @@ def _collect_operations(openapi: Mapping[str, Any]) -> Iterable[dict[str, Any]]:
         path_item = paths[raw_path] or {}
         for method in sorted(m for m in path_item.keys() if m in http_methods):
             op = path_item[method] or {}
+            all_params = list(path_item.get("parameters", []) or []) + list(op.get("parameters", []) or [])
             yield {
                 "function_name": _function_name(raw_path, method, op.get("operationId")),
                 "summary": op.get("summary", ""),
                 "method": method.upper(),
                 "path": raw_path,
-                "path_params": _path_params(
-                    raw_path,
-                    list(path_item.get("parameters", []) or []) + list(op.get("parameters", []) or []),
-                ),
+                "path_params": _path_params(raw_path, all_params),
+                "header_params": _header_params(all_params),
                 "has_body": method in {"post", "put", "patch"} and "requestBody" in op,
                 "stream": "text/event-stream" in (op.get("responses", {}).get("200", {}).get("content", {}) or {}),
             }
@@ -189,6 +188,25 @@ def _path_params(path: str, parameters: Iterable[Mapping[str, Any]]) -> list[str
     return sorted(set(names))
 
 
+def _header_params(parameters: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Extract header parameters, preserving their original order."""
+    result: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for param in parameters:
+        if param.get("in") != "header":
+            continue
+        name = param.get("name", "")
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        result.append({
+            "name": name,
+            "required": bool(param.get("required", False)),
+            "ts_name": _to_camel_case(name.replace("-", "_")),
+        })
+    return result
+
+
 def _render_operation(op: Mapping[str, Any]) -> str:
     name = op["function_name"]
     method = op["method"]
@@ -230,7 +248,14 @@ def _render_stream_operation(op: Mapping[str, Any]) -> str:
     method = op["method"]
     path_template = op["path"]
     path_params = op["path_params"]
+    header_params = op.get("header_params", [])
+    # Build signature: path params first, then optional header params
     signature_params = [f"{param}: string" for param in path_params]
+    for hp in header_params:
+        if hp["required"]:
+            signature_params.append(f'{hp["ts_name"]}: string')
+        else:
+            signature_params.append(f'{hp["ts_name"]}?: string')
     signature = ", ".join(signature_params)
     if path_params:
         replacements = {param: "${" + param + "}" for param in path_params}
@@ -246,11 +271,19 @@ def _render_stream_operation(op: Mapping[str, Any]) -> str:
         doc_lines.append(f"   * {summary}")
     doc_lines.append("   * Returns an async iterable of sanitized SSE frame objects.")
     doc_lines.append("   */")
+    # Build headers object, including optional header params
+    header_lines = ['      headers: { "accept": "text/event-stream", ...this.defaultHeaders']
+    for hp in header_params:
+        header_lines.append(f'        {("..." if not hp["required"] else "")}' +
+                           f'({hp["ts_name"]} ? {{ "{hp["name"]}": String({hp["ts_name"]}) }} : {{}}),')
+    header_lines.append("      },")
     body_lines = [
         f"  async *{name}({signature}): AsyncIterable<SseFrame> {{",
         f"    const response = await this.fetchImpl(this.baseUrl + {url_expr}, {{",
         f'      method: "{method}",',
-        f'      headers: {{ "accept": "text/event-stream", ...this.defaultHeaders }},',
+    ]
+    body_lines.extend(header_lines)
+    body_lines.extend([
         "    });",
         "    if (!response.body) {",
         '      throw new PlatformApiError("stream body missing", { status: response.status, code: "stream_missing" });',
@@ -272,7 +305,7 @@ def _render_stream_operation(op: Mapping[str, Any]) -> str:
         "      }",
         "    }",
         "  }",
-    ]
+    ])
     return "\n".join(doc_lines + body_lines)
 
 

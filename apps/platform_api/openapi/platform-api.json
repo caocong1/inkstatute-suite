@@ -52,7 +52,6 @@
             "type": "string"
           },
           "turn_id": {
-            "description": "Unique turn id.",
             "type": "string"
           },
           "user_id": {
@@ -104,6 +103,41 @@
         "required": [
           "approval_id",
           "decision"
+        ],
+        "type": "object"
+      },
+      "ArtifactResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reference_only": {
+            "description": "Always true \u2014 no raw content stored or returned.",
+            "type": "boolean"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "uri_ref": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "tenant_id"
         ],
         "type": "object"
       },
@@ -185,6 +219,42 @@
         ],
         "type": "object"
       },
+      "CreateSessionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "device_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tenant_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ElicitationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "Error": {
         "additionalProperties": false,
         "properties": {
@@ -204,6 +274,74 @@
         ],
         "type": "object"
       },
+      "FeedbackRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "up",
+              "down",
+              "needs_fix",
+              "route_wrong"
+            ],
+            "type": "string"
+          },
+          "conversation_id": {
+            "type": "string"
+          },
+          "feedback_target": {
+            "type": "string"
+          },
+          "message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tenant_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "turn_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FeedbackResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "feedback_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "feedback_id",
+          "tenant_id",
+          "action"
+        ],
+        "type": "object"
+      },
       "OutputConstraints": {
         "additionalProperties": false,
         "properties": {
@@ -220,29 +358,12 @@
             "type": "array"
           },
           "format": {
-            "enum": [
-              "docx",
-              "pptx",
-              "xlsx",
-              "pdf",
-              "markdown",
-              "text",
-              "json",
-              "card",
-              "other",
-              null
-            ],
             "type": [
               "string",
               "null"
             ]
           },
           "language_register": {
-            "enum": [
-              "formal",
-              "colloquial",
-              null
-            ],
             "type": [
               "string",
               "null"
@@ -295,6 +416,9 @@
             ],
             "type": "string"
           },
+          "tenant_id": {
+            "type": "string"
+          },
           "turn_id": {
             "type": "string"
           }
@@ -303,7 +427,8 @@
           "run_id",
           "status",
           "turn_id",
-          "solution_id"
+          "solution_id",
+          "tenant_id"
         ],
         "type": "object"
       },
@@ -325,6 +450,122 @@
           "event",
           "id",
           "data"
+        ],
+        "type": "object"
+      },
+      "RunListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/Run"
+            },
+            "type": "array"
+          },
+          "tenant_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenant_id",
+          "runs"
+        ],
+        "type": "object"
+      },
+      "SessionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "session_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "tenant_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "tenant_id",
+          "conversation_id"
+        ],
+        "type": "object"
+      },
+      "SkillDescriptor": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "license": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          },
+          "skill_id": {
+            "type": "string"
+          },
+          "source_repo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "skill_id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "SkillsListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillDescriptor"
+            },
+            "type": "array"
+          },
+          "tenant_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenant_id",
+          "skills"
         ],
         "type": "object"
       },
@@ -372,27 +613,274 @@
           "approval"
         ],
         "type": "object"
+      },
+      "UploadRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "conversation_id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "reference_only": {
+            "description": "Must be true \u2014 raw content is never stored.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "UploadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "content_hash": {
+            "type": "string"
+          },
+          "content_ref": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "payload_ref": {
+            "type": "string"
+          },
+          "reference_only": {
+            "type": "boolean"
+          },
+          "size_bytes": {
+            "type": "integer"
+          },
+          "tenant_id": {
+            "type": "string"
+          },
+          "upload_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_id",
+          "tenant_id",
+          "payload_ref"
+        ],
+        "type": "object"
       }
     },
     "securitySchemes": {
-      "PlatformApiSecret": {
-        "description": "Reference token resolved by the host deployment. The OpenAPI document does not store secret values.",
-        "in": "header",
-        "name": "X-InkStatute-Token",
+      "BearerAuth": {
+        "description": "RBAC Bearer token for bot/programmatic access.",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "SessionCookie": {
+        "description": "Session cookie for web/desktop access.",
+        "in": "cookie",
+        "name": "inkstatute_session",
         "type": "apiKey"
       }
     }
   },
   "info": {
-    "description": "Default-off thin host surface for the InkStatute RunRuntime. The host exposes remote/thin endpoints only and never embeds a local runtime, queue, or database. All examples and schema references are sanitized; no live WeCom, Hermes, or runtime payloads are accepted.",
-    "title": "InkStatute Platform API",
+    "description": "Unified multi-tenant HTTP+SSE Gateway for InkStatute \u2014 the single client-facing entry point for all clients (web, desktop, WeCom, QQ, programmatic). Exposes sessions, runs, SSE streaming, elicitation, approvals, artifacts, uploads, feedback, and skills endpoints. Auth: RBAC Bearer token + session cookie. All examples and schema references are sanitized; no live payloads are accepted.",
+    "title": "InkStatute Gateway API",
     "version": "0.1.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/v1/artifacts/{artifact_id}": {
+      "get": {
+        "description": "Retrieve artifact metadata by artifact_id. Returns a uri_ref (not raw content). Cross-tenant access returns 404. Reference-only: no raw content is stored or returned.",
+        "operationId": "getArtifact",
+        "parameters": [
+          {
+            "description": "Artifact identifier.",
+            "in": "path",
+            "name": "artifact_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Artifact response",
+                    "value": {
+                      "artifact_id": "artifact-example-001",
+                      "kind": "trackchanges_docx",
+                      "metadata": {},
+                      "name": "contract_review.docx",
+                      "reference_only": true,
+                      "tenant_id": "tenant-example",
+                      "uri_ref": "fixture://artifacts/artifact-example-001"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactResponse"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "tenant_mismatch",
+                    "details": {},
+                    "message": "Example error code: tenant_mismatch"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "not_found",
+                    "details": {},
+                    "message": "Example error code: not_found"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Download an artifact by id.",
+        "tags": [
+          "Artifacts"
+        ]
+      }
+    },
+    "/v1/feedback": {
+      "post": {
+        "description": "Submit feedback (up/down/needs_fix/route_wrong) for a run or conversation. route_wrong feedback creates a SkillCandidate with requires_human_review=True (never auto-modified).",
+        "operationId": "submitFeedback",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "sanitized": {
+                  "summary": "Feedback",
+                  "value": {
+                    "action": "up",
+                    "conversation_id": "conv-1"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Feedback response",
+                    "value": {
+                      "action": "up",
+                      "event_type": "feedback",
+                      "feedback_id": "feedback-example-001",
+                      "status": "pending",
+                      "tenant_id": "tenant-example"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Submit feedback for a run or conversation.",
+        "tags": [
+          "Feedback"
+        ]
+      }
+    },
     "/v1/runs": {
       "post": {
-        "description": "Submits a run to the injected RunRuntime. The body must include a validated AgentTurn shape and a SolutionBinding reference. The host does not perform network I/O, queueing, or storage beyond the injected runtime and contract log.",
+        "description": "Create a new run from a turn and solution binding. The run is queued and events are streamed via the streamRun endpoint.",
         "operationId": "createRun",
         "parameters": [],
         "requestBody": {
@@ -400,14 +888,11 @@
             "application/json": {
               "examples": {
                 "sanitized": {
-                  "summary": "Sanitized create run request",
+                  "summary": "Create run request",
                   "value": {
-                    "metadata": {
-                      "request_id": "request-example-001"
-                    },
-                    "session_id": "session-example",
+                    "session_id": "session-example-001",
                     "solution": {
-                      "backend_id": "fake-backend",
+                      "backend_id": "hermes",
                       "config_ref": "fixture://solutions/lawyer-v1",
                       "solution_id": "lawyer-v1"
                     },
@@ -420,11 +905,10 @@
                       "metadata": {
                         "raw_payload_ref": "fixture://turns/turn-example-001/raw"
                       },
-                      "received_at": "2026-06-29T00:00:00Z",
+                      "received_at": "2026-08-07T00:00:00Z",
                       "turn_id": "turn-example-001",
                       "user_id": "user-example"
-                    },
-                    "workspace_id": "workspace-example"
+                    }
                   }
                 }
               },
@@ -441,16 +925,14 @@
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "summary": "Sanitized run response",
+                    "summary": "Run response",
                     "value": {
-                      "metadata": {
-                        "backend_id": "fake-backend",
-                        "backend_run_id": "backend-run-example-001"
-                      },
+                      "metadata": {},
                       "result": null,
                       "run_id": "run-example-001",
                       "solution_id": "lawyer-v1",
-                      "status": "succeeded",
+                      "status": "queued",
+                      "tenant_id": "tenant-example",
                       "turn_id": "turn-example-001"
                     }
                   }
@@ -468,9 +950,7 @@
                 "examples": {
                   "sanitized": {
                     "code": "invalid_request",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
+                    "details": {},
                     "message": "Example error code: invalid_request"
                   }
                 },
@@ -481,16 +961,14 @@
             },
             "description": "Error response"
           },
-          "503": {
+          "401": {
             "content": {
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "code": "platform_api_disabled",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: platform_api_disabled"
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
                   }
                 },
                 "schema": {
@@ -501,18 +979,27 @@
             "description": "Error response"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Create a run from an AgentTurn and a SolutionBinding.",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
     "/v1/runs/{run_id}": {
       "delete": {
+        "description": "Cancel a running or queued run. The run transitions to cancelled state.",
         "operationId": "cancelRun",
         "parameters": [
           {
-            "description": "Identifier returned by createRun.",
+            "description": "Run identifier.",
             "in": "path",
             "name": "run_id",
             "required": true,
@@ -527,16 +1014,14 @@
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "summary": "Sanitized run response",
+                    "summary": "Run response",
                     "value": {
-                      "metadata": {
-                        "backend_id": "fake-backend",
-                        "backend_run_id": "backend-run-example-001"
-                      },
+                      "metadata": {},
                       "result": null,
                       "run_id": "run-example-001",
                       "solution_id": "lawyer-v1",
-                      "status": "succeeded",
+                      "status": "queued",
+                      "tenant_id": "tenant-example",
                       "turn_id": "turn-example-001"
                     }
                   }
@@ -548,35 +1033,14 @@
             },
             "description": "Successful response"
           },
-          "400": {
+          "401": {
             "content": {
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "code": "invalid_request",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: invalid_request"
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "examples": {
-                  "sanitized": {
-                    "code": "platform_api_disabled",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: platform_api_disabled"
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
                   }
                 },
                 "schema": {
@@ -587,16 +1051,25 @@
             "description": "Error response"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Cancel a run by id.",
         "tags": [
-          "runs"
+          "Runs"
         ]
       },
       "get": {
-        "operationId": "pollRun",
+        "description": "Retrieve run metadata and status by run_id. Tenant-scoped.",
+        "operationId": "getRun",
         "parameters": [
           {
-            "description": "Identifier returned by createRun.",
+            "description": "Run identifier.",
             "in": "path",
             "name": "run_id",
             "required": true,
@@ -611,16 +1084,14 @@
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "summary": "Sanitized run response",
+                    "summary": "Run response",
                     "value": {
-                      "metadata": {
-                        "backend_id": "fake-backend",
-                        "backend_run_id": "backend-run-example-001"
-                      },
+                      "metadata": {},
                       "result": null,
                       "run_id": "run-example-001",
                       "solution_id": "lawyer-v1",
-                      "status": "succeeded",
+                      "status": "queued",
+                      "tenant_id": "tenant-example",
                       "turn_id": "turn-example-001"
                     }
                   }
@@ -632,16 +1103,14 @@
             },
             "description": "Successful response"
           },
-          "400": {
+          "401": {
             "content": {
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "code": "invalid_request",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: invalid_request"
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
                   }
                 },
                 "schema": {
@@ -651,16 +1120,14 @@
             },
             "description": "Error response"
           },
-          "503": {
+          "404": {
             "content": {
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "code": "platform_api_disabled",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: platform_api_disabled"
+                    "code": "not_found",
+                    "details": {},
+                    "message": "Example error code: not_found"
                   }
                 },
                 "schema": {
@@ -671,18 +1138,27 @@
             "description": "Error response"
           }
         },
-        "summary": "Poll a run by id.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Get a run by id.",
         "tags": [
-          "runs"
+          "Runs"
         ]
       }
     },
     "/v1/runs/{run_id}/approvals": {
       "post": {
+        "description": "Submit an approval or rejection decision for a permission request. The run resumes from the waiting_for_user state.",
         "operationId": "submitApproval",
         "parameters": [
           {
-            "description": "Identifier returned by createRun.",
+            "description": "Run identifier.",
             "in": "path",
             "name": "run_id",
             "required": true,
@@ -696,11 +1172,11 @@
             "application/json": {
               "examples": {
                 "sanitized": {
-                  "summary": "Sanitized approval request",
+                  "summary": "Approval request",
                   "value": {
                     "approval": {
                       "approval_id": "approval-example-001",
-                      "decided_at": "2026-06-29T00:00:00Z",
+                      "decided_at": "2026-08-07T00:00:00Z",
                       "decided_by": "user-example",
                       "decision": "approved"
                     }
@@ -720,16 +1196,14 @@
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "summary": "Sanitized run response",
+                    "summary": "Run response",
                     "value": {
-                      "metadata": {
-                        "backend_id": "fake-backend",
-                        "backend_run_id": "backend-run-example-001"
-                      },
+                      "metadata": {},
                       "result": null,
                       "run_id": "run-example-001",
                       "solution_id": "lawyer-v1",
-                      "status": "succeeded",
+                      "status": "queued",
+                      "tenant_id": "tenant-example",
                       "turn_id": "turn-example-001"
                     }
                   }
@@ -741,35 +1215,14 @@
             },
             "description": "Successful response"
           },
-          "400": {
+          "401": {
             "content": {
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "code": "invalid_request",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: invalid_request"
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "examples": {
-                  "sanitized": {
-                    "code": "platform_api_disabled",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: platform_api_disabled"
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
                   }
                 },
                 "schema": {
@@ -780,23 +1233,131 @@
             "description": "Error response"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "summary": "Submit an approval decision for a run.",
         "tags": [
-          "runs"
+          "Approvals"
         ]
       }
     },
-    "/v1/runs/{run_id}/events": {
-      "get": {
-        "operationId": "streamRun",
+    "/v1/runs/{run_id}/elicitation": {
+      "post": {
+        "description": "Submit user answers to an elicitation request. The run resumes from the waiting_for_user state.",
+        "operationId": "submitElicitation",
         "parameters": [
           {
-            "description": "Identifier returned by createRun.",
+            "description": "Run identifier.",
             "in": "path",
             "name": "run_id",
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "sanitized": {
+                  "summary": "Elicitation response",
+                  "value": {
+                    "answers": []
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/ElicitationResponse"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Run response",
+                    "value": {
+                      "metadata": {},
+                      "result": null,
+                      "run_id": "run-example-001",
+                      "solution_id": "lawyer-v1",
+                      "status": "queued",
+                      "tenant_id": "tenant-example",
+                      "turn_id": "turn-example-001"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Submit an elicitation response for a run.",
+        "tags": [
+          "Elicitation"
+        ]
+      }
+    },
+    "/v1/runs/{run_id}/events": {
+      "get": {
+        "description": "Open an SSE stream for a run. Events are delivered in seq order. When Last-Event-ID header is present, buffered events with seq > last_event_id are replayed first, then live streaming continues.",
+        "operationId": "streamRun",
+        "parameters": [
+          {
+            "description": "Run identifier.",
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last event sequence number for reconnection replay.",
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
             }
           }
         ],
@@ -809,37 +1370,16 @@
                 }
               }
             },
-            "description": "SSE stream of sanitized RunEvent frames. Each frame contains an event id, an event name, and a JSON data payload. The stream ends with a run_completed frame."
+            "description": "SSE stream of RunEvent frames. Each frame contains an event id, an event name, and a JSON data payload."
           },
-          "400": {
+          "401": {
             "content": {
               "application/json": {
                 "examples": {
                   "sanitized": {
-                    "code": "invalid_request",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: invalid_request"
-                  }
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "examples": {
-                  "sanitized": {
-                    "code": "platform_api_disabled",
-                    "details": {
-                      "request_id": "request-example-001"
-                    },
-                    "message": "Example error code: platform_api_disabled"
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
                   }
                 },
                 "schema": {
@@ -850,27 +1390,447 @@
             "description": "Error response"
           }
         },
-        "summary": "Stream run events as Server-Sent Events frames.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Stream run events as Server-Sent Events.",
         "tags": [
-          "stream"
+          "Stream"
+        ]
+      }
+    },
+    "/v1/sessions": {
+      "post": {
+        "description": "Create a new session for a tenant. Returns a session_id and Set-Cookie header for web/desktop clients.",
+        "operationId": "createSession",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "sanitized": {
+                  "summary": "Create session request",
+                  "value": {
+                    "conversation_id": "conv-example-001",
+                    "tenant_id": "tenant-example",
+                    "user_id": "lawyer-example"
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Session response",
+                    "value": {
+                      "conversation_id": "conv-example-001",
+                      "session_id": "session-example-001",
+                      "status": "ok",
+                      "tenant_id": "tenant-example"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Create a new session.",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/sessions/{session_id}": {
+      "get": {
+        "description": "Retrieve session metadata by session_id. Tenant-scoped.",
+        "operationId": "getSession",
+        "parameters": [
+          {
+            "description": "Session identifier.",
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Session response",
+                    "value": {
+                      "conversation_id": "conv-example-001",
+                      "session_id": "session-example-001",
+                      "status": "ok",
+                      "tenant_id": "tenant-example"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "not_found",
+                    "details": {},
+                    "message": "Example error code: not_found"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Get a session by id.",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/sessions/{session_id}/runs": {
+      "get": {
+        "description": "List all runs associated with a session, ordered by creation time.",
+        "operationId": "listSessionRuns",
+        "parameters": [
+          {
+            "description": "Session identifier.",
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Run list response",
+                    "value": {
+                      "count": 0,
+                      "runs": [],
+                      "tenant_id": "tenant-example"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/RunListResponse"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "List runs for a session.",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/skills": {
+      "get": {
+        "description": "List all skills or search by tag/category/name. Read-only endpoint (no write API exposed through the Gateway). Feature-flagged (skill_registry_enabled, default-off).",
+        "operationId": "listSkills",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Skills list response",
+                    "value": {
+                      "count": 0,
+                      "skills": [],
+                      "tenant_id": "tenant-example"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SkillsListResponse"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "List or search skills.",
+        "tags": [
+          "Skills"
+        ]
+      }
+    },
+    "/v1/uploads": {
+      "post": {
+        "description": "Upload a file with reference-only storage. Raw content is hashed and discarded; only references (payload_ref, content_ref) and metadata are kept. Cross-tenant access is denied.",
+        "operationId": "upload",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "sanitized": {
+                  "summary": "Upload request",
+                  "value": {
+                    "conversation_id": "conv-example-001",
+                    "filename": "doc.pdf",
+                    "mime_type": "application/pdf",
+                    "reference_only": true
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/UploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "summary": "Upload response",
+                    "value": {
+                      "content_hash": "sha256:abc123",
+                      "content_ref": "ref://tenant-example/conv-1/upload-example-001/content",
+                      "filename": "doc.pdf",
+                      "mime_type": "application/pdf",
+                      "payload_ref": "ref://tenant-example/conv-1/upload-example-001/payload",
+                      "reference_only": true,
+                      "size_bytes": 1024,
+                      "tenant_id": "tenant-example",
+                      "upload_id": "upload-example-001"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "sanitized": {
+                    "code": "unauthorized",
+                    "details": {},
+                    "message": "Example error code: unauthorized"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Upload a file (reference-only).",
+        "tags": [
+          "Uploads"
         ]
       }
     }
   },
+  "security": [
+    {
+      "BearerAuth": []
+    },
+    {
+      "SessionCookie": []
+    }
+  ],
   "servers": [
     {
-      "description": "Platform API host",
+      "description": "InkStatute Gateway",
       "url": "/v1"
     }
   ],
   "tags": [
     {
+      "description": "Session lifecycle endpoints",
+      "name": "Sessions"
+    },
+    {
       "description": "Run lifecycle endpoints",
-      "name": "runs"
+      "name": "Runs"
     },
     {
       "description": "SSE stream endpoints",
-      "name": "stream"
+      "name": "Stream"
+    },
+    {
+      "description": "Elicitation response endpoints",
+      "name": "Elicitation"
+    },
+    {
+      "description": "Approval submission endpoints",
+      "name": "Approvals"
+    },
+    {
+      "description": "Artifact download endpoints",
+      "name": "Artifacts"
+    },
+    {
+      "description": "File upload endpoints",
+      "name": "Uploads"
+    },
+    {
+      "description": "Feedback submission endpoints",
+      "name": "Feedback"
+    },
+    {
+      "description": "Skills listing endpoints",
+      "name": "Skills"
     }
   ]
 }

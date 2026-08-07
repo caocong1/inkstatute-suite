@@ -91,9 +91,16 @@ class GeneratedSdkContentTests(unittest.TestCase):
         self.assertIn("remote/thin", self.text)
 
     def test_exposes_all_operations(self) -> None:
-        for name in ("createRun", "pollRun", "cancelRun", "submitApproval", "streamRun"):
+        for name in ("createRun", "getRun", "cancelRun", "submitApproval", "streamRun",
+                      "createSession", "getSession", "submitElicitation", "getArtifact",
+                      "upload", "submitFeedback", "listSkills", "listSessionRuns"):
             with self.subTest(name=name):
                 self.assertIn(name, self.text)
+
+    def test_stream_run_has_last_event_id(self) -> None:
+        """streamRun must accept an optional lastEventID parameter for reconnection."""
+        self.assertIn("lastEventID", self.text)
+        self.assertIn("Last-Event-ID", self.text)
 
     def test_sse_helper_present(self) -> None:
         self.assertIn("function parseSseFrame", self.text)
@@ -124,13 +131,30 @@ class OpenApiSourceOfTruthTests(unittest.TestCase):
         document = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
         paths = set(document["paths"].keys())
         for required in (
+            "/v1/sessions",
+            "/v1/sessions/{session_id}",
+            "/v1/sessions/{session_id}/runs",
             "/v1/runs",
             "/v1/runs/{run_id}",
-            "/v1/runs/{run_id}/approvals",
             "/v1/runs/{run_id}/events",
+            "/v1/runs/{run_id}/elicitation",
+            "/v1/runs/{run_id}/approvals",
+            "/v1/artifacts/{artifact_id}",
+            "/v1/uploads",
+            "/v1/feedback",
+            "/v1/skills",
         ):
             with self.subTest(path=required):
                 self.assertIn(required, paths)
+
+    def test_stream_run_has_last_event_id_param(self) -> None:
+        """The OpenAPI document must declare Last-Event-ID header for streamRun."""
+        document = json.loads(OPENAPI_PATH.read_text(encoding="utf-8"))
+        op = document["paths"]["/v1/runs/{run_id}/events"]["get"]
+        params = op.get("parameters", [])
+        header_params = [p for p in params if p.get("in") == "header"]
+        names = {p.get("name") for p in header_params}
+        self.assertIn("Last-Event-ID", names)
 
 
 if __name__ == "__main__":
