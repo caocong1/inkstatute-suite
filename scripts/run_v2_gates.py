@@ -125,6 +125,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (acp_client_src, platform_src, platform_runtime_src),
         ),
         Gate(
+            "fs-sandbox-escape",
+            (py, "-m", "unittest", "packages/acp-client/tests/test_fs_sandbox.py"),
+            (acp_client_src, platform_src, platform_runtime_src),
+        ),
+        Gate(
             "acp-event-bridge",
             (py, "-m", "unittest", "discover", "-s", "packages/acp-event-bridge/tests"),
             (acp_event_bridge_src, acp_client_src, platform_src, platform_runtime_src),
