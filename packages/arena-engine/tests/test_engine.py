@@ -31,6 +31,8 @@ from platform_runtime.protocols import ArenaWorkflow
 from arena_engine.engine import ArenaEngine
 from arena_engine.guardrail_boundary import apply_post_hoc_guardrails
 from arena_engine.mock_acp import MockACPBackendAdapter
+from arena_engine.mode3 import Mode3Result
+from arena_engine.mode4 import Mode4Result
 
 
 # ---------------------------------------------------------------------------
@@ -367,6 +369,305 @@ class EngineGuardrailTests(unittest.IsolatedAsyncioTestCase):
 
             status = await engine.query_status(config.arena_id)
             self.assertTrue(status.metadata["slot-1_requires_human_review"])
+
+
+# ---------------------------------------------------------------------------
+# Task 3 — Mode3Mode4DispatchTests (Tests 14-22)
+# ---------------------------------------------------------------------------
+
+
+def _mode3_config(
+    arena_id: str = "arena-3",
+    slots: list[str] | None = None,
+    max_rounds: int = 1,
+    instruction: str = "审查合同效力",
+) -> ArenaWorkflowConfig:
+    return ArenaWorkflowConfig(
+        arena_id=arena_id,
+        mode="mode3_arena_review",
+        agent_slots=slots or ["slot-0", "slot-1"],
+        task_instruction=instruction,
+        max_rounds=max_rounds,
+    )
+
+
+def _mode4_config(
+    arena_id: str = "arena-4",
+    slots: list[str] | None = None,
+    max_rounds: int = 1,
+    instruction: str = "审查合同效力",
+) -> ArenaWorkflowConfig:
+    return ArenaWorkflowConfig(
+        arena_id=arena_id,
+        mode="mode4_adversarial",
+        agent_slots=slots or ["slot-0", "slot-1"],
+        task_instruction=instruction,
+        max_rounds=max_rounds,
+    )
+
+
+def _scored_response(score: int, analysis: str = "分析：...") -> str:
+    return f"自评分数：{score}/10\n{analysis}"
+
+
+def _finding_response(
+    description: str = "缺少引用",
+    confidence: str = "Likely",
+    severity: str = "Medium",
+    confirmed: bool = True,
+) -> str:
+    return (
+        f"[FINDING]\n"
+        f"description: {description}\n"
+        f"confidence: {confidence}\n"
+        f"severity: {severity}\n"
+        f"confirmed: {confirmed}\n"
+        f"[/FINDING]"
+    )
+
+
+def _cross_family_mode3_adapters() -> dict:
+    """2 cross-family candidate slot adapters for Mode 3."""
+    return {
+        "slot-0": MockACPBackendAdapter(
+            backend_id="hermes",
+            responses=[_scored_response(8), _finding_response("问题A")],
+            agent_slot="slot-0",
+        ),
+        "slot-1": MockACPBackendAdapter(
+            backend_id="codex",
+            responses=[_scored_response(7), _finding_response("问题B")],
+            agent_slot="slot-1",
+        ),
+    }
+
+
+def _synthesis_adapter(responses: list[str] | None = None) -> MockACPBackendAdapter:
+    return MockACPBackendAdapter(
+        backend_id="gemini-cli",
+        responses=responses or ["综合最终版本"],
+        agent_slot="synthesis",
+    )
+
+
+def _adversarial_adapter(responses: list[str] | None = None) -> MockACPBackendAdapter:
+    return MockACPBackendAdapter(
+        backend_id="inkstatute-agent",
+        responses=responses or ["未发现严重问题。综合回答质量良好。"],
+        agent_slot="adversarial",
+    )
+
+
+class Mode3Mode4DispatchTests(unittest.IsolatedAsyncioTestCase):
+    """ArenaEngine dispatch integration tests for Modes 3+4."""
+
+    # Test 1 — Mode 3 dispatch stores Mode3Result and marks completed
+    async def test_1_mode3_dispatch_stores_result_and_completes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+            config = _mode3_config()
+            adapters = _cross_family_mode3_adapters()
+            synthesis = _synthesis_adapter()
+            await engine.start(config)
+            engine.register_adapters(config.arena_id, adapters)
+            engine.register_synthesis_adapter(config.arena_id, synthesis)
+            await engine.run(config.arena_id, adapters, None)
+
+            result = engine._results[config.arena_id]
+            self.assertIsInstance(result, Mode3Result)
+            self.assertIsNotNone(result.synthesis_content)
+
+            status = await engine.query_status(config.arena_id)
+            self.assertEqual(status.status, "completed")
+
+    # Test 2 — Mode 4 dispatch stores Mode4Result and marks completed
+    async def test_2_mode4_dispatch_stores_result_and_completes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+            config = _mode4_config(max_rounds=1)
+            adapters = _cross_family_mode3_adapters()
+            synthesis = _synthesis_adapter(
+                responses=["自评分数：9/10\n综合最终版本"],
+            )
+            adversarial = _adversarial_adapter()
+            await engine.start(config)
+            engine.register_adapters(config.arena_id, adapters)
+            engine.register_synthesis_adapter(config.arena_id, synthesis)
+            engine.register_adversarial_adapter(config.arena_id, adversarial)
+            await engine.run(config.arena_id, adapters, None)
+
+            result = engine._results[config.arena_id]
+            self.assertIsInstance(result, Mode4Result)
+            self.assertIsNotNone(result.final_synthesis_content)
+
+            status = await engine.query_status(config.arena_id)
+            self.assertEqual(status.status, "completed")
+
+    # Test 3 — Mode 3 dispatch uses distinct synthesis adapter
+    async def test_3_mode3_synthesis_adapter_distinct_from_slots(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+            config = _mode3_config()
+            adapters = _cross_family_mode3_adapters()
+            synthesis = _synthesis_adapter()
+            await engine.start(config)
+            engine.register_adapters(config.arena_id, adapters)
+            engine.register_synthesis_adapter(config.arena_id, synthesis)
+            await engine.run(config.arena_id, adapters, None)
+
+            # Synthesis adapter is a separate instance from slot adapters
+            self.assertIsNot(synthesis, adapters["slot-0"])
+            self.assertIsNot(synthesis, adapters["slot-1"])
+            # Synthesis adapter has a distinct backend_id
+            self.assertNotIn(synthesis.backend_id(), [a.backend_id() for a in adapters.values()])
+
+    # Test 4 — Mode 4 dispatch uses distinct synthesis and adversarial adapters
+    async def test_4_mode4_synthesis_and_adversarial_distinct(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+            config = _mode4_config(max_rounds=1)
+            adapters = _cross_family_mode3_adapters()
+            synthesis = _synthesis_adapter(
+                responses=["自评分数：9/10\n综合最终版本"],
+            )
+            adversarial = _adversarial_adapter()
+            await engine.start(config)
+            engine.register_adapters(config.arena_id, adapters)
+            engine.register_synthesis_adapter(config.arena_id, synthesis)
+            engine.register_adversarial_adapter(config.arena_id, adversarial)
+            await engine.run(config.arena_id, adapters, None)
+
+            # Both are separate instances from slot adapters
+            self.assertIsNot(synthesis, adapters["slot-0"])
+            self.assertIsNot(adversarial, adapters["slot-0"])
+            self.assertIsNot(synthesis, adversarial)
+
+    # Test 5 — Post-hoc guardrails applied to Mode 3 synthesis output
+    async def test_5_mode3_guardrails_applied_to_synthesis(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+            config = _mode3_config()
+            adapters = _cross_family_mode3_adapters()
+            synthesis = _synthesis_adapter()
+            await engine.start(config)
+            engine.register_adapters(config.arena_id, adapters)
+            engine.register_synthesis_adapter(config.arena_id, synthesis)
+            await engine.run(config.arena_id, adapters, None)
+
+            status = await engine.query_status(config.arena_id)
+            # Guardrail metadata recorded for synthesis slot
+            self.assertIn("synthesis_requires_human_review", status.metadata)
+            self.assertIn("synthesis_guardrail_skipped", status.metadata)
+
+    # Test 6 — Post-hoc guardrails applied to Mode 4 final synthesis output
+    async def test_6_mode4_guardrails_applied_to_final_synthesis(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+            config = _mode4_config(max_rounds=1)
+            adapters = _cross_family_mode3_adapters()
+            synthesis = _synthesis_adapter(
+                responses=["自评分数：9/10\n综合最终版本"],
+            )
+            adversarial = _adversarial_adapter()
+            await engine.start(config)
+            engine.register_adapters(config.arena_id, adapters)
+            engine.register_synthesis_adapter(config.arena_id, synthesis)
+            engine.register_adversarial_adapter(config.arena_id, adversarial)
+            await engine.run(config.arena_id, adapters, None)
+
+            status = await engine.query_status(config.arena_id)
+            self.assertIn("synthesis_requires_human_review", status.metadata)
+            self.assertIn("synthesis_guardrail_skipped", status.metadata)
+
+    # Test 7 — backend_family() used to build backend_families dict
+    async def test_7_backend_family_used_for_cross_family(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+            config = _mode3_config()
+            # Use adapters with explicit backend_family to verify it's used
+            adapters = {
+                "slot-0": MockACPBackendAdapter(
+                    backend_id="hermes",
+                    responses=[_scored_response(8), _finding_response("问题A")],
+                    agent_slot="slot-0",
+                    backend_family="claude",
+                ),
+                "slot-1": MockACPBackendAdapter(
+                    backend_id="codex",
+                    responses=[_scored_response(7), _finding_response("问题B")],
+                    agent_slot="slot-1",
+                    backend_family="gpt",
+                ),
+            }
+            synthesis = _synthesis_adapter()
+            await engine.start(config)
+            engine.register_adapters(config.arena_id, adapters)
+            engine.register_synthesis_adapter(config.arena_id, synthesis)
+
+            # Verify _build_backend_families calls backend_family()
+            families = ArenaEngine._build_backend_families(adapters)
+            self.assertEqual(families["slot-0"], "claude")
+            self.assertEqual(families["slot-1"], "gpt")
+
+            await engine.run(config.arena_id, adapters, None)
+            result = engine._results[config.arena_id]
+            self.assertIsInstance(result, Mode3Result)
+            # Cross-family should not be degraded since claude != gpt
+            self.assertFalse(result.cross_family_degraded)
+
+    # Test 8 — Unknown mode raises ValueError
+    async def test_8_unknown_mode_raises_value_error(self) -> None:
+        engine = ArenaEngine()
+        config = ArenaWorkflowConfig(
+            arena_id="arena-unknown",
+            mode="mode5_unknown",
+            agent_slots=["slot-0", "slot-1"],
+            task_instruction="test",
+        )
+        adapters = _cross_family_mode3_adapters()
+        await engine.start(config)
+        engine.register_adapters(config.arena_id, adapters)
+        with self.assertRaises(ValueError) as ctx:
+            await engine.run(config.arena_id, adapters, None)
+        self.assertIn("unknown arena mode: mode5_unknown", str(ctx.exception))
+
+    # Test 9 — Existing Mode 1 and Mode 2 dispatch still work (no regression)
+    async def test_9_mode1_and_mode2_dispatch_no_regression(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = ArenaEngine(storage_dir=tmp)
+
+            # Mode 1
+            config1 = _mode1_config(arena_id="arena-m1", slots=["slot-1"])
+            adapters1 = {
+                "slot-1": MockACPBackendAdapter(
+                    backend_id="backend-slot-1",
+                    responses=["回答内容"],
+                    agent_slot="slot-1",
+                ),
+            }
+            await engine.start(config1)
+            await engine.run(config1.arena_id, adapters1, None)
+            status1 = await engine.query_status(config1.arena_id)
+            self.assertEqual(status1.status, "completed")
+
+            # Mode 2
+            config2 = _mode2_config(arena_id="arena-m2", max_rounds=1)
+            adapters2 = {
+                "slot-1": MockACPBackendAdapter(
+                    backend_id="backend-slot-1",
+                    responses=["自评分数：8/10\n回答内容"],
+                    agent_slot="slot-1",
+                ),
+                "slot-2": MockACPBackendAdapter(
+                    backend_id="backend-slot-2",
+                    responses=["自评分数：7/10\n回答内容"],
+                    agent_slot="slot-2",
+                ),
+            }
+            await engine.start(config2)
+            await engine.run(config2.arena_id, adapters2, None)
+            status2 = await engine.query_status(config2.arena_id)
+            self.assertEqual(status2.status, "completed")
 
 
 if __name__ == "__main__":

@@ -2,8 +2,9 @@
 
 The :class:`ArenaEngine` is the top-level orchestration entry point that
 implements the :class:`ArenaWorkflow` Protocol from
-``platform_runtime.protocols``.  It wires Mode 1 (Standard Parallel) and
-Mode 2 (Self-score Iteration) together with:
+``platform_runtime.protocols``.  It wires Mode 1 (Standard Parallel),
+Mode 2 (Self-score Iteration), Mode 3 (Arena Review), and Mode 4
+(Adversarial) together with:
 
 - **Guardrail boundary enforcement** — every external agent output passes
   through :func:`apply_post_hoc_guardrails` (non-bypassable, SAFE-01..04).
@@ -37,6 +38,8 @@ from .artifact_store import ArtifactStore
 from .guardrail_boundary import GuardrailResult, apply_post_hoc_guardrails
 from .mode1 import EventEmitter, Mode1Result, run_mode1_parallel
 from .mode2 import Mode2Result, run_mode2_iteration
+from .mode3 import Mode3Result, run_mode3_arena_review
+from .mode4 import Mode4Result, run_mode4_adversarial
 from .provenance import ProvenanceLogger
 from .slot_runner import SlotResult
 
@@ -49,10 +52,11 @@ from .slot_runner import SlotResult
 class ArenaEngine:
     """Top-level arena orchestration engine implementing ``ArenaWorkflow``.
 
-    Coordinates Mode 1 / Mode 2 execution, applies the post-hoc guardrail
-    boundary to every external agent output, persists artifacts, and logs
-    per-claim provenance.  Supports user stop / pause / resume / cancel
-    with graceful shutdown of all background tasks and adapter sessions.
+    Coordinates Mode 1 / Mode 2 / Mode 3 / Mode 4 execution, applies the
+    post-hoc guardrail boundary to every external agent output, persists
+    artifacts, and logs per-claim provenance.  Supports user stop / pause
+    / resume / cancel with graceful shutdown of all background tasks and
+    adapter sessions.
 
     Parameters
     ----------
@@ -90,7 +94,9 @@ class ArenaEngine:
         self._pause_flags: dict[str, asyncio.Event] = {}
         self._bg_tasks: dict[str, asyncio.Task[Any]] = {}
         self._selections: dict[str, str] = {}
-        self._results: dict[str, Mode1Result | Mode2Result] = {}
+        self._results: dict[str, Mode1Result | Mode2Result | Mode3Result | Mode4Result] = {}
+        self._synthesis_adapters: dict[str, BackendAdapter] = {}
+        self._adversarial_adapters: dict[str, BackendAdapter] = {}
 
     # ------------------------------------------------------------------
     # ArenaWorkflow Protocol — start
@@ -225,6 +231,33 @@ class ArenaEngine:
         """Register the per-slot adapter map for an arena."""
         self._adapters[arena_id] = dict(adapters)
 
+    def register_synthesis_adapter(
+        self,
+        arena_id: str,
+        adapter: BackendAdapter,
+    ) -> None:
+        """Register the synthesis adapter for Mode 3 / Mode 4.
+
+        The synthesis adapter must be a **separate** :class:`BackendAdapter`
+        instance — not one of the candidate slot adapters.  The orchestrator
+        never produces content; synthesis is delegated to this adapter.
+        """
+        self._synthesis_adapters[arena_id] = adapter
+
+    def register_adversarial_adapter(
+        self,
+        arena_id: str,
+        adapter: BackendAdapter,
+    ) -> None:
+        """Register the adversarial adapter for Mode 4.
+
+        The adversarial adapter must be a **separate** :class:`BackendAdapter`
+        instance — not one of the candidate slot adapters or the synthesis
+        adapter.  The orchestrator never produces content; adversarial
+        challenges are delegated to this adapter.
+        """
+        self._adversarial_adapters[arena_id] = adapter
+
     async def run(
         self,
         arena_id: str,
@@ -253,7 +286,7 @@ class ArenaEngine:
         agent_adapters: dict[str, BackendAdapter],
         event_emitter: EventEmitter | None = None,
     ) -> None:
-        """Dispatch to Mode 1 or Mode 2 based on ``config.mode``.
+        """Dispatch to Mode 1, 2, 3, or 4 based on ``config.mode``.
 
         After the mode completes, applies the post-hoc guardrail boundary
         and logs per-claim provenance via
@@ -298,6 +331,74 @@ class ArenaEngine:
                 slot_results,
                 self._external_map(agent_adapters),
             )
+        elif config.mode == "mode3_arena_review":
+            # Build backend_families dict from each slot adapter.
+            backend_families = self._build_backend_families(agent_adapters)
+            synthesis_adapter = self._synthesis_adapters[arena_id]
+            result = await run_mode3_arena_review(
+                config=config,
+                agent_adapters=agent_adapters,
+                synthesis_adapter=synthesis_adapter,
+                event_emitter=event_emitter,
+                stop_signal=stop_signal,
+                artifact_store=self._artifact_store,
+                backend_families=backend_families,
+                provenance_logger=self._provenance_logger,
+            )
+            self._results[arena_id] = result
+            # Apply guardrails to synthesis output.
+            if result.synthesis_content is not None:
+                synthesis_slot_results: dict[str, SlotResult] = {
+                    "synthesis": SlotResult(
+                        slot_id="synthesis",
+                        status="success",
+                        content=result.synthesis_content,
+                        metadata={},
+                    ),
+                }
+                synthesis_external = {
+                    "synthesis": synthesis_adapter.backend_id() != "inkstatute-agent",
+                }
+                await self._apply_guardrails_and_provenance(
+                    arena_id,
+                    synthesis_slot_results,
+                    synthesis_external,
+                )
+        elif config.mode == "mode4_adversarial":
+            # Build backend_families dict from each slot adapter.
+            backend_families = self._build_backend_families(agent_adapters)
+            synthesis_adapter = self._synthesis_adapters[arena_id]
+            adversarial_adapter = self._adversarial_adapters[arena_id]
+            result = await run_mode4_adversarial(
+                config=config,
+                agent_adapters=agent_adapters,
+                synthesis_adapter=synthesis_adapter,
+                adversarial_adapter=adversarial_adapter,
+                event_emitter=event_emitter,
+                stop_signal=stop_signal,
+                artifact_store=self._artifact_store,
+                backend_families=backend_families,
+                provenance_logger=self._provenance_logger,
+            )
+            self._results[arena_id] = result
+            # Apply guardrails to final synthesis output.
+            if result.final_synthesis_content is not None:
+                final_slot_results: dict[str, SlotResult] = {
+                    "synthesis": SlotResult(
+                        slot_id="synthesis",
+                        status="success",
+                        content=result.final_synthesis_content,
+                        metadata={},
+                    ),
+                }
+                final_external = {
+                    "synthesis": synthesis_adapter.backend_id() != "inkstatute-agent",
+                }
+                await self._apply_guardrails_and_provenance(
+                    arena_id,
+                    final_slot_results,
+                    final_external,
+                )
         else:
             raise ValueError(f"unknown arena mode: {config.mode}")
 
@@ -396,6 +497,26 @@ class ArenaEngine:
                 pass
             external_map[slot_id] = backend_id != "inkstatute-agent"
         return external_map
+
+    @staticmethod
+    def _build_backend_families(
+        agent_adapters: dict[str, BackendAdapter],
+    ) -> dict[str, str]:
+        """Build a slot → backend_family map for cross-family enforcement.
+
+        Calls ``adapter.backend_family()`` for each slot adapter to
+        determine the model family.  Used by Mode 3 and Mode 4 to
+        enforce cross-family review pairing (SAFE-06).
+        """
+        families: dict[str, str] = {}
+        for slot_id, adapter in agent_adapters.items():
+            try:
+                families[slot_id] = adapter.backend_family()
+            except Exception:
+                # Fallback: use backend_id as family if backend_family()
+                # is not available.
+                families[slot_id] = adapter.backend_id()
+        return families
 
     # ------------------------------------------------------------------
     # Internal helpers
