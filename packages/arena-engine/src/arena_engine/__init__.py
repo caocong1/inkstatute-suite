@@ -19,6 +19,7 @@ Every run uses a fresh context — no ``session/resume`` calls (ENGINE-06).
 from __future__ import annotations
 
 from .artifact_store import ArtifactStore, RoundArtifact
+from .engine import ArenaEngine
 from .guardrail_boundary import GuardrailResult, apply_post_hoc_guardrails
 from .mode1 import Mode1Result, run_mode1_parallel
 from .mode2 import (
@@ -33,6 +34,7 @@ from .provenance import ProvenanceChain, ProvenanceLogger
 __version__ = "0.1.0"
 
 __all__ = [
+    "ArenaEngine",
     "ArtifactStore",
     "EventEmitter",
     "GuardrailResult",

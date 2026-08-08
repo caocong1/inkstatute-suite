@@ -89,6 +89,14 @@ class MockACPBackendAdapter:
         self.events: dict[str, list[RunEvent]] = {}
         self.artifacts: dict[str, list[ArtifactRecord]] = {}
 
+        # Active session tracking — mirrors the real ACP adapter's
+        # ``_sessions`` so the engine's "zero orphaned processes" cleanup
+        # logic (ENGINE-09) can be validated with the mock.  Each
+        # ``submit_run`` opens a session; ``cancel_run`` / ``shutdown``
+        # close it.  Phase 107 uses mocks (no real subprocesses); the
+        # real subprocess PID assertion is Phase 109.
+        self._sessions: set[str] = set()
+
     # ------------------------------------------------------------------
     # Protocol method 1: backend_id
     # ------------------------------------------------------------------
@@ -143,6 +151,7 @@ class MockACPBackendAdapter:
         self.runs[run_id] = run
         self.events[run_id] = []
         self.artifacts[run_id] = []
+        self._sessions.add(run_id)
 
         # Script MESSAGE_DELTA per response chunk + MESSAGE_COMPLETED
         if response:
@@ -201,6 +210,7 @@ class MockACPBackendAdapter:
     async def cancel_run(self, run_id: str) -> Run:
         run = self._require_run(run_id)
         self.cancelled_run_ids.append(run_id)
+        self._sessions.discard(run_id)
         updated = replace(run, status=AsyncTaskState.CANCELLED)
         self.runs[run_id] = updated
         return updated
@@ -229,6 +239,19 @@ class MockACPBackendAdapter:
     async def collect_artifacts(self, run_id: str) -> list[ArtifactRecord]:
         self._require_run(run_id)
         return list(self.artifacts[run_id])
+
+    # ------------------------------------------------------------------
+    # Cleanup — mirrors ACPBackendAdapter.shutdown() (adapter.py:452-466)
+    # ------------------------------------------------------------------
+
+    async def shutdown(self) -> None:
+        """Close all active sessions (zero orphaned processes, ENGINE-09).
+
+        Mirrors the real :meth:`ACPBackendAdapter.shutdown` pattern: clear
+        all active sessions so no orphaned subprocesses remain.  For the
+        mock this simply empties ``_sessions``.
+        """
+        self._sessions.clear()
 
     # ------------------------------------------------------------------
     # Internal helpers
