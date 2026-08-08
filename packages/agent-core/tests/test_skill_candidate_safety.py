@@ -74,6 +74,17 @@ class TestCreateSkillCandidate(unittest.TestCase):
         # Safety invariant still holds.
         self.assertTrue(candidate.requires_human_review)
 
+    def test_factory_rejects_falsy_non_false_values(self):
+        """Regression test for C-1: non-False falsy values must not bypass SAFE-01."""
+        for falsy_val in (0, None, "", []):
+            with self.subTest(falsy_val=falsy_val):
+                with self.assertRaises(ValueError):
+                    create_skill_candidate(
+                        name="bypass-attempt",
+                        description="bypass",
+                        requires_human_review=falsy_val,
+                    )
+
 
 class TestAssertSkillCandidateSafety(unittest.TestCase):
     """``assert_skill_candidate_safety`` validates external dicts."""

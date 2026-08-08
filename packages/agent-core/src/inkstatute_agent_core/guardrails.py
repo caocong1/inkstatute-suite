@@ -378,12 +378,13 @@ def create_skill_candidate(
     ``requires_human_review`` to ``False`` raises ``ValueError`` (SAFE-01).
     Extra keyword arguments are stored in the ``extra`` dict.
     """
-    if kwargs.get("requires_human_review") is False:
+    raw_flag = kwargs.pop("requires_human_review", True)
+    if not raw_flag:
         raise ValueError(
             "skill_candidate.requires_human_review must be True — "
             "legal safety violation"
         )
-    requires_human_review = bool(kwargs.pop("requires_human_review", True))
+    requires_human_review = True
     return SkillCandidate(
         name=name,
         description=description,
