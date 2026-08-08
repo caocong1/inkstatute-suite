@@ -19,6 +19,7 @@ from .config import ArenaServiceConfig
 from .event_buffer import ArenaEventBuffer, BufferedArenaEvent
 from .openapi import build_openapi_document, render_openapi_json
 from .sse import ArenaSseStream, encode_arena_sse_event, parse_last_event_id
+from .subprocess_control import PartialResult, SubprocessController
 
 __all__ = [
     "ArenaEventBuffer",
@@ -30,6 +31,8 @@ __all__ = [
     "ArenaSseStream",
     "AuthContext",
     "BufferedArenaEvent",
+    "PartialResult",
+    "SubprocessController",
     "build_openapi_document",
     "encode_arena_sse_event",
     "parse_last_event_id",

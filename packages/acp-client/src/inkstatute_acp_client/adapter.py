@@ -446,6 +446,27 @@ class ACPBackendAdapter:
         return list(self._artifacts.get(run_id, []))
 
     # ------------------------------------------------------------------
+    # PID tracking — exposes subprocess PIDs for orphan detection (GATE-06)
+    # ------------------------------------------------------------------
+
+    def get_active_pids(self) -> set[int]:
+        """Return PIDs of all active subprocess sessions.
+
+        Iterates over every :class:`ACPClient` in ``_sessions``, reads the
+        ``pid`` property of its underlying transport (a
+        :class:`StdioACPTransport`), and collects non-``None`` PIDs into a
+        set.  Returns an empty set when no sessions are active.
+        """
+        pids: set[int] = set()
+        for client in self._sessions.values():
+            transport = getattr(client, "_transport", None)
+            if transport is not None:
+                pid = getattr(transport, "pid", None)
+                if pid is not None:
+                    pids.add(pid)
+        return pids
+
+    # ------------------------------------------------------------------
     # Cleanup
     # ------------------------------------------------------------------
 
