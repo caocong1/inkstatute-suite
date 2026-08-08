@@ -537,5 +537,366 @@ class ArenaComponentWiringTests(unittest.IsolatedAsyncioTestCase):
         self.assertLessEqual(max(observations), max_concurrent)
 
 
+# ---------------------------------------------------------------------------
+# E2E tests — full create → stream → cancel → status flows
+# ---------------------------------------------------------------------------
+
+
+class HangingAdapter(V3MockAdapter):
+    """V3MockAdapter that hangs forever in stream_events (for timeout tests)."""
+
+    async def stream_events(self, run_id):
+        await asyncio.sleep(3600)
+        yield  # never reached, but needed for async generator
+
+
+class MetaContentAdapter(V3MockAdapter):
+    """V3MockAdapter that emits 'meta: internal' content (blocked by boundary)."""
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("responses", ["meta: internal info"])
+        super().__init__(**kwargs)
+
+
+class EngineE2ETests(unittest.IsolatedAsyncioTestCase):
+    """End-to-end integration tests: create → stream → cancel → status.
+
+    Tests 1-10 from Plan 05 Task 2 — full flows with MockACPBackendAdapter
+    instances as adapters, covering all SVC requirements.
+    """
+
+    async def test_e2e_full_mode1_flow(self):
+        # Test 1: create arena with 2 mock agents → stream → verify both
+        # agents' events appear with correct agent_slot tags → arena completes.
+        engine = _make_engine()
+        app = _make_app(engine=engine)
+        headers = _auth_headers()
+        body = {
+            "mode": "mode1_parallel",
+            "agent_slots": ["slot-0", "slot-1"],
+            "task": "analyze contract",
+        }
+        result = await app.dispatch("POST", "/v1/arena", headers, body)
+        self.assertEqual(result["status"], 201)
+        arena_id = result["body"]["arena_id"]
+
+        await asyncio.sleep(0.1)
+        frames = await _collect_stream(
+            app.stream("GET", f"/v1/arena/{arena_id}/stream", headers, "127.0.0.1"),
+        )
+
+        # Verify both slots appear in the SSE stream.
+        agent_slots_seen: set[str] = set()
+        for frame in frames:
+            data_line = frame.split("data: ", 1)[1].split("\n", 1)[0]
+            data = json.loads(data_line)
+            slot = data.get("metadata", {}).get("agent_slot")
+            if slot:
+                agent_slots_seen.add(slot)
+        self.assertIn("slot-0", agent_slots_seen)
+        self.assertIn("slot-1", agent_slots_seen)
+
+        # Verify arena completed.
+        status = await _wait_for_status(engine, arena_id, {"completed", "cancelled"})
+        self.assertIn(status["status"], ("completed", "cancelled"))
+
+    async def test_e2e_cancel_flow(self):
+        # Test 2: create → stream → cancel → status is "cancelled" → stream
+        # ends gracefully.
+        engine = _make_engine()
+        app = _make_app(engine=engine)
+        headers = _auth_headers()
+
+        result = await app.dispatch("POST", "/v1/arena", headers, {
+            "mode": "mode1_parallel",
+            "agent_slots": ["slot-0"],
+            "task": "test",
+        })
+        arena_id = result["body"]["arena_id"]
+        await asyncio.sleep(0.1)
+
+        # Collect stream frames — stream should end gracefully.
+        frames = await _collect_stream(
+            app.stream("GET", f"/v1/arena/{arena_id}/stream", headers, "127.0.0.1"),
+        )
+        self.assertTrue(len(frames) > 0)
+
+        # Cancel the arena.
+        cancel_result = await app.dispatch(
+            "POST", f"/v1/arena/{arena_id}/cancel", headers, {},
+        )
+        self.assertEqual(cancel_result["body"]["status"], "cancelled")
+
+        # Verify status endpoint returns "cancelled".
+        status_result = await app.dispatch(
+            "GET", f"/v1/arena/{arena_id}/status", headers, None,
+        )
+        self.assertEqual(status_result["body"]["status"], "cancelled")
+
+    async def test_e2e_user_action_stop(self):
+        # Test 3: create arena (Mode 2) → submit "stop" action → status
+        # changes to "stopped".
+        engine = _make_engine()
+        app = _make_app(engine=engine)
+        headers = _auth_headers()
+
+        result = await app.dispatch("POST", "/v1/arena", headers, {
+            "mode": "mode2_iteration",
+            "agent_slots": ["slot-0"],
+            "task": "test",
+        })
+        arena_id = result["body"]["arena_id"]
+        await asyncio.sleep(0.05)
+
+        action_result = await app.dispatch(
+            "POST", f"/v1/arena/{arena_id}/action", headers, {"action": "stop"},
+        )
+        self.assertEqual(action_result["body"]["status"], "stopped")
+
+        status = await engine.status_arena(arena_id)
+        self.assertEqual(status["status"], "stopped")
+
+    async def test_e2e_sse_reconnection(self):
+        # Test 4: create arena → wait for completion → reconnect with
+        # Last-Event-ID: 3 → verify events with seq > 3 are replayed —
+        # no duplication, no loss.
+        def factory(slot_id, body):
+            return V3MockAdapter(
+                backend_id=f"mock-{slot_id}",
+                responses=[f"response {slot_id}"],
+                agent_slot=slot_id,
+            )
+
+        engine = _make_engine(adapter_factory=factory)
+        app = _make_app(engine=engine)
+        headers = _auth_headers()
+
+        result = await app.dispatch("POST", "/v1/arena", headers, {
+            "mode": "mode1_parallel",
+            "agent_slots": ["slot-0", "slot-1", "slot-2"],
+            "task": "test",
+        })
+        arena_id = result["body"]["arena_id"]
+
+        # Wait for background run to complete (all events buffered).
+        await _wait_for_status(engine, arena_id, {"completed", "cancelled"})
+
+        # Reconnect with Last-Event-ID: 3.
+        reconnect_headers = {**_auth_headers(), "Last-Event-ID": "3"}
+        frames = await _collect_stream(
+            app.stream("GET", f"/v1/arena/{arena_id}/stream", reconnect_headers, "127.0.0.1"),
+        )
+
+        # Verify all frames have seq > 3 — no duplication.
+        seqs: list[int] = []
+        for frame in frames:
+            data_line = frame.split("data: ", 1)[1].split("\n", 1)[0]
+            data = json.loads(data_line)
+            self.assertGreater(data["seq"], 3)
+            seqs.append(data["seq"])
+
+        # No duplicate seq numbers — no loss, no duplication.
+        self.assertEqual(len(seqs), len(set(seqs)), "Duplicate seq numbers found")
+
+        # Verify events were actually replayed (at least some frames).
+        self.assertTrue(len(frames) > 0, "Expected replayed events with seq > 3")
+
+    async def test_e2e_output_boundary_blocks_meta_content(self):
+        # Test 5: create arena with a mock agent that emits "meta: internal"
+        # content → verify the blocked event does NOT appear in SSE stream.
+        def factory(slot_id, body):
+            return MetaContentAdapter(
+                backend_id=f"mock-{slot_id}",
+                agent_slot=slot_id,
+            )
+
+        engine = _make_engine(adapter_factory=factory)
+        app = _make_app(engine=engine)
+        headers = _auth_headers()
+
+        result = await app.dispatch("POST", "/v1/arena", headers, {
+            "mode": "mode1_parallel",
+            "agent_slots": ["slot-0"],
+            "task": "test",
+        })
+        arena_id = result["body"]["arena_id"]
+        await asyncio.sleep(0.1)
+
+        frames = await _collect_stream(
+            app.stream("GET", f"/v1/arena/{arena_id}/stream", headers, "127.0.0.1"),
+        )
+
+        # No frames should pass the output boundary — "meta:" content blocked.
+        self.assertEqual(len(frames), 0, "meta: content should be blocked from SSE")
+
+    async def test_e2e_subprocess_timeout_triggers_cancel(self):
+        # Test 6: create arena with a mock agent that hangs → per-run timeout
+        # triggers → arena is cancelled → status shows "cancelled".
+        cfg = ArenaServiceConfig(token="secret", per_run_timeout_seconds=1.0)
+
+        def factory(slot_id, body):
+            return HangingAdapter(
+                backend_id=f"mock-{slot_id}",
+                responses=["test"],
+                agent_slot=slot_id,
+            )
+
+        engine = _make_engine(config=cfg, adapter_factory=factory)
+        app = _make_app(engine=engine, config=cfg)
+        headers = _auth_headers()
+
+        result = await app.dispatch("POST", "/v1/arena", headers, {
+            "mode": "mode1_parallel",
+            "agent_slots": ["slot-0"],
+            "task": "test",
+        })
+        arena_id = result["body"]["arena_id"]
+
+        # Wait for timeout to trigger and arena to be cancelled.
+        status = await _wait_for_status(
+            engine, arena_id, {"cancelled", "completed"}, timeout=5.0,
+        )
+        self.assertEqual(status["status"], "cancelled")
+
+    async def test_e2e_staggered_startup_limits_concurrent(self):
+        # Test 7: create arena with 4 mock agents and max_concurrent=2 →
+        # verify at most 2 agents are initializing at any time.
+        max_concurrent = 2
+        cfg = ArenaServiceConfig(
+            token="secret",
+            max_concurrent_initializations=max_concurrent,
+        )
+        staggered_ref: StaggeredStartupSemaphore | None = None
+
+        class TrackingAdapter(V3MockAdapter):
+            async def submit_run(self, req):
+                if staggered_ref is not None:
+                    observations.append(staggered_ref.current_concurrent)
+                await asyncio.sleep(0.05)
+                if staggered_ref is not None:
+                    observations.append(staggered_ref.current_concurrent)
+                return await super().submit_run(req)
+
+        observations: list[int] = []
+
+        def factory(slot_id, body):
+            return TrackingAdapter(
+                backend_id=f"mock-{slot_id}",
+                responses=[f"response {slot_id}"],
+                agent_slot=slot_id,
+            )
+
+        engine = _make_engine(config=cfg, adapter_factory=factory)
+        staggered_ref = engine.staggered_startup
+
+        result = await app_dispatch_create(engine, cfg)
+        arena_id = result["body"]["arena_id"]
+
+        # Wait for background run to complete.
+        await _wait_for_status(engine, arena_id, {"completed", "cancelled"}, timeout=10.0)
+
+        # Verify max concurrent never exceeded the limit.
+        self.assertTrue(len(observations) > 0, "Expected submit_run observations")
+        self.assertLessEqual(max(observations), max_concurrent)
+
+    async def test_e2e_auth_enforcement_all_endpoints(self):
+        # Test 8: create/stream/cancel/status without token → 401 for each.
+        engine = _make_engine()
+        app = _make_app(engine=engine)
+
+        # Create without token → 401.
+        result = await app.dispatch("POST", "/v1/arena", {}, {
+            "mode": "mode1_parallel", "agent_slots": ["s0"], "task": "t",
+        })
+        self.assertEqual(result["status"], 401)
+
+        # Cancel without token → 401.
+        result = await app.dispatch("POST", "/v1/arena/abc/cancel", {}, {})
+        self.assertEqual(result["status"], 401)
+
+        # Action without token → 401.
+        result = await app.dispatch("POST", "/v1/arena/abc/action", {}, {"action": "stop"})
+        self.assertEqual(result["status"], 401)
+
+        # Status without token → 401.
+        result = await app.dispatch("GET", "/v1/arena/abc/status", {}, None)
+        self.assertEqual(result["status"], 401)
+
+        # Stream without token → raises ArenaServiceAuthError (401).
+        with self.assertRaises(ArenaServiceAuthError) as ctx:
+            async for _frame in app.stream("GET", "/v1/arena/abc/stream", {}, "127.0.0.1"):
+                pass
+        self.assertEqual(ctx.exception.status, 401)
+
+    async def test_e2e_localhost_enforcement(self):
+        # Test 9: create arena from non-localhost client address → 403.
+        engine = _make_engine()
+        app = _make_app(engine=engine)
+        headers = _auth_headers()
+
+        result = await app.dispatch(
+            "POST", "/v1/arena", headers,
+            {"mode": "mode1_parallel", "agent_slots": ["s0"], "task": "t"},
+            client_address="192.168.1.1",
+        )
+        self.assertEqual(result["status"], 403)
+        self.assertEqual(result["error"]["code"], "forbidden_remote")
+
+    async def test_e2e_multiple_concurrent_arenas_isolated(self):
+        # Test 10: create 2 arenas simultaneously → stream both independently
+        # → verify events are not mixed (buffer keyed by arena_id).
+        engine = _make_engine()
+        app = _make_app(engine=engine)
+        headers = _auth_headers()
+
+        result_a = await app.dispatch("POST", "/v1/arena", headers, {
+            "mode": "mode1_parallel",
+            "agent_slots": ["slot-0"],
+            "task": "arena A task",
+        })
+        arena_a = result_a["body"]["arena_id"]
+
+        result_b = await app.dispatch("POST", "/v1/arena", headers, {
+            "mode": "mode1_parallel",
+            "agent_slots": ["slot-0"],
+            "task": "arena B task",
+        })
+        arena_b = result_b["body"]["arena_id"]
+
+        self.assertNotEqual(arena_a, arena_b)
+
+        # Wait for both to complete.
+        await _wait_for_status(engine, arena_a, {"completed", "cancelled"})
+        await _wait_for_status(engine, arena_b, {"completed", "cancelled"})
+
+        # Verify buffers are separate — events in buffer A have arena_a's ID.
+        events_a = engine.event_buffer.get_buffered_events(arena_a)
+        events_b = engine.event_buffer.get_buffered_events(arena_b)
+
+        self.assertTrue(len(events_a) > 0, "Arena A should have buffered events")
+        self.assertTrue(len(events_b) > 0, "Arena B should have buffered events")
+
+        for event in events_a:
+            self.assertEqual(event["metadata"].get("arena_id"), arena_a)
+        for event in events_b:
+            self.assertEqual(event["metadata"].get("arena_id"), arena_b)
+
+
+# ---------------------------------------------------------------------------
+# E2E helper
+# ---------------------------------------------------------------------------
+
+
+async def app_dispatch_create(engine: ArenaServiceEngine, cfg: ArenaServiceConfig) -> dict:
+    """Create an arena via ArenaServiceApp dispatch and return the result."""
+    app = _make_app(engine=engine, config=cfg)
+    headers = _auth_headers()
+    return await app.dispatch("POST", "/v1/arena", headers, {
+        "mode": "mode1_parallel",
+        "agent_slots": [f"slot-{i}" for i in range(4)],
+        "task": "staggered startup test",
+    })
+
+
 if __name__ == "__main__":
     unittest.main()

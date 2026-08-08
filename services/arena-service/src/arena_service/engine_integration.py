@@ -268,12 +268,19 @@ class ArenaServiceEngine:
         Creates an :class:`ArenaEventEmitter` for the arena, wraps each
         adapter's ``submit_run`` with :class:`StaggeredStartupSemaphore`,
         wires the :class:`SubprocessController` cleanup callback to
-        ``engine.cancel()``, and calls ``engine.run()`` with a per-run
-        timeout.
+        ``engine.cancel()``, and runs the arena with a per-run timeout.
 
         On timeout, the cleanup callback cancels the arena and the
         stream is terminated gracefully (sentinel ``None`` put into the
         event queue).
+
+        .. note::
+
+            This method calls ``engine._run_arena()`` directly instead
+            of ``engine.run()`` because the latter catches
+            ``CancelledError``, which prevents
+            :meth:`SubprocessController.run_with_timeout` from enforcing
+            the per-run timeout via :func:`asyncio.wait_for`.
         """
         queue: asyncio.Queue = asyncio.Queue()
         self._event_queues[arena_id] = queue
@@ -290,11 +297,18 @@ class ArenaServiceEngine:
 
         self._subprocess_controller.set_cleanup_callback(_cleanup)
 
+        # Register adapters and create the background task directly (not
+        # via engine.run() which catches CancelledError and prevents the
+        # per-run timeout from being enforced by asyncio.wait_for).
+        self._engine.register_adapters(arena_id, wrapped)
+        task = asyncio.create_task(
+            self._engine._run_arena(arena_id, wrapped, emitter),
+        )
+        self._engine._bg_tasks[arena_id] = task
+
         # Run with per-run timeout (SVC-06).
         try:
-            await self._subprocess_controller.run_with_timeout(
-                self._engine.run(arena_id, wrapped, emitter),
-            )
+            await self._subprocess_controller.run_with_timeout(task)
         except asyncio.TimeoutError:
             pass  # cleanup already invoked by run_with_timeout
         finally:
@@ -377,13 +391,23 @@ class ArenaServiceEngine:
 
         The stream terminates gracefully when the arena run completes
         (sentinel ``None`` in the event queue).
+
+        Reconnection guarantee (SVC-07): events from the queue with
+        ``seq <= max_replayed_seq`` are skipped to prevent duplication
+        when the client reconnects after the run has already buffered
+        events.
         """
+        max_replayed_seq = last_seq or 0
+
         # Replay buffered events with seq > last_seq (SVC-07).
         if last_seq is not None:
             for event in self._event_buffer.replay(arena_id, last_seq):
                 frame = self._sse_stream.encode_event(event)
                 if frame is not None:
                     yield frame
+                max_replayed_seq = max(
+                    max_replayed_seq, event.get("seq", 0),
+                )
 
         # Consume live events from the per-arena queue.
         queue = self._event_queues.get(arena_id)
@@ -394,6 +418,10 @@ class ArenaServiceEngine:
             event = await queue.get()
             if event is None:  # sentinel for stream end
                 break
+            # Skip events already replayed from the buffer — prevents
+            # duplication when reconnecting after the run has buffered.
+            if event.get("seq", 0) <= max_replayed_seq:
+                continue
             frame = self._sse_stream.encode_event(event)
             if frame is not None:
                 yield frame
