@@ -250,6 +250,16 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (arena_service_src, acp_client_src, acp_event_bridge_src, platform_src, platform_runtime_src, arena_engine_src),
         ),
         Gate(
+            "arena-orphan-process",
+            (py, "-m", "unittest", "services/arena-service/tests/test_orphan_process.py"),
+            (arena_service_src, acp_client_src, acp_event_bridge_src, platform_src, platform_runtime_src, arena_engine_src),
+        ),
+        Gate(
+            "arena-service",
+            (py, "-m", "unittest", "discover", "-s", "services/arena-service/tests"),
+            (arena_service_src, acp_client_src, acp_event_bridge_src, platform_src, platform_runtime_src, arena_engine_src),
+        ),
+        Gate(
             "phase7-privacy-boundary",
             (
                 py,
