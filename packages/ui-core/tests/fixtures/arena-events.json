@@ -1,0 +1,262 @@
+[
+  {
+    "event_id": "arena-evt-001",
+    "run_id": "arena-run-001",
+    "event_type": "arena.workflow_started",
+    "occurred_at": "2026-08-09T10:00:00Z",
+    "seq": 1,
+    "payload": {
+      "arena_id": "arena-001",
+      "mode": "arena_review",
+      "agent_slots": ["slot-0", "slot-1"]
+    }
+  },
+  {
+    "event_id": "arena-evt-002",
+    "run_id": "arena-run-001",
+    "event_type": "session.started",
+    "occurred_at": "2026-08-09T10:00:01Z",
+    "seq": 2,
+    "payload": {
+      "backend_id": "hermes",
+      "session_id": "sess-slot-0"
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-003",
+    "run_id": "arena-run-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-08-09T10:00:02Z",
+    "seq": 3,
+    "payload": {
+      "delta": "slot-0 第一段",
+      "message_id": "msg-slot-0-001"
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-004",
+    "run_id": "arena-run-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-08-09T10:00:03Z",
+    "seq": 4,
+    "payload": {
+      "delta": "，第二段",
+      "message_id": "msg-slot-0-001"
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-005",
+    "run_id": "arena-run-001",
+    "event_type": "message.completed",
+    "occurred_at": "2026-08-09T10:00:04Z",
+    "seq": 5,
+    "payload": {
+      "content": "slot-0 第一段，第二段",
+      "message_id": "msg-slot-0-001"
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-006",
+    "run_id": "arena-run-001",
+    "event_type": "thought.delta",
+    "occurred_at": "2026-08-09T10:00:05Z",
+    "seq": 6,
+    "payload": {
+      "delta": "slot-0 思考中"
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-007",
+    "run_id": "arena-run-001",
+    "event_type": "tool_call.started",
+    "occurred_at": "2026-08-09T10:00:06Z",
+    "seq": 7,
+    "payload": {
+      "tool_call_id": "tc-slot-0-1",
+      "tool_name": "legal_search"
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-008",
+    "run_id": "arena-run-001",
+    "event_type": "tool_call.completed",
+    "occurred_at": "2026-08-09T10:00:07Z",
+    "seq": 8,
+    "payload": {
+      "tool_call_id": "tc-slot-0-1",
+      "status": "success",
+      "content": "找到2条法规"
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-009",
+    "run_id": "arena-run-001",
+    "event_type": "session.started",
+    "occurred_at": "2026-08-09T10:00:08Z",
+    "seq": 9,
+    "payload": {
+      "backend_id": "codex",
+      "session_id": "sess-slot-1"
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-010",
+    "run_id": "arena-run-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-08-09T10:00:09Z",
+    "seq": 10,
+    "payload": {
+      "delta": "slot-1 回答",
+      "message_id": "msg-slot-1-001"
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-011",
+    "run_id": "arena-run-001",
+    "event_type": "message.delta",
+    "occurred_at": "2026-08-09T10:00:10Z",
+    "seq": 11,
+    "payload": {
+      "delta": "，继续",
+      "message_id": "msg-slot-1-001"
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-012",
+    "run_id": "arena-run-001",
+    "event_type": "message.completed",
+    "occurred_at": "2026-08-09T10:00:11Z",
+    "seq": 12,
+    "payload": {
+      "content": "slot-1 回答，继续",
+      "message_id": "msg-slot-1-001"
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-013",
+    "run_id": "arena-run-001",
+    "event_type": "thought.delta",
+    "occurred_at": "2026-08-09T10:00:12Z",
+    "seq": 13,
+    "payload": {
+      "delta": "slot-1 思考中"
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-014",
+    "run_id": "arena-run-001",
+    "event_type": "tool_call.started",
+    "occurred_at": "2026-08-09T10:00:13Z",
+    "seq": 14,
+    "payload": {
+      "tool_call_id": "tc-slot-1-1",
+      "tool_name": "search_law"
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-015",
+    "run_id": "arena-run-001",
+    "event_type": "tool_call.completed",
+    "occurred_at": "2026-08-09T10:00:14Z",
+    "seq": 15,
+    "payload": {
+      "tool_call_id": "tc-slot-1-1",
+      "status": "success",
+      "content": "找到1条法规"
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-016",
+    "run_id": "arena-run-001",
+    "event_type": "arena.score_recorded",
+    "occurred_at": "2026-08-09T10:01:00Z",
+    "seq": 16,
+    "payload": {
+      "arena_id": "arena-001",
+      "agent_slot": "slot-0",
+      "round": 1,
+      "score": 8
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-017",
+    "run_id": "arena-run-001",
+    "event_type": "arena.score_recorded",
+    "occurred_at": "2026-08-09T10:01:01Z",
+    "seq": 17,
+    "payload": {
+      "arena_id": "arena-001",
+      "agent_slot": "slot-1",
+      "round": 1,
+      "score": 7
+    },
+    "metadata": { "agent_slot": "slot-1" }
+  },
+  {
+    "event_id": "arena-evt-018",
+    "run_id": "arena-run-001",
+    "event_type": "arena.review_completed",
+    "occurred_at": "2026-08-09T10:02:00Z",
+    "seq": 18,
+    "payload": {
+      "arena_id": "arena-001",
+      "reviewer_slot": "slot-0",
+      "reviewed_slot": "slot-1",
+      "round": 1,
+      "findings": [{ "issue": "论据不足" }]
+    },
+    "metadata": { "agent_slot": "slot-0" }
+  },
+  {
+    "event_id": "arena-evt-019",
+    "run_id": "arena-run-001",
+    "event_type": "arena.synthesis_started",
+    "occurred_at": "2026-08-09T10:03:00Z",
+    "seq": 19,
+    "payload": {
+      "arena_id": "arena-001",
+      "round": 1,
+      "source_slots": ["slot-0", "slot-1"]
+    }
+  },
+  {
+    "event_id": "arena-evt-020",
+    "run_id": "arena-run-001",
+    "event_type": "arena.synthesis_completed",
+    "occurred_at": "2026-08-09T10:03:30Z",
+    "seq": 20,
+    "payload": {
+      "arena_id": "arena-001",
+      "round": 1,
+      "content": "综合结论：slot-0 更优"
+    }
+  },
+  {
+    "event_id": "arena-evt-021",
+    "run_id": "arena-run-001",
+    "event_type": "arena.workflow_completed",
+    "occurred_at": "2026-08-09T10:04:00Z",
+    "seq": 21,
+    "payload": {
+      "arena_id": "arena-001",
+      "mode": "arena_review",
+      "status": "succeeded",
+      "agent_slots": ["slot-0", "slot-1"]
+    }
+  }
+]
