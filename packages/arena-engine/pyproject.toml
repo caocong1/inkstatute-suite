@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkstatute-arena-engine"
+version = "0.1.0"
+description = "InkStatute Arena Engine — Modes 1+2 boundary-layer modules with zero LLM provider dependencies."
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [
+  { name = "InkStatute" }
+]
+dependencies = [
+  "platform-contract",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
