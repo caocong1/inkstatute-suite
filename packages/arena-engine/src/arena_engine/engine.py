@@ -34,9 +34,11 @@ from platform_contract.arena_contract import (
 from platform_runtime.protocols import BackendAdapter
 
 from .artifact_store import ArtifactStore
+from .guardrail_boundary import GuardrailResult, apply_post_hoc_guardrails
 from .mode1 import EventEmitter, Mode1Result, run_mode1_parallel
 from .mode2 import Mode2Result, run_mode2_iteration
 from .provenance import ProvenanceLogger
+from .slot_runner import SlotResult
 
 
 # ---------------------------------------------------------------------------
@@ -268,6 +270,11 @@ class ArenaEngine:
                 artifact_store=self._artifact_store,
             )
             self._results[arena_id] = result
+            await self._apply_guardrails_and_provenance(
+                arena_id,
+                result.slot_results,
+                self._external_map(agent_adapters),
+            )
         elif config.mode == "mode2_iteration":
             result = await run_mode2_iteration(
                 config=config,
@@ -277,6 +284,20 @@ class ArenaEngine:
                 stop_signal=stop_signal,
             )
             self._results[arena_id] = result
+            # Mode 2 best results → SlotResult-shaped dict for guardrails.
+            slot_results: dict[str, SlotResult] = {}
+            for slot_id, state in result.best_results.items():
+                slot_results[slot_id] = SlotResult(
+                    slot_id=slot_id,
+                    status="success",
+                    content=state.content,
+                    metadata=dict(state.metadata),
+                )
+            await self._apply_guardrails_and_provenance(
+                arena_id,
+                slot_results,
+                self._external_map(agent_adapters),
+            )
         else:
             raise ValueError(f"unknown arena mode: {config.mode}")
 
@@ -284,6 +305,97 @@ class ArenaEngine:
         current = self._arenas.get(arena_id)
         if current is not None and current.status == "running":
             self._update_status(arena_id, status="completed")
+
+    # ------------------------------------------------------------------
+    # Guardrail + provenance wiring (SAFE-01..04, SAFE-07)
+    # ------------------------------------------------------------------
+
+    async def _apply_guardrails_and_provenance(
+        self,
+        arena_id: str,
+        slot_results: dict[str, SlotResult],
+        is_external: dict[str, bool],
+    ) -> None:
+        """Apply the post-hoc guardrail boundary and log per-claim provenance.
+
+        For every slot with content, this:
+
+        1. Calls :func:`apply_post_hoc_guardrails` — non-bypassable for
+           external agents (SAFE-01).  No code path delivers external
+           agent content to the user without this call.
+        2. Records ``GuardrailResult.requires_human_review`` in the arena
+           status metadata (SAFE-04).
+        3. Logs one :class:`ProvenanceChain` per extracted claim via
+           :class:`ProvenanceLogger` (SAFE-07).
+        """
+        review_metadata: dict[str, Any] = {}
+        for slot_id, slot_result in slot_results.items():
+            if slot_result.content is None:
+                continue
+            external = is_external.get(slot_id, True)
+            guardrail: GuardrailResult = await apply_post_hoc_guardrails(
+                content=slot_result.content,
+                is_external=external,
+            )
+            review_metadata[f"{slot_id}_requires_human_review"] = (
+                guardrail.requires_human_review
+            )
+            review_metadata[f"{slot_id}_guardrail_skipped"] = guardrail.skipped
+
+            # Provenance — log one chain per extracted claim.  When the
+            # citation audit produced items, log each citation reference;
+            # otherwise log the polished content as a single claim so the
+            # agent → source chain is always traceable.
+            if self._provenance_logger is not None:
+                claims = self._extract_claims(guardrail, slot_result.content)
+                for claim in claims:
+                    self._provenance_logger.log_claim(
+                        arena_id=arena_id,
+                        claim=claim,
+                        agent_slot=slot_id,
+                        citation_audit=guardrail.citation_audit,
+                    )
+
+        if review_metadata:
+            self._update_status(arena_id, metadata=review_metadata)
+
+    @staticmethod
+    def _extract_claims(
+        guardrail: GuardrailResult,
+        content: str,
+    ) -> list[str]:
+        """Extract claim strings for provenance logging.
+
+        When the citation audit produced items, each citation's
+        ``reference`` is a claim.  When there are no citations, the
+        (polished) content itself is logged as a single claim so the
+        chain is never empty.
+        """
+        audit = guardrail.citation_audit
+        if audit is not None and getattr(audit, "items", None):
+            return [item.reference for item in audit.items]
+        return [guardrail.polished_content or content]
+
+    def _external_map(
+        self,
+        agent_adapters: dict[str, BackendAdapter],
+    ) -> dict[str, bool]:
+        """Build a slot → is_external map.
+
+        An adapter is considered external when its ``backend_id`` is not
+        the self-built core (``inkstatute-agent``).  The self-built core
+        already runs guardrails inside ``turn_loop.py`` (SAFE-01), so
+        post-hoc application is skipped for it.
+        """
+        external_map: dict[str, bool] = {}
+        for slot_id, adapter in agent_adapters.items():
+            backend_id = ""
+            try:
+                backend_id = adapter.backend_id()
+            except Exception:
+                pass
+            external_map[slot_id] = backend_id != "inkstatute-agent"
+        return external_map
 
     # ------------------------------------------------------------------
     # Internal helpers
