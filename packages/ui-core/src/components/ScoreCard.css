@@ -1,0 +1,152 @@
+/* ScoreCard — per-agent per-round 10-point self-score display */
+
+.score-card {
+  width: 100%;
+  font-family: var(--serif, ui-serif, Georgia, serif);
+}
+
+.score-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 24px;
+  color: var(--muted, #888);
+  font-size: 14px;
+  text-align: center;
+}
+
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.score-table thead th {
+  padding: 8px 10px;
+  text-align: center;
+  color: var(--sheet-ink, #222);
+  font-weight: 600;
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--sheet-line, #ddd);
+  background: color-mix(in srgb, var(--accent-soft, #f5f0e6) 55%, var(--sheet-bg, #fff));
+}
+
+.score-table thead .col-agent {
+  text-align: left;
+}
+
+.score-table tbody td,
+.score-table tbody th.cell-agent {
+  padding: 10px;
+  border-bottom: 1px solid var(--sheet-line, #eee);
+  vertical-align: middle;
+}
+
+/* Agent header cell */
+.cell-agent {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--sheet-ink, #222);
+}
+
+.agent-avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.agent-name {
+  font-size: 12.5px;
+}
+
+/* Score cell */
+.cell-score {
+  text-align: center;
+  min-width: 80px;
+}
+
+.cell-score.empty {
+  color: var(--muted, #bbb);
+}
+
+.score-value {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.score-bar-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--sheet-line, #eee);
+  overflow: hidden;
+}
+
+.score-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Color coding: green >= 8, yellow 5-7, red < 5 */
+.cell-score.green .score-value,
+.cell-best.green {
+  color: var(--green, #1a7f4b);
+}
+
+.cell-score.green .score-bar {
+  background: var(--green, #1a7f4b);
+}
+
+.cell-score.yellow .score-value,
+.cell-best.yellow {
+  color: var(--amber, #b45309);
+}
+
+.cell-score.yellow .score-bar {
+  background: var(--amber, #d4a017);
+}
+
+.cell-score.red .score-value,
+.cell-best.red {
+  color: var(--red, #c0392b);
+}
+
+.cell-score.red .score-bar {
+  background: var(--red, #c0392b);
+}
+
+/* Best score column */
+.col-best {
+  min-width: 60px;
+}
+
+.cell-best {
+  text-align: center;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+/* Responsive — horizontal scroll on narrow screens */
+@media (max-width: 640px) {
+  .score-card {
+    overflow-x: auto;
+  }
+  .score-table {
+    min-width: 480px;
+  }
+}
