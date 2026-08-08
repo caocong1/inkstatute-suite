@@ -199,3 +199,7 @@ export { validateConversationTitle, CONVERSATION_TITLE_MIN, CONVERSATION_TITLE_M
 // Arena UI — multi-agent arena workflow creator + parallel stream panel (UI-01/UI-02)
 export { ArenaWorkflowCreator, ARENA_MODES, clampMaxRounds } from "./components/ArenaWorkflowCreator";
 export type { ArenaWorkflowCreatorProps, ArenaModeOption } from "./components/ArenaWorkflowCreator";
+export { ParallelStreamPanel } from "./components/ParallelStreamPanel";
+export type { ParallelStreamPanelProps } from "./components/ParallelStreamPanel";
+export { SlotStreamView } from "./components/SlotStreamView";
+export type { SlotStreamViewProps } from "./components/SlotStreamView";
