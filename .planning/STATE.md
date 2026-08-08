@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 101 plan 101-02 complete — PathSandbox + file_read + MCP client + regulation search + builtin_registry, 6/6 tasks done, all 38 gates green
-last_updated: "2026-08-11T16:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 101 exec 101-02: PathSandbox (path_sandbox.py — reject .., canonicalize, allowlist roots), file_read tool (file_read.py — read-only, sandboxed, max 50000 chars, binary rejection, UTF-8/latin-1), McpClient (mcp_client.py — JSON-RPC 2.0 over stdio, asyncio subprocess, MCP-to-OpenAI schema conversion), regulation_search tool (regulation_search.py — MCP law-database + fixture mode), builtin_registry factory (builtin_registry.py — composes all Phase 101 tools). 82 new tests (19 path_sandbox + 15 file_read + 19 mcp_client + 20 regulation_search + 9 builtin_registry). All 487 agent-core tests pass. All 38 gates green. Commits: 47a416a, dd2c72a, 04c9819, 3a3f9e6, 8cdb150, 7b0f62c, a6dcca0.
+stopped_at: Phase 101 plan 101-03 complete — document_generate tool + Word track-changes docx + OOXML verification, all 38 gates green
+last_updated: "2026-08-11T17:00:00.000Z"
+last_activity: 2026-08-11 -- Phase 101 exec 101-03: document_generate tool (document_generate.py — lazy-import TrackChangesBuilder via importlib, monkey-patch REVIEW_ITEMS for injection, PathSandbox validation, artifact.created with kind=trackchanges_docx), OOXML track-changes verification (test_trackchanges_verification.py — w:ins, w:del, w:delText, w:comment, commentRangeStart/End/Reference, Content_Types Override, rels Relationship), builtin_registry extension (generate_review_docx registered when emitter provided). 35 new tests (16 document_generate + 15 trackchanges verification + 4 builtin_registry). All 522 agent-core tests pass. All 38 gates green. Commits: 41a476a, a56fd55.
 progress:
   total_phases: 17
   completed_phases: 13
   total_plans: 62
-  completed_plans: 58
-  percent: 77
+  completed_plans: 59
+  percent: 78
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 101 plan 101-02 complete — PathSandbox + file_read + MCP client + regulation search + builtin_registry
+**Current focus:** Phase 101 plan 101-03 complete — document_generate tool + Word track-changes docx + OOXML verification
 
 ## Current Position
 
-Phase: 101 (agent-core-tools) — plan 101-02 complete, 2 plans remaining
-Status: Phase 101 plan 101-02 complete. PathSandbox (path traversal prevention, canonicalization, allowlist roots), file_read tool (read-only, sandboxed, max 50000 chars, binary rejection, UTF-8/latin-1 fallback), McpClient (JSON-RPC 2.0 over stdio, asyncio subprocess, MCP-to-OpenAI schema conversion), regulation_search tool (MCP law-database + fixture mode), and builtin_registry factory all implemented. 82 new tests, all 487 agent-core tests pass, all 38 gates green. Next: 101-03 (Wave 2: document_generate + track-changes) and 101-04 (e2e + completion).
-Last activity: 2026-08-11 -- Phase 101 exec 101-02. 6 tasks, 7 commits, 82 new tests.
+Phase: 101 (agent-core-tools) — plan 101-03 complete, 1 plan remaining (101-04: e2e + completion)
+Status: Phase 101 plan 101-03 complete. document_generate tool imports TrackChangesBuilder from lawfirm-profile via importlib (CORE-03: import, don't rewrite), uses monkey-patching for REVIEW_ITEMS injection (script lives in sibling repo, cannot be modified), validates paths via PathSandbox, emits artifact.created with kind=trackchanges_docx. OOXML verification confirms w:ins, w:del, w:delText, w:comment, commentRangeStart/End/Reference, Content_Types Override, rels Relationship. builtin_registry extended with generate_review_docx. 35 new tests, all 522 agent-core tests pass, all 38 gates green. Next: 101-04 (e2e integration + phase completion).
+Last activity: 2026-08-11 -- Phase 101 exec 101-03. 5 tasks, 2 commits, 35 new tests.
 
-**Next command:** `/gsd-exec 101-03` (Wave 2: document_generate + track-changes) or `/gsd-exec 101-04` (e2e + completion)
+**Next command:** `/gsd-exec 101-04` (e2e integration + phase completion)
 
 ## Milestone v3.0 Overview
 

@@ -319,7 +319,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. MCP 工具（`law-database`、`wenshu`）可被发现与调用，调用摘要进入 `tool_call.*` 事件与 `ExecutionTrace.tool_calls`
   6. 工具权限遵守 Phase 90 的安全默认——不存在未经审批的 shell / 代码执行路径
 
-**Plans**: 4 (101-01 tool registry + EventEmitter + clarification ✅ | 101-02 file_read + MCP client + regulation search ✅ | 101-03 document_generate + track-changes | 101-04 e2e + completion)
+**Plans**: 4 (101-01 tool registry + EventEmitter + clarification ✅ | 101-02 file_read + MCP client + regulation search ✅ | 101-03 document_generate + track-changes ✅ | 101-04 e2e + completion)
 **UI hint**: no
 
 ### Phase 102: Legal Guardrail Port
