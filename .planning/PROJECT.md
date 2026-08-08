@@ -14,26 +14,60 @@
 
 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-## Current Milestone: v3.0 Unified Legal Core — IN PROGRESS
+## Current Milestone: v3.1 Legal AI Arena
 
-**Started:** 2026-08-06
-**Status:** Phases 88-104（17 phases，61 requirements，四阶段）
+**Started:** 2026-08-08
+**Status:** Defining requirements
+**Predecessor:** v3.0 Unified Legal Core (shipped 2026-08-08, 17 phases, 937 tests, 34 gates)
+
+**目标：** 律师可在桌面 app 内创建法律任务，选择多个 ACP 后端 agent 并行处理，每个 agent 自评迭代到满意后交叉评审，最终由独立 session 综合评审意见产出最终版——全程流式可见、法律护栏不绕过。
+
+**为什么做这个：** v3.0 交付了统一法律能力核心（ACP 后端层 + Gateway + ui-core + 396 skill + 自研 Python core + 4 法律护栏），但律师使用时仍是单 agent 单轮交互。实际法律任务中，不同 agent 各有强弱，交叉评审能对冲单 agent 盲区。用户需要一个通用工作流：多 agent 并行 → 自评迭代 → 交叉评审 → 综合最终版，且全程可看到中间结果。
+
+**四级工作流模式：**
+
+| 级别 | 名称 | 流程 | 适用场景 |
+|---|---|---|---|
+| 1 | 标准 | N 个 agent 并行处理，无迭代无交叉评审，用户自选结果 | 快速对比，简单任务 |
+| 2 | 自评迭代 | 每个 agent 自评（10 分框架）+ 自优化迭代，用户手动停止 | 单 agent 质量提升 |
+| 3 | 竞技评审 | 自评迭代 + 多 agent 交叉评审 + 独立 session 综合最终版 | 需多方视角的重要任务 |
+| 4 | 对抗竞技 | 竞技评审 + 对抗式审查 + 多轮综合 + 提前停止 | 高风险/高复杂度法律任务 |
+
+**架构：**
+
+```
+Desktop App (Tauri + SolidJS + ui-core)
+    ↕ HTTP+SSE（与 Gateway 同构事件词汇）
+Local Arena Service (services/arena-service, Python)
+    ├── packages/arena-engine（4 级工作流编排）
+    ├── packages/acp-client（ACP 会话管理，复用）
+    ├── packages/agent-core（法律护栏，复用）
+    ├── packages/skill-index（法律 skill 索引，复用）
+    └── ACP fs/* handler（从用户选定目录提供文件）
+    ↕ ACP over stdio（每个 agent 一个子进程）
+Local Agents: Kimi-M3 (agent-core ACP) / Devin CLI / Codex
+```
+
+**关键设计决策：**
+- Agent 是本地 stdio 子进程 → 编排器必须本地运行
+- Python 编排器 → 可复用 acp-client / agent-core / skill-index
+- 本地服务暴露与 Gateway 同构的 HTTP+SSE → 桌面 app 复用 ui-core 和事件词汇
+- arena-engine 只调度和汇总，自己不产出内容；最终版由 agent session 产出
+- ACP fs/read_text_file 让 agent 自主读取用户选定目录内的参考文件
+- 法律护栏（research-gate / citation audit / ask-user / de-AI polish）在竞技工作流中不可绕过
+- 评分标准：自由评分（仅给 10 分框架），不限定维度
+- 最终优化：独立 session 拿最高分结果 + 所有评审意见产出最终版
+- 吸收 Crossfire / ultra-review / LLM4Review 模式：prompt enrichment、结构化评审输出、提前停止、自评偏差意识
+
+## Previous: v3.0 Unified Legal Core — SHIPPED
+
+**Shipped:** 2026-08-08
+**Status:** COMPLETE — 17 phases (88-104), 69 plans, 192 tasks, 937 tests, 34 gates green
 **Source:** [V3-PRD.md](../docs/requirements/V3-PRD.md) | **Evidence:** [V3-SELECTION.md](research/V3-SELECTION.md)
 
-**为什么重新定位：** V2 交付了 118,556 行 Python、3,173 个测试、28 个 CI gate 的高质量平台管道，但全仓库 grep `ai-for-china-legal` 只命中 PRD 和一份研究笔记——**管道从未接上真实法律能力**。同时存在三个互不相认的执行器（Hermes profile、lawyer-desktop 自研 Rust、lawyer-ai/OpenCode），各自重复实现了 skill 加载、路由、MCP、ask_user。V2 的四个范围前提（单通道、单后端、无真实 skill、自研只留口）已全部失效。
+**交付内容：** 13-category 统一事件词汇（ACP 同构）、Python ACP client、统一多租户 HTTP+SSE Gateway、@inkstatute/ui-core（23 组件 3 主题）、响应式 Web + Tauri 桌面 + WeCom/QQ Gateway 消费者、396 真实法律 skill 索引物化、自研 Python async streaming agent core（context budget + tool layer + Word 原生修订 docx + 4 法律护栏移植）、双入口（in-process + `inkstatute-agent acp` CLI）、存量收敛（~10,483 行退役）。
 
-**四个阶段：**
-
-| 阶段 | Phases | 完成后的状态 |
-|---|---|---|
-| A 协议底座 | 88-90 | Hermes 可通过 ACP 被平台驱动 |
-| B 通道统一 | 91-95 | 律师可在 web / 桌面 / WeCom / QQ 四处用同一套能力 |
-| C 能力层 | 96-99 | 396 个真实法律 skill 首次进入平台 |
-| D 自研核心 | 100-104 | 心脏换成自研 Python core，通道层零改动 |
-
-**关键路径：** 88 → 89 → 90 → 91 → 92 → 93（走完即有可用 Web 产品）
-
-**决定性发现：** `hermes acp --check` → `Hermes ACP check OK`（Hermes Agent v0.19.0）。本项目使用的 Hermes 原生支持 ACP；Codex / Claude Code / Gemini CLI / OpenCode / Cursor / Cline 亦然（ACP Registry 174+ agent）。现有 `packages/backends/{hermes,codex}` 共 3,875 行自定义 adapter 可归并为一个 ACP client。
+**Archive:** [v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md) | [v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md) | [v3.0-phases](milestones/v3.0-phases/)
 
 ## Previous: v1.11 Product Console — SHIPPED
 
@@ -142,18 +176,9 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ### Active
 
-**v3.0 Unified Legal Core — 61 requirements across 10 categories. See [REQUIREMENTS.md](REQUIREMENTS.md) for the full list and traceability matrix.**
+**v3.1 Legal AI Arena — requirements to be defined. See [REQUIREMENTS.md](REQUIREMENTS.md) once created.**
 
-- [ ] EVT-01..06: 统一事件契约（ACP 同构词汇 + Schema/绑定 + 降级规则 + V2 契约保持） — Phase 88
-- [ ] ACP-01..07: ACP 后端层（Python client + hermes acp + 第二后端 + 事件桥 + 输出边界 + 权限安全默认） — Phases 89-90
-- [ ] GW-01..06: 统一多租户 HTTP+SSE Gateway — Phase 91
-- [ ] UI-01..06: 共享 UI 核心 + Web 客户端 + 桌面客户端（chat UI 单一实现） — Phases 92-94
-- [ ] BOT-01..03: WeCom/QQ 改为 Gateway 消费者 + 非流式降级，现有生产行为不回退 — Phase 95
-- [ ] SKILL-01..09: 396 个真实 SKILL.md 索引 / 物化 / 路由 — Phases 96-98
-- [ ] PROF-01..03: 执业配置（CLAUDE.md 机制）多租户化 — Phase 99
-- [ ] CORE-01..10: 自研 Python agent core（流式 turn loop / 工具层 / 法律护栏移植 / 双入口） — Phases 100-103
-- [ ] CONV-01..05: 存量收敛，约 5,465 行退役 + gate 体系更新 — Phase 104
-- [ ] SAFE-01..06: 安全与法律安全（贯穿）
+**v3.0 Unified Legal Core — 61 requirements ALL SATISFIED (shipped 2026-08-08). See [v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md) for the archived full list.**
 
 **Human gates（不得由自动化声称通过）：**
 
@@ -330,12 +355,11 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v1.11 Product Console (Phases 79–87) — product-grade operations control plane with process orchestration, observability dashboards, session auth, and end-to-end smoke verification.
-- **Active milestone:** v3.0 Unified Legal Core (Phases 88–104) — ALL PHASES COMPLETE. Ready for milestone completion.
-- **Phase 104 complete:** Legacy Convergence — 4 plans, ~10,483 lines retired (hermes/codex backends, web_sse channel, lawyer-web-chat, hermes-contract-layer), multi-agent-adapter frozen, gate system updated (38→34 gates), composability + WeCom/QQ regression verified. All 61 requirements satisfied.
-- **Phase 103 complete:** Dual Entry Points — 3 plans, 94 new tests (879 total), CORE-10 satisfied. InProcessAgentCoreAdapter (9 BackendAdapter methods) + `inkstatute-agent acp` CLI (ACP v1 server). Both share same run_turn() implementation. Backend selection configurable via operator-config. W-1 sentinel race + W-7 system prompt parity fixed.
+- **Last shipped:** v3.0 Unified Legal Core (Phases 88–104) — 17 phases, 937 tests, 34 gates green, ~10,483 lines legacy retired.
+- **Active milestone:** v3.1 Legal AI Arena — defining requirements.
+- **v3.0 delivered:** Unified event vocabulary (ACP isomorphic), Python ACP client, multi-tenant HTTP+SSE Gateway, @inkstatute/ui-core (23 components, 3 themes), responsive web + Tauri desktop + WeCom/QQ Gateway consumers, 396 legal skills indexed/materialized, self-built Python async streaming agent core (context budget + tool layer + Word-native track-changes docx + 4 legal guardrails), dual entry points (in-process + `inkstatute-agent acp` CLI), legacy convergence.
 - **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
-- **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
+- **Carried human gates:** HG-1 法律质量 (Phase 102); HG-4 修订稿质量 (Phase 101); HG-2 真机通道 (carried from V2); HG-3 律师试运行 (carried from V2); operator `--live` QQ OpenAPI acceptance (carried from v1.9).
 - **Tech debt (v1.11):** Missing SUMMARY.md for phases 82-85; unchecked REQUIREMENTS.md checkboxes for OBS-04..10; incomplete Nyquist validation for 7/9 phases. All non-blocking.
 
 
@@ -359,4 +383,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-08-08 — Phase 104 (Legacy Convergence) complete, milestone v3.0 ALL PHASES COMPLETE*
+*Last updated: 2026-08-08 — Milestone v3.1 Legal AI Arena started (v3.0 shipped)*

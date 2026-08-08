@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Unified Legal Core
-status: Awaiting next milestone
-stopped_at: Milestone v3.0 implementation complete — all 17 phases (88-104) done, ready for milestone completion
-last_updated: "2026-08-08T13:29:46.077Z"
+milestone: v3.1
+milestone_name: Legal AI Arena
+status: planning
+last_updated: "2026-08-08T14:41:19.475Z"
 last_activity: 2026-08-08
-last_activity_desc: Milestone v3.0 completed and archived
 progress:
-  total_phases: 17
-  completed_phases: 16
-  total_plans: 69
-  completed_plans: 68
-  percent: 94
-current_phase: 104
-current_phase_name: Legacy Convergence
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -29,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 ## Current Position
 
-Phase: Milestone v3.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-08-08 — Milestone v3.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-08-08 — Milestone v3.1 started
 
 ## Milestone v3.0 Overview
 
