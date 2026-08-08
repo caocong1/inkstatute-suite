@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v3.0 Unified Legal Core** — Phases 88-104 (in progress, started 2026-08-06)
+- ✅ **v3.0 Unified Legal Core** — Phases 88-104 (shipped 2026-08-08)
 - ✅ **V2 PRD Foundation** — Phases 1-8 (2026-06-30; Phase 5/8 human gates carried)
 - ✅ **v1.1 Platform Foundation** — Phases 09-13 (2026-06-30)
 - ✅ **v1.2 Conversational Context and Memory Foundation** — Phases 14-19 (2026-07-02)
@@ -32,7 +32,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 ---
 
-## 🚧 v3.0 Unified Legal Core (In Progress)
+## ✅ v3.0 Unified Legal Core (SHIPPED 2026-08-08)
 
 **Milestone Goal:** 一套法律能力核心，通过同一套事件词汇同时服务所有客户端（web / 桌面 / 移动浏览器 / WeCom / QQ）和所有 agent 后端（Hermes / Codex / Claude Code / 墨律自研），并让 396 个真实法律 skill 首次进入平台。
 
@@ -78,7 +78,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 - [x] **Phase 101: Agent Core Tools** - 工具层 + Word 原生修订 docx (CORE-02, CORE-03) ✅ COMPLETE
 - [x] **Phase 102: Legal Guardrail Port** - prompt 装配 / tool_leak / citation 审计 / 四护栏移植 (CORE-05..08, SAFE-01, SAFE-04) (completed 2026-08-08)
 - [x] **Phase 103: Dual Entry Points** - in-process BackendAdapter + inkstatute-agent acp (CORE-10) (completed 2026-08-08)
-- [ ] **Phase 104: Legacy Convergence** - 退役 ~5,465 行存量 + gate 体系更新 (CONV-01..05, SAFE-06)
+- [x] **Phase 104: Legacy Convergence** - 退役 ~5,465 行存量 + gate 体系更新 (CONV-01..05, SAFE-06) (completed 2026-08-08)
 
 ---
 
@@ -396,19 +396,19 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | Phase | Stage | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
 | 88. Unified Event Contract | A | 6/6 | Complete    | 2026-08-07 |
-| 89. ACP Backend Client | A | 3/4 | In Progress|  |
+| 89. ACP Backend Client | A | 3/3 | Complete | 2026-08-07 |
 | 90. ACP Event Bridge & Output Boundary | A | 4/4 | Complete | 2026-08-07 |
-| 91. Unified Gateway | B | 3/5 | In Progress|  |
+| 91. Unified Gateway | B | 5/5 | Complete | 2026-08-08 |
 | 92. Shared UI Core | B | 4/4 | Complete | 2026-08-08 |
 | 93. Web Client | B | 4/4 | Complete | 2026-08-08 |
 | 94. Desktop Client | B | 4/4 | Complete | 2026-08-09 |
 | 95. Bot Channel Degradation | B | 4/4 | Complete | 2026-08-09 |
-| 96. Real Skill Index | C | 3/4 | In Progress | - |
-| 97. Skill Materialization | C | 0/TBD | Not started | - |
-| 98. Real-Index Routing | C | 0/TBD | Not started | - |
-| 99. Practice Profile | C | 0/TBD | Not started | - |
+| 96. Real Skill Index | C | 4/4 | Complete | 2026-08-09 |
+| 97. Skill Materialization | C | 4/4 | Complete | 2026-08-10 |
+| 98. Real-Index Routing | C | 3/3 | Complete | 2026-08-10 |
+| 99. Practice Profile | C | 3/3 | Complete | 2026-08-10 |
 | 100. Agent Core Skeleton | D | 4/4 | Complete | 2026-08-11 |
-| 101. Agent Core Tools | D | 1/4 | In Progress | - |
+| 101. Agent Core Tools | D | 4/4 | Complete | 2026-08-11 |
 | 102. Legal Guardrail Port | D | 5/5 | Complete    | 2026-08-08 |
 | 103. Dual Entry Points | D | 3/3 | Complete    | 2026-08-08 |
-| 104. Legacy Convergence | D | 0/TBD | Not started | - |
+| 104. Legacy Convergence | D | 4/4 | Complete    | 2026-08-08 |

@@ -1,5 +1,43 @@
 # Project Milestones: 墨律 InkStatute
 
+## v3.0 Unified Legal Core (Shipped: 2026-08-08)
+
+**Delivered:** Unified legal capability core with one event vocabulary, one ACP backend seam, one Gateway, one UI core across web/desktop/WeCom/QQ, 396 real legal skills indexed and materialized, and a self-built Python agent core with legal guardrails ported from Rust. Legacy backends (hermes, codex), legacy channels (web_sse), and legacy services (lawyer-web-chat, hermes-contract-layer) retired. ~10,483 lines of legacy code removed. 34 V2 gates green, 937 tests passing.
+
+**Phases completed:** 88-104 (17 phases, 69 plans, 192 tasks)
+
+**Archive:** [v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md) | [v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md) | [v3.0-phases](milestones/v3.0-phases/)
+
+**Key accomplishments:**
+
+- **Stage A — Protocol foundation (88-90):** 13-category unified event vocabulary (15 JSON Schemas, 18 Python dataclasses, 18 TypeScript interfaces) isomorphic to ACP v1 session/update. Python ACP client drives Hermes via stdio subprocess. Bidirectional event bridge with output boundary enforced twice (ACP bridge + Gateway). Permission requests never auto-approved.
+- **Stage B — Channel unification (91-95):** Single multi-tenant HTTP+SSE Gateway replaces platform_api + lawyer-web-chat overlap. @inkstatute/ui-core extracted from lawyer-desktop (23 components, 3 themes). Responsive web client (desktop + mobile browser). Tauri desktop shell reusing invoke()→Gateway. WeCom/QQ bots refactored as Gateway consumers with non-streaming degradation.
+- **Stage C — Capability layer (96-99):** 396 real Chinese legal skills indexed from ai-for-china-legal (345) + legal-skills (51), read-only vendored. Per-backend materialization with three-way separation (manifest/materializer/runtime). Strong-signal router ported from lawfirm-profile. CLAUDE.md practice profile multi-tenantized with cold-start interview.
+- **Stage D — Self-built core (100-104):** Python async streaming turn loop with context budget and model layer. Tool layer + Word-native track-changes docx (41,185 bytes ported). Legal guardrails ported from Rust: tool_leak, prompt assembly, citation audit, 4 guardrails (research-gate, ask-user, citation audit, de-AI polish). Dual entry points: in-process BackendAdapter + `inkstatute-agent acp` CLI. Legacy convergence: ~10,483 lines retired, multi-agent-adapter frozen, gate system updated (38→34 gates).
+
+**Stats:**
+
+- 17 phases, 69 plans, 192 tasks
+- Timeline: 2026-06-27 → 2026-08-08 (43 days)
+- Git range: feat(88-01) → docs(104): transition complete
+- 937 tests passing, 34 V2 gates green
+- ~174K LOC Python across packages + services
+
+**Closeout type:** override_closeout — 10 phases (91-99, 101) completed in prior sessions lack formal VERIFICATION.md metadata but have SUMMARY.md files and are verified by tests+gates.
+
+**Known Gaps / Deferred at close:**
+
+- HG-1 法律质量: Ported prompt assembly and legal guardrails require lawyer sampling — NOT auto-closable
+- HG-4 修订稿质量: Word-native track-changes docx requires lawyer confirmation for external negotiation — NOT auto-closable
+- HG-2 真机通道: Live WeCom send/receive acceptance — carried from V2
+- HG-3 律师试运行: Five-workday / 15-real-task lawyer trial — carried from V2
+- Operator `--live` QQ OpenAPI acceptance — carried from v1.9
+- 10 phases (91-99, 101) lack VERIFICATION.md metadata — verification override recorded
+
+**Follow-up:** Start next milestone with `/gsd-new-milestone`.
+
+---
+
 ## v1.11 Product Console (Shipped: 2026-07-15)
 
 **Phases completed:** 9 phases, 11 plans, 21 tasks
