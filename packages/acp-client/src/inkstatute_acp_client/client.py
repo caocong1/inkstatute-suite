@@ -12,7 +12,7 @@ import asyncio
 import json
 import logging
 import uuid
-from typing import Any, AsyncIterator, Protocol
+from typing import Any, AsyncIterator, Callable, Protocol
 
 from platform_runtime.protocols import RunEvent
 
@@ -71,6 +71,7 @@ class StdioACPTransport:
         self._process: asyncio.subprocess.Process | None = None
         self._notification_buffer: list[dict] = []
         self._response_buffer: list[dict] = []
+        self._request_buffer: list[dict] = []
 
     async def start(
         self,
@@ -102,12 +103,18 @@ class StdioACPTransport:
         await self._process.stdin.drain()
 
     async def receive(self) -> dict:
-        """Read a JSON-RPC response (has ``id``) from stdout.
+        """Read a JSON-RPC response (has ``id``, no ``method``) from stdout.
 
-        Skips notifications (messages without ``id``) until a response
-        is found.  Notifications are buffered for later retrieval via
-        :meth:`receive_notification`.
+        Skips notifications (messages with ``method`` but no ``id``) and
+        inbound requests (messages with both ``id`` and ``method``) until
+        a response is found.  Notifications are buffered for later
+        retrieval via :meth:`receive_notification`; inbound requests are
+        buffered for later retrieval via :meth:`receive_inbound_request`.
         """
+        # First, drain any responses buffered by receive_notification().
+        if self._response_buffer:
+            return self._response_buffer.pop(0)
+
         while True:
             msg = await self._read_line()
             if msg is None:
@@ -115,8 +122,23 @@ class StdioACPTransport:
             if "id" in msg and "method" not in msg:
                 # This is a response (has id, no method)
                 return msg
-            # It's a notification — buffer it
+            if "id" in msg and "method" in msg:
+                # This is an inbound request from the agent — buffer it.
+                self._request_buffer.append(msg)
+                continue
+            # It's a notification (has method, no id) — buffer it
             self._notification_buffer.append(msg)
+
+    async def receive_inbound_request(self) -> dict | None:
+        """Read a buffered inbound JSON-RPC request (has both ``id`` and ``method``).
+
+        Returns ``None`` if no inbound request is currently buffered.
+        Inbound requests are collected during :meth:`receive` and are
+        dispatched by :meth:`ACPClient.handle_inbound_request`.
+        """
+        if self._request_buffer:
+            return self._request_buffer.pop(0)
+        return None
 
     async def receive_notification(self) -> dict | None:
         """Read a JSON-RPC notification (has ``method``, no ``id``) from stdout.
@@ -130,6 +152,10 @@ class StdioACPTransport:
         # Try to read a line with a very short timeout
         msg = await self._read_line_nonblocking()
         if msg is None:
+            return None
+        if "id" in msg and "method" in msg:
+            # It's an inbound request — buffer it, not a notification.
+            self._request_buffer.append(msg)
             return None
         if "method" in msg:
             return msg
@@ -217,11 +243,62 @@ class ACPClient:
         self,
         transport: ACPTransport,
         required_capabilities: RequiredCapabilities,
+        client_capabilities: dict | None = None,
     ) -> None:
         self._transport = transport
         self._required_capabilities = required_capabilities
+        self._client_capabilities: dict | None = client_capabilities
+        self._request_handlers: dict[str, Callable[[dict], Any]] = {}
         self._next_id: int = 1
         self._negotiation_result: CapabilityNegotiationResult | None = None
+
+    def register_request_handler(
+        self, method: str, handler: Callable[[dict], Any]
+    ) -> None:
+        """Register a handler for an inbound JSON-RPC request method.
+
+        When the agent sends an inbound request (a message with both
+        ``id`` and ``method``) whose ``method`` matches, the handler is
+        called with the request ``params`` dict and its return value is
+        sent as the JSON-RPC ``result`` response.
+
+        Args:
+            method: The JSON-RPC method name (e.g. ``"fs/read_text_file"``).
+            handler: A callable accepting a ``dict`` of params and
+                returning a JSON-serializable result.
+        """
+        self._request_handlers[method] = handler
+
+    async def handle_inbound_request(self, msg: dict) -> None:
+        """Dispatch an inbound JSON-RPC request to a registered handler.
+
+        Called when a message with both ``id`` and ``method`` is received
+        from the agent.  If a handler is registered for the method, it is
+        called and its return value is sent as the response.  If no
+        handler is registered, a JSON-RPC error with code ``-32601``
+        (method not found) is sent — the client does NOT raise or crash.
+
+        Args:
+            msg: The inbound JSON-RPC request message.
+        """
+        method = msg.get("method", "")
+        req_id = msg.get("id")
+        params = msg.get("params", {})
+
+        handler = self._request_handlers.get(method)
+        if handler is not None:
+            result = handler(params)
+            response = {"jsonrpc": "2.0", "id": req_id, "result": result}
+        else:
+            response = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {
+                    "code": -32601,
+                    "message": f"Method not found: {method}",
+                },
+            }
+        await self._transport.send(response)
 
     def _next_request_id(self) -> int:
         rid = self._next_id
@@ -248,6 +325,8 @@ class ACPClient:
                 "clientInfo": {"name": "inkstatute-acp-client", "version": "0.1.0"},
             },
         )
+        if self._client_capabilities is not None:
+            request["params"]["clientCapabilities"] = self._client_capabilities
         await self._transport.send(request)
         response = await self._transport.receive()
 

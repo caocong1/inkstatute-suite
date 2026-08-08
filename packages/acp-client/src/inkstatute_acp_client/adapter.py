@@ -93,6 +93,7 @@ class ACPBackendConfig:
     )
     hermes_home: str | None = None
     compatibility_matrix: dict[str, Any] = field(default_factory=dict)
+    client_capabilities: dict | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -194,7 +195,11 @@ class ACPBackendAdapter:
         Closes the transport after the check.
         """
         transport = self._transport_factory(self.config)
-        client = ACPClient(transport, self.config.required_capabilities)
+        client = ACPClient(
+            transport,
+            self.config.required_capabilities,
+            client_capabilities=self.config.client_capabilities,
+        )
 
         try:
             await transport.start(self.config.command, self._build_env())
@@ -261,7 +266,11 @@ class ACPBackendAdapter:
 
         # 1. Create transport and client
         transport = self._transport_factory(self.config)
-        client = ACPClient(transport, self.config.required_capabilities)
+        client = ACPClient(
+            transport,
+            self.config.required_capabilities,
+            client_capabilities=self.config.client_capabilities,
+        )
 
         # 2. Start transport
         await transport.start(self.config.command, self._build_env())
