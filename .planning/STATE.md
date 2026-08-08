@@ -2,10 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
+current_phase: 101
+current_phase_name: agent-core-tools
 status: executing
 stopped_at: Phase 101 complete — CORE-02, CORE-03 complete, ready for Phase 102
-last_updated: "2026-08-11T18:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 101 complete (Agent Core Tools). 4 plans (101-01 tool registry + clarification, 101-02 file_read + MCP + regulation search, 101-03 document_generate + track-changes, 101-04 e2e + security + completion). 145 new tests across all plans (405 + 82 + 35 + 28). 550 total agent-core tests. All 38 gates green. CORE-02 (tool layer) and CORE-03 (Word track-changes docx) complete. HG-4 (修订稿质量) NOT auto-closed — requires lawyer confirmation.
+last_updated: "2026-08-08T05:03:37.593Z"
+last_activity: 2026-08-11
+last_activity_desc: Phase 101 complete. 4 plans, 145 new tests, 550 total agent-core tests.
 progress:
   total_phases: 17
   completed_phases: 14
@@ -27,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 ## Current Position
 
 Phase: 101 (agent-core-tools) — COMPLETE
-Status: Phase 101 complete. All 4 plans done. Tool layer (clarification, file_read, regulation_search, document_generate, MCP client) implemented and callable from turn loop. Multi-tool orchestration and error recovery verified via e2e tests. Word native track-changes docx generation via imported TrackChangesBuilder (CORE-03: import, don't rewrite). artifact.created with kind=trackchanges_docx. Security verified (no shell/code execution paths). 550 agent-core tests, all 38 gates green. CORE-02 and CORE-03 complete. HG-4 NOT auto-closed.
+Status: Ready to execute
 Last activity: 2026-08-11 -- Phase 101 complete. 4 plans, 145 new tests, 550 total agent-core tests.
 
 **Next command:** `/gsd-plan-phase 102` （或 `/gsd-autonomous` 自动推进）
