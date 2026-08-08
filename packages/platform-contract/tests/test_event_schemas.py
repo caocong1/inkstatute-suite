@@ -43,6 +43,20 @@ NEW_SCHEMAS = [
     "arena_early_stop_triggered",
 ]
 
+# Non-event-payload schemas (dataclass contracts, not lifecycle events).
+# These follow the run.schema.json pattern: no event_type const field.
+DATACLASS_SCHEMAS = [
+    "run",
+    "session",
+    "arena_workflow_config",
+    "arena_handle",
+    "arena_status",
+    "arena_user_action",
+]
+
+# All schemas that should pass generic structure checks (both event and dataclass).
+ALL_STRUCTURE_SCHEMAS = NEW_SCHEMAS + DATACLASS_SCHEMAS
+
 FORBIDDEN_TOP_LEVEL = {
     "jurisdiction",
     "lawyer",
@@ -62,7 +76,7 @@ def _load_schema(name: str) -> dict:
 class SchemaFileExistenceTests(unittest.TestCase):
 
     def test_all_13_schema_files_load(self) -> None:
-        for name in NEW_SCHEMAS:
+        for name in ALL_STRUCTURE_SCHEMAS:
             path = SCHEMA_DIR / f"{name}.schema.json"
             self.assertTrue(path.exists(), f"Schema file missing: {name}")
             schema = _load_schema(name)
@@ -108,7 +122,7 @@ class PermissionRequestedSchemaTests(unittest.TestCase):
 class SchemaStructureTests(unittest.TestCase):
 
     def test_all_schemas_have_additional_properties_false(self) -> None:
-        for name in NEW_SCHEMAS:
+        for name in ALL_STRUCTURE_SCHEMAS:
             schema = _load_schema(name)
             self.assertFalse(
                 schema.get("additionalProperties", True),
@@ -116,7 +130,7 @@ class SchemaStructureTests(unittest.TestCase):
             )
 
     def test_no_forbidden_top_level_fields(self) -> None:
-        for name in NEW_SCHEMAS:
+        for name in ALL_STRUCTURE_SCHEMAS:
             schema = _load_schema(name)
             props = set(schema.get("properties", {}).keys())
             bad = props & FORBIDDEN_TOP_LEVEL
@@ -126,7 +140,7 @@ class SchemaStructureTests(unittest.TestCase):
             )
 
     def test_all_schemas_reference_common(self) -> None:
-        for name in NEW_SCHEMAS:
+        for name in ALL_STRUCTURE_SCHEMAS:
             path = SCHEMA_DIR / f"{name}.schema.json"
             raw = path.read_text(encoding="utf-8")
             self.assertIn(
@@ -136,16 +150,25 @@ class SchemaStructureTests(unittest.TestCase):
             )
 
     def test_all_schemas_have_correct_id(self) -> None:
-        for name in NEW_SCHEMAS:
+        for name in ALL_STRUCTURE_SCHEMAS:
             schema = _load_schema(name)
             expected = f"https://inkstatute.dev/schemas/platform-contract/{name}.schema.json"
             self.assertEqual(schema["$id"], expected)
 
-    def test_all_schemas_have_event_type_const(self) -> None:
+    def test_event_payload_schemas_have_event_type_const(self) -> None:
         for name in NEW_SCHEMAS:
             schema = _load_schema(name)
             et = schema["properties"]["event_type"]
             self.assertIn("const", et, f"{name}: event_type has no const")
+
+    def test_dataclass_schemas_have_no_event_type(self) -> None:
+        for name in DATACLASS_SCHEMAS:
+            schema = _load_schema(name)
+            self.assertNotIn(
+                "event_type",
+                schema.get("properties", {}),
+                f"{name}: dataclass schema should not have event_type",
+            )
 
 
 if __name__ == "__main__":
