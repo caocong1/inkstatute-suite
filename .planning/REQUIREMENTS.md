@@ -5,7 +5,7 @@
 
 ## v3.1 Requirements
 
-Requirements for the Legal AI Arena milestone. Each maps to roadmap phases (105–110).
+Requirements for the Legal AI Arena milestone. Each maps to exactly one roadmap phase (105–110). See Traceability section below for the full mapping.
 
 ### Arena Contract
 
@@ -101,17 +101,77 @@ Requirements for the Legal AI Arena milestone. Each maps to roadmap phases (105�
 
 ## Traceability
 
-To be populated during roadmap creation.
+Every v3.1 requirement maps to exactly one phase. SAFE and GATE requirements are distributed across the phases where their corresponding code is built, rather than bundled in a single phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (pending roadmap) | | |
+| CONTRACT-01 | 105 | Not started |
+| CONTRACT-02 | 105 | Not started |
+| CONTRACT-03 | 105 | Not started |
+| CONTRACT-04 | 105 | Not started |
+| FS-01 | 106 | Not started |
+| FS-02 | 106 | Not started |
+| FS-03 | 106 | Not started |
+| FS-04 | 106 | Not started |
+| SAFE-05 | 106 | Not started |
+| GATE-04 | 106 | Not started |
+| ENGINE-01 | 107 | Not started |
+| ENGINE-02 | 107 | Not started |
+| ENGINE-05 | 107 | Not started |
+| ENGINE-06 | 107 | Not started |
+| ENGINE-07 | 107 | Not started |
+| ENGINE-08 | 107 | Not started |
+| ENGINE-09 | 107 | Not started |
+| SAFE-01 | 107 | Not started |
+| SAFE-02 | 107 | Not started |
+| SAFE-03 | 107 | Not started |
+| SAFE-04 | 107 | Not started |
+| SAFE-07 | 107 | Not started |
+| ENGINE-03 | 108 | Not started |
+| ENGINE-04 | 108 | Not started |
+| SAFE-06 | 108 | Not started |
+| SVC-01 | 109 | Not started |
+| SVC-02 | 109 | Not started |
+| SVC-03 | 109 | Not started |
+| SVC-04 | 109 | Not started |
+| SVC-05 | 109 | Not started |
+| SVC-06 | 109 | Not started |
+| SVC-07 | 109 | Not started |
+| SVC-08 | 109 | Not started |
+| GATE-05 | 109 | Not started |
+| GATE-06 | 109 | Not started |
+| UI-01 | 110 | Not started |
+| UI-02 | 110 | Not started |
+| UI-03 | 110 | Not started |
+| UI-04 | 110 | Not started |
+| UI-05 | 110 | Not started |
+| UI-06 | 110 | Not started |
+| UI-07 | 110 | Not started |
+| GATE-01 | 110 | Not started |
+| GATE-02 | 110 | Not started |
+| GATE-03 | 110 | Not started |
 
 **Coverage:**
-- v3.1 requirements: 38 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 38 ⚠️
+- v3.1 requirements: 45 total (4 CONTRACT + 4 FS + 9 ENGINE + 8 SVC + 7 UI + 7 SAFE + 6 GATE)
+- Mapped to phases: 45 (100%)
+- Unmapped: 0 ✅
+
+**Phase distribution:**
+
+| Phase | Requirements | Count |
+|-------|-------------|-------|
+| 105 Arena Contract Extension | CONTRACT-01..04 | 4 |
+| 106 ACP fs Handler | FS-01..04, SAFE-05, GATE-04 | 6 |
+| 107 Arena Engine — Modes 1+2 | ENGINE-01, ENGINE-02, ENGINE-05..09, SAFE-01..04, SAFE-07 | 12 |
+| 108 Arena Engine — Modes 3+4 | ENGINE-03, ENGINE-04, SAFE-06 | 3 |
+| 109 Arena Service | SVC-01..08, GATE-05, GATE-06 | 10 |
+| 110 Arena UI + Integration | UI-01..07, GATE-01..03 | 10 |
+| **Total** | | **45** |
+
+**Distribution rationale:**
+- SAFE requirements are distributed: SAFE-05 (prompt injection sanitization) → Phase 106 where reference files enter; SAFE-01..04, SAFE-07 (guardrail enforcement, post-hoc audit, provenance) → Phase 107 where engine boundary is built; SAFE-06 (cross-family review) → Phase 108 where cross-review happens.
+- GATE requirements are distributed: GATE-04 (fs sandbox escape) → Phase 106 where sandboxing is built; GATE-05 (permission safety) + GATE-06 (orphaned subprocess) → Phase 109 where service-level safety lives; GATE-01..03 (gate-coverage, composability, e2e integration) → Phase 110 as final integration validation.
 
 ---
 *Requirements defined: 2026-08-08*
-*Last updated: 2026-08-08 after initial definition*
+*Last updated: 2026-08-08 after roadmap creation (45/45 mapped, 100% coverage)*
