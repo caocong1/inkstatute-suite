@@ -6,6 +6,12 @@ from dataclasses import replace
 from typing import AsyncIterator, Iterable
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
+from platform_contract.arena_contract import (
+    ArenaHandle,
+    ArenaStatus,
+    ArenaUserAction,
+    ArenaWorkflowConfig,
+)
 from platform_contract.enums import AgentResultStatus, AsyncTaskState, ReplyType, RunEventType
 from platform_contract.events import AgentResult
 
@@ -312,11 +318,68 @@ class FakeChannelAdapter:
         )
 
 
+class FakeArenaWorkflow:
+    """In-memory Arena workflow mock with deterministic lifecycle scripts."""
+
+    def __init__(
+        self,
+        *,
+        clock: FakeRuntimeClock | None = None,
+        id_factory: FakeIdFactory | None = None,
+    ) -> None:
+        self._clock = clock or FakeRuntimeClock()
+        self._id_factory = id_factory or FakeIdFactory()
+        self.arenas: dict[str, ArenaStatus] = {}
+        self.cancelled_arena_ids: list[str] = []
+        self.submitted_actions: list[tuple[str, ArenaUserAction]] = []
+        self.started_configs: list[ArenaWorkflowConfig] = []
+
+    async def start(self, config: ArenaWorkflowConfig) -> ArenaHandle:
+        self.started_configs.append(config)
+        self.arenas[config.arena_id] = ArenaStatus(
+            arena_id=config.arena_id,
+            mode=config.mode,
+            status="running",
+            agent_slots=list(config.agent_slots),
+            current_round=0,
+        )
+        return ArenaHandle(
+            arena_id=config.arena_id,
+            status="running",
+            created_at=self._clock.now(),
+        )
+
+    async def cancel(self, arena_id: str) -> ArenaHandle:
+        self.cancelled_arena_ids.append(arena_id)
+        if arena_id in self.arenas:
+            self.arenas[arena_id] = replace(self.arenas[arena_id], status="cancelled")
+        return ArenaHandle(
+            arena_id=arena_id,
+            status="cancelled",
+            created_at=self._clock.now(),
+        )
+
+    async def submit_user_action(self, arena_id: str, action: ArenaUserAction) -> ArenaHandle:
+        self.submitted_actions.append((arena_id, action))
+        return ArenaHandle(
+            arena_id=arena_id,
+            status="running",
+            created_at=self._clock.now(),
+        )
+
+    async def query_status(self, arena_id: str) -> ArenaStatus:
+        try:
+            return self.arenas[arena_id]
+        except KeyError as exc:
+            raise KeyError(f"unknown arena: {arena_id}") from exc
+
+
 def _coerce_status(status: AsyncTaskState | str) -> AsyncTaskState:
     return status if isinstance(status, AsyncTaskState) else AsyncTaskState(str(status))
 
 
 __all__ = [
+    "FakeArenaWorkflow",
     "FakeBackendAdapter",
     "FakeChannelAdapter",
     "FakeIdFactory",

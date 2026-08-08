@@ -9,9 +9,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import AsyncIterator, Protocol, TypeAlias
+from typing import AsyncIterator, Protocol, TypeAlias, runtime_checkable
 
 from platform_contract.agent_adapter import AdapterCapabilitySet
+from platform_contract.arena_contract import (
+    ArenaHandle,
+    ArenaStatus,
+    ArenaUserAction,
+    ArenaWorkflowConfig,
+)
 from platform_contract.enums import AsyncTaskState
 from platform_contract.events import (
     AgentResult,
@@ -274,10 +280,26 @@ class RunRuntime(Protocol):
     async def approve(self, run_id: str, approval: Approval) -> Run: ...
 
 
+@runtime_checkable
+class ArenaWorkflow(Protocol):
+    async def start(self, config: ArenaWorkflowConfig) -> ArenaHandle: ...
+
+    async def cancel(self, arena_id: str) -> ArenaHandle: ...
+
+    async def submit_user_action(self, arena_id: str, action: ArenaUserAction) -> ArenaHandle: ...
+
+    async def query_status(self, arena_id: str) -> ArenaStatus: ...
+
+
 __all__ = [
     "AckResponse",
     "AdapterCapabilitySet",
     "Approval",
+    "ArenaHandle",
+    "ArenaStatus",
+    "ArenaUserAction",
+    "ArenaWorkflow",
+    "ArenaWorkflowConfig",
     "ArtifactRecord",
     "BackendAdapter",
     "BackendId",

@@ -3,6 +3,11 @@
 from .protocols import (
     AckResponse,
     Approval,
+    ArenaHandle,
+    ArenaStatus,
+    ArenaUserAction,
+    ArenaWorkflow,
+    ArenaWorkflowConfig,
     ArtifactRecord,
     BackendAdapter,
     BackendSolutionBundle,
@@ -34,7 +39,13 @@ from .ports import (
 )
 from .output_boundary import BoundaryAction, BoundaryDecision, DefaultAssistantOutputBoundary
 from .feature_flags import RuntimeFeatureDisabledError, RuntimeFeatureFlags
-from .fakes import FakeBackendAdapter, FakeChannelAdapter, FakeIdFactory, FakeRuntimeClock
+from .fakes import (
+    FakeArenaWorkflow,
+    FakeBackendAdapter,
+    FakeChannelAdapter,
+    FakeIdFactory,
+    FakeRuntimeClock,
+)
 from .context_assembler import (
     ContextAssembler,
     ContextAssemblyBudgetError,
@@ -166,6 +177,11 @@ from .vision_router import VisionRoute, VisionRouter, VisionRoutingDecision
 __all__ = [
     "AckResponse",
     "ActiveTaskSnapshot",
+    "ArenaHandle",
+    "ArenaStatus",
+    "ArenaUserAction",
+    "ArenaWorkflow",
+    "ArenaWorkflowConfig",
     "AssistantOutputBoundary",
     "AssistantOutputDecision",
     "Approval",
@@ -190,6 +206,7 @@ __all__ = [
     "DefaultRunRuntime",
     "DefaultAssistantOutputBoundary",
     "DeliveryResult",
+    "FakeArenaWorkflow",
     "FakeBackendAdapter",
     "FakeChannelAdapter",
     "FakeIdFactory",

@@ -1,7 +1,7 @@
 {
   "algorithm": "sha256",
   "files": {
-    "packages/platform-contract/src/platform_contract/__init__.py": "ec210ad398a9365cdeb37a9933bded9e95136f0a347d37cad37d5465ff7cd0f4",
+    "packages/platform-contract/src/platform_contract/__init__.py": "019f4f7594a47d7a971f8a76cd000323fbbbf429cbb06cae221cf9760cc751d8",
     "packages/platform-contract/src/platform_contract/agent_adapter.py": "295d30324dcb0c682e02bc02c9d8816d4d49b8fefe936eeb3cdfc19071dc24b0",
     "packages/platform-contract/src/platform_contract/enums.py": "fc9ccc6cdd1b607bf8058cd86311891197b639f23bd04b8a869ef5f955f8e2e0",
     "packages/platform-contract/src/platform_contract/events.py": "51352e1843fcae1e70e692a613a5e9613693cad200c54f2370fd083e5c7c0c93",
@@ -9,6 +9,18 @@
     "packages/platform-contract/src/platform_contract/schemas/agent_result.schema.json": "45cd6d465698538ef00c57fad7adc024ec46fc55239e22d2f89c762fdf1217ce",
     "packages/platform-contract/src/platform_contract/schemas/agent_turn.schema.json": "79649b6263962392d2310644ea2c1e66c792fa2823452d1c1d91525cc348c685",
     "packages/platform-contract/src/platform_contract/schemas/approval.schema.json": "a34a276758f470ed3e1bf2f9ff75a2a0349be171512fc7eea6a5a371bc2a80d1",
+    "packages/platform-contract/src/platform_contract/schemas/arena_adversarial_challenge_completed.schema.json": "8e5d16c06c135d6c373bd218a1ccbfd5d5c43a16e37bedf729efc2950dc03398",
+    "packages/platform-contract/src/platform_contract/schemas/arena_early_stop_triggered.schema.json": "4a0b43275181f49f3392921c1a744b66af867fcce1c40feb1fac04a2c030ef60",
+    "packages/platform-contract/src/platform_contract/schemas/arena_handle.schema.json": "4a06f97b8b3c15b5230dc872093aaee33c73978af36fdf963c6a288802b4867c",
+    "packages/platform-contract/src/platform_contract/schemas/arena_review_completed.schema.json": "e85126f88cd8dc1ab56548d5cfccfab2acf3c785c46a56ed620ad377ca9525e8",
+    "packages/platform-contract/src/platform_contract/schemas/arena_score_recorded.schema.json": "fb137663cf09ee6e7620a8243b6a69bc1df247ecf8587c028cf776d82046f1b6",
+    "packages/platform-contract/src/platform_contract/schemas/arena_status.schema.json": "f2fdc9dba1213718f36998d4746f9bd61d7e0ff1e419ee12b18b7033759350a6",
+    "packages/platform-contract/src/platform_contract/schemas/arena_synthesis_completed.schema.json": "b55bfdca96cbbe4af6091aa97fa13b9045b484f55b8a56b8aa0e3454ebbfcf5f",
+    "packages/platform-contract/src/platform_contract/schemas/arena_synthesis_started.schema.json": "f8eb4a8b505a2a999548b7bf2d1badbe3bf59e2c9475118337cd52617f0248de",
+    "packages/platform-contract/src/platform_contract/schemas/arena_user_action.schema.json": "01857367ccef8b8beea68abaaa56867796ca0a1529fecd6198f8f89f1cbf46ad",
+    "packages/platform-contract/src/platform_contract/schemas/arena_workflow_completed.schema.json": "3ec6806c2662e3fb63688910f9121d70c50131f3a5c4f56fcd0392986f4fb5f6",
+    "packages/platform-contract/src/platform_contract/schemas/arena_workflow_config.schema.json": "a82fa0673f647d6ec70dd0b1fd356f060a783e8f5588823bd6a51b02781836ee",
+    "packages/platform-contract/src/platform_contract/schemas/arena_workflow_started.schema.json": "8497f15fa06b6bb3f6240255cb51cc42919c5832ec32677416a953c2eb28f50b",
     "packages/platform-contract/src/platform_contract/schemas/artifact_created.schema.json": "ad27421e0802ab596cd6d4373e17f7850c0e1259ac8b0a4f6f4fa682dd7188f2",
     "packages/platform-contract/src/platform_contract/schemas/artifact_record.schema.json": "4bab42b6f96df713fc17ba8a83d18644ac703c5bf8c6e804862db80a25aed441",
     "packages/platform-contract/src/platform_contract/schemas/bot_instance.schema.json": "3ee94e27cfac1ac26c5af11dd2641e2f4fff8de2b1cfb5351314a5b25e333706",
@@ -47,14 +59,6 @@
     "packages/platform-contract/src/platform_contract/schemas/tool_call_delta.schema.json": "4b4e5c3d547818597567406b2d69703fcbeb5e60c9037f1bcc542e986610fa0e",
     "packages/platform-contract/src/platform_contract/schemas/tool_call_started.schema.json": "7f3d7b16333a0037933879b208352e8cec117415c0d80b4a99012f4347cca3e6",
     "packages/platform-contract/src/platform_contract/schemas/workspace.schema.json": "b08467d915843c9652a40eb5668c66c4addd49f8aa467ef7de125581f14038d7",
-    "packages/platform-runtime/src/platform_runtime/protocols.py": "8ed7769e69aae75cfda77fae871092fc7d4c382720071685841cb52f51a0824c",
-    "packages/platform-contract/src/platform_contract/schemas/arena_workflow_started.schema.json": "8497f15fa06b6bb3f6240255cb51cc42919c5832ec32677416a953c2eb28f50b",
-    "packages/platform-contract/src/platform_contract/schemas/arena_workflow_completed.schema.json": "3ec6806c2662e3fb63688910f9121d70c50131f3a5c4f56fcd0392986f4fb5f6",
-    "packages/platform-contract/src/platform_contract/schemas/arena_score_recorded.schema.json": "fb137663cf09ee6e7620a8243b6a69bc1df247ecf8587c028cf776d82046f1b6",
-    "packages/platform-contract/src/platform_contract/schemas/arena_review_completed.schema.json": "e85126f88cd8dc1ab56548d5cfccfab2acf3c785c46a56ed620ad377ca9525e8",
-    "packages/platform-contract/src/platform_contract/schemas/arena_synthesis_started.schema.json": "f8eb4a8b505a2a999548b7bf2d1badbe3bf59e2c9475118337cd52617f0248de",
-    "packages/platform-contract/src/platform_contract/schemas/arena_synthesis_completed.schema.json": "b55bfdca96cbbe4af6091aa97fa13b9045b484f55b8a56b8aa0e3454ebbfcf5f",
-    "packages/platform-contract/src/platform_contract/schemas/arena_adversarial_challenge_completed.schema.json": "8e5d16c06c135d6c373bd218a1ccbfd5d5c43a16e37bedf729efc2950dc03398",
-    "packages/platform-contract/src/platform_contract/schemas/arena_early_stop_triggered.schema.json": "4a0b43275181f49f3392921c1a744b66af867fcce1c40feb1fac04a2c030ef60"
+    "packages/platform-runtime/src/platform_runtime/protocols.py": "afc6c808036c09f79e2b9963c1f7ebd303b38b00e4b09a2b041879ebd894ce24"
   }
 }
