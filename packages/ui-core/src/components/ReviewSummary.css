@@ -1,0 +1,135 @@
+/* ReviewSummary — findings with categorical confidence and confirmed/disproved */
+
+.review-summary {
+  width: 100%;
+  font-family: var(--serif, ui-serif, Georgia, serif);
+}
+
+.review-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 24px;
+  color: var(--muted, #888);
+  font-size: 14px;
+  text-align: center;
+}
+
+.review-group {
+  margin-bottom: 20px;
+}
+
+.review-group:last-child {
+  margin-bottom: 0;
+}
+
+.review-group-h {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--sheet-ink, #222);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--gold, #b8860b);
+  background: color-mix(in srgb, var(--accent-soft, #f5f0e6) 50%, transparent);
+  border-radius: 0 6px 6px 0;
+}
+
+.review-finding {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sheet-line, #eee);
+}
+
+.review-finding:last-child {
+  border-bottom: none;
+}
+
+.finding-desc {
+  font-size: 13px;
+  color: var(--sheet-ink-2, #333);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.finding-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+/* Confidence badges — categorical, NOT numeric */
+.badge.confidence.certain {
+  color: #fff;
+  background: var(--green, #1a7f4b);
+  border-color: var(--green, #1a7f4b);
+}
+
+.badge.confidence.likely {
+  color: #fff;
+  background: var(--accent, #2b6cb0);
+  border-color: var(--accent, #2b6cb0);
+}
+
+.badge.confidence.possible {
+  color: var(--muted, #666);
+  background: var(--accent-soft, #eee);
+  border-color: var(--sheet-line, #ccc);
+}
+
+/* Severity badges */
+.badge.severity.high {
+  color: #fff;
+  background: var(--red, #c0392b);
+  border-color: var(--red, #c0392b);
+}
+
+.badge.severity.medium {
+  color: #fff;
+  background: var(--amber, #d97706);
+  border-color: var(--amber, #d97706);
+}
+
+.badge.severity.low {
+  color: var(--muted, #666);
+  background: var(--accent-soft, #eee);
+  border-color: var(--sheet-line, #ccc);
+}
+
+/* Confirmed / disproved markers */
+.marker {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.marker.confirmed {
+  color: var(--green, #1a7f4b);
+}
+
+.marker.disproved {
+  color: var(--red, #c0392b);
+}
+
+/* Reviewer attribution */
+.reviewer {
+  font-size: 11.5px;
+  color: var(--muted, #888);
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .reviewer {
+    margin-left: 0;
+  }
+}
