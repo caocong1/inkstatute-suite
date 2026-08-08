@@ -112,5 +112,43 @@ class MockACPAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(handle.run_id, adapter.cancelled_run_ids)
 
 
+class MockACPBackendFamilyTests(unittest.TestCase):
+    """Cover backend_family() behaviours for MockACPBackendAdapter."""
+
+    def test_explicit_backend_family_returned(self) -> None:
+        """Test 2: explicit backend_family parameter is returned directly."""
+        adapter = MockACPBackendAdapter(
+            backend_id="hermes",
+            responses=["test"],
+            backend_family="claude",
+        )
+        self.assertEqual(adapter.backend_family(), "claude")
+
+    def test_auto_derive_from_known_backend_id(self) -> None:
+        """Test 3: without backend_family, auto-derives from backend_id via DEFAULT_FAMILY_MAP."""
+        adapter = MockACPBackendAdapter(
+            backend_id="hermes",
+            responses=["test"],
+        )
+        self.assertEqual(adapter.backend_family(), "claude")
+
+    def test_auto_derive_unknown_backend_defaults_to_own_id(self) -> None:
+        """Test 4: unknown backend_id defaults to its own ID as family."""
+        adapter = MockACPBackendAdapter(
+            backend_id="unknown-backend",
+            responses=["test"],
+        )
+        self.assertEqual(adapter.backend_family(), "unknown-backend")
+
+    def test_existing_backend_id_unchanged(self) -> None:
+        """Test 5: backend_id() still returns the original ID with backend_family set."""
+        adapter = MockACPBackendAdapter(
+            backend_id="hermes",
+            responses=["test"],
+            backend_family="claude",
+        )
+        self.assertEqual(adapter.backend_id(), "hermes")
+
+
 if __name__ == "__main__":
     unittest.main()

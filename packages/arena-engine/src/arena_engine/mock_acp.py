@@ -28,6 +28,8 @@ from platform_runtime.protocols import (
     RunRequest,
 )
 
+from .families import get_backend_family
+
 JsonObject = dict[str, Any]
 
 
@@ -59,6 +61,10 @@ class MockACPBackendAdapter:
     id_factory
         Optional deterministic ID factory.  Defaults to a new
         :class:`FakeIdFactory`.
+    backend_family
+        Optional explicit model family for cross-family enforcement
+        (SAFE-06).  When ``None``, auto-derives from ``backend_id`` via
+        :func:`get_backend_family`.
     """
 
     def __init__(
@@ -71,8 +77,10 @@ class MockACPBackendAdapter:
         timeout_seconds: float = 30.0,
         delay: float = 0.0,
         id_factory: FakeIdFactory | None = None,
+        backend_family: str | None = None,
     ) -> None:
         self._backend_id = backend_id
+        self._backend_family = backend_family
         self._responses = list(responses)
         self._agent_slot = agent_slot
         self._crash_on_stream = crash_on_stream
@@ -105,7 +113,23 @@ class MockACPBackendAdapter:
         return self._backend_id
 
     # ------------------------------------------------------------------
-    # Protocol method 2: capabilities
+    # Protocol method 2: backend_family
+    # ------------------------------------------------------------------
+
+    def backend_family(self) -> str:
+        """Return the model family for cross-family enforcement (SAFE-06).
+
+        When an explicit ``backend_family`` was provided at construction,
+        return it directly.  Otherwise, auto-derive from ``backend_id``
+        via :func:`get_backend_family` (uses :data:`DEFAULT_FAMILY_MAP`).
+        Unknown backends default to their own ID as the family.
+        """
+        if self._backend_family is not None:
+            return self._backend_family
+        return get_backend_family(self._backend_id)
+
+    # ------------------------------------------------------------------
+    # Protocol method 3: capabilities
     # ------------------------------------------------------------------
 
     def capabilities(self) -> AdapterCapabilitySet:
