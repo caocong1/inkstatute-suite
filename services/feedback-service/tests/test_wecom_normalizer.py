@@ -131,6 +131,182 @@ class WeComFeedbackNormalizerTests(unittest.TestCase):
         self.assertEqual(batch.issues[0].code, "raw_payload_forbidden")
         self.assertEqual(batch.issues[0].path, "raw_payload")
 
+    def test_unsupported_action_returns_issue(self) -> None:
+        previews = _load_jsonl(FIXTURE_ROOT / "phase5_wecom_pending_previews_sample.jsonl")
+        batch = normalize_wecom_feedback_records(
+            [
+                {
+                    "feedback_id": "feedback-bad-action",
+                    "feedback_target": "phase5-msg-retrieval-001",
+                    "action": "invalid_action",
+                    "user_id": "phase5-lawyer-001",
+                    "created_at": "2026-06-28T03:24:00Z",
+                    "raw_payload_ref": "fixture://raw/bad-action",
+                }
+            ],
+            previews,
+        )
+
+        self.assertEqual(batch.events, [])
+        self.assertEqual(batch.issues[0].code, "unsupported_action")
+
+    def test_preview_raw_payload_returns_issue(self) -> None:
+        batch = normalize_wecom_feedback_records(
+            [
+                {
+                    "feedback_id": "feedback-preview-raw",
+                    "feedback_target": "preview-with-raw",
+                    "action": "up",
+                    "user_id": "lawyer-1",
+                    "created_at": "2026-06-28T03:24:00Z",
+                    "raw_payload_ref": "fixture://raw/preview-raw",
+                }
+            ],
+            [
+                {
+                    "feedback_target": "preview-with-raw",
+                    "turn_id": "turn-1",
+                    "conversation_id": "conv-1",
+                    "user_id": "lawyer-1",
+                    "raw_payload": {"secret": "forbidden"},
+                }
+            ],
+        )
+
+        self.assertEqual(batch.events, [])
+        self.assertEqual(batch.issues[0].code, "raw_payload_forbidden")
+        self.assertTrue(batch.issues[0].path.startswith("preview."))
+
+    def test_missing_created_at_returns_issue(self) -> None:
+        batch = normalize_wecom_feedback_records(
+            [
+                {
+                    "feedback_id": "feedback-no-time",
+                    "feedback_target": "target-no-time",
+                    "action": "down",
+                    "user_id": "lawyer-1",
+                    "raw_payload_ref": "fixture://raw/no-time",
+                }
+            ],
+            [
+                {
+                    "feedback_target": "target-no-time",
+                    "turn_id": "turn-1",
+                    "conversation_id": "conv-1",
+                    "user_id": "lawyer-1",
+                }
+            ],
+        )
+
+        self.assertEqual(batch.events, [])
+        self.assertEqual(batch.issues[0].code, "missing_created_at")
+
+    def test_missing_required_reference_returns_issue(self) -> None:
+        batch = normalize_wecom_feedback_records(
+            [
+                {
+                    "feedback_id": "feedback-no-refs",
+                    "preview_id": "shared-preview-id",
+                    "action": "up",
+                    "created_at": "2026-06-28T03:24:00Z",
+                    "raw_payload_ref": "fixture://raw/no-refs",
+                }
+            ],
+            [
+                {
+                    "preview_id": "shared-preview-id",
+                }
+            ],
+        )
+
+        self.assertEqual(batch.events, [])
+        self.assertEqual(batch.issues[0].code, "missing_required_reference")
+
+    def test_labels_are_included_when_present(self) -> None:
+        batch = normalize_wecom_feedback_records(
+            [
+                {
+                    "feedback_id": "feedback-labels",
+                    "feedback_target": "target-labels",
+                    "action": "down",
+                    "user_id": "lawyer-1",
+                    "turn_id": "turn-1",
+                    "conversation_id": "conv-1",
+                    "created_at": "2026-06-28T03:24:00Z",
+                    "labels": ["citation_error", "format"],
+                    "raw_payload_ref": "fixture://raw/labels",
+                }
+            ],
+            [
+                {
+                    "feedback_target": "target-labels",
+                    "turn_id": "turn-1",
+                    "conversation_id": "conv-1",
+                    "user_id": "lawyer-1",
+                }
+            ],
+        )
+
+        self.assertEqual(batch.issues, [])
+        self.assertEqual(len(batch.events), 1)
+        self.assertEqual(batch.events[0]["labels"], ["citation_error", "format"])
+
+    def test_event_type_mapping(self) -> None:
+        actions_types = [("up", "rating"), ("down", "correction"), ("needs_fix", "correction"), ("route_wrong", "route_mismatch")]
+        previews = [
+            {
+                "feedback_target": "target-type",
+                "turn_id": "turn-1",
+                "conversation_id": "conv-1",
+                "user_id": "lawyer-1",
+            }
+        ]
+
+        for action, expected_type in actions_types:
+            with self.subTest(action=action):
+                batch = normalize_wecom_feedback_records(
+                    [
+                        {
+                            "feedback_id": f"feedback-{action}",
+                            "feedback_target": "target-type",
+                            "action": action,
+                            "user_id": "lawyer-1",
+                            "created_at": "2026-06-28T03:24:00Z",
+                            "raw_payload_ref": f"fixture://raw/{action}",
+                        }
+                    ],
+                    previews,
+                )
+
+                self.assertEqual(batch.issues, [])
+                self.assertEqual(batch.events[0]["event_type"], expected_type)
+
+    def test_find_exact_key_in_nested_list(self) -> None:
+        batch = normalize_wecom_feedback_records(
+            [
+                {
+                    "feedback_id": "feedback-nested-list",
+                    "feedback_target": "target-nested",
+                    "action": "up",
+                    "user_id": "lawyer-1",
+                    "created_at": "2026-06-28T03:24:00Z",
+                    "items": [{"raw_payload": "forbidden"}],
+                    "raw_payload_ref": "fixture://raw/nested-list",
+                }
+            ],
+            [
+                {
+                    "feedback_target": "target-nested",
+                    "turn_id": "turn-1",
+                    "conversation_id": "conv-1",
+                    "user_id": "lawyer-1",
+                }
+            ],
+        )
+
+        self.assertEqual(batch.events, [])
+        self.assertEqual(batch.issues[0].code, "raw_payload_forbidden")
+
     def assert_no_exact_raw_payload_key(self, value: Any) -> None:
         if isinstance(value, dict):
             self.assertNotIn("raw_payload", value)

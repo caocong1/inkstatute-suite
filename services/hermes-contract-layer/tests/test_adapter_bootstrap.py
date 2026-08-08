@@ -104,5 +104,87 @@ class HermesBootstrapProbeTests(unittest.TestCase):
         self.assertTrue({issue.code for issue in report.issues} >= {"forbidden_bundle_indicator"})
 
 
+class HermesBootstrapEdgeCaseTests(unittest.TestCase):
+    def test_probe_reports_missing_hermes_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "nonexistent-hermes"
+            profile = Path(tmp) / "profiles" / "lawfirm"
+            profile.mkdir(parents=True)
+            contract_log = Path(tmp).parent / "contract-log.jsonl"
+
+            report = probe_hermes_capabilities(root, profile, contract_log)
+
+        self.assertFalse(report.passed)
+        self.assertIn("missing_hermes_root", {issue.code for issue in report.issues})
+        self.assertFalse(report.capabilities["hermes_root_exists"])
+
+    def test_probe_reports_missing_version_or_source_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "hermes-agent"
+            root.mkdir(parents=True)
+            profile = Path(tmp) / "profiles" / "lawfirm"
+            (profile / "hooks" / "response_filter").mkdir(parents=True)
+            (profile / "hooks" / "response_filter_contract_result_recorder").mkdir(parents=True)
+            contract_log = Path(tmp).parent / "contract-log.jsonl"
+
+            report = probe_hermes_capabilities(root, profile, contract_log)
+
+        self.assertFalse(report.passed)
+        self.assertIn("missing_version_or_source", {issue.code for issue in report.issues})
+
+    def test_probe_reports_missing_profile_path(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "hermes-agent"
+            (root / "gateway").mkdir(parents=True)
+            profile = Path(tmp) / "profiles" / "nonexistent-profile"
+            contract_log = Path(tmp).parent / "contract-log.jsonl"
+
+            report = probe_hermes_capabilities(root, profile, contract_log)
+
+        self.assertFalse(report.passed)
+        self.assertIn("missing_profile_path", {issue.code for issue in report.issues})
+        self.assertFalse(report.capabilities["profile_exists"])
+
+    def test_probe_reports_missing_response_filter_hook(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "hermes-agent"
+            (root / "gateway").mkdir(parents=True)
+            profile = Path(tmp) / "profiles" / "lawfirm"
+            profile.mkdir(parents=True)
+            contract_log = Path(tmp).parent / "contract-log.jsonl"
+
+            report = probe_hermes_capabilities(root, profile, contract_log)
+
+        self.assertFalse(report.passed)
+        self.assertIn("missing_response_filter_hook", {issue.code for issue in report.issues})
+        self.assertFalse(report.capabilities["response_filter_present"])
+
+    def test_version_marker_reads_file_content(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "hermes-agent"
+            root.mkdir(parents=True)
+            (root / "VERSION").write_text("1.2.3\n", encoding="utf-8")
+            profile = Path(tmp) / "profiles" / "lawfirm"
+            (profile / "hooks" / "response_filter").mkdir(parents=True)
+            (profile / "hooks" / "response_filter_contract_result_recorder").mkdir(parents=True)
+            contract_log = Path(tmp).parent / "contract-log.jsonl"
+
+            report = probe_hermes_capabilities(root, profile, contract_log)
+
+        self.assertTrue(report.capabilities["hermes_root_exists"])
+        issue_codes = {issue.code for issue in report.issues}
+        self.assertNotIn("missing_hermes_root", issue_codes)
+        self.assertNotIn("missing_version_or_source", issue_codes)
+
+    def test_bundle_manifest_missing_file_returns_issue(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "does-not-exist.json"
+
+            report = check_sanitized_bundle_manifest(path)
+
+        self.assertFalse(report.passed)
+        self.assertEqual(report.issues[0].code, "missing_bundle_manifest")
+
+
 if __name__ == "__main__":
     unittest.main()

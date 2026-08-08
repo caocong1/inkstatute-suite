@@ -84,6 +84,172 @@ class WeComNormalizationTests(unittest.TestCase):
         self.assertIn("idempotency_key", event["metadata"])
         self.assert_no_raw_payload(event)
 
+    def test_text_callback_with_output_constraints(self) -> None:
+        event = normalize_wecom_turn(
+            {
+                "MsgId": "msg-constraints",
+                "FromUserName": "lawyer-4",
+                "ConversationId": "conv-4",
+                "MsgType": "text",
+                "Content": "Analyze clause.",
+                "raw_payload_ref": "fixture://wecom/callback/msg-constraints",
+                "output_constraints": {"max_length": 500, "format": "markdown"},
+            },
+            received_at="2026-06-28T04:00:03Z",
+        )
+
+        self.assertEqual(event["output_constraints"]["max_length"], 500)
+
+    def test_unsupported_message_type_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            normalize_wecom_turn(
+                {
+                    "MsgId": "msg-bad-type",
+                    "FromUserName": "lawyer-5",
+                    "ConversationId": "conv-5",
+                    "MsgType": "video",
+                    "raw_payload_ref": "fixture://wecom/callback/msg-bad-type",
+                },
+                received_at="2026-06-28T04:00:04Z",
+            )
+
+        self.assertIn("unsupported", str(ctx.exception))
+
+    def test_feedback_callback_missing_target_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            normalize_wecom_feedback_callback(
+                {
+                    "FromUserName": "lawyer-6",
+                    "ConversationId": "conv-6",
+                    "action": "down",
+                },
+                created_at="2026-06-28T04:00:05Z",
+            )
+
+        self.assertIn("feedback_target", str(ctx.exception))
+
+    def test_feedback_callback_with_result_id_and_message(self) -> None:
+        event = normalize_wecom_feedback_callback(
+            {
+                "FromUserName": "lawyer-7",
+                "ConversationId": "conv-7",
+                "Event": "click",
+                "EventKey": "feedback:up",
+                "feedback_target": "result-msg-7",
+                "result_id": "result-007",
+                "message": "Good response",
+                "raw_payload_ref": "fixture://wecom/callback/feedback-7",
+            },
+            created_at="2026-06-28T04:00:06Z",
+        )
+
+        self.assertEqual(event["result_id"], "result-007")
+        self.assertEqual(event["message"], "Good response")
+        self.assertEqual(event["rating"], 1.0)
+
+    def test_feedback_route_wrong_produces_skill_candidate(self) -> None:
+        event = normalize_wecom_feedback_callback(
+            {
+                "FromUserName": "lawyer-8",
+                "ConversationId": "conv-8",
+                "Event": "click",
+                "EventKey": "feedback:route_wrong",
+                "feedback_target": "result-msg-8",
+                "raw_payload_ref": "fixture://wecom/callback/feedback-8",
+            },
+            created_at="2026-06-28T04:00:07Z",
+        )
+
+        self.assertTrue(event["route_mismatch"])
+        self.assertEqual(event["skill_candidate"]["source"], "route_mismatch")
+        self.assertTrue(event["skill_candidate"]["requires_human_review"])
+        self.assertTrue(event["metadata"]["no_auto_modify"])
+
+    def test_feedback_action_aliases(self) -> None:
+        aliases = {
+            "thumbs_up": "up",
+            "like": "up",
+            "thumbs_down": "down",
+            "dislike": "down",
+            "fix": "needs_fix",
+            "route_mismatch": "route_wrong",
+        }
+
+        for alias, expected in aliases.items():
+            with self.subTest(alias=alias):
+                event = normalize_wecom_feedback_callback(
+                    {
+                        "FromUserName": "lawyer-alias",
+                        "ConversationId": "conv-alias",
+                        "action": alias,
+                        "feedback_target": "result-alias",
+                        "raw_payload_ref": "fixture://wecom/callback/alias",
+                    },
+                    created_at="2026-06-28T04:00:08Z",
+                )
+
+                self.assertEqual(event["action"], expected)
+
+    def test_unsupported_feedback_action_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            normalize_wecom_feedback_callback(
+                {
+                    "FromUserName": "lawyer-9",
+                    "ConversationId": "conv-9",
+                    "action": "unknown_action",
+                    "feedback_target": "result-msg-9",
+                    "raw_payload_ref": "fixture://wecom/callback/feedback-9",
+                },
+                created_at="2026-06-28T04:00:09Z",
+            )
+
+        self.assertIn("unsupported", str(ctx.exception))
+
+    def test_file_attachment_with_mime_type(self) -> None:
+        event = normalize_wecom_turn(
+            {
+                "MsgId": "msg-mime",
+                "FromUserName": "lawyer-10",
+                "ConversationId": "conv-10",
+                "MsgType": "file",
+                "MediaId": "media-mime",
+                "FileName": "contract.pdf",
+                "mime_type": "application/pdf",
+                "raw_payload_ref": "fixture://wecom/callback/msg-mime",
+            },
+            received_at="2026-06-28T04:00:10Z",
+        )
+
+        self.assertEqual(event["attachments"][0]["mime_type"], "application/pdf")
+
+    def test_media_callback_without_media_ref_has_no_attachments(self) -> None:
+        event = normalize_wecom_turn(
+            {
+                "MsgId": "msg-no-media",
+                "FromUserName": "lawyer-11",
+                "ConversationId": "conv-11",
+                "MsgType": "image",
+                "raw_payload_ref": "fixture://wecom/callback/msg-no-media",
+            },
+            received_at="2026-06-28T04:00:11Z",
+        )
+
+        self.assertNotIn("attachments", event)
+
+    def test_missing_conversation_id_raises(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            normalize_wecom_turn(
+                {
+                    "MsgId": "msg-no-conv",
+                    "FromUserName": "lawyer-12",
+                    "MsgType": "text",
+                    "raw_payload_ref": "fixture://wecom/callback/msg-no-conv",
+                },
+                received_at="2026-06-28T04:00:12Z",
+            )
+
+        self.assertIn("conversation_id", str(ctx.exception))
+
     def assert_no_raw_payload(self, value: object) -> None:
         if isinstance(value, dict):
             self.assertNotIn("raw_payload", value)

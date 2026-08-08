@@ -46,6 +46,73 @@ class FeedbackClassificationTests(unittest.TestCase):
         self.assertTrue(classification.requires_human_review)
         self.assertTrue(classification.no_auto_modify)
 
+    def test_event_type_fallback_to_known_category(self) -> None:
+        classification = classify_feedback_event({"event_type": "format_issue"})
+
+        self.assertEqual(classification.category, "format_issue")
+        self.assertEqual(classification.reason, "event_type")
+
+    def test_default_fallback_when_no_signals_match(self) -> None:
+        classification = classify_feedback_event({"event_type": "unknown_type"})
+
+        self.assertEqual(classification.category, "correction")
+        self.assertEqual(classification.reason, "default fallback")
+
+    def test_label_aliases_for_fact_missing(self) -> None:
+        for label in ("missing_fact", "missing_facts", "fact_gap"):
+            with self.subTest(label=label):
+                classification = classify_feedback_event({"labels": [label]})
+                self.assertEqual(classification.category, "fact_missing")
+
+    def test_label_aliases_for_citation_error(self) -> None:
+        for label in ("bad_citation", "citation_missing", "wrong_citation"):
+            with self.subTest(label=label):
+                classification = classify_feedback_event({"labels": [label]})
+                self.assertEqual(classification.category, "citation_error")
+
+    def test_label_aliases_for_format_issue(self) -> None:
+        for label in ("format", "formatting"):
+            with self.subTest(label=label):
+                classification = classify_feedback_event({"labels": [label]})
+                self.assertEqual(classification.category, "format_issue")
+
+    def test_label_aliases_for_compliance_issue(self) -> None:
+        for label in ("compliance", "policy"):
+            with self.subTest(label=label):
+                classification = classify_feedback_event({"labels": [label]})
+                self.assertEqual(classification.category, "compliance_issue")
+
+    def test_message_hint_fact_missing(self) -> None:
+        classification = classify_feedback_event({"message": "Missing a key fact"})
+
+        self.assertEqual(classification.category, "fact_missing")
+        self.assertEqual(classification.reason, "message hint")
+
+    def test_message_hint_format_issue(self) -> None:
+        classification = classify_feedback_event({"message": "Bad format"})
+
+        self.assertEqual(classification.category, "format_issue")
+
+    def test_message_hint_compliance_issue(self) -> None:
+        classification = classify_feedback_event({"message": "Compliance problem"})
+
+        self.assertEqual(classification.category, "compliance_issue")
+
+    def test_message_hint_returns_none_for_unmatched_text(self) -> None:
+        classification = classify_feedback_event({"message": "general feedback"})
+
+        self.assertEqual(classification.category, "correction")
+        self.assertEqual(classification.reason, "default fallback")
+
+    def test_to_dict_serializes_classification(self) -> None:
+        classification = classify_feedback_event({"event_type": "rating", "action": "up"})
+        d = classification.to_dict()
+
+        self.assertEqual(d["category"], "rating")
+        self.assertIsInstance(d["labels"], list)
+        self.assertIn("requires_human_review", d)
+        self.assertIn("no_auto_modify", d)
+
 
 class FeedbackNormalizationQueueTests(unittest.TestCase):
     def test_duplicate_wecom_callback_events_collapse_to_one_canonical_event(self) -> None:
@@ -147,6 +214,127 @@ class FeedbackNormalizationQueueTests(unittest.TestCase):
         elif isinstance(value, list):
             for child in value:
                 self.assert_no_exact_raw_payload_key(child)
+
+
+class FeedbackQueueEdgeCaseTests(unittest.TestCase):
+    def test_idempotency_key_from_target_action_user_created_at(self) -> None:
+        event = {
+            "feedback_target": "target-1",
+            "action": "down",
+            "user_id": "user-1",
+            "created_at": "2026-06-28T05:00:00Z",
+            "status": "pending",
+        }
+
+        events = dedupe_feedback_events([event])
+
+        key = events[0]["metadata"]["idempotency_key"]
+        self.assertIn("target-1", key)
+        self.assertIn("down", key)
+        self.assertIn("user-1", key)
+
+    def test_idempotency_key_fallback_to_feedback_id(self) -> None:
+        event = {
+            "feedback_id": "fb-unique-123",
+            "status": "pending",
+        }
+
+        events = dedupe_feedback_events([event])
+
+        self.assertEqual(events[0]["metadata"]["idempotency_key"], "fb-unique-123")
+
+    def test_idempotency_key_fallback_to_hash(self) -> None:
+        event = {"status": "pending", "some_field": "value"}
+
+        events = dedupe_feedback_events([event])
+
+        key = events[0]["metadata"]["idempotency_key"]
+        self.assertTrue(key.startswith("feedback-event:"))
+
+    def test_timestamp_bucket_invalid_date_returns_prefix(self) -> None:
+        event = {
+            "feedback_target": "target-1",
+            "action": "up",
+            "user_id": "user-1",
+            "created_at": "not-a-date-at-all",
+            "status": "pending",
+        }
+
+        events = dedupe_feedback_events([event])
+
+        self.assertEqual(len(events), 1)
+
+    def test_privacy_checked_clone_rejects_raw_payload_key(self) -> None:
+        event = {
+            "feedback_id": "fb-1",
+            "raw_payload": {"secret": "data"},
+            "status": "pending",
+        }
+
+        with self.assertRaises(ValueError) as ctx:
+            dedupe_feedback_events([event])
+
+        self.assertIn("raw_payload_ref", str(ctx.exception))
+
+    def test_privacy_checked_clone_rejects_nested_raw_payload(self) -> None:
+        event = {
+            "feedback_id": "fb-2",
+            "metadata": {"raw_payload": {"data": "secret"}},
+            "status": "pending",
+        }
+
+        with self.assertRaises(ValueError):
+            dedupe_feedback_events([event])
+
+    def test_privacy_checked_clone_rejects_raw_payload_in_list(self) -> None:
+        event = {
+            "feedback_id": "fb-3",
+            "items": [{"raw_payload": "forbidden"}],
+            "status": "pending",
+        }
+
+        with self.assertRaises(ValueError):
+            dedupe_feedback_events([event])
+
+    def test_normalize_inputs_raises_on_compatibility_issues(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            normalize_feedback_inputs(
+                compatibility_feedback_records=[
+                    {
+                        "feedback_id": "fb-bad",
+                        "action": "invalid_action",
+                        "feedback_target": "target",
+                        "user_id": "u1",
+                        "created_at": "2026-06-28T05:00:00Z",
+                    }
+                ],
+                compatibility_preview_records=[],
+            )
+
+        self.assertIn("could not normalize", str(ctx.exception))
+
+    def test_duplicate_count_from_metadata(self) -> None:
+        event1 = _normalized_wecom_feedback_event("dc-1")
+        event1["metadata"]["duplicate_count"] = 3
+        event2 = _normalized_wecom_feedback_event("dc-1")
+        event2["metadata"]["duplicate_count"] = 2
+
+        events = dedupe_feedback_events([event1, event2])
+
+        self.assertEqual(events[0]["metadata"]["duplicate_count"], 5)
+
+    def test_string_helper_returns_none_for_empty_string(self) -> None:
+        event = {
+            "feedback_id": "",
+            "feedback_target": "t",
+            "action": "up",
+            "user_id": "u",
+            "created_at": "2026-06-28T05:00:00Z",
+            "status": "pending",
+        }
+
+        events = dedupe_feedback_events([event])
+        self.assertEqual(len(events), 1)
 
 
 def _normalized_wecom_feedback_event(callback_id: str, *, action: str = "down") -> dict[str, object]:

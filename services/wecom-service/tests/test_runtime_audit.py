@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import stat
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from wecom_service.runtime_audit import append_runtime_audit, parse_bool_env
 
@@ -50,6 +52,87 @@ class RuntimeAuditTests(unittest.TestCase):
         self.assertFalse(parse_bool_env("0", default=True))
         self.assertFalse(parse_bool_env("false", default=True))
         self.assertTrue(parse_bool_env("1", default=False))
+
+    def test_chmod_oserror_is_silently_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+
+            with patch("os.chmod", side_effect=OSError("permission denied")):
+                record = append_runtime_audit(
+                    path,
+                    kind="test_chmod",
+                    direction="outbound",
+                    payload={"data": "value"},
+                )
+
+            self.assertEqual(record["kind"], "test_chmod")
+            self.assertTrue(path.exists())
+
+    def test_redact_secrets_handles_tuples(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+
+            record = append_runtime_audit(
+                path,
+                kind="tuple_test",
+                direction="inbound",
+                payload=("item1", "item2"),
+                include_payload=True,
+            )
+
+            self.assertEqual(record["payload"], ["item1", "item2"])
+
+    def test_redact_secrets_handles_nested_lists(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+
+            record = append_runtime_audit(
+                path,
+                kind="list_test",
+                direction="inbound",
+                payload={"items": ["a", "b"], "nested_secret": "val"},
+                include_payload=True,
+            )
+
+            self.assertEqual(record["payload"]["items"], ["a", "b"])
+
+    def test_redact_known_env_secret_values_in_strings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+
+            with patch.dict(os.environ, {"MY_SECRET_TOKEN": "supersecretvalue123"}, clear=False):
+                record = append_runtime_audit(
+                    path,
+                    kind="env_redact_test",
+                    direction="inbound",
+                    payload={"text": "The value is supersecretvalue123 here"},
+                    include_payload=True,
+                )
+
+            self.assertIn("[REDACTED]", record["payload"]["text"])
+            self.assertNotIn("supersecretvalue123", record["payload"]["text"])
+
+    def test_stable_json_fallback_for_non_serializable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.jsonl"
+
+            record = append_runtime_audit(
+                path,
+                kind="non_serializable",
+                direction="inbound",
+                payload=object(),
+            )
+
+            self.assertIn("sha256_16", record["payload_summary"])
+            self.assertIsInstance(record["payload_summary"]["length"], int)
+
+    def test_parse_bool_env_edge_cases(self) -> None:
+        self.assertFalse(parse_bool_env("", default=False))
+        self.assertTrue(parse_bool_env("", default=True))
+        self.assertFalse(parse_bool_env("no", default=True))
+        self.assertFalse(parse_bool_env("off", default=True))
+        self.assertTrue(parse_bool_env("yes", default=False))
+        self.assertTrue(parse_bool_env("true", default=False))
 
 
 if __name__ == "__main__":
