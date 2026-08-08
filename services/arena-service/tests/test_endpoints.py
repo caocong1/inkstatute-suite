@@ -34,25 +34,25 @@ class MockEngine:
         self.actions: list[dict] = []
         self.queried: list[str] = []
 
-    def create_arena(self, *, mode: str, agent_slots: list[str], task: str, metadata: dict) -> dict:
+    async def create_arena(self, body: dict) -> dict:
         result = {
             "arena_id": "arena-test-001",
             "status": "created",
-            "mode": mode,
-            "agent_slots": agent_slots,
+            "mode": body.get("mode", ""),
+            "agent_slots": body.get("agent_slots", []),
         }
-        self.created.append({"mode": mode, "agent_slots": agent_slots, "task": task, "metadata": metadata})
+        self.created.append(dict(body))
         return result
 
-    def cancel_arena(self, arena_id: str) -> dict:
+    async def cancel_arena(self, arena_id: str) -> dict:
         self.cancelled.append(arena_id)
         return {"arena_id": arena_id, "status": "cancelled"}
 
-    def submit_user_action(self, arena_id: str, *, action: str, selection, metadata: dict) -> dict:
-        self.actions.append({"arena_id": arena_id, "action": action, "selection": selection, "metadata": metadata})
+    async def user_action(self, arena_id: str, body: dict) -> dict:
+        self.actions.append({"arena_id": arena_id, **body})
         return {"arena_id": arena_id, "status": "running"}
 
-    def query_status(self, arena_id: str) -> dict:
+    async def status_arena(self, arena_id: str) -> dict:
         self.queried.append(arena_id)
         return {"arena_id": arena_id, "status": "running", "slots": []}
 

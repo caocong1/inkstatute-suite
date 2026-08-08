@@ -20,11 +20,13 @@ checks for SSE connections.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+import inspect
+from typing import Any, AsyncIterator, Mapping
 
 from .auth import ArenaServiceAuth, ArenaServiceAuthError, AuthContext
 from .config import ArenaServiceConfig
 from .openapi import build_openapi_document, render_openapi_json
+from .sse import parse_last_event_id
 
 JsonObject = dict[str, Any]
 
@@ -162,6 +164,76 @@ class ArenaServiceApp:
         except ArenaServiceAuthError as exc:
             return _error_response(exc.code, exc.message, status=exc.status)
 
+    async def stream(
+        self,
+        method: str,
+        path: str,
+        headers: Mapping[str, str],
+        client_address: str = "127.0.0.1",
+    ) -> AsyncIterator[str]:
+        """SSE streaming dispatch. Auth is applied BEFORE yielding frames.
+
+        The order is critical (same as ``dispatch``):
+
+        1. ``auth.require_localhost(client_address)`` — reject non-localhost
+           with ``403 forbidden_remote`` BEFORE anything else.
+        2. Parse route — 404 if unknown or not a stream route.
+        3. ``auth.require_auth(headers)`` — reject missing/wrong token
+           with ``401 unauthorized`` BEFORE yielding any SSE frames.
+        4. Parse ``arena_id`` from path and ``Last-Event-ID`` from headers.
+        5. Delegate to ``engine.stream_arena(arena_id, last_seq)`` which
+           replays buffered events (``seq > last_seq``) then streams live
+           events through the :class:`ArenaOutputBoundary`.
+
+        Auth and localhost failures raise :class:`ArenaServiceAuthError`.
+        """
+        if not self._config.enabled:
+            return
+
+        # 1. Localhost check — reject non-localhost BEFORE anything else.
+        try:
+            self._auth.require_localhost(client_address)
+        except ArenaServiceAuthError:
+            raise
+
+        # 2. Parse route.
+        route = _parse_route(method, path, self._config.base_path)
+        if route is None:
+            raise ArenaServiceError(
+                f"Unknown route: {method} {path}",
+                code="not_found",
+                status=404,
+            )
+
+        operation, path_params = route
+        if operation != OPERATION_STREAM_ARENA:
+            raise ArenaServiceError(
+                f"Not a stream route: {method} {path}",
+                code="not_found",
+                status=404,
+            )
+
+        # 3. Auth check — BEFORE yielding any SSE frames. No bypass.
+        try:
+            self._auth.require_auth(headers)
+        except ArenaServiceAuthError:
+            raise
+
+        # 4. Parse arena_id and Last-Event-ID.
+        arena_id = path_params.get("arena_id", "")
+        last_seq = parse_last_event_id(headers)
+
+        # 5. Delegate to engine.stream_arena().
+        if self._engine is None:
+            return  # no engine — nothing to stream
+
+        stream_arena = getattr(self._engine, "stream_arena", None)
+        if not callable(stream_arena):
+            return
+
+        async for frame in stream_arena(arena_id, last_seq):
+            yield frame
+
     def operations(self) -> tuple[str, ...]:
         return OPERATIONS
 
@@ -185,7 +257,12 @@ class ArenaServiceApp:
         ctx: AuthContext,
         body: Mapping[str, object],
     ) -> JsonObject:
-        """Handle POST /v1/arena — create a new arena."""
+        """Handle POST /v1/arena — create a new arena.
+
+        Delegates to ``engine.create_arena(body_dict)`` which parses the
+        :class:`ArenaWorkflowConfig`, calls ``ArenaEngine.start()``, and
+        starts a background arena run.
+        """
         if self._engine is None:
             return _not_implemented("create_arena")
         mode = str(body.get("mode") or "")
@@ -206,12 +283,9 @@ class ArenaServiceApp:
         create = getattr(self._engine, "create_arena", None)
         if not callable(create):
             return _not_implemented("create_arena")
-        result = create(
-            mode=mode,
-            agent_slots=[str(s) for s in agent_slots],
-            task=task,
-            metadata=dict(body.get("metadata") or {}),
-        )
+        result = create(dict(body))
+        if inspect.isawaitable(result):
+            result = await result
         if isinstance(result, Mapping):
             data = dict(result)
         else:
@@ -224,7 +298,11 @@ class ArenaServiceApp:
         ctx: AuthContext,
         path_params: dict[str, str],
     ) -> JsonObject:
-        """Handle POST /v1/arena/{arena_id}/cancel — cancel an arena."""
+        """Handle POST /v1/arena/{arena_id}/cancel — cancel an arena.
+
+        Delegates to ``engine.cancel_arena(arena_id)`` which calls
+        ``ArenaEngine.cancel()`` for graceful shutdown.
+        """
         arena_id = path_params.get("arena_id", "")
         if not arena_id:
             return _error_response("invalid_request", "arena_id is required", status=400)
@@ -234,10 +312,13 @@ class ArenaServiceApp:
         if not callable(cancel):
             return _not_implemented("cancel_arena")
         result = cancel(arena_id)
+        if inspect.isawaitable(result):
+            result = await result
         if isinstance(result, Mapping):
             data = dict(result)
         else:
             data = {"arena_id": arena_id, "status": getattr(result, "status", "cancelled")}
+        data.setdefault("status", "cancelled")
         return {"status": 200, "body": data}
 
     async def _handle_user_action(
@@ -246,7 +327,12 @@ class ArenaServiceApp:
         path_params: dict[str, str],
         body: Mapping[str, object],
     ) -> JsonObject:
-        """Handle POST /v1/arena/{arena_id}/action — submit a user action."""
+        """Handle POST /v1/arena/{arena_id}/action — submit a user action.
+
+        Delegates to ``engine.user_action(arena_id, body_dict)`` which
+        parses :class:`ArenaUserAction` and calls
+        ``ArenaEngine.submit_user_action()``.
+        """
         arena_id = path_params.get("arena_id", "")
         if not arena_id:
             return _error_response("invalid_request", "arena_id is required", status=400)
@@ -255,15 +341,12 @@ class ArenaServiceApp:
             return _error_response("invalid_request", "action is required", status=400)
         if self._engine is None:
             return _not_implemented("user_action")
-        submit = getattr(self._engine, "submit_user_action", None)
+        submit = getattr(self._engine, "user_action", None)
         if not callable(submit):
             return _not_implemented("user_action")
-        result = submit(
-            arena_id,
-            action=action,
-            selection=body.get("selection"),
-            metadata=dict(body.get("metadata") or {}),
-        )
+        result = submit(arena_id, dict(body))
+        if inspect.isawaitable(result):
+            result = await result
         if isinstance(result, Mapping):
             data = dict(result)
         else:
@@ -275,16 +358,22 @@ class ArenaServiceApp:
         ctx: AuthContext,
         path_params: dict[str, str],
     ) -> JsonObject:
-        """Handle GET /v1/arena/{arena_id}/status — query arena status."""
+        """Handle GET /v1/arena/{arena_id}/status — query arena status.
+
+        Delegates to ``engine.status_arena(arena_id)`` which calls
+        ``ArenaEngine.query_status()``.
+        """
         arena_id = path_params.get("arena_id", "")
         if not arena_id:
             return _error_response("invalid_request", "arena_id is required", status=400)
         if self._engine is None:
             return _not_implemented("status_arena")
-        query = getattr(self._engine, "query_status", None)
+        query = getattr(self._engine, "status_arena", None)
         if not callable(query):
             return _not_implemented("status_arena")
         result = query(arena_id)
+        if inspect.isawaitable(result):
+            result = await result
         if isinstance(result, Mapping):
             data = dict(result)
         else:

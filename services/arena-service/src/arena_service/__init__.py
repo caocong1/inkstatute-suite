@@ -16,6 +16,7 @@ from __future__ import annotations
 from .app import ArenaServiceApp, ArenaServiceError
 from .auth import ArenaServiceAuth, ArenaServiceAuthError, AuthContext
 from .config import ArenaServiceConfig
+from .engine_integration import ArenaEventEmitter, ArenaServiceEngine
 from .event_buffer import ArenaEventBuffer, BufferedArenaEvent
 from .openapi import build_openapi_document, render_openapi_json
 from .output_boundary import ArenaOutputBoundary
@@ -33,11 +34,13 @@ from .subprocess_control import PartialResult, SubprocessController
 
 __all__ = [
     "ArenaEventBuffer",
+    "ArenaEventEmitter",
     "ArenaOutputBoundary",
     "ArenaServiceApp",
     "ArenaServiceAuth",
     "ArenaServiceAuthError",
     "ArenaServiceConfig",
+    "ArenaServiceEngine",
     "ArenaServiceError",
     "ArenaSseStream",
     "AuthContext",
