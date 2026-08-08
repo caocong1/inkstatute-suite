@@ -24,7 +24,7 @@ class RuntimeFeatureFlags:
     admin_api_enabled: bool = False
     qqbot_channel_enabled: bool = False
     wecom_channel_enabled: bool = False
-    codex_backend_enabled: bool = False
+    codex_backend_enabled: bool = False  # Deprecated: codex backend retired in Phase 104-01, replaced by acp-client.
     provider_model_backend_enabled: bool = False
 
     # M3 flags (9) — all default OFF, gated by require_enabled

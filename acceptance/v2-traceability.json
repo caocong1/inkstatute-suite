@@ -182,9 +182,14 @@
           "wecom-service"
         ],
         "implementation_files": [
+          "services/wecom-service/src/wecom_service/__main__.py",
           "services/wecom-service/src/wecom_service/active_task_router.py",
           "services/wecom-service/src/wecom_service/agent_backend.py",
+          "services/wecom-service/src/wecom_service/channel_wiring.py",
           "services/wecom-service/src/wecom_service/delivery_guard.py",
+          "services/wecom-service/src/wecom_service/event_consumer.py",
+          "services/wecom-service/src/wecom_service/gateway_client.py",
+          "services/wecom-service/src/wecom_service/http_server.py",
           "services/wecom-service/src/wecom_service/idempotency.py",
           "services/wecom-service/src/wecom_service/ingress_runtime.py",
           "services/wecom-service/src/wecom_service/memory_factory.py",
@@ -196,7 +201,9 @@
           "services/wecom-service/src/wecom_service/runtime_audit.py",
           "services/wecom-service/src/wecom_service/sender.py",
           "services/wecom-service/src/wecom_service/session_runtime.py",
-          "services/wecom-service/src/wecom_service/task_flow.py"
+          "services/wecom-service/src/wecom_service/task_flow.py",
+          "services/wecom-service/src/wecom_service/webhook.py",
+          "services/wecom-service/src/wecom_service/wiring.py"
         ],
         "schema_ids": [
           "channel_delivery.schema.json",
@@ -246,16 +253,20 @@
           "wecom-service"
         ],
         "implementation_files": [
-          "services/hermes-contract-layer/src/hermes_contract_layer/adapter_manifest.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/bootstrap.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/hook.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/ids.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/mapper.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/wecom_validation.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/writer.py",
+          "packages/acp-client/src/inkstatute_acp_client/adapter.py",
+          "packages/acp-client/src/inkstatute_acp_client/capability_negotiation.py",
+          "packages/acp-client/src/inkstatute_acp_client/client.py",
+          "packages/acp-client/src/inkstatute_acp_client/event_mapping.py",
+          "packages/acp-client/src/inkstatute_acp_client/lifecycle.py",
+          "packages/acp-client/src/inkstatute_acp_client/process_mode.py",
+          "services/wecom-service/src/wecom_service/__main__.py",
           "services/wecom-service/src/wecom_service/active_task_router.py",
           "services/wecom-service/src/wecom_service/agent_backend.py",
+          "services/wecom-service/src/wecom_service/channel_wiring.py",
           "services/wecom-service/src/wecom_service/delivery_guard.py",
+          "services/wecom-service/src/wecom_service/event_consumer.py",
+          "services/wecom-service/src/wecom_service/gateway_client.py",
+          "services/wecom-service/src/wecom_service/http_server.py",
           "services/wecom-service/src/wecom_service/idempotency.py",
           "services/wecom-service/src/wecom_service/ingress_runtime.py",
           "services/wecom-service/src/wecom_service/memory_factory.py",
@@ -267,7 +278,9 @@
           "services/wecom-service/src/wecom_service/runtime_audit.py",
           "services/wecom-service/src/wecom_service/sender.py",
           "services/wecom-service/src/wecom_service/session_runtime.py",
-          "services/wecom-service/src/wecom_service/task_flow.py"
+          "services/wecom-service/src/wecom_service/task_flow.py",
+          "services/wecom-service/src/wecom_service/webhook.py",
+          "services/wecom-service/src/wecom_service/wiring.py"
         ],
         "schema_ids": [
           "agent_adapter_manifest.schema.json"
@@ -301,22 +314,21 @@
       "evidence": {
         "fixtures": [],
         "gate_suites": [
-          "hermes-contract-layer"
+          "acp-client"
         ],
         "implementation_files": [
-          "services/hermes-contract-layer/src/hermes_contract_layer/adapter_manifest.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/bootstrap.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/hook.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/ids.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/mapper.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/wecom_validation.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/writer.py"
+          "packages/acp-client/src/inkstatute_acp_client/adapter.py",
+          "packages/acp-client/src/inkstatute_acp_client/capability_negotiation.py",
+          "packages/acp-client/src/inkstatute_acp_client/client.py",
+          "packages/acp-client/src/inkstatute_acp_client/event_mapping.py",
+          "packages/acp-client/src/inkstatute_acp_client/lifecycle.py",
+          "packages/acp-client/src/inkstatute_acp_client/process_mode.py"
         ],
         "schema_ids": [
           "agent_adapter_manifest.schema.json"
         ],
         "test_modules": [
-          "services/hermes-contract-layer/tests/test_adapter_bootstrap.py"
+          "packages/acp-client/tests/test_adapter.py"
         ]
       },
       "human_gate": false,
@@ -330,11 +342,11 @@
           "passed": true
         },
         "level_2_library": {
-          "evidence": "services/hermes-contract-layer/src/hermes_contract_layer/bootstrap.py: check_sanitized_bundle_manifest, probe_hermes_capabilities found",
+          "evidence": "packages/acp-client/src/inkstatute_acp_client/adapter.py: ACPBackendAdapter, ACPBackendConfig found",
           "passed": true
         },
         "level_3_wiring": {
-          "evidence": "services/hermes-contract-layer/src/hermes_contract_layer/__init__.py wiring patterns found: probe_hermes_capabilities, check_sanitized_bundle_manifest",
+          "evidence": "packages/acp-client/src/inkstatute_acp_client/__init__.py wiring patterns found: HERMES_COMPATIBILITY_MATRIX, create_hermes_adapter",
           "passed": true
         }
       }
@@ -350,9 +362,14 @@
           "wecom-service"
         ],
         "implementation_files": [
+          "services/wecom-service/src/wecom_service/__main__.py",
           "services/wecom-service/src/wecom_service/active_task_router.py",
           "services/wecom-service/src/wecom_service/agent_backend.py",
+          "services/wecom-service/src/wecom_service/channel_wiring.py",
           "services/wecom-service/src/wecom_service/delivery_guard.py",
+          "services/wecom-service/src/wecom_service/event_consumer.py",
+          "services/wecom-service/src/wecom_service/gateway_client.py",
+          "services/wecom-service/src/wecom_service/http_server.py",
           "services/wecom-service/src/wecom_service/idempotency.py",
           "services/wecom-service/src/wecom_service/ingress_runtime.py",
           "services/wecom-service/src/wecom_service/memory_factory.py",
@@ -364,7 +381,9 @@
           "services/wecom-service/src/wecom_service/runtime_audit.py",
           "services/wecom-service/src/wecom_service/sender.py",
           "services/wecom-service/src/wecom_service/session_runtime.py",
-          "services/wecom-service/src/wecom_service/task_flow.py"
+          "services/wecom-service/src/wecom_service/task_flow.py",
+          "services/wecom-service/src/wecom_service/webhook.py",
+          "services/wecom-service/src/wecom_service/wiring.py"
         ],
         "schema_ids": [],
         "test_modules": [
@@ -404,9 +423,14 @@
           "wecom-service"
         ],
         "implementation_files": [
+          "services/wecom-service/src/wecom_service/__main__.py",
           "services/wecom-service/src/wecom_service/active_task_router.py",
           "services/wecom-service/src/wecom_service/agent_backend.py",
+          "services/wecom-service/src/wecom_service/channel_wiring.py",
           "services/wecom-service/src/wecom_service/delivery_guard.py",
+          "services/wecom-service/src/wecom_service/event_consumer.py",
+          "services/wecom-service/src/wecom_service/gateway_client.py",
+          "services/wecom-service/src/wecom_service/http_server.py",
           "services/wecom-service/src/wecom_service/idempotency.py",
           "services/wecom-service/src/wecom_service/ingress_runtime.py",
           "services/wecom-service/src/wecom_service/memory_factory.py",
@@ -418,7 +442,9 @@
           "services/wecom-service/src/wecom_service/runtime_audit.py",
           "services/wecom-service/src/wecom_service/sender.py",
           "services/wecom-service/src/wecom_service/session_runtime.py",
-          "services/wecom-service/src/wecom_service/task_flow.py"
+          "services/wecom-service/src/wecom_service/task_flow.py",
+          "services/wecom-service/src/wecom_service/webhook.py",
+          "services/wecom-service/src/wecom_service/wiring.py"
         ],
         "schema_ids": [
           "agent_result.schema.json",
@@ -508,9 +534,15 @@
         ],
         "implementation_files": [
           "services/conversation-read-view/src/conversation_read_view/api.py",
+          "services/conversation-read-view/src/conversation_read_view/audit.py",
+          "services/conversation-read-view/src/conversation_read_view/export.py",
+          "services/conversation-read-view/src/conversation_read_view/log_reader.py",
           "services/conversation-read-view/src/conversation_read_view/models.py",
+          "services/conversation-read-view/src/conversation_read_view/pagination.py",
           "services/conversation-read-view/src/conversation_read_view/privacy.py",
-          "services/conversation-read-view/src/conversation_read_view/read_model.py"
+          "services/conversation-read-view/src/conversation_read_view/read_model.py",
+          "services/conversation-read-view/src/conversation_read_view/reports_aggregator.py",
+          "services/conversation-read-view/src/conversation_read_view/tenant_read_model.py"
         ],
         "schema_ids": [],
         "test_modules": [
@@ -547,11 +579,15 @@
           "packages/contract-test-suite/fixtures/phase4_success_event_stream.jsonl"
         ],
         "gate_suites": [
+          "acp-event-bridge",
           "contract-test-suite",
-          "hermes-contract-layer",
           "phase7-privacy-boundary"
         ],
         "implementation_files": [
+          "packages/acp-event-bridge/src/inkstatute_acp_event_bridge/bridge.py",
+          "packages/acp-event-bridge/src/inkstatute_acp_event_bridge/output_filter.py",
+          "packages/acp-event-bridge/src/inkstatute_acp_event_bridge/privacy_scan.py",
+          "packages/acp-event-bridge/src/inkstatute_acp_event_bridge/reverse_mapping.py",
           "packages/contract-test-suite/src/contract_test_suite/boundary_checks.py",
           "packages/contract-test-suite/src/contract_test_suite/coverage_report.py",
           "packages/contract-test-suite/src/contract_test_suite/event_stream_replay.py",
@@ -560,13 +596,7 @@
           "packages/contract-test-suite/src/contract_test_suite/privacy_scan.py",
           "packages/contract-test-suite/src/contract_test_suite/schema_validation.py",
           "packages/contract-test-suite/src/contract_test_suite/trial_acceptance.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/adapter_manifest.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/bootstrap.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/hook.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/ids.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/mapper.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/wecom_validation.py",
-          "services/hermes-contract-layer/src/hermes_contract_layer/writer.py"
+          "packages/contract-test-suite/src/contract_test_suite/wecom_validation.py"
         ],
         "schema_ids": [
           "execution_trace.schema.json",
@@ -593,7 +623,7 @@
           "passed": true
         },
         "level_3_wiring": {
-          "evidence": "services/hermes-contract-layer/src/hermes_contract_layer/hook.py wiring patterns found: from\\s+\\.writer\\s+import, ContractEventWriter",
+          "evidence": "packages/acp-event-bridge/src/inkstatute_acp_event_bridge/__init__.py wiring patterns found: scan_event, assert_reference_first",
           "passed": true
         }
       }
@@ -620,7 +650,8 @@
           "packages/contract-test-suite/src/contract_test_suite/paths.py",
           "packages/contract-test-suite/src/contract_test_suite/privacy_scan.py",
           "packages/contract-test-suite/src/contract_test_suite/schema_validation.py",
-          "packages/contract-test-suite/src/contract_test_suite/trial_acceptance.py"
+          "packages/contract-test-suite/src/contract_test_suite/trial_acceptance.py",
+          "packages/contract-test-suite/src/contract_test_suite/wecom_validation.py"
         ],
         "schema_ids": [],
         "test_modules": [
@@ -664,7 +695,8 @@
           "packages/contract-test-suite/src/contract_test_suite/paths.py",
           "packages/contract-test-suite/src/contract_test_suite/privacy_scan.py",
           "packages/contract-test-suite/src/contract_test_suite/schema_validation.py",
-          "packages/contract-test-suite/src/contract_test_suite/trial_acceptance.py"
+          "packages/contract-test-suite/src/contract_test_suite/trial_acceptance.py",
+          "packages/contract-test-suite/src/contract_test_suite/wecom_validation.py"
         ],
         "schema_ids": [],
         "test_modules": [
