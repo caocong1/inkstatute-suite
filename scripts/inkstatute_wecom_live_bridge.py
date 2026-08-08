@@ -418,6 +418,18 @@ class InkStatuteWeComBridge(WeComAdapter):
             return
         except Exception:
             LOGGER.exception("long task notice failed")
+            _append_jsonl(
+                self.events_path,
+                {
+                    "event": "wecom_task_flow",
+                    "task_id": flow.task_id,
+                    "trace_id": flow.trace_id,
+                    "stage": "long_task_notice_error",
+                    "occurred_at": _now(),
+                    "error_category": "runtime_error",
+                    "error_code": "long_task_notice_failed",
+                },
+            )
 
     async def _deliver_answer(self, event: Any, answer: str) -> dict[str, Any]:
         media_files, cleaned = self.extract_media(answer)
@@ -886,6 +898,7 @@ def _latest_hermes_message_id() -> int:
             row = conn.execute("select coalesce(max(id), 0) from messages").fetchone()
         return int(row[0] or 0) if row else 0
     except Exception:
+        LOGGER.warning("could not read latest Hermes message id from %s", db_path, exc_info=True)
         return 0
 
 
@@ -990,7 +1003,7 @@ def _unlink_quietly(path: Path) -> None:
     try:
         path.unlink()
     except OSError:
-        pass
+        LOGGER.debug("could not remove temporary file %s", path, exc_info=True)
 
 
 def _turn_record(event: Any, *, stage: str) -> dict[str, Any]:
@@ -1124,9 +1137,12 @@ def _setup_logging(path: Path) -> None:
 
 
 def _append_jsonl(path: Path, item: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n")
+    except OSError:
+        LOGGER.warning("could not append contract event to %s", path, exc_info=True)
 
 
 def _sha16(value: str) -> str:

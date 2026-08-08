@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import logging
 import os
 from typing import Any, Callable, Mapping
+
+_logger = logging.getLogger(__name__)
 
 from .mapper import map_agent_end_context
 from .writer import ContractEventWriter
@@ -38,6 +41,7 @@ def handle(event_type: str, context: dict[str, Any]) -> HookRecordingResult:
     try:
         return record_contract_result(event_type, context)
     except Exception:
+        _logger.exception("contract result recorder failed for event_type=%s", event_type)
         return HookRecordingResult(status="error", error="recorder_failed")
     finally:
         _restore_outbound_context(context, snapshot)

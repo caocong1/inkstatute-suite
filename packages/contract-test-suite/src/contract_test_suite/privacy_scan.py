@@ -99,7 +99,8 @@ def _scan_structured_data(path: Path, text: str) -> list[PrivacyIssue]:
     if path.suffix == ".json":
         try:
             value = json.loads(text)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as exc:
+            issues.append(_issue(path, "invalid_json", f"could not parse JSON file: {exc}"))
             return issues
         issues.extend(_raw_payload_issues(value, path=path))
     elif path.suffix == ".jsonl":
@@ -109,6 +110,7 @@ def _scan_structured_data(path: Path, text: str) -> list[PrivacyIssue]:
             try:
                 value = json.loads(line)
             except json.JSONDecodeError:
+                issues.append(_issue(path, "invalid_jsonl_line", "could not parse JSONL line", line=line_number))
                 continue
             issues.extend(_raw_payload_issues(value, path=path, line=line_number))
     return issues
