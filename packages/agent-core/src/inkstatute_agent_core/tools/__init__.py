@@ -5,7 +5,7 @@ and individual tool implementations.
 
 Phase 101-01: ToolRegistry, dispatching ToolExecutor, clarification (ask_user) tool.
 Phase 101-02: PathSandbox, file_read, MCP client, regulation search, builtin_registry.
-Phase 101-03: document_generate (planned).
+Phase 101-03: document_generate (Word track-changes docx).
 """
 
 from __future__ import annotations
@@ -25,6 +25,10 @@ from .regulation_search import (
     create_fixture_regulation_search_tool,
     REGULATION_SEARCH_TOOL_DEFINITION,
 )
+from .document_generate import (
+    create_document_generate_tool,
+    DOCUMENT_GENERATE_TOOL_DEFINITION,
+)
 from .builtin_registry import create_builtin_registry
 
 __all__ = [
@@ -41,5 +45,7 @@ __all__ = [
     "create_regulation_search_tool",
     "create_fixture_regulation_search_tool",
     "REGULATION_SEARCH_TOOL_DEFINITION",
+    "create_document_generate_tool",
+    "DOCUMENT_GENERATE_TOOL_DEFINITION",
     "create_builtin_registry",
 ]

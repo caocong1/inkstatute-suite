@@ -1,13 +1,16 @@
 """Builtin tool registry factory — composes all Phase 101 tools into one registry.
 
 ``create_builtin_registry()`` creates a ``ToolRegistry`` and registers
-all builtin tools from Phase 101 plans 101-01 and 101-02:
+all builtin tools from Phase 101 plans 101-01, 101-02, and 101-03:
 
 - ``read_file`` — file reading tool (via ``create_file_read_tool``)
 - ``search_laws`` — regulation search tool (via
   ``create_regulation_search_tool`` or fixture mode if no connector path)
 - ``ask_user`` — clarification tool (via ``create_clarification_tool``)
   — only if an ``EventEmitter`` is provided
+- ``generate_review_docx`` — Word track-changes document generation
+  tool (via ``create_document_generate_tool``) — only if an
+  ``EventEmitter`` is provided
 
 This factory composes the tools into a single registry that can be
 passed to ``create_dispatching_executor()`` and used with ``run_turn()``.
@@ -21,6 +24,11 @@ from ..event_emitter import EventEmitter
 from .clarification import (
     CLARIFICATION_TOOL_DEFINITION,
     create_clarification_tool,
+)
+from .document_generate import (
+    DEFAULT_TRACKCHANGES_SCRIPT_PATH,
+    DOCUMENT_GENERATE_TOOL_DEFINITION,
+    create_document_generate_tool,
 )
 from .file_read import (
     FILE_READ_TOOL_DEFINITION,
@@ -43,6 +51,7 @@ def create_builtin_registry(
     mcp_connector_path: str | None = None,
     emitter: EventEmitter | None = None,
     fixture_responses: dict[str, str] | None = None,
+    trackchanges_script_path: str | None = None,
 ) -> ToolRegistry:
     """Create a ``ToolRegistry`` with all builtin tools registered.
 
@@ -52,11 +61,15 @@ def create_builtin_registry(
         mcp_connector_path: Path to the law-database MCP connector
             (``index.js``).  If ``None``, the regulation search tool
             uses fixture mode (canned responses).
-        emitter: The ``EventEmitter`` for the clarification tool.  If
-            ``None``, the ``ask_user`` tool is not registered.
+        emitter: The ``EventEmitter`` for the clarification and
+            document_generate tools.  If ``None``, neither ``ask_user``
+            nor ``generate_review_docx`` is registered.
         fixture_responses: Canned responses for fixture-mode regulation
             search.  If ``None`` and ``mcp_connector_path`` is ``None``,
             an empty dict is used (all searches return "no results").
+        trackchanges_script_path: Path to
+            ``contract_review_trackchanges.py``.  Defaults to
+            ``DEFAULT_TRACKCHANGES_SCRIPT_PATH``.
 
     Returns:
         A ``ToolRegistry`` with all applicable builtin tools registered.
@@ -101,6 +114,18 @@ def create_builtin_registry(
             name="ask_user",
             handler=clarification_handler,
             definition=CLARIFICATION_TOOL_DEFINITION,
+        )
+
+    # 4. Register generate_review_docx tool (only if emitter is provided)
+    if emitter is not None:
+        script_path = trackchanges_script_path or DEFAULT_TRACKCHANGES_SCRIPT_PATH
+        doc_gen_handler = create_document_generate_tool(
+            sandbox, emitter, script_path=script_path,
+        )
+        registry.register_definition(
+            name="generate_review_docx",
+            handler=doc_gen_handler,
+            definition=DOCUMENT_GENERATE_TOOL_DEFINITION,
         )
 
     return registry

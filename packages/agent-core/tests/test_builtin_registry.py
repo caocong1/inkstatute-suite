@@ -30,7 +30,7 @@ class TestBuiltinRegistry(unittest.TestCase):
         self.tmpdir.cleanup()
 
     def test_registry_with_all_tools(self) -> None:
-        """Registry with emitter should have read_file, search_laws, and ask_user."""
+        """Registry with emitter should have read_file, search_laws, ask_user, and generate_review_docx."""
         emitter = EventEmitter(run_id="test-run")
         registry = create_builtin_registry(
             sandbox_roots=[str(self.root)],
@@ -41,9 +41,10 @@ class TestBuiltinRegistry(unittest.TestCase):
         self.assertTrue(registry.has_tool("read_file"))
         self.assertTrue(registry.has_tool("search_laws"))
         self.assertTrue(registry.has_tool("ask_user"))
+        self.assertTrue(registry.has_tool("generate_review_docx"))
 
     def test_registry_without_emitter(self) -> None:
-        """Registry without emitter should not have ask_user."""
+        """Registry without emitter should not have ask_user or generate_review_docx."""
         registry = create_builtin_registry(
             sandbox_roots=[str(self.root)],
             fixture_responses=LAW_FIXTURE_RESPONSES,
@@ -52,6 +53,7 @@ class TestBuiltinRegistry(unittest.TestCase):
         self.assertTrue(registry.has_tool("read_file"))
         self.assertTrue(registry.has_tool("search_laws"))
         self.assertFalse(registry.has_tool("ask_user"))
+        self.assertFalse(registry.has_tool("generate_review_docx"))
 
     def test_registry_returns_tool_registry(self) -> None:
         """create_builtin_registry should return a ToolRegistry instance."""
@@ -71,7 +73,7 @@ class TestBuiltinRegistry(unittest.TestCase):
         )
 
         definitions = registry.get_tool_definitions()
-        self.assertEqual(len(definitions), 3)
+        self.assertEqual(len(definitions), 4)
 
         # Each definition should be OpenAI function-calling format
         for defn in definitions:
@@ -93,7 +95,7 @@ class TestBuiltinRegistry(unittest.TestCase):
 
         definitions = registry.get_tool_definitions()
         names = {d["function"]["name"] for d in definitions}
-        self.assertEqual(names, {"read_file", "search_laws", "ask_user"})
+        self.assertEqual(names, {"read_file", "search_laws", "ask_user", "generate_review_docx"})
 
     def test_fixture_mode_fallback(self) -> None:
         """When mcp_connector_path is None, fixture mode should be used."""
@@ -161,6 +163,54 @@ class TestBuiltinRegistry(unittest.TestCase):
         # The handler should exist (we don't call it since it would need a real subprocess)
         handler = registry.get_handler("search_laws")
         self.assertIsNotNone(handler)
+
+    def test_document_generate_registered_with_emitter(self) -> None:
+        """generate_review_docx should be registered when emitter is provided."""
+        emitter = EventEmitter(run_id="test-run")
+        registry = create_builtin_registry(
+            sandbox_roots=[str(self.root)],
+            emitter=emitter,
+            fixture_responses=LAW_FIXTURE_RESPONSES,
+        )
+
+        self.assertTrue(registry.has_tool("generate_review_docx"))
+        handler = registry.get_handler("generate_review_docx")
+        self.assertIsNotNone(handler)
+
+    def test_document_generate_not_registered_without_emitter(self) -> None:
+        """generate_review_docx should NOT be registered when emitter is None."""
+        registry = create_builtin_registry(
+            sandbox_roots=[str(self.root)],
+            fixture_responses=LAW_FIXTURE_RESPONSES,
+        )
+
+        self.assertFalse(registry.has_tool("generate_review_docx"))
+
+    def test_document_generate_in_tool_definitions(self) -> None:
+        """get_tool_definitions() should include the document_generate definition."""
+        emitter = EventEmitter(run_id="test-run")
+        registry = create_builtin_registry(
+            sandbox_roots=[str(self.root)],
+            emitter=emitter,
+            fixture_responses=LAW_FIXTURE_RESPONSES,
+        )
+
+        definitions = registry.get_tool_definitions()
+        names = {d["function"]["name"] for d in definitions}
+        self.assertIn("generate_review_docx", names)
+
+    def test_trackchanges_script_path_parameter(self) -> None:
+        """trackchanges_script_path should be accepted and used."""
+        emitter = EventEmitter(run_id="test-run")
+        registry = create_builtin_registry(
+            sandbox_roots=[str(self.root)],
+            emitter=emitter,
+            fixture_responses=LAW_FIXTURE_RESPONSES,
+            trackchanges_script_path="/custom/path/to/script.py",
+        )
+
+        # The tool should be registered (the script path is only used at call time)
+        self.assertTrue(registry.has_tool("generate_review_docx"))
 
 
 if __name__ == "__main__":
