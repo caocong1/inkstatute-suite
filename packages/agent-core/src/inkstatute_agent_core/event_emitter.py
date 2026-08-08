@@ -41,6 +41,8 @@ from platform_contract.enums import RunEventType
 from platform_contract.events import Artifact, ErrorInfo, RunEvent
 from platform_contract.unified_events import (
     ArtifactCreatedPayload,
+    CitationRecord,
+    CitationRecordedPayload,
     ElicitationQuestion,
     ElicitationRequestedPayload,
     ErrorEventPayload,
@@ -412,6 +414,45 @@ class EventEmitter:
             metadata=metadata or {},
         )
         event = self._emit(RunEventType.ELICITATION_REQUESTED, payload, metadata=metadata)
+        self._side_channel_events.append(event)
+        return event
+
+    def emit_citation_recorded(
+        self,
+        citations: list[Any],
+        metadata: JsonObject | None = None,
+    ) -> RunEvent:
+        """Emit a ``citation.recorded`` event.
+
+        Converts each citation audit item (``CitationAuditItem`` or any
+        object with ``source`` and ``status`` attributes) into a
+        ``CitationRecord`` containing only ``source`` and ``status``
+        (the platform-contract payload). Full audit details remain in
+        the ``CitationAuditItem`` objects or event metadata.
+
+        Uses the side-channel buffer (same pattern as
+        ``emit_artifact_created`` and ``emit_elicitation_requested``).
+
+        Args:
+            citations: List of citation audit items. Each item must have
+                ``source`` and ``status`` attributes. For bare case
+                numbers (empty source), the ``reference`` is used as the
+                source label.
+            metadata: Optional metadata dict.
+
+        Returns:
+            A ``RunEvent`` with ``event_type="citation.recorded"`` and
+            a serialized ``CitationRecordedPayload``.
+        """
+        records: list[CitationRecord] = []
+        for item in citations:
+            source = item.source if item.source else item.reference
+            records.append(CitationRecord(source=source, status=item.status))
+        payload = CitationRecordedPayload(
+            citations=records,
+            metadata=metadata or {},
+        )
+        event = self._emit(RunEventType.CITATION_RECORDED, payload, metadata=metadata)
         self._side_channel_events.append(event)
         return event
 
