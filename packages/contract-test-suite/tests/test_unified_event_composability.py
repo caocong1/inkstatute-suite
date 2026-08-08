@@ -24,6 +24,7 @@ from contract_test_suite.schema_validation import (
 
 
 # The 15 new V3 event schema files (13 categories, 15 files with sub-types).
+# Plus 8 Arena lifecycle event schemas (Phase 105).
 NEW_EVENT_SCHEMA_NAMES = [
     "session_started",
     "message_delta",
@@ -40,6 +41,15 @@ NEW_EVENT_SCHEMA_NAMES = [
     "citation_recorded",
     "run_state_changed",
     "error_event",
+    # Arena lifecycle events (Phase 105 — CONTRACT-01/04).
+    "arena_workflow_started",
+    "arena_workflow_completed",
+    "arena_score_recorded",
+    "arena_review_completed",
+    "arena_synthesis_started",
+    "arena_synthesis_completed",
+    "arena_adversarial_challenge_completed",
+    "arena_early_stop_triggered",
 ]
 
 
@@ -296,6 +306,41 @@ class UnifiedEventComposabilityTests(unittest.TestCase):
         properties = set(schema.get("properties", {}).keys())
         self.assertNotIn("auto_approve", properties)
         self.assertNotIn("default_decision", properties)
+
+    # ------------------------------------------------------------------
+    # 10. Arena workflow_started neutral for non-legal use
+    # ------------------------------------------------------------------
+
+    def test_arena_workflow_started_neutral_for_non_legal_use(self) -> None:
+        """An arena.workflow_started event with engineering domain validates.
+
+        Verifies that Arena schemas are industry-neutral: a non-legal
+        (engineering) Arena event validates against the
+        ``arena_workflow_started`` schema with no legal-specific top-level
+        fields.
+        """
+        schemas = self.schemas
+        arena_started = {
+            "event_type": "arena.workflow_started",
+            "arena_id": "arena-eng-001",
+            "mode": "standard",
+            "agent_slots": ["codex", "claude"],
+            "metadata": {
+                "industry_context": {"domain": "engineering"},
+            },
+        }
+        _validate_schema(
+            schemas["arena_workflow_started"],
+            arena_started,
+            schemas,
+            path=("arena_workflow_started",),
+        )
+        # Confirm no forbidden top-level fields are present.
+        forbidden_present = set(arena_started) & FORBIDDEN_TOP_LEVEL_FIELDS
+        self.assertFalse(
+            forbidden_present,
+            f"arena_workflow_started payload has forbidden fields: {sorted(forbidden_present)}",
+        )
 
 
 if __name__ == "__main__":
