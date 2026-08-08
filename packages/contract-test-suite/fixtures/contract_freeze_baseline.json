@@ -1,9 +1,9 @@
 {
   "algorithm": "sha256",
   "files": {
-    "packages/platform-contract/src/platform_contract/__init__.py": "912d690fc161a1f24900df4252183d533c04da533f19acc6107115ea951d462f",
+    "packages/platform-contract/src/platform_contract/__init__.py": "ec210ad398a9365cdeb37a9933bded9e95136f0a347d37cad37d5465ff7cd0f4",
     "packages/platform-contract/src/platform_contract/agent_adapter.py": "295d30324dcb0c682e02bc02c9d8816d4d49b8fefe936eeb3cdfc19071dc24b0",
-    "packages/platform-contract/src/platform_contract/enums.py": "6d175194b0dd073297f0368b9e07448fcfca224c9a44ed89d3e1f3c1a2e104d3",
+    "packages/platform-contract/src/platform_contract/enums.py": "fc9ccc6cdd1b607bf8058cd86311891197b639f23bd04b8a869ef5f955f8e2e0",
     "packages/platform-contract/src/platform_contract/events.py": "51352e1843fcae1e70e692a613a5e9613693cad200c54f2370fd083e5c7c0c93",
     "packages/platform-contract/src/platform_contract/schemas/agent_adapter_manifest.schema.json": "f11307fbf5c19a6e2b79bd69c88f038d5efca73a389db99ddbffb130c6472bab",
     "packages/platform-contract/src/platform_contract/schemas/agent_result.schema.json": "45cd6d465698538ef00c57fad7adc024ec46fc55239e22d2f89c762fdf1217ce",
@@ -16,7 +16,7 @@
     "packages/platform-contract/src/platform_contract/schemas/channel_delivery.schema.json": "78f76e0f3aa6ab4135a96603a0e9524f6b3b6722ac002d8f2d20c6d33b5e67fb",
     "packages/platform-contract/src/platform_contract/schemas/channel_message.schema.json": "af624bee4d3309899cfc50a1ad54ba6a18e2701dddec02eb0e1b9be424de54fe",
     "packages/platform-contract/src/platform_contract/schemas/citation_recorded.schema.json": "5662c304da5f11170884acf84f361c996f6658ad8cb424d5de14154f6715da90",
-    "packages/platform-contract/src/platform_contract/schemas/common.schema.json": "5c9ac9133fdade9b4d7c3856feb6595614c4765616e8922958598d068f08b474",
+    "packages/platform-contract/src/platform_contract/schemas/common.schema.json": "519c7508fe2d2468b94ea22eb0287e9e41408630b23eb5f041d0c25b916445f7",
     "packages/platform-contract/src/platform_contract/schemas/context_bundle.schema.json": "8f24086665bb4ae0365abf453cdf5dc8a088c2d03322333601e5b1974b693a89",
     "packages/platform-contract/src/platform_contract/schemas/elicitation_question.schema.json": "6514d2377480473556fcdb5cc3b1096ba215375818543fd3e3800adfaaeebb1e",
     "packages/platform-contract/src/platform_contract/schemas/elicitation_requested.schema.json": "1b133945d1198975cf46f27b26bfcdc70dd8f1585132fc191c555ca50286762d",
@@ -47,6 +47,14 @@
     "packages/platform-contract/src/platform_contract/schemas/tool_call_delta.schema.json": "4b4e5c3d547818597567406b2d69703fcbeb5e60c9037f1bcc542e986610fa0e",
     "packages/platform-contract/src/platform_contract/schemas/tool_call_started.schema.json": "7f3d7b16333a0037933879b208352e8cec117415c0d80b4a99012f4347cca3e6",
     "packages/platform-contract/src/platform_contract/schemas/workspace.schema.json": "b08467d915843c9652a40eb5668c66c4addd49f8aa467ef7de125581f14038d7",
-    "packages/platform-runtime/src/platform_runtime/protocols.py": "8ed7769e69aae75cfda77fae871092fc7d4c382720071685841cb52f51a0824c"
+    "packages/platform-runtime/src/platform_runtime/protocols.py": "8ed7769e69aae75cfda77fae871092fc7d4c382720071685841cb52f51a0824c",
+    "packages/platform-contract/src/platform_contract/schemas/arena_workflow_started.schema.json": "8497f15fa06b6bb3f6240255cb51cc42919c5832ec32677416a953c2eb28f50b",
+    "packages/platform-contract/src/platform_contract/schemas/arena_workflow_completed.schema.json": "3ec6806c2662e3fb63688910f9121d70c50131f3a5c4f56fcd0392986f4fb5f6",
+    "packages/platform-contract/src/platform_contract/schemas/arena_score_recorded.schema.json": "fb137663cf09ee6e7620a8243b6a69bc1df247ecf8587c028cf776d82046f1b6",
+    "packages/platform-contract/src/platform_contract/schemas/arena_review_completed.schema.json": "e85126f88cd8dc1ab56548d5cfccfab2acf3c785c46a56ed620ad377ca9525e8",
+    "packages/platform-contract/src/platform_contract/schemas/arena_synthesis_started.schema.json": "f8eb4a8b505a2a999548b7bf2d1badbe3bf59e2c9475118337cd52617f0248de",
+    "packages/platform-contract/src/platform_contract/schemas/arena_synthesis_completed.schema.json": "b55bfdca96cbbe4af6091aa97fa13b9045b484f55b8a56b8aa0e3454ebbfcf5f",
+    "packages/platform-contract/src/platform_contract/schemas/arena_adversarial_challenge_completed.schema.json": "8e5d16c06c135d6c373bd218a1ccbfd5d5c43a16e37bedf729efc2950dc03398",
+    "packages/platform-contract/src/platform_contract/schemas/arena_early_stop_triggered.schema.json": "4a0b43275181f49f3392921c1a744b66af867fcce1c40feb1fac04a2c030ef60"
   }
 }

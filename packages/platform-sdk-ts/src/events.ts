@@ -155,6 +155,73 @@ export interface ErrorEventPayload {
 }
 
 // ---------------------------------------------------------------------------
+// Arena lifecycle event payload interfaces (8 types)
+// ---------------------------------------------------------------------------
+
+export type ArenaMode = "standard" | "self_score" | "arena_review" | "adversarial";
+
+export interface ArenaWorkflowStartedPayload {
+  arena_id: string;
+  mode: ArenaMode;
+  agent_slots?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaWorkflowCompletedPayload {
+  arena_id: string;
+  mode: ArenaMode;
+  status: string;
+  agent_slots?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaScoreRecordedPayload {
+  arena_id: string;
+  agent_slot: string;
+  round: number;
+  score: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaReviewCompletedPayload {
+  arena_id: string;
+  reviewer_slot: string;
+  reviewed_slot: string;
+  round: number;
+  findings?: Array<Record<string, unknown>>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaSynthesisStartedPayload {
+  arena_id: string;
+  round: number;
+  source_slots?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaSynthesisCompletedPayload {
+  arena_id: string;
+  round: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaAdversarialChallengeCompletedPayload {
+  arena_id: string;
+  challenger_slot: string;
+  challenged_slot: string;
+  round: number;
+  findings?: Array<Record<string, unknown>>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaEarlyStopTriggeredPayload {
+  arena_id: string;
+  reason: string;
+  round: number;
+  metadata?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
 // Union type and event envelope
 // ---------------------------------------------------------------------------
 
@@ -173,7 +240,15 @@ export type UnifiedEventPayload =
   | ArtifactCreatedPayload
   | CitationRecordedPayload
   | RunStateChangedPayload
-  | ErrorEventPayload;
+  | ErrorEventPayload
+  | ArenaWorkflowStartedPayload
+  | ArenaWorkflowCompletedPayload
+  | ArenaScoreRecordedPayload
+  | ArenaReviewCompletedPayload
+  | ArenaSynthesisStartedPayload
+  | ArenaSynthesisCompletedPayload
+  | ArenaAdversarialChallengeCompletedPayload
+  | ArenaEarlyStopTriggeredPayload;
 
 export interface RunEventEnvelope {
   event_id: string;

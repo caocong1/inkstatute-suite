@@ -73,6 +73,38 @@ class EventTypesTsTests(unittest.TestCase):
         self.assertIn("export interface ElicitationOption", self.source)
         self.assertIn("export interface ElicitationQuestion", self.source)
 
+    def test_contains_all_8_arena_payload_interfaces(self) -> None:
+        expected = [
+            "ArenaWorkflowStartedPayload",
+            "ArenaWorkflowCompletedPayload",
+            "ArenaScoreRecordedPayload",
+            "ArenaReviewCompletedPayload",
+            "ArenaSynthesisStartedPayload",
+            "ArenaSynthesisCompletedPayload",
+            "ArenaAdversarialChallengeCompletedPayload",
+            "ArenaEarlyStopTriggeredPayload",
+        ]
+        for name in expected:
+            self.assertIn(f"export interface {name}", self.source)
+
+    def test_contains_arena_mode_type(self) -> None:
+        self.assertIn("export type ArenaMode", self.source)
+        self.assertIn('"standard" | "self_score" | "arena_review" | "adversarial"', self.source)
+
+    def test_unified_event_payload_union_includes_arena_types(self) -> None:
+        arena_names = [
+            "ArenaWorkflowStartedPayload",
+            "ArenaWorkflowCompletedPayload",
+            "ArenaScoreRecordedPayload",
+            "ArenaReviewCompletedPayload",
+            "ArenaSynthesisStartedPayload",
+            "ArenaSynthesisCompletedPayload",
+            "ArenaAdversarialChallengeCompletedPayload",
+            "ArenaEarlyStopTriggeredPayload",
+        ]
+        for name in arena_names:
+            self.assertIn(name, self.source)
+
 
 if __name__ == "__main__":
     unittest.main()
