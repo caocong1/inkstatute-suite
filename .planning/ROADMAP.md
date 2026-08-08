@@ -336,7 +336,10 @@ Carried human gates from v1.x (NOT closed by v3.0):
   5. 高风险法律安全保持：不自动合成 skill、不自动修改法律结论类 skill、`skill_candidate.requires_human_review` 恒为 true，有测试断言
   6. 建立 golden fixture 对拍集——同一输入在移植前后的 prompt 装配结果可比对，差异需被显式解释
 
-**Plans**: TBD (est. 4-5)
+**Plans**: 5 plans
+  - Wave 1: `102-01-PLAN.md` (tool_leak.py — CORE-06), `102-02-PLAN.md` (prompt_assembler.py — CORE-05)
+  - Wave 2: `102-03-PLAN.md` (citations/ — CORE-07), `102-04-PLAN.md` (guardrails.py — CORE-08, SAFE-01, SAFE-04)
+  - Wave 3: `102-05-PLAN.md` (turn loop integration — CORE-05..08, SAFE-04)
 **UI hint**: no
 **Human gate**: HG-1 法律质量（律师抽样确认输出质量不低于现有 lawyer-desktop / Hermes）—— 不得由自动化声称通过
 
