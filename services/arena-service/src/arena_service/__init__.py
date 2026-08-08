@@ -46,7 +46,13 @@ __all__ = [
     "StaggeredStartupSemaphore",
     "SubprocessController",
     "build_openapi_document",
+    "check_no_auto_approve_dangerous",
+    "check_no_batch_approve",
+    "check_permission_request_forwarding",
     "encode_arena_sse_event",
+    "get_dangerous_kinds",
+    "is_dangerous_kind",
     "parse_last_event_id",
     "render_openapi_json",
+    "simulate_approval",
 ]
