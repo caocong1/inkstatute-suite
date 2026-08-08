@@ -20,16 +20,30 @@ from __future__ import annotations
 
 from .artifact_store import ArtifactStore, RoundArtifact
 from .guardrail_boundary import GuardrailResult, apply_post_hoc_guardrails
+from .mode1 import Mode1Result, run_mode1_parallel
+from .mode2 import (
+    EventEmitter,
+    IterationState,
+    Mode2Result,
+    _extract_self_score,
+    run_mode2_iteration,
+)
 from .provenance import ProvenanceChain, ProvenanceLogger
 
 __version__ = "0.1.0"
 
 __all__ = [
     "ArtifactStore",
+    "EventEmitter",
     "GuardrailResult",
+    "IterationState",
+    "Mode1Result",
+    "Mode2Result",
     "ProvenanceChain",
     "ProvenanceLogger",
     "RoundArtifact",
     "__version__",
     "apply_post_hoc_guardrails",
+    "run_mode1_parallel",
+    "run_mode2_iteration",
 ]
