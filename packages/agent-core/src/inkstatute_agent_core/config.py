@@ -46,6 +46,11 @@ class AgentCoreConfig:
             per token).  Default 4.
         heartbeat_metadata_key: Metadata key used to mark heartbeat
             events.  Default ``"heartbeat"``.
+        max_leak_retries: Maximum number of leak-retry rounds after the
+            LLM emits tool-call markup in plain text.  When exhausted,
+            the leaked content is sanitised and emitted as the final
+            answer.  Default 3, matching Rust ``MAX_LEAK_RETRIES``
+            (``chat.rs:36``).
     """
 
     max_turns: int = 10
@@ -55,6 +60,7 @@ class AgentCoreConfig:
     context_budget_tokens: int = 32768
     chars_per_token: int = 4
     heartbeat_metadata_key: str = "heartbeat"
+    max_leak_retries: int = 3
     metadata: JsonObject = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -66,6 +72,10 @@ class AgentCoreConfig:
             raise ValueError(
                 f"silence_threshold_seconds must be > 0, "
                 f"got {self.silence_threshold_seconds}"
+            )
+        if self.max_leak_retries < 0:
+            raise ValueError(
+                f"max_leak_retries must be >= 0, got {self.max_leak_retries}"
             )
 
 

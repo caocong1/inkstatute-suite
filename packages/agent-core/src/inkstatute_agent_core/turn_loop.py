@@ -38,6 +38,7 @@ from platform_contract.events import ErrorInfo, RunEvent
 
 from .config import AgentCoreConfig
 from .event_emitter import EventEmitter
+from .guardrails import de_ai_polish
 from .model.provider import (
     ChatRequest,
     ContentDelta,
@@ -48,7 +49,11 @@ from .model.provider import (
     UsageAccumulator,
     UsageDelta,
 )
+from .tool_leak import contains_tool_leakage, sanitize_assistant_content
 
+# ``audit`` is an async function in the ``citations`` sub-package (Plan 102-03).
+# It is imported lazily inside ``run_turn`` so the turn loop remains importable
+# even if the citations package is absent during early plan ordering.
 JsonObject = dict[str, Any]
 
 
@@ -117,6 +122,14 @@ async def run_turn(
     # Work on a mutable copy of messages
     current_messages = list(messages)
     previous_phase: str | None = None
+    # Leak-retry counter — incremented each time the model emits tool-call
+    # markup in plain text.  When ``leak_retries`` reaches
+    # ``config.max_leak_retries`` the leaked content is sanitised and
+    # emitted as the final answer (matching Rust ``MAX_LEAK_RETRIES``).
+    leak_retries = 0
+    # Track tool names alongside tool results so the citation audit can
+    # collect retrieval evidence ``(tool_name, result_text)`` pairs.
+    tool_result_names: list[str] = []
 
     for _round in range(config.max_turns):
         # 1. Emit phase_changed
@@ -240,6 +253,7 @@ async def run_turn(
                                     is_error=True,
                                 )
                             )
+                            tool_result_names.append(tc_delta.tool_name)
                         else:
                             # Tool succeeded
                             yield emitter.emit_tool_call_delta(
@@ -257,6 +271,7 @@ async def run_turn(
                                     result.content,
                                 )
                             )
+                            tool_result_names.append(tc_delta.tool_name)
 
                             # Check terminate_turn metadata — a tool can
                             # signal that the current turn should stop
@@ -280,6 +295,7 @@ async def run_turn(
                                 "[fixture tool result]",
                             )
                         )
+                        tool_result_names.append(tc_delta.tool_name)
                 except Exception as exc:
                     # Tool execution exception — error recovery
                     error_info = ErrorInfo(
@@ -301,6 +317,7 @@ async def run_turn(
                             is_error=True,
                         )
                     )
+                    tool_result_names.append(tc_delta.tool_name)
 
             # d. Check if any tool requested turn termination
             if should_terminate:
@@ -319,9 +336,58 @@ async def run_turn(
         full_content = "".join(content_parts)
         usage_dict = usage_accumulator.to_dict()
 
+        # ------------------------------------------------------------------
+        # 7a. Leak detection + retry (Phase 102-05, CORE-06)
+        # ------------------------------------------------------------------
+        # After streaming completes, check whether the model leaked
+        # tool-call markup (DSML/XML) into plain text.  If leaked and
+        # retries remain, discard this response and retry the same
+        # request (do NOT feed leaked text into history).  When retries
+        # are exhausted, sanitise the content and proceed.
+        if contains_tool_leakage(full_content):
+            if leak_retries < config.max_leak_retries:
+                leak_retries += 1
+                # Retry — do not append the leaked assistant message to
+                # history; just continue to the next round.
+                yield emitter.emit_thought_delta(
+                    "检测到工具调用泄漏，正在重试..."
+                )
+                continue
+            # Retries exhausted — sanitise and proceed
+            full_content = sanitize_assistant_content(full_content)
+
+        # ------------------------------------------------------------------
+        # 7b. Citation audit (Phase 102-05, CORE-07, SAFE-04)
+        # ------------------------------------------------------------------
+        # Collect retrieval evidence from tool results in message history.
+        retrievals = _collect_retrieval_evidence(
+            current_messages, tool_result_names
+        )
+        citation_audit = await _run_citation_audit(full_content, retrievals)
+        citation_audit_summary = {
+            "total": citation_audit.total,
+            "verified": citation_audit.verified,
+            "retrieved": citation_audit.retrieved,
+            "unverified": citation_audit.unverified,
+        }
+        if citation_audit.items:
+            yield emitter.emit_citation_recorded(citation_audit.items)
+
+        # ------------------------------------------------------------------
+        # 7c. De-AI polish (Phase 102-05, CORE-08)
+        # ------------------------------------------------------------------
+        full_content = de_ai_polish(full_content)
+
+        # ------------------------------------------------------------------
+        # 7d. Emit message.completed with citation audit summary
+        # ------------------------------------------------------------------
+        completed_metadata: JsonObject = {"provider_usage": usage_dict}
+        if citation_audit_summary["total"] > 0:
+            completed_metadata["citation_audit"] = citation_audit_summary
+
         yield emitter.emit_message_completed(
             full_content,
-            metadata={"provider_usage": usage_dict},
+            metadata=completed_metadata,
         )
         yield emitter.emit_run_state_changed(
             "succeeded",
@@ -382,6 +448,60 @@ def _build_assistant_message_with_tool_calls(
         "content": content if content else None,
         "tool_calls": tool_calls,
     }
+
+
+# ---------------------------------------------------------------------------
+# Phase 102-05 — guardrail pipeline helpers
+# ---------------------------------------------------------------------------
+
+
+def _collect_retrieval_evidence(
+    messages: list[dict],
+    tool_names: list[str],
+) -> list[tuple[str, str]]:
+    """Collect ``(tool_name, result_text)`` pairs from tool result messages.
+
+    Scans *messages* for ``role == "tool"`` entries and pairs each with the
+    corresponding tool name from *tool_names* (in insertion order).  This
+    retrieval evidence is fed to the citation audit so citations found in
+    tool results are labelled ``retrieved`` rather than ``unverified``.
+    """
+    retrievals: list[tuple[str, str]] = []
+    tool_msg_idx = 0
+    for msg in messages:
+        if msg.get("role") != "tool":
+            continue
+        content = msg.get("content", "")
+        if not isinstance(content, str):
+            content = str(content)
+        if tool_msg_idx < len(tool_names):
+            name = tool_names[tool_msg_idx]
+        else:
+            name = "unknown_tool"
+        tool_msg_idx += 1
+        retrievals.append((name, content))
+    return retrievals
+
+
+async def _run_citation_audit(
+    text: str,
+    retrievals: list[tuple[str, str]],
+) -> Any:
+    """Run the citation audit and return a ``CitationAudit``-like result.
+
+    Delegates to ``citations.audit()`` (Plan 102-03) when available.  Falls
+    back to ``guardrails.enforce_citation_audit()`` (which itself has a
+    conservative self-contained fallback) so the guardrail is never bypassed.
+    """
+    try:
+        from .citations import audit as _audit  # type: ignore[attr-defined]
+
+        return await _audit(text, retrievals, None)
+    except ImportError:
+        # citations sub-package not available — use guardrails fallback
+        from .guardrails import enforce_citation_audit
+
+        return await enforce_citation_audit(text, retrievals, None)
 
 
 __all__ = [
