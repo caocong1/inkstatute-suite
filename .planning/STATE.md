@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 current_phase: 104
-current_phase_name: Legacy Convergence
-status: planning
-stopped_at: Phase 103 complete — CORE-10 dual entry points complete, ready for Phase 104
-last_updated: "2026-08-08T14:45:00.000Z"
+status: milestone_complete
+stopped_at: Phase 104 complete — all 17 phases done, milestone v3.0 ready for completion
+last_updated: "2026-08-08T15:30:00.000Z"
 last_activity: 2026-08-08
-last_activity_desc: Phase 103 complete. 3 plans, 94 new tests, 879 total agent-core tests. Dual entry points (in-process + ACP) verified.
+last_activity_desc: Phase 104 complete. 4 plans, ~10,483 lines retired, 34 gates green. Milestone v3.0 implementation complete — human gates remain.
 progress:
   total_phases: 17
-  completed_phases: 16
-  total_plans: 70
-  completed_plans: 69
-  percent: 94
+  completed_phases: 17
+  total_plans: 74
+  completed_plans: 73
+  percent: 100
+current_phase_name: Legacy Convergence
 ---
 
 # Project State
@@ -25,15 +25,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 103 complete — ready for Phase 104 (Legacy Convergence)
+**Current focus:** Milestone v3.0 implementation complete — all 17 phases done. Ready for milestone completion and human gate acceptance.
 
 ## Current Position
 
-Phase: 104 — Legacy Convergence
-Status: Ready to plan
-Last activity: 2026-08-08 — Phase 103 complete (Dual Entry Points), transitioned to Phase 104
+Phase: 104 — Legacy Convergence (COMPLETE)
+Status: Milestone v3.0 complete — all phases done
+Last activity: 2026-08-08 — Phase 104 complete, milestone v3.0 implementation finished
 
-**Next command:** `/gsd-plan-phase 104` （或 `/gsd-autonomous` 自动推进）
+**Next command:** `/gsd-complete-milestone v3.0` （milestone 归档 + 准备下一版本）
 
 ## Milestone v3.0 Overview
 
@@ -113,15 +113,15 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 ## Session Continuity
 
 Last session: 2026-08-08
-Stopped at: Phase 103 complete — CORE-10 dual entry points complete, ready for Phase 104
+Stopped at: Milestone v3.0 implementation complete — all 17 phases (88-104) done, ready for milestone completion
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01..10 + SAFE-01 + SAFE-04 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-103 complete, next: Phase 104)
-Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/, HG-1 (法律质量 — Phase 102), HG-4 (修订稿质量 — Phase 101)
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, all requirements satisfied: EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-01..06 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01..10 + CONV-01..05 + SAFE-01 + SAFE-04 + SAFE-06 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, ALL COMPLETE)
+Carried human gates (do not auto-complete): HG-1 (法律质量 — Phase 102), HG-4 (修订稿质量 — Phase 101), HG-2 (真机通道 — carried from V2), HG-3 (律师试运行 — carried from V2), QQ --live acceptance (carried from v1.9)
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-plan-phase 104` — Legacy Convergence (CONV-01..05, SAFE-06: retire ~5,465 lines + gate update)
-- 或 `/gsd-autonomous` 自动推进 Phase 104 (final phase)
+- `/gsd-complete-milestone v3.0` — 归档 v3.0 milestone + 准备下一版本
+- 人工验收：HG-1 法律质量抽样、HG-4 修订稿质量确认、HG-2 真机通道、HG-3 律师试运行

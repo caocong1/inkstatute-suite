@@ -133,6 +133,12 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 - ✓ SAFE-01: skill_candidate.requires_human_review 恒为 true，高风险法律结论人审 — Phase 102
 - ✓ SAFE-04: research-gate 与 citation 审计不可绕过 — Phase 102
 - ✓ CORE-10: 双入口（in-process BackendAdapter + inkstatute-agent acp） — Phase 103
+- ✓ CONV-01: 退役 packages/backends/hermes 与 packages/backends/codex — Phase 104
+- ✓ CONV-02: 退役 packages/channels/web_sse — Phase 104
+- ✓ CONV-03: 归并 services/lawyer-web-chat 进 Gateway；退役 services/hermes-contract-layer — Phase 104
+- ✓ CONV-04: 冻结 packages/multi-agent-adapter (experimental) — Phase 104
+- ✓ CONV-05: gate 体系更新（34 gates, gate-coverage meta-test 全覆盖） — Phase 104
+- ✓ SAFE-06: 可组合性保持 + WeCom/QQ 回归测试全绿 — Phase 104
 
 ### Active
 
@@ -325,7 +331,8 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 ## Current State
 
 - **Last shipped:** v1.11 Product Console (Phases 79–87) — product-grade operations control plane with process orchestration, observability dashboards, session auth, and end-to-end smoke verification.
-- **Active milestone:** v3.0 Unified Legal Core (Phases 88–104) — Stage D 自研核心 in progress, final phase remaining.
+- **Active milestone:** v3.0 Unified Legal Core (Phases 88–104) — ALL PHASES COMPLETE. Ready for milestone completion.
+- **Phase 104 complete:** Legacy Convergence — 4 plans, ~10,483 lines retired (hermes/codex backends, web_sse channel, lawyer-web-chat, hermes-contract-layer), multi-agent-adapter frozen, gate system updated (38→34 gates), composability + WeCom/QQ regression verified. All 61 requirements satisfied.
 - **Phase 103 complete:** Dual Entry Points — 3 plans, 94 new tests (879 total), CORE-10 satisfied. InProcessAgentCoreAdapter (9 BackendAdapter methods) + `inkstatute-agent acp` CLI (ACP v1 server). Both share same run_turn() implementation. Backend selection configurable via operator-config. W-1 sentinel race + W-7 system prompt parity fixed.
 - **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
 - **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
@@ -352,4 +359,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-08-08 — Phase 103 (Dual Entry Points) complete, milestone v3.0 in progress*
+*Last updated: 2026-08-08 — Phase 104 (Legacy Convergence) complete, milestone v3.0 ALL PHASES COMPLETE*
