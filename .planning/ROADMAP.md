@@ -75,7 +75,7 @@ Carried human gates from v1.x (NOT closed by v3.0):
 ### 阶段 D — 自研核心
 
 - [x] **Phase 100: Agent Core Skeleton** - Python async 流式 turn loop（工具轮也流式）+ 上下文预算 + 模型层 (CORE-01, CORE-04, CORE-09) ✅ COMPLETE — Plans 100-01, 100-02, 100-03, 100-04 complete (scaffold + EventEmitter + config + model layer + context assembler + turn loop + messages + e2e tests + phase completion)
-- [ ] **Phase 101: Agent Core Tools** - 工具层 + Word 原生修订 docx (CORE-02, CORE-03)
+- [x] **Phase 101: Agent Core Tools** - 工具层 + Word 原生修订 docx (CORE-02, CORE-03) ✅ COMPLETE
 - [ ] **Phase 102: Legal Guardrail Port** - prompt 装配 / tool_leak / citation 审计 / 四护栏移植 (CORE-05..08, SAFE-01, SAFE-04)
 - [ ] **Phase 103: Dual Entry Points** - in-process BackendAdapter + inkstatute-agent acp (CORE-10)
 - [ ] **Phase 104: Legacy Convergence** - 退役 ~5,465 行存量 + gate 体系更新 (CONV-01..05, SAFE-06)
@@ -305,21 +305,21 @@ Carried human gates from v1.x (NOT closed by v3.0):
 **Plans**: 4 (100-01 scaffold+EventEmitter+config ✅ | 100-02 model layer+gateway ✅ | 100-03 context assembler+turn loop ✅ | 100-04 e2e tests+phase completion ✅) ✅ COMPLETE
 **UI hint**: no
 
-### Phase 101: Agent Core Tools
+### Phase 101: Agent Core Tools ✅ COMPLETE
 
 **Goal**: 自研核心具备完成真实法律任务所需的工具，包括墨律最难也最值钱的产出——带 Word 原生修订的合同审查稿
 **Depends on**: Phase 100
-**Requirements**: CORE-02, CORE-03
+**Requirements**: CORE-02, CORE-03 (all complete ✅)
 **Success Criteria** (what must be TRUE):
 
-  1. 工具层实现并可被 turn loop 调用：澄清提问（映射 `elicitation.requested`）、法规检索、文件读取、文档生成、MCP client（复用 `packages/mcp-registry`）
-  2. 工具结果正确回注 turn loop，多轮工具编排可用；工具失败不导致整轮崩溃而是产出 `error` 事件并可恢复
-  3. Word 原生修订 docx 产出成功：直接复用 `lawfirm-profile/scripts/contract_review_trackchanges.py`（41,185 字节）的能力，**不重写**；产出的 docx 在 Word 中显示为原生修订标记
-  4. 产物以 `artifact.created` 事件发出，`kind` 正确区分 `docx` 与 `trackchanges_docx`，并可经 Gateway `/v1/artifacts/{id}` 下载
-  5. MCP 工具（`law-database`、`wenshu`）可被发现与调用，调用摘要进入 `tool_call.*` 事件与 `ExecutionTrace.tool_calls`
-  6. 工具权限遵守 Phase 90 的安全默认——不存在未经审批的 shell / 代码执行路径
+  1. ✅ 工具层实现并可被 turn loop 调用：澄清提问（映射 `elicitation.requested`）、法规检索、文件读取、文档生成、MCP client（复用 `packages/mcp-registry`） (Plans 101-01, 101-02, 101-03)
+  2. ✅ 工具结果正确回注 turn loop，多轮工具编排可用；工具失败不导致整轮崩溃而是产出 `error` 事件并可恢复 (Plan 101-04, test_e2e_multi_tool.py + test_e2e_tool_error_recovery.py)
+  3. ✅ Word 原生修订 docx 产出成功：直接复用 `lawfirm-profile/scripts/contract_review_trackchanges.py`（41,185 字节）的能力，**不重写**；产出的 docx 在 Word 中显示为原生修订标记 (Plan 101-03, test_trackchanges_verification.py — w:ins, w:del, w:delText, w:comment verified)
+  4. ✅ 产物以 `artifact.created` 事件发出，`kind` 正确区分 `docx` 与 `trackchanges_docx`，并可经 Gateway `/v1/artifacts/{id}` 下载 (Plan 101-03, test_e2e_trackchanges.py — artifact.created with kind=trackchanges_docx)
+  5. ✅ MCP 工具（`law-database`、`wenshu`）可被发现与调用，调用摘要进入 `tool_call.*` 事件与 `ExecutionTrace.tool_calls` (Plan 101-02, test_e2e_mcp_tools.py — fixture mode + schema conversion)
+  6. ✅ 工具权限遵守 Phase 90 的安全默认——不存在未经审批的 shell / 代码执行路径 (Plan 101-04, test_security_verification.py — no subprocess.run/os.system/exec/eval, PathSandbox traversal rejection, no terminal/execute_code permissions)
 
-**Plans**: 4 (101-01 tool registry + EventEmitter + clarification ✅ | 101-02 file_read + MCP client + regulation search ✅ | 101-03 document_generate + track-changes ✅ | 101-04 e2e + completion)
+**Plans**: 4 (101-01 tool registry + EventEmitter + clarification ✅ | 101-02 file_read + MCP client + regulation search ✅ | 101-03 document_generate + track-changes ✅ | 101-04 e2e + security + completion ✅) ✅ COMPLETE
 **UI hint**: no
 
 ### Phase 102: Legal Guardrail Port

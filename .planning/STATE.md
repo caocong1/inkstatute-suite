@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Unified Legal Core
 status: executing
-stopped_at: Phase 101 plan 101-03 complete — document_generate tool + Word track-changes docx + OOXML verification, all 38 gates green
-last_updated: "2026-08-11T17:00:00.000Z"
-last_activity: 2026-08-11 -- Phase 101 exec 101-03: document_generate tool (document_generate.py — lazy-import TrackChangesBuilder via importlib, monkey-patch REVIEW_ITEMS for injection, PathSandbox validation, artifact.created with kind=trackchanges_docx), OOXML track-changes verification (test_trackchanges_verification.py — w:ins, w:del, w:delText, w:comment, commentRangeStart/End/Reference, Content_Types Override, rels Relationship), builtin_registry extension (generate_review_docx registered when emitter provided). 35 new tests (16 document_generate + 15 trackchanges verification + 4 builtin_registry). All 522 agent-core tests pass. All 38 gates green. Commits: 41a476a, a56fd55.
+stopped_at: Phase 101 complete — CORE-02, CORE-03 complete, ready for Phase 102
+last_updated: "2026-08-11T18:00:00.000Z"
+last_activity: 2026-08-11 -- Phase 101 complete (Agent Core Tools). 4 plans (101-01 tool registry + clarification, 101-02 file_read + MCP + regulation search, 101-03 document_generate + track-changes, 101-04 e2e + security + completion). 145 new tests across all plans (405 + 82 + 35 + 28). 550 total agent-core tests. All 38 gates green. CORE-02 (tool layer) and CORE-03 (Word track-changes docx) complete. HG-4 (修订稿质量) NOT auto-closed — requires lawyer confirmation.
 progress:
   total_phases: 17
-  completed_phases: 13
+  completed_phases: 14
   total_plans: 62
-  completed_plans: 59
-  percent: 78
+  completed_plans: 60
+  percent: 80
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 101 plan 101-03 complete — document_generate tool + Word track-changes docx + OOXML verification
+**Current focus:** Phase 101 complete — ready for Phase 102 (Legal Guardrail Port)
 
 ## Current Position
 
-Phase: 101 (agent-core-tools) — plan 101-03 complete, 1 plan remaining (101-04: e2e + completion)
-Status: Phase 101 plan 101-03 complete. document_generate tool imports TrackChangesBuilder from lawfirm-profile via importlib (CORE-03: import, don't rewrite), uses monkey-patching for REVIEW_ITEMS injection (script lives in sibling repo, cannot be modified), validates paths via PathSandbox, emits artifact.created with kind=trackchanges_docx. OOXML verification confirms w:ins, w:del, w:delText, w:comment, commentRangeStart/End/Reference, Content_Types Override, rels Relationship. builtin_registry extended with generate_review_docx. 35 new tests, all 522 agent-core tests pass, all 38 gates green. Next: 101-04 (e2e integration + phase completion).
-Last activity: 2026-08-11 -- Phase 101 exec 101-03. 5 tasks, 2 commits, 35 new tests.
+Phase: 101 (agent-core-tools) — COMPLETE
+Status: Phase 101 complete. All 4 plans done. Tool layer (clarification, file_read, regulation_search, document_generate, MCP client) implemented and callable from turn loop. Multi-tool orchestration and error recovery verified via e2e tests. Word native track-changes docx generation via imported TrackChangesBuilder (CORE-03: import, don't rewrite). artifact.created with kind=trackchanges_docx. Security verified (no shell/code execution paths). 550 agent-core tests, all 38 gates green. CORE-02 and CORE-03 complete. HG-4 NOT auto-closed.
+Last activity: 2026-08-11 -- Phase 101 complete. 4 plans, 145 new tests, 550 total agent-core tests.
 
-**Next command:** `/gsd-exec 101-04` (e2e integration + phase completion)
+**Next command:** `/gsd-plan-phase 102` （或 `/gsd-autonomous` 自动推进）
 
 ## Milestone v3.0 Overview
 
@@ -109,17 +109,16 @@ Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策�
 
 ## Session Continuity
 
-Last session: 2026-08-11T16:00:00.000Z
-Stopped at: Phase 101 plan 101-02 complete — PathSandbox + file_read + MCP client + regulation search + builtin_registry, 6/6 tasks done, all 38 gates green
+Last session: 2026-08-11T18:00:00.000Z
+Stopped at: Phase 101 complete — CORE-02, CORE-03 complete, ready for Phase 102
 Product spec: docs/requirements/V3-PRD.md
 Selection evidence: .planning/research/V3-SELECTION.md (§7 verified)
-Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01 + CORE-04 + CORE-09 complete)
-Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-100 complete, Phase 101 plan 101-01 + 101-02 complete, next: exec 101-03 ∥ 101-04)
-Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/
+Requirements: .planning/REQUIREMENTS.md (61/61 mapped, EVT-01..06 + ACP-01..07 + SAFE-02..03 + GW-01..06 + UI-04..05 + BOT-01..03 + SKILL-01..09 + SAFE-05 + PROF-01..03 + CORE-01..04 + CORE-09 complete)
+Execution plan: .planning/ROADMAP.md (Phases 88-104, Phase 88-101 complete, next: Phase 102)
+Carried human gates (do not auto-complete): .planning/phases/08-lawyer-trial-acceptance/, HG-4 (修订稿质量 — Phase 101)
 v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- `/gsd-exec 101-03` (Wave 2: document_generate + track-changes)
-- `/gsd-exec 101-04` (e2e integration + phase completion)
-- 或 `/gsd-autonomous` 自动推进 Phases 101-104
+- `/gsd-plan-phase 102` — Legal Guardrail Port (CORE-05..08, SAFE-01, SAFE-04)
+- 或 `/gsd-autonomous` 自动推进 Phases 102-104
