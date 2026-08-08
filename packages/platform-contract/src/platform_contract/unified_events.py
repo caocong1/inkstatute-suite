@@ -156,6 +156,80 @@ class ErrorEventPayload:
 
 
 # ---------------------------------------------------------------------------
+# Arena lifecycle event payload dataclasses (Phase 105 — 8 types)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaWorkflowStartedPayload:
+    arena_id: str
+    mode: str
+    agent_slots: list[str] = field(default_factory=list)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaWorkflowCompletedPayload:
+    arena_id: str
+    mode: str
+    status: str
+    agent_slots: list[str] = field(default_factory=list)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaScoreRecordedPayload:
+    arena_id: str
+    agent_slot: str
+    round: int
+    score: int
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaReviewCompletedPayload:
+    arena_id: str
+    reviewer_slot: str
+    reviewed_slot: str
+    round: int
+    findings: list[JsonObject] = field(default_factory=list)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaSynthesisStartedPayload:
+    arena_id: str
+    round: int
+    source_slots: list[str] = field(default_factory=list)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaSynthesisCompletedPayload:
+    arena_id: str
+    round: int
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaAdversarialChallengeCompletedPayload:
+    arena_id: str
+    challenger_slot: str
+    challenged_slot: str
+    round: int
+    findings: list[JsonObject] = field(default_factory=list)
+    metadata: JsonObject = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ArenaEarlyStopTriggeredPayload:
+    arena_id: str
+    reason: str
+    round: int
+    metadata: JsonObject = field(default_factory=dict)
+
+
+# ---------------------------------------------------------------------------
 # Event-type → payload-class mapping
 # ---------------------------------------------------------------------------
 
@@ -176,6 +250,15 @@ EVENT_TYPE_TO_PAYLOAD_CLASS: dict[str, type] = {
     RunEventType.RUN_STATE_CHANGED.value: RunStateChangedPayload,
     # "error" is shared between V2 and V3 — mapped to the V3 typed payload.
     RunEventType.ERROR.value: ErrorEventPayload,
+    # Arena lifecycle events (Phase 105).
+    RunEventType.ARENA_WORKFLOW_STARTED.value: ArenaWorkflowStartedPayload,
+    RunEventType.ARENA_WORKFLOW_COMPLETED.value: ArenaWorkflowCompletedPayload,
+    RunEventType.ARENA_SCORE_RECORDED.value: ArenaScoreRecordedPayload,
+    RunEventType.ARENA_REVIEW_COMPLETED.value: ArenaReviewCompletedPayload,
+    RunEventType.ARENA_SYNTHESIS_STARTED.value: ArenaSynthesisStartedPayload,
+    RunEventType.ARENA_SYNTHESIS_COMPLETED.value: ArenaSynthesisCompletedPayload,
+    RunEventType.ARENA_ADVERSARIAL_CHALLENGE_COMPLETED.value: ArenaAdversarialChallengeCompletedPayload,
+    RunEventType.ARENA_EARLY_STOP_TRIGGERED.value: ArenaEarlyStopTriggeredPayload,
 }
 
 

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_synthesis_completed.schema.json",
+  "title": "ArenaSynthesisCompletedPayload",
+  "description": "Payload for the arena.synthesis_completed event — emitted when a synthesis round finishes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "round"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.synthesis_completed"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "round": {
+      "type": "integer"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

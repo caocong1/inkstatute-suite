@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_early_stop_triggered.schema.json",
+  "title": "ArenaEarlyStopTriggeredPayload",
+  "description": "Payload for the arena.early_stop_triggered event — emitted when an Arena workflow stops early.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "reason",
+    "round"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.early_stop_triggered"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "round": {
+      "type": "integer"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

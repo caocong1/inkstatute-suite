@@ -33,6 +33,14 @@ NEW_SCHEMAS = [
     "citation_recorded",
     "run_state_changed",
     "error_event",
+    "arena_workflow_started",
+    "arena_workflow_completed",
+    "arena_score_recorded",
+    "arena_review_completed",
+    "arena_synthesis_started",
+    "arena_synthesis_completed",
+    "arena_adversarial_challenge_completed",
+    "arena_early_stop_triggered",
 ]
 
 FORBIDDEN_TOP_LEVEL = {

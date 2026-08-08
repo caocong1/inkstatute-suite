@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_workflow_started.schema.json",
+  "title": "ArenaWorkflowStartedPayload",
+  "description": "Payload for the arena.workflow_started event — emitted when an Arena workflow begins.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "mode"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.workflow_started"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "self_score",
+        "arena_review",
+        "adversarial"
+      ]
+    },
+    "agent_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

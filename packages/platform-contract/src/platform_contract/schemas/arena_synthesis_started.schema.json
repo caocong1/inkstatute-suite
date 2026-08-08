@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_synthesis_started.schema.json",
+  "title": "ArenaSynthesisStartedPayload",
+  "description": "Payload for the arena.synthesis_started event — emitted when a synthesis round begins from source slots.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "round"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.synthesis_started"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "round": {
+      "type": "integer"
+    },
+    "source_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

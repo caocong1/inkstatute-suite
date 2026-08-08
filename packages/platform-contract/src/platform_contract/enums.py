@@ -122,6 +122,15 @@ class RunEventType(StrEnum):
     ARTIFACT_CREATED_V3 = "artifact.created"
     CITATION_RECORDED = "citation.recorded"
     RUN_STATE_CHANGED = "run.state_changed"
+    # Arena lifecycle event types (Phase 105 — isomorphic with existing categories).
+    ARENA_WORKFLOW_STARTED = "arena.workflow_started"
+    ARENA_WORKFLOW_COMPLETED = "arena.workflow_completed"
+    ARENA_SCORE_RECORDED = "arena.score_recorded"
+    ARENA_REVIEW_COMPLETED = "arena.review_completed"
+    ARENA_SYNTHESIS_STARTED = "arena.synthesis_started"
+    ARENA_SYNTHESIS_COMPLETED = "arena.synthesis_completed"
+    ARENA_ADVERSARIAL_CHALLENGE_COMPLETED = "arena.adversarial_challenge_completed"
+    ARENA_EARLY_STOP_TRIGGERED = "arena.early_stop_triggered"
 
 
 class RunStepKind(StrEnum):

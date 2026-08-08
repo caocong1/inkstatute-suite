@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_adversarial_challenge_completed.schema.json",
+  "title": "ArenaAdversarialChallengeCompletedPayload",
+  "description": "Payload for the arena.adversarial_challenge_completed event — emitted when a challenger slot challenges a challenged slot in a round.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "challenger_slot",
+    "challenged_slot",
+    "round"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.adversarial_challenge_completed"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "challenger_slot": {
+      "type": "string"
+    },
+    "challenged_slot": {
+      "type": "string"
+    },
+    "round": {
+      "type": "integer"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

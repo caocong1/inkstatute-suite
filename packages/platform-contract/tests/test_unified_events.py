@@ -16,6 +16,14 @@ if str(PACKAGE_SRC) not in sys.path:
 
 from platform_contract.enums import RunEventType
 from platform_contract.unified_events import (
+    ArenaAdversarialChallengeCompletedPayload,
+    ArenaEarlyStopTriggeredPayload,
+    ArenaReviewCompletedPayload,
+    ArenaScoreRecordedPayload,
+    ArenaSynthesisCompletedPayload,
+    ArenaSynthesisStartedPayload,
+    ArenaWorkflowCompletedPayload,
+    ArenaWorkflowStartedPayload,
     ArtifactCreatedPayload,
     CitationRecord,
     CitationRecordedPayload,
@@ -59,6 +67,14 @@ class UnifiedEventsEnumTests(unittest.TestCase):
         "ARTIFACT_CREATED_V3",
         "CITATION_RECORDED",
         "RUN_STATE_CHANGED",
+        "ARENA_WORKFLOW_STARTED",
+        "ARENA_WORKFLOW_COMPLETED",
+        "ARENA_SCORE_RECORDED",
+        "ARENA_REVIEW_COMPLETED",
+        "ARENA_SYNTHESIS_STARTED",
+        "ARENA_SYNTHESIS_COMPLETED",
+        "ARENA_ADVERSARIAL_CHALLENGE_COMPLETED",
+        "ARENA_EARLY_STOP_TRIGGERED",
     ]
 
     V2_MEMBERS = [
@@ -88,7 +104,7 @@ class UnifiedEventsEnumTests(unittest.TestCase):
             )
 
     def test_enum_total_count_is_23(self) -> None:
-        self.assertEqual(len(list(RunEventType)), 23)
+        self.assertEqual(len(list(RunEventType)), 31)
 
 
 class EventTypeToPayloadMappingTests(unittest.TestCase):
@@ -109,6 +125,14 @@ class EventTypeToPayloadMappingTests(unittest.TestCase):
         "artifact.created",
         "citation.recorded",
         "run.state_changed",
+        "arena.workflow_started",
+        "arena.workflow_completed",
+        "arena.score_recorded",
+        "arena.review_completed",
+        "arena.synthesis_started",
+        "arena.synthesis_completed",
+        "arena.adversarial_challenge_completed",
+        "arena.early_stop_triggered",
     ]
 
     def test_event_type_to_payload_class_mapping(self) -> None:
@@ -270,6 +294,108 @@ class PayloadSerializationTests(unittest.TestCase):
         restored = deserialize_payload("error", serialize_payload(payload))
         self.assertEqual(restored.error.category, "channel_error")
         self.assertEqual(restored.error.message, "timeout")
+
+    def test_arena_workflow_started_roundtrip(self) -> None:
+        payload = ArenaWorkflowStartedPayload(
+            arena_id="arena-1",
+            mode="standard",
+            agent_slots=["slot-a", "slot-b"],
+        )
+        restored = deserialize_payload("arena.workflow_started", serialize_payload(payload))
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.mode, "standard")
+        self.assertEqual(restored.agent_slots, ["slot-a", "slot-b"])
+
+    def test_arena_workflow_completed_roundtrip(self) -> None:
+        payload = ArenaWorkflowCompletedPayload(
+            arena_id="arena-1",
+            mode="adversarial",
+            status="completed",
+            agent_slots=["slot-a", "slot-b"],
+        )
+        restored = deserialize_payload("arena.workflow_completed", serialize_payload(payload))
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.mode, "adversarial")
+        self.assertEqual(restored.status, "completed")
+        self.assertEqual(restored.agent_slots, ["slot-a", "slot-b"])
+
+    def test_arena_score_recorded_roundtrip(self) -> None:
+        payload = ArenaScoreRecordedPayload(
+            arena_id="arena-1",
+            agent_slot="slot-a",
+            round=2,
+            score=85,
+        )
+        restored = deserialize_payload("arena.score_recorded", serialize_payload(payload))
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.agent_slot, "slot-a")
+        self.assertEqual(restored.round, 2)
+        self.assertEqual(restored.score, 85)
+
+    def test_arena_review_completed_roundtrip(self) -> None:
+        payload = ArenaReviewCompletedPayload(
+            arena_id="arena-1",
+            reviewer_slot="slot-a",
+            reviewed_slot="slot-b",
+            round=1,
+            findings=[{"issue": "missing citation", "severity": "high"}],
+        )
+        restored = deserialize_payload("arena.review_completed", serialize_payload(payload))
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.reviewer_slot, "slot-a")
+        self.assertEqual(restored.reviewed_slot, "slot-b")
+        self.assertEqual(restored.round, 1)
+        self.assertEqual(len(restored.findings), 1)
+        self.assertEqual(restored.findings[0]["issue"], "missing citation")
+
+    def test_arena_synthesis_started_roundtrip(self) -> None:
+        payload = ArenaSynthesisStartedPayload(
+            arena_id="arena-1",
+            round=3,
+            source_slots=["slot-a", "slot-b"],
+        )
+        restored = deserialize_payload("arena.synthesis_started", serialize_payload(payload))
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.round, 3)
+        self.assertEqual(restored.source_slots, ["slot-a", "slot-b"])
+
+    def test_arena_synthesis_completed_roundtrip(self) -> None:
+        payload = ArenaSynthesisCompletedPayload(
+            arena_id="arena-1",
+            round=3,
+        )
+        restored = deserialize_payload("arena.synthesis_completed", serialize_payload(payload))
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.round, 3)
+
+    def test_arena_adversarial_challenge_completed_roundtrip(self) -> None:
+        payload = ArenaAdversarialChallengeCompletedPayload(
+            arena_id="arena-1",
+            challenger_slot="slot-a",
+            challenged_slot="slot-b",
+            round=2,
+            findings=[{"flaw": "logical gap", "severity": "medium"}],
+        )
+        restored = deserialize_payload(
+            "arena.adversarial_challenge_completed", serialize_payload(payload)
+        )
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.challenger_slot, "slot-a")
+        self.assertEqual(restored.challenged_slot, "slot-b")
+        self.assertEqual(restored.round, 2)
+        self.assertEqual(len(restored.findings), 1)
+        self.assertEqual(restored.findings[0]["flaw"], "logical gap")
+
+    def test_arena_early_stop_triggered_roundtrip(self) -> None:
+        payload = ArenaEarlyStopTriggeredPayload(
+            arena_id="arena-1",
+            reason="convergence_threshold_met",
+            round=4,
+        )
+        restored = deserialize_payload("arena.early_stop_triggered", serialize_payload(payload))
+        self.assertEqual(restored.arena_id, "arena-1")
+        self.assertEqual(restored.reason, "convergence_threshold_met")
+        self.assertEqual(restored.round, 4)
 
 
 class ElicitationQuestionTests(unittest.TestCase):

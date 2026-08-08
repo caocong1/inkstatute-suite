@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_score_recorded.schema.json",
+  "title": "ArenaScoreRecordedPayload",
+  "description": "Payload for the arena.score_recorded event — emitted when a score is recorded for an agent slot in a round.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "agent_slot",
+    "round",
+    "score"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.score_recorded"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "agent_slot": {
+      "type": "string"
+    },
+    "round": {
+      "type": "integer"
+    },
+    "score": {
+      "type": "integer"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

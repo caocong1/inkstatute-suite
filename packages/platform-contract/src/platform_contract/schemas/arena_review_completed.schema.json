@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_review_completed.schema.json",
+  "title": "ArenaReviewCompletedPayload",
+  "description": "Payload for the arena.review_completed event — emitted when one agent slot reviews another in a round.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "reviewer_slot",
+    "reviewed_slot",
+    "round"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.review_completed"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "reviewer_slot": {
+      "type": "string"
+    },
+    "reviewed_slot": {
+      "type": "string"
+    },
+    "round": {
+      "type": "integer"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_workflow_completed.schema.json",
+  "title": "ArenaWorkflowCompletedPayload",
+  "description": "Payload for the arena.workflow_completed event — emitted when an Arena workflow finishes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_type",
+    "arena_id",
+    "mode",
+    "status"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "const": "arena.workflow_completed"
+    },
+    "arena_id": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "self_score",
+        "arena_review",
+        "adversarial"
+      ]
+    },
+    "status": {
+      "type": "string"
+    },
+    "agent_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -132,7 +132,15 @@
         "permission.requested",
         "artifact.created",
         "citation.recorded",
-        "run.state_changed"
+        "run.state_changed",
+        "arena.workflow_started",
+        "arena.workflow_completed",
+        "arena.score_recorded",
+        "arena.review_completed",
+        "arena.synthesis_started",
+        "arena.synthesis_completed",
+        "arena.adversarial_challenge_completed",
+        "arena.early_stop_triggered"
       ]
     },
     "run_step_kind": {
