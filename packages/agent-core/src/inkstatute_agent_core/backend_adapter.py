@@ -109,6 +109,9 @@ class InProcessAgentCoreAdapter:
         # Approvals pending consumption by the turn loop
         self._pending_approvals: dict[str, list[Approval]] = {}
 
+        # Runs whose sentinel was already pushed by cancel_run
+        self._sentinel_pushed: set[str] = set()
+
         # Counters
         self._next_run = 1
 
@@ -306,6 +309,10 @@ class InProcessAgentCoreAdapter:
             cancel_event = emitter.emit_run_state_changed("cancelled")
             await self._queues[run_id].put(cancel_event)
 
+        # Mark that we've pushed the sentinel so the background task's
+        # finally block doesn't push a duplicate.
+        self._sentinel_pushed.add(run_id)
+
         # Push sentinel so stream_events consumers can finish
         await self._queues[run_id].put(_STREAM_DONE)
 
@@ -404,24 +411,23 @@ class InProcessAgentCoreAdapter:
     def _build_messages(self, req: RunRequest) -> list[dict]:
         """Build the messages list for ``run_turn()`` from a RunRequest.
 
-        Constructs a simple system + user message pair.  The system prompt
-        is a minimal default; production callers can pre-build messages
-        via the prompt assembler (Phase 102) and pass them through
-        RunRequest metadata if needed.
+        Uses ``build_system_prompt()`` from Phase 102 to assemble the
+        full legal system prompt with research-gate and citation spec,
+        ensuring parity with the ACP server entry point.
         """
+        from .prompt_assembler import AgentMode, build_system_prompt
+
         content = req.turn.content or ""
+        system_prompt = build_system_prompt(
+            skills=[],
+            research_gate_content=None,
+            active_skill=None,
+            mode=AgentMode.CHAT,
+            retrieval_tools=[],
+        )
         messages: list[dict] = [
-            {
-                "role": "system",
-                "content": (
-                    "你是墨律法律智能体，专注于中国法律场景。"
-                    "请遵循研究先行、引用审计、用户澄清等护栏要求。"
-                ),
-            },
-            {
-                "role": "user",
-                "content": content,
-            },
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": content},
         ]
         return messages
 
@@ -481,9 +487,10 @@ class InProcessAgentCoreAdapter:
                     metadata={**run.metadata, "error": str(exc)},
                 )
         finally:
-            # Only push sentinel if the task wasn't cancelled (cancel_run
-            # pushes its own sentinel after emitting the cancelled event).
-            if not asyncio.current_task().cancelled():
+            # Only push sentinel if cancel_run hasn't already pushed one.
+            # cancel_run marks the run in _sentinel_pushed before pushing
+            # its own sentinel + cancelled event.
+            if run_id not in self._sentinel_pushed:
                 await queue.put(_STREAM_DONE)
 
     def _update_run_status(self, run_id: str, status: str) -> None:
