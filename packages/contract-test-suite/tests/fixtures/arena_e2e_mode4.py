@@ -48,6 +48,21 @@ def _finding_response(description: str) -> str:
     )
 
 
+def _adversarial_high_severity_response() -> str:
+    """Adversarial response with a high-severity [FINDING] block.
+
+    This prevents convergence in round 0, triggering re-synthesis.
+    """
+    return (
+        "[FINDING]\n"
+        "description: 综合回答存在严重逻辑错误，合同条款引用不准确\n"
+        "confidence: Likely\n"
+        "severity: High\n"
+        "confirmed: true\n"
+        "[/FINDING]"
+    )
+
+
 def _adversarial_no_finding_response() -> str:
     """Adversarial response with no [FINDING] blocks — no issues found.
 
@@ -57,7 +72,12 @@ def _adversarial_no_finding_response() -> str:
 
 
 def make_mode4_fixtures() -> dict:
-    """Return Mode 4 fixtures: config, adapters, synthesis, adversarial."""
+    """Return Mode 4 fixtures: config, adapters, synthesis, adversarial.
+
+    The adversarial adapter finds a high-severity issue in round 0
+    (triggering re-synthesis) and finds no issues in round 1 (triggering
+    convergence). This exercises multi-round synthesis and early stop.
+    """
     config = ArenaWorkflowConfig(
         arena_id="e2e-mode4",
         mode="mode4_adversarial",
@@ -83,14 +103,20 @@ def make_mode4_fixtures() -> dict:
     synthesis_adapter = MockACPBackendAdapter(
         backend_id="mock-synthesis",
         backend_family="synthesis-family",
-        responses=["自评分数：8/10\n综合最终版本：合同审查报告"],
+        responses=[
+            "自评分数：8/10\n综合最终版本v1：合同审查报告",
+            "自评分数：9/10\n综合最终版本v2：修正后的合同审查报告",
+        ],
         agent_slot="synthesis",
     )
 
     adversarial_adapter = MockACPBackendAdapter(
         backend_id="mock-adversarial",
         backend_family="adversarial-family",
-        responses=[_adversarial_no_finding_response()],
+        responses=[
+            _adversarial_high_severity_response(),
+            _adversarial_no_finding_response(),
+        ],
         agent_slot="adversarial",
     )
 
