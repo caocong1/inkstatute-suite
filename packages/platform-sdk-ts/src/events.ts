@@ -222,6 +222,43 @@ export interface ArenaEarlyStopTriggeredPayload {
 }
 
 // ---------------------------------------------------------------------------
+// Arena contract dataclass interfaces
+// ---------------------------------------------------------------------------
+
+export interface ArenaWorkflowConfig {
+  arena_id: string;
+  mode: ArenaMode;
+  agent_slots: string[];
+  task_instruction: string;
+  reference_dir?: string;
+  max_rounds?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaHandle {
+  arena_id: string;
+  status: string;
+  created_at: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaStatus {
+  arena_id: string;
+  mode: ArenaMode;
+  status: string;
+  agent_slots?: string[];
+  current_round?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ArenaUserAction {
+  arena_id: string;
+  action: "stop" | "pause" | "cancel" | "select_result";
+  selected_slot?: string;
+  metadata?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
 // Union type and event envelope
 // ---------------------------------------------------------------------------
 

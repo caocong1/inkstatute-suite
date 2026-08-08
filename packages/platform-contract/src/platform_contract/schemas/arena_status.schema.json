@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_status.schema.json",
+  "title": "ArenaStatus",
+  "description": "Current status snapshot of an Arena workflow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "arena_id",
+    "mode",
+    "status"
+  ],
+  "properties": {
+    "arena_id": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "self_score",
+        "arena_review",
+        "adversarial"
+      ]
+    },
+    "status": {
+      "type": "string"
+    },
+    "agent_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "current_round": {
+      "type": "integer"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

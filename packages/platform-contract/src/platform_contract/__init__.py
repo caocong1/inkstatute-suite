@@ -1,5 +1,11 @@
 """Public Python bindings for the InkStatute V2 platform contract."""
 
+from .arena_contract import (
+    ArenaHandle,
+    ArenaStatus,
+    ArenaUserAction,
+    ArenaWorkflowConfig,
+)
 from .agent_adapter import (
     AdapterCapabilitySet,
     AgentBackendManifest,
@@ -133,11 +139,15 @@ __all__ = [
     "AgentBackendMode",
     "ArenaAdversarialChallengeCompletedPayload",
     "ArenaEarlyStopTriggeredPayload",
+    "ArenaHandle",
     "ArenaReviewCompletedPayload",
     "ArenaScoreRecordedPayload",
+    "ArenaStatus",
     "ArenaSynthesisCompletedPayload",
     "ArenaSynthesisStartedPayload",
+    "ArenaUserAction",
     "ArenaWorkflowCompletedPayload",
+    "ArenaWorkflowConfig",
     "ArenaWorkflowStartedPayload",
     "BackendProcessMode",
     "Approval",

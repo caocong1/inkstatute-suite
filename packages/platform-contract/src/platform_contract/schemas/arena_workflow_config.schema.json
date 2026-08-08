@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_workflow_config.schema.json",
+  "title": "ArenaWorkflowConfig",
+  "description": "Configuration for starting an Arena workflow.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "arena_id",
+    "mode",
+    "agent_slots",
+    "task_instruction"
+  ],
+  "properties": {
+    "arena_id": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "self_score",
+        "arena_review",
+        "adversarial"
+      ]
+    },
+    "agent_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "task_instruction": {
+      "type": "string"
+    },
+    "reference_dir": {
+      "type": "string"
+    },
+    "max_rounds": {
+      "type": "integer"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

@@ -105,6 +105,16 @@ class EventTypesTsTests(unittest.TestCase):
         for name in arena_names:
             self.assertIn(name, self.source)
 
+    def test_contains_arena_contract_interfaces(self) -> None:
+        expected = [
+            "ArenaWorkflowConfig",
+            "ArenaHandle",
+            "ArenaStatus",
+            "ArenaUserAction",
+        ]
+        for name in expected:
+            self.assertIn(f"export interface {name}", self.source)
+
 
 if __name__ == "__main__":
     unittest.main()

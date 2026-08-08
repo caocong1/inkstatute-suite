@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_user_action.schema.json",
+  "title": "ArenaUserAction",
+  "description": "User-initiated action on an Arena workflow (stop, pause, cancel, select_result).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "arena_id",
+    "action"
+  ],
+  "properties": {
+    "arena_id": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "stop",
+        "pause",
+        "cancel",
+        "select_result"
+      ]
+    },
+    "selected_slot": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}

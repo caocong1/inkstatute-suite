@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkstatute.dev/schemas/platform-contract/arena_handle.schema.json",
+  "title": "ArenaHandle",
+  "description": "Handle returned when an Arena workflow is started, cancelled, or acted upon.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "arena_id",
+    "status",
+    "created_at"
+  ],
+  "properties": {
+    "arena_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/datetime"
+    },
+    "metadata": {
+      "$ref": "common.schema.json#/$defs/metadata"
+    }
+  }
+}
