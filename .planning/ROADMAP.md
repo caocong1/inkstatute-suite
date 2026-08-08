@@ -215,55 +215,72 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 <summary>v3.0 Phase Details (88-104) — SHIPPED</summary>
 
 ### Phase 88: Unified Event Contract ✅
+
 - **Requirements**: EVT-01..06 — 13-category unified event vocabulary, ACP-isomorphic, JSON Schema + Python + TypeScript bindings, bot degradation rules, V2 contract preserved.
 
 ### Phase 89: ACP Backend Client ✅
+
 - **Requirements**: ACP-01, ACP-02, ACP-03, ACP-06 — Python ACP client driving hermes acp, second backend proof, subprocess lifecycle.
 
 ### Phase 90: ACP Event Bridge & Output Boundary ✅
+
 - **Requirements**: ACP-04, ACP-05, ACP-07, SAFE-02, SAFE-03 — Bidirectional ACP↔unified event mapping, output boundary enforced, permission safety defaults.
 
 ### Phase 91: Unified Gateway ✅ COMPLETE
+
 - **Requirements**: GW-01..06 — Single multi-tenant HTTP+SSE Gateway replacing platform_api + lawyer-web-chat.
 
 ### Phase 92: Shared UI Core ✅ COMPLETE
+
 - **Requirements**: UI-01, UI-02, UI-03, UI-06 — @inkstatute/ui-core extracted from lawyer-desktop, 23 components, 3 themes, single chat UI implementation.
 
 ### Phase 93: Web Client ✅ COMPLETE
+
 - **Requirements**: UI-04 — Responsive web client (desktop + mobile browser), full task flow via Gateway.
 
 ### Phase 94: Desktop Client ✅ COMPLETE
+
 - **Requirements**: UI-05 — Tauri desktop shell reusing ui-core, invoke()→Gateway, offline read-only.
 
 ### Phase 95: Bot Channel Degradation ✅ COMPLETE
+
 - **Requirements**: BOT-01, BOT-02, BOT-03 — WeCom/QQ as Gateway consumers with non-streaming degradation.
 
 ### Phase 96: Real Skill Index ✅ COMPLETE
+
 - **Requirements**: SKILL-01..04, SAFE-05 — 396 real legal SKILL.md indexed, read-only, dual-repo merge.
 
 ### Phase 97: Skill Materialization ✅ COMPLETE
+
 - **Requirements**: SKILL-05, SKILL-06, SKILL-09 — Per-backend materialization, three-way separation, manifest cleanup.
 
 ### Phase 98: Real-Index Routing ✅ COMPLETE
+
 - **Requirements**: SKILL-07, SKILL-08 — Routing on real skill index, strong-signal rules ported, three-mode detection.
 
 ### Phase 99: Practice Profile ✅ COMPLETE
+
 - **Requirements**: PROF-01, PROF-02, PROF-03 — CLAUDE.md practice profile multi-tenantized, cold-start interview.
 
 ### Phase 100: Agent Core Skeleton ✅ COMPLETE
+
 - **Requirements**: CORE-01, CORE-04, CORE-09 — Python async streaming turn loop, context budget, model layer.
 
 ### Phase 101: Agent Core Tools ✅ COMPLETE
+
 - **Requirements**: CORE-02, CORE-03 — Tool layer + Word-native track-changes docx (41,185 bytes ported).
 
 ### Phase 102: Legal Guardrail Port ✅ COMPLETE
+
 - **Requirements**: CORE-05..08, SAFE-01, SAFE-04 — Prompt assembly, tool_leak, citation audit, 4 guardrails ported from Rust.
 - **Human gate**: HG-1 法律质量
 
 ### Phase 103: Dual Entry Points ✅ COMPLETE
+
 - **Requirements**: CORE-10 — in-process BackendAdapter + `inkstatute-agent acp` CLI.
 
 ### Phase 104: Legacy Convergence ✅ COMPLETE
+
 - **Requirements**: CONV-01..05, SAFE-06 — ~10,483 lines retired, gate system updated (34 gates), composability preserved.
 
 **Archive:** [v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md) | [v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md) | [v3.0-phases](milestones/v3.0-phases/)
@@ -287,7 +304,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 | Phase | Stage | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
-| 105. Arena Contract Extension | A | 0/? | Not started | — |
+| 105. Arena Contract Extension | A | 4/4 | Complete   | 2026-08-08 |
 | 106. ACP fs Handler | B | 0/? | Not started | — |
 | 107. Arena Engine — Modes 1+2 | C | 0/? | Not started | — |
 | 108. Arena Engine — Modes 3+4 | D | 0/? | Not started | — |
