@@ -1,8 +1,7 @@
 """SSE encoding for the InkStatute Gateway.
 
-Uses ``encode_sse_event`` from the ``web_sse`` package (replacing
-platform_api's custom ``SSE_EVENT_RUN`` / ``SSE_EVENT_RUN_COMPLETED``
-constants) with output boundary enforcement per event.
+Inlines ``encode_sse_event`` (originally from the retired ``web_sse``
+channel package) with output boundary enforcement per event.
 
 The output boundary is the second enforcement point (the first is at the
 ACP event bridge). Backend meta / gateway / system / update / command
@@ -12,14 +11,62 @@ notices must never reach the SSE stream.
 from __future__ import annotations
 
 from dataclasses import asdict, is_dataclass
+from enum import Enum
+import json
 from typing import Any, Iterator, Mapping
 
-from inkstatute_channels_web_sse import encode_sse_event
 from platform_runtime.output_boundary import (
     BoundaryAction,
     DefaultAssistantOutputBoundary,
 )
 from platform_runtime.protocols import RunEvent
+
+JsonObject = dict[str, Any]
+
+
+def encode_sse_event(event: RunEvent | Mapping[str, Any]) -> str:
+    """Encode a runtime event into a deterministic SSE frame."""
+
+    payload = _event_mapping(event)
+    _assert_no_forbidden_payload_keys(payload)
+    data = json.dumps(_json_ready(payload), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return f"id: {payload['event_id']}\nevent: {payload['event_type']}\ndata: {data}\n\n"
+
+
+def _event_mapping(event: RunEvent | Mapping[str, Any]) -> JsonObject:
+    if isinstance(event, Mapping):
+        payload = dict(event)
+    elif is_dataclass(event):
+        payload = asdict(event)
+    else:
+        raise TypeError("event must be a RunEvent or mapping")
+    for key in ("event_id", "event_type"):
+        if not payload.get(key):
+            raise ValueError(f"SSE event requires {key}")
+    return payload
+
+
+def _assert_no_forbidden_payload_keys(value: Any, path: str = "") -> None:
+    if isinstance(value, Mapping):
+        for key, child in value.items():
+            child_path = f"{path}.{key}" if path else str(key)
+            normalized = "".join(ch for ch in str(key).lower() if ch.isalnum())
+            if normalized in {"rawpayload", "rawbody", "callbackbody"}:
+                raise ValueError(f"SSE payload contains forbidden raw payload key at {child_path}")
+            _assert_no_forbidden_payload_keys(child, child_path)
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            _assert_no_forbidden_payload_keys(child, f"{path}[{index}]")
+
+
+def _json_ready(value: Any) -> Any:
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, Mapping):
+        return {str(key): _json_ready(child) for key, child in value.items()}
+    if isinstance(value, list):
+        return [_json_ready(child) for child in value]
+    return value
 
 
 class GatewaySseStream:
@@ -168,5 +215,6 @@ def _replace_text(payload: dict[str, Any], new_text: str) -> None:
 
 __all__ = [
     "GatewaySseStream",
+    "encode_sse_event",
     "parse_last_event_id",
 ]

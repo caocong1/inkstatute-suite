@@ -30,13 +30,11 @@ FORBIDDEN_IMPORT_ROOTS = {
     "conversation_read_view",
     "feedback_service",
     "hermes",
-    "hermes_contract_layer",
     "services",
     "wecom_service",
 }
 PLATFORM_FORBIDDEN_TEXT = (
     "~/.hermes",
-    "hermes_contract_layer",
     "wecom_service",
     "feedback_service",
     "conversation_read_view",
@@ -211,22 +209,6 @@ def assert_thin_layer_scope(repo_root: str | Path = REPO_ROOT) -> None:
                         message=f"platform contract source mentions runtime marker {marker!r}",
                     )
                 )
-
-    bundle_root = root / "services" / "hermes-contract-layer" / "bundles"
-    for path in sorted(bundle_root.glob("*.json")):
-        value = json.loads(path.read_text(encoding="utf-8"))
-        policy = value.get("runtime_material_policy") if isinstance(value, Mapping) else None
-        if not isinstance(policy, Mapping):
-            issues.append(BoundaryIssue(path, "bundle_policy_missing", "bundle manifest requires runtime_material_policy"))
-            continue
-        for field in (
-            "repo_contains_runtime_values",
-            "repo_contains_raw_values",
-            "repo_contains_private_documents",
-            "repo_contains_binary_uploads",
-        ):
-            if policy.get(field) is not False:
-                issues.append(BoundaryIssue(path, "bundle_policy_unsafe", f"{field} must be false"))
     _raise_if_issues(issues)
 
 

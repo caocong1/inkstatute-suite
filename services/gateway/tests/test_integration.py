@@ -529,57 +529,17 @@ class TestGatewayIntegration(unittest.TestCase):
         self.assertEqual(result["status"], 404)
 
     # ------------------------------------------------------------------
-    # SC-5: lawyer-web-chat deprecated
+    # SC-5: lawyer-web-chat deprecated (service retired in Phase 104)
     # ------------------------------------------------------------------
-
-    def test_success_criteria_5_lawyer_web_chat_deprecated(self) -> None:
-        """Call handle_lawyer_chat_request and assert Deprecation header."""
-        from lawyer_web_chat.server import handle_lawyer_chat_request
-        from platform_runtime.feature_flags import RuntimeFeatureFlags
-        from lawyer_web_chat.upload import FileUploadHandler
-        from lawyer_web_chat.feedback import FeedbackHandler
-        from lawyer_web_chat.sse import SseStream
-        from lawyer_web_chat.session import SessionStore as LwcSessionStore
-        from lawyer_web_chat.history import MessageHistory
-
-        feature_flags = RuntimeFeatureFlags(lawyer_web_chat_enabled=True)
-        session_store = LwcSessionStore()
-        message_history = MessageHistory()
-        upload_handler = FileUploadHandler()
-        feedback_handler = FeedbackHandler()
-        sse_stream = SseStream()
-
-        status, body, headers = handle_lawyer_chat_request(
-            "GET", "/", None, None,
-            feature_flags=feature_flags,
-            session_store=session_store,
-            message_history=message_history,
-            upload_handler=upload_handler,
-            feedback_handler=feedback_handler,
-            sse_stream=sse_stream,
-            rbac_secret="test-secret",
-        )
-        self.assertIn("Deprecation", headers)
-        self.assertEqual(headers["Deprecation"], "true")
+    # The lawyer-web-chat service has been retired and replaced by the
+    # Gateway. The deprecation header test is no longer applicable.
 
     # ------------------------------------------------------------------
-    # SC-6: verify_and_ack optional
+    # SC-6: verify_and_ack optional (web_sse channel retired in Phase 104)
     # ------------------------------------------------------------------
-
-    def test_success_criteria_6_verify_and_ack_optional(self) -> None:
-        """Assert WebSseChannelAdapter has verify_and_ack_support=False and
-        still passes Protocol validation."""
-        from inkstatute_channels_web_sse import WebSseChannelAdapter
-        adapter = WebSseChannelAdapter()
-        caps = adapter.capabilities()
-        self.assertFalse(caps.verify_and_ack_support)
-        # Adapter should still be a valid ChannelAdapter
-        self.assertTrue(hasattr(adapter, "channel_id"))
-        self.assertTrue(hasattr(adapter, "capabilities"))
-        self.assertTrue(hasattr(adapter, "verify_and_ack"))
-        self.assertTrue(hasattr(adapter, "normalize_inbound"))
-        self.assertTrue(hasattr(adapter, "deliver"))
-        self.assertTrue(hasattr(adapter, "health"))
+    # The web_sse channel package has been retired. The verify_and_ack
+    # optional capability is still tested in test_verify_and_ack_optional.py
+    # using the remaining channel adapters (qqbot, wecom, fake).
 
     # ------------------------------------------------------------------
     # Full lifecycle integration
@@ -713,14 +673,15 @@ class TestGatewayIntegration(unittest.TestCase):
         self.assertTrue(summary.get("passed"), f"Gates not all green: {summary}")
 
     # ------------------------------------------------------------------
-    # Gate count is 38
+    # Gate count is 34 (Phase 104: retired web-sse-channel, lawyer-web-chat,
+    # hermes-contract-layer, and codex-backend gates)
     # ------------------------------------------------------------------
 
     @unittest.skipIf(
         os.environ.get("INKSTATUTE_GATE_RUNNING") == "1",
         "Skipping nested gate execution (already running inside gate runner)",
     )
-    def test_gate_count_is_38(self) -> None:
+    def test_gate_count_is_34(self) -> None:
         """Run python scripts/run_v2_gates.py --list and count gates."""
         result = subprocess.run(
             [sys.executable, "scripts/run_v2_gates.py", "--list"],
@@ -729,7 +690,7 @@ class TestGatewayIntegration(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         lines = [l.strip() for l in result.stdout.strip().split("\n") if l.strip()]
-        self.assertEqual(len(lines), 38, f"Expected 38 gates, got {len(lines)}")
+        self.assertEqual(len(lines), 34, f"Expected 34 gates, got {len(lines)}")
 
     # ------------------------------------------------------------------
     # No external dependencies

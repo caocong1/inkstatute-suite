@@ -1,4 +1,0 @@
-name: contract_result_recorder
-description: Records InkStatute V2 shadow contract events after lawfirm response filtering.
-events:
-  - agent:end

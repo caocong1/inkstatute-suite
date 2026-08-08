@@ -18,7 +18,7 @@ import time
 import unittest
 from typing import AsyncIterator
 
-from inkstatute_channels_web_sse import encode_sse_event
+from gateway.sse import GatewaySseStream, encode_sse_event
 from platform_contract.enums import AsyncTaskState
 from platform_runtime.protocols import Run, RunEvent, RunRequest
 

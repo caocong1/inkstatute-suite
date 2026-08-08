@@ -76,8 +76,8 @@ Carried human gates from v1.x (NOT closed by v3.0):
 
 - [x] **Phase 100: Agent Core Skeleton** - Python async 流式 turn loop（工具轮也流式）+ 上下文预算 + 模型层 (CORE-01, CORE-04, CORE-09) ✅ COMPLETE — Plans 100-01, 100-02, 100-03, 100-04 complete (scaffold + EventEmitter + config + model layer + context assembler + turn loop + messages + e2e tests + phase completion)
 - [x] **Phase 101: Agent Core Tools** - 工具层 + Word 原生修订 docx (CORE-02, CORE-03) ✅ COMPLETE
-- [ ] **Phase 102: Legal Guardrail Port** - prompt 装配 / tool_leak / citation 审计 / 四护栏移植 (CORE-05..08, SAFE-01, SAFE-04)
-- [ ] **Phase 103: Dual Entry Points** - in-process BackendAdapter + inkstatute-agent acp (CORE-10)
+- [x] **Phase 102: Legal Guardrail Port** - prompt 装配 / tool_leak / citation 审计 / 四护栏移植 (CORE-05..08, SAFE-01, SAFE-04) (completed 2026-08-08)
+- [x] **Phase 103: Dual Entry Points** - in-process BackendAdapter + inkstatute-agent acp (CORE-10) (completed 2026-08-08)
 - [ ] **Phase 104: Legacy Convergence** - 退役 ~5,465 行存量 + gate 体系更新 (CONV-01..05, SAFE-06)
 
 ---
@@ -337,9 +337,11 @@ Carried human gates from v1.x (NOT closed by v3.0):
   6. 建立 golden fixture 对拍集——同一输入在移植前后的 prompt 装配结果可比对，差异需被显式解释
 
 **Plans**: 5 plans
+
   - Wave 1: `102-01-PLAN.md` (tool_leak.py — CORE-06), `102-02-PLAN.md` (prompt_assembler.py — CORE-05)
   - Wave 2: `102-03-PLAN.md` (citations/ — CORE-07), `102-04-PLAN.md` (guardrails.py — CORE-08, SAFE-01, SAFE-04)
   - Wave 3: `102-05-PLAN.md` (turn loop integration — CORE-05..08, SAFE-04)
+
 **UI hint**: no
 **Human gate**: HG-1 法律质量（律师抽样确认输出质量不低于现有 lawyer-desktop / Hermes）—— 不得由自动化声称通过
 
@@ -407,6 +409,6 @@ Carried human gates from v1.x (NOT closed by v3.0):
 | 99. Practice Profile | C | 0/TBD | Not started | - |
 | 100. Agent Core Skeleton | D | 4/4 | Complete | 2026-08-11 |
 | 101. Agent Core Tools | D | 1/4 | In Progress | - |
-| 102. Legal Guardrail Port | D | 0/TBD | Not started | - |
-| 103. Dual Entry Points | D | 0/TBD | Not started | - |
+| 102. Legal Guardrail Port | D | 5/5 | Complete    | 2026-08-08 |
+| 103. Dual Entry Points | D | 3/3 | Complete    | 2026-08-08 |
 | 104. Legacy Convergence | D | 0/TBD | Not started | - |

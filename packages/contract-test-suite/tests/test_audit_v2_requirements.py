@@ -419,7 +419,7 @@ class TestAuditSingleRequirementMode(unittest.TestCase):
 
 
 class TestAuditGateList(unittest.TestCase):
-    """Verify the 19 gates are registered in run_v2_gates.py."""
+    """Verify the 34 gates are registered in run_v2_gates.py."""
 
     def test_v2_gates_includes_traceability_gate(self):
         result = subprocess.run(
@@ -440,13 +440,11 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("rbac-annotation-scan", gate_names)
         self.assertIn("mcp-registry", gate_names)
         self.assertIn("qqbot-channel", gate_names)
-        self.assertIn("web-sse-channel", gate_names)
         self.assertIn("wecom-channel", gate_names)
         self.assertIn("platform-sdk-ts", gate_names)
         self.assertIn("model-gateway", gate_names)
         self.assertIn("multi-agent-adapter", gate_names)
         self.assertIn("admin-web-ui", gate_names)
-        self.assertIn("lawyer-web-chat", gate_names)
         self.assertIn("gate-coverage-meta-test", gate_names)
         self.assertIn("acp-client", gate_names)
         self.assertIn("acp-event-bridge", gate_names)
@@ -457,7 +455,7 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("skill-index", gate_names)
         self.assertIn("skill-materializer", gate_names)
         self.assertIn("agent-core", gate_names)
-        self.assertEqual(len(gate_names), 37)
+        self.assertEqual(len(gate_names), 34)
 
 
 if __name__ == "__main__":

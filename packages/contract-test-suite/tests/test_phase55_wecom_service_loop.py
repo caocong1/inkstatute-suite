@@ -11,16 +11,61 @@ import unittest
 REPO_ROOT = Path(__file__).resolve().parents[3]
 for source_path in (
     REPO_ROOT / "packages" / "platform-contract" / "src",
-    REPO_ROOT / "services" / "hermes-contract-layer" / "src",
 ):
     sys.path.insert(0, str(source_path))
 
 from contract_test_suite.fixture_replay import assert_relationship_integrity
 from contract_test_suite.paths import LOCAL_FIXTURE_ROOT
 from contract_test_suite.schema_validation import load_schemas, validate_event_bundle
-from hermes_contract_layer.adapter_manifest import build_hermes_adapter_manifest
 from wecom_service.agent_backend import select_agent_backend
 from wecom_service.output_policy import apply_output_policy
+
+
+def build_hermes_adapter_manifest(
+    *,
+    backend_version: str,
+    profile_name: str,
+    adapter_version: str = "0.1.0",
+    no_channel_io: bool = True,
+) -> dict[str, Any]:
+    """Build a backend-neutral manifest for the Hermes lawfirm adapter.
+
+    Inlined from the retired hermes_contract_layer.adapter_manifest module
+    (Phase 104-02: legacy convergence).
+    """
+    return {
+        "adapter_name": "hermes-lawfirm-agent-adapter",
+        "adapter_version": adapter_version,
+        "mode": "hermes",
+        "backend_version": backend_version,
+        "profile_name": profile_name,
+        "bundle_id": "lawfirm-profile-bundle",
+        "capabilities": {
+            "hook_event_support": [
+                "agent:end",
+                "gateway:startup",
+                "response_filter_contract_result_recorder",
+            ],
+            "invocation_mode": "sync",
+            "feedback_target_support": "message_id",
+            "session_read_support": True,
+            "artifact_return_support": True,
+            "trace_support": True,
+            "no_channel_io": no_channel_io,
+        },
+        "metadata": {
+            "after_filter_recorder_dir": "response_filter_contract_result_recorder",
+            "manifest_hook_name": "contract_result_recorder",
+            "repo_hook_artifacts": [
+                "hooks/response_filter_contract_result_recorder",
+                "response_filter_contract_result_recorder",
+            ],
+            "ordinary_wecom_channel_owner": "inkstatute_wecom_service",
+            "no_channel_io_evidence": "Hermes adapter returns platform events/results; WeCom send is owned by InkStatute service.",
+            "source_status": "repo_fixture_manifest",
+            "production_ready": True,
+        },
+    }
 
 
 PHASE55_LOOP = LOCAL_FIXTURE_ROOT / "phase55_wecom_service_agent_loop.json"

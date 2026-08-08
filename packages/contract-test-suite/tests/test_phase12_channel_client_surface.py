@@ -27,7 +27,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 WECOM_WRAPPER_ROOT = REPO_ROOT / "packages" / "channels" / "wecom"
-WEB_SSE_FIXTURE = REPO_ROOT / "packages" / "channels" / "web_sse" / "fixtures" / "multichannel_web_sse.json"
+WEB_SSE_FIXTURE = REPO_ROOT / "packages" / "contract-test-suite" / "fixtures" / "multichannel_web_sse.json"
 PLATFORM_API_OPENAPI = REPO_ROOT / "apps" / "platform_api" / "openapi" / "platform-api.json"
 PLATFORM_SDK_TS = REPO_ROOT / "packages" / "platform-sdk-ts" / "src" / "index.ts"
 WEB_CHAT_FIXTURE = REPO_ROOT / "apps" / "web_chat" / "fixtures" / "run_events.json"

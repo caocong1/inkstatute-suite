@@ -11,7 +11,6 @@ import unittest
 REPO_ROOT = Path(__file__).resolve().parents[3]
 for source_path in (
     REPO_ROOT / "services" / "feedback-service" / "src",
-    REPO_ROOT / "services" / "hermes-contract-layer" / "src",
 ):
     sys.path.insert(0, str(source_path))
 
@@ -19,8 +18,8 @@ from contract_test_suite.event_stream_replay import assert_event_stream_integrit
 from contract_test_suite.fixture_replay import assert_relationship_integrity
 from contract_test_suite.paths import LOCAL_FIXTURE_ROOT
 from contract_test_suite.schema_validation import load_schemas, validate_event_bundle
+from contract_test_suite.wecom_validation import validate_wecom_shadow_evidence
 from feedback_service.wecom_normalizer import normalize_wecom_feedback_records
-from hermes_contract_layer.wecom_validation import validate_wecom_shadow_evidence
 
 
 PHASE5_STREAM = LOCAL_FIXTURE_ROOT / "phase5_wecom_contract_stream.jsonl"

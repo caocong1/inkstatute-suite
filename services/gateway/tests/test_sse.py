@@ -1,8 +1,8 @@
 """Unit tests for the Gateway SSE encoding with output boundary.
 
-Tests GatewaySseStream using encode_sse_event from web_sse, output boundary
-enforcement per event, forbidden payload key rejection, and Last-Event-ID
-parsing.
+Tests GatewaySseStream using encode_sse_event (inlined from the retired
+web_sse channel package), output boundary enforcement per event, forbidden
+payload key rejection, and Last-Event-ID parsing.
 
 The output boundary is the second enforcement point (AGENTS.md: "Output
 boundary is enforced twice: at the ACP event bridge and at the Gateway").
@@ -12,10 +12,9 @@ from __future__ import annotations
 
 import unittest
 
-from inkstatute_channels_web_sse import encode_sse_event
 from platform_runtime.protocols import RunEvent
 
-from gateway.sse import GatewaySseStream, parse_last_event_id
+from gateway.sse import GatewaySseStream, encode_sse_event, parse_last_event_id
 
 
 def _make_event(

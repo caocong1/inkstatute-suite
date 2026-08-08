@@ -34,12 +34,16 @@ class RuntimeFeatureFlags:
     multi_agent_enabled: bool = False
     skill_registry_write_enabled: bool = False
     hybrid_routing_enabled: bool = False
+    # Deprecated: web_sse_channel retired in Phase 104-02, replaced by services/gateway.
+    # Kept as a config flag for backward compatibility; no longer gates any runtime lane.
     web_sse_channel_enabled: bool = False
     rbac_enabled: bool = False
     multi_tenant_enabled: bool = False
 
     # Phase 57 flags — all default OFF, gated by require_enabled
     admin_web_ui_enabled: bool = False
+    # Deprecated: lawyer_web_chat retired in Phase 104-02, replaced by services/gateway.
+    # Kept as a config flag for backward compatibility; no longer gates any runtime lane.
     lawyer_web_chat_enabled: bool = False
 
     # v1.10 operator config — default OFF; mutate paths require explicit opt-in

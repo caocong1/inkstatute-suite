@@ -208,7 +208,8 @@ def _check_wiring_any(
 # ---------------------------------------------------------------------------
 
 WECOM_SRC = "services/wecom-service/src/wecom_service"
-HERMES_SRC = "services/hermes-contract-layer/src/hermes_contract_layer"
+ACP_CLIENT_SRC = "packages/acp-client/src/inkstatute_acp_client"
+ACP_EVENT_BRIDGE_SRC = "packages/acp-event-bridge/src/inkstatute_acp_event_bridge"
 FEEDBACK_SRC = "services/feedback-service/src/feedback_service"
 READVIEW_SRC = "services/conversation-read-view/src/conversation_read_view"
 CONTRACT_SUITE_SRC = "packages/contract-test-suite/src/contract_test_suite"
@@ -311,7 +312,7 @@ REQUIREMENT_REGISTRY: tuple[RequirementSpec, ...] = (
             ),
         ),
         evidence_hints=EvidenceHints(
-            source_dirs=(WECOM_SRC, HERMES_SRC),
+            source_dirs=(WECOM_SRC, ACP_CLIENT_SRC),
             test_patterns=(r"test_agent_backend",),
             schema_names=("agent_adapter_manifest.schema.json",),
             fixture_patterns=(r"phase55_non_hermes_adapter_manifest",),
@@ -338,28 +339,28 @@ REQUIREMENT_REGISTRY: tuple[RequirementSpec, ...] = (
             VerificationProbe(
                 level=2,
                 kind="library",
-                target="bootstrap.py with probe_hermes_capabilities and check_sanitized_bundle_manifest",
+                target="adapter.py with ACPBackendAdapter and ACPBackendConfig",
                 checker=_check_library_surface(
-                    f"{HERMES_SRC}/bootstrap.py",
-                    ("probe_hermes_capabilities", "check_sanitized_bundle_manifest"),
+                    f"{ACP_CLIENT_SRC}/adapter.py",
+                    ("ACPBackendAdapter", "ACPBackendConfig"),
                 ),
             ),
             VerificationProbe(
                 level=3,
                 kind="wiring",
-                target="hermes_contract_layer __init__.py exports bootstrap health-check functions",
+                target="acp_client __init__.py exports HERMES_COMPATIBILITY_MATRIX and create_hermes_adapter",
                 checker=_check_wiring_all(
-                    f"{HERMES_SRC}/__init__.py",
-                    (r"probe_hermes_capabilities", r"check_sanitized_bundle_manifest"),
+                    f"{ACP_CLIENT_SRC}/__init__.py",
+                    (r"HERMES_COMPATIBILITY_MATRIX", r"create_hermes_adapter"),
                 ),
             ),
         ),
         evidence_hints=EvidenceHints(
-            source_dirs=(HERMES_SRC,),
-            test_patterns=(r"test_adapter_bootstrap",),
+            source_dirs=(ACP_CLIENT_SRC,),
+            test_patterns=(r"test_adapter",),
             schema_names=("agent_adapter_manifest.schema.json",),
             fixture_patterns=(),
-            gate_names=("hermes-contract-layer",),
+            gate_names=("acp-client",),
         ),
     ),
     # 4. Output boundary
@@ -596,15 +597,15 @@ REQUIREMENT_REGISTRY: tuple[RequirementSpec, ...] = (
             VerificationProbe(
                 level=3,
                 kind="wiring",
-                target="hook.py imports ContractEventWriter from writer.py",
+                target="acp_event_bridge __init__.py exports privacy scan functions",
                 checker=_check_wiring_all(
-                    f"{HERMES_SRC}/hook.py",
-                    (r"from\s+\.writer\s+import", r"ContractEventWriter"),
+                    f"{ACP_EVENT_BRIDGE_SRC}/__init__.py",
+                    (r"scan_event", r"assert_reference_first"),
                 ),
             ),
         ),
         evidence_hints=EvidenceHints(
-            source_dirs=(CONTRACT_SUITE_SRC, HERMES_SRC),
+            source_dirs=(CONTRACT_SUITE_SRC, ACP_EVENT_BRIDGE_SRC),
             test_patterns=(
                 r"test_privacy_gates",
                 r"test_event_stream_replay",
@@ -612,7 +613,7 @@ REQUIREMENT_REGISTRY: tuple[RequirementSpec, ...] = (
             ),
             schema_names=("memory_use.schema.json", "execution_trace.schema.json"),
             fixture_patterns=(r"phase4_.*_event_stream",),
-            gate_names=("phase7-privacy-boundary", "contract-test-suite", "hermes-contract-layer"),
+            gate_names=("phase7-privacy-boundary", "contract-test-suite", "acp-event-bridge"),
         ),
     ),
     # 9. Composability CI

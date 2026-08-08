@@ -5,7 +5,7 @@ This package is the single client-facing entry point for all clients
 pattern, zero external dependencies) and delegates to an injected
 ``RunRuntime`` for agent execution.
 
-All SSE encoding uses ``encode_sse_event`` from the ``web_sse`` package.
+All SSE encoding is self-contained in ``gateway.sse``.
 All auth uses ``rbac.identity.resolve_identity()`` (Bearer + cookie).
 """
 

@@ -76,12 +76,12 @@
 - [x] **CORE-02**: 工具层——澄清提问、法规检索、文件读取、文档生成、MCP client；工具结果回注与多轮工具编排 ✅ Phase 101
 - [x] **CORE-03**: Word 原生修订 docx 产出能力，直接复用 `lawfirm-profile/scripts/contract_review_trackchanges.py`（41,185 字节）的能力，不重写 ✅ Phase 101
 - [x] **CORE-04**: 上下文预算与裁剪策略，处理 skill 正文 2K–20K token 的注入成本 ✅ Phase 100
-- [ ] **CORE-05**: 移植 `lawyer-desktop/src-tauri/src/skills/router.rs`（627 行）的中文法律 prompt 装配、research-gate 注入、检索工具映射、引用书写规范
-- [ ] **CORE-06**: 移植 `lawyer-desktop/src-tauri/src/llm/tool_leak.rs`（392 行）的工具调用泄漏检测与解析（DSML / XML 变体、全角字符归一、重试），用 Rust 侧现有测试用例作为对拍集
-- [ ] **CORE-07**: 移植 citation 审计（引用抽取 + 核验 + verified / retrieved / unverified 标注）
-- [ ] **CORE-08**: 四条法律护栏在核心中代码级强制——research-gate 前置、ask-user-enforcement 阻断、citation 审计、de-AI polish
+- [x] **CORE-05**: 移植 `lawyer-desktop/src-tauri/src/skills/router.rs`（627 行）的中文法律 prompt 装配、research-gate 注入、检索工具映射、引用书写规范
+- [x] **CORE-06**: 移植 `lawyer-desktop/src-tauri/src/llm/tool_leak.rs`（392 行）的工具调用泄漏检测与解析（DSML / XML 变体、全角字符归一、重试），用 Rust 侧现有测试用例作为对拍集
+- [x] **CORE-07**: 移植 citation 审计（引用抽取 + 核验 + verified / retrieved / unverified 标注）
+- [x] **CORE-08**: 四条法律护栏在核心中代码级强制——research-gate 前置、ask-user-enforcement 阻断、citation 审计、de-AI polish
 - [x] **CORE-09**: 多 provider 模型层（OpenAI 兼容 / Anthropic / Ollama），由 `packages/backends/provider_model` 归并而来，复用 `packages/model-gateway` 的熔断 / 限流 / 成本追踪 ✅ Phase 100
-- [ ] **CORE-10**: 双入口一份实现——in-process `BackendAdapter`（`backend_id="inkstatute"`）+ `inkstatute-agent acp` 标准 ACP agent 入口，`--check` 可通过
+- [x] **CORE-10**: 双入口一份实现——in-process `BackendAdapter`（`backend_id="inkstatute"`）+ `inkstatute-agent acp` 标准 ACP agent 入口，`--check` 可通过
 
 ### CONV — 存量收敛
 
@@ -93,10 +93,10 @@
 
 ### SAFE — 安全与法律安全
 
-- [ ] **SAFE-01**: 高风险法律结论保持人审——不自动合成 skill、不自动修改法律结论类 skill、`skill_candidate.requires_human_review` 恒为 true
+- [x] **SAFE-01**: 高风险法律结论保持人审——不自动合成 skill、不自动修改法律结论类 skill、`skill_candidate.requires_human_review` 恒为 true
 - [x] **SAFE-02**: 契约日志 reference-first（`raw_payload_ref`），不存敏感全文；secrets 不入仓 / 不入日志 / 不入契约事件；ACP 子进程凭据经环境注入
 - [x] **SAFE-03**: 输出边界贯穿事件桥与 Gateway 两处，后端 meta / gateway / system 噪声不得到达普通律师用户
-- [ ] **SAFE-04**: research-gate 与 citation 审计不可绕过——法律结论必须有依据来源标注
+- [x] **SAFE-04**: research-gate 与 citation 审计不可绕过——法律结论必须有依据来源标注
 - [x] **SAFE-05**: skill 语料以只读 vendoring 引用，平台不写回 skill 仓 ✅ Phase 96
 - [ ] **SAFE-06**: 可组合性保持——非法律合成任务（`solutions/demo_non_legal`）必须跑通契约层，法律专用字段只在 `industry_context`
 
@@ -196,20 +196,20 @@
 | CORE-09 | Phase 100 | Complete ✅ |
 | CORE-02 | Phase 101 | Complete ✅ |
 | CORE-03 | Phase 101 | Complete ✅ |
-| CORE-05 | Phase 102 | Pending |
-| CORE-06 | Phase 102 | Pending |
-| CORE-07 | Phase 102 | Pending |
-| CORE-08 | Phase 102 | Pending |
-| CORE-10 | Phase 103 | Pending |
+| CORE-05 | Phase 102 | Complete |
+| CORE-06 | Phase 102 | Complete |
+| CORE-07 | Phase 102 | Complete |
+| CORE-08 | Phase 102 | Complete |
+| CORE-10 | Phase 103 | Complete |
 | CONV-01 | Phase 104 | Pending |
 | CONV-02 | Phase 104 | Pending |
 | CONV-03 | Phase 104 | Pending |
 | CONV-04 | Phase 104 | Pending |
 | CONV-05 | Phase 104 | Pending |
-| SAFE-01 | Phase 102 | Pending |
+| SAFE-01 | Phase 102 | Complete |
 | SAFE-02 | Phase 90 | Complete |
 | SAFE-03 | Phase 90 | Complete |
-| SAFE-04 | Phase 102 | Pending |
+| SAFE-04 | Phase 102 | Complete |
 | SAFE-05 | Phase 96 | Complete ✅ |
 | SAFE-06 | Phase 104 | Pending |
 

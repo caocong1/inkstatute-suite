@@ -2,7 +2,6 @@
 
 Verifies that:
 - ChannelCapabilitySet has verify_and_ack_support field (default False)
-- WebSseChannelAdapter declares verify_and_ack_support=False
 - QqBotChannelAdapter declares verify_and_ack_support=True
 - WeComChannelAdapter declares verify_and_ack_support=True
 - FakeChannelAdapter declares verify_and_ack_support=False
@@ -15,7 +14,6 @@ from __future__ import annotations
 import unittest
 
 from inkstatute_channels_qqbot.adapter import QQBotChannelAdapter
-from inkstatute_channels_web_sse.adapter import WebSseChannelAdapter
 from inkstatute_channels_wecom.adapter import WeComChannelAdapter
 from platform_runtime.fakes import FakeChannelAdapter
 from platform_runtime.protocols import (
@@ -42,11 +40,6 @@ class TestVerifyAndAckOptional(unittest.TestCase):
         """Default value of verify_and_ack_support is False."""
         cs = ChannelCapabilitySet()
         self.assertFalse(cs.verify_and_ack_support)
-
-    def test_web_sse_adapter_verify_and_ack_support_false(self) -> None:
-        """WebSseChannelAdapter declares verify_and_ack_support=False."""
-        adapter = WebSseChannelAdapter()
-        self.assertFalse(adapter.capabilities().verify_and_ack_support)
 
     def test_qqbot_adapter_verify_and_ack_support_true(self) -> None:
         """QqBotChannelAdapter declares verify_and_ack_support=True."""

@@ -51,7 +51,6 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     platform_src = repo_root / "packages" / "platform-contract" / "src"
     contract_src = repo_root / "packages" / "contract-test-suite" / "src"
     wecom_src = repo_root / "services" / "wecom-service" / "src"
-    hermes_src = repo_root / "services" / "hermes-contract-layer" / "src"
     feedback_src = repo_root / "services" / "feedback-service" / "src"
     read_view_src = repo_root / "services" / "conversation-read-view" / "src"
     platform_runtime_src = repo_root / "packages" / "platform-runtime" / "src"
@@ -68,14 +67,12 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     channel_core_src = repo_root / "packages" / "channel-core" / "src"
     qqbot_src = repo_root / "packages" / "channels" / "qqbot" / "src"
     qqbot_service_src = repo_root / "services" / "qqbot-service" / "src"
-    web_sse_src = repo_root / "packages" / "channels" / "web_sse" / "src"
     wecom_channel_src = repo_root / "packages" / "channels" / "wecom" / "src"
     mcp_registry_src = repo_root / "packages" / "mcp-registry" / "src"
     sdk_ts_src = repo_root / "packages" / "platform-sdk-ts" / "src"
     model_gateway_src = repo_root / "packages" / "model-gateway" / "src"
     multi_agent_src = repo_root / "packages" / "multi-agent-adapter" / "src"
     admin_web_ui_src = repo_root / "services" / "admin-web-ui" / "src"
-    lawyer_web_chat_src = repo_root / "services" / "lawyer-web-chat" / "src"
     operator_config_src = repo_root / "packages" / "operator-config" / "src"
     acp_client_src = repo_root / "packages" / "acp-client" / "src"
     acp_event_bridge_src = repo_root / "packages" / "acp-event-bridge" / "src"
@@ -96,11 +93,6 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "wecom-service",
             (py, "-m", "unittest", "discover", "-s", "services/wecom-service/tests"),
             (wecom_src, wecom_channel_src, channel_core_src, platform_src, contract_src, platform_runtime_src, operator_config_src),
-        ),
-        Gate(
-            "hermes-contract-layer",
-            (py, "-m", "unittest", "discover", "-s", "services/hermes-contract-layer/tests"),
-            (hermes_src, platform_src, contract_src, router_service_src, skill_registry_src),
         ),
         Gate(
             "conversation-read-view",
@@ -140,7 +132,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "gateway",
             (py, "-m", "unittest", "discover", "-s", "services/gateway/tests"),
-            (gateway_src, platform_src, platform_runtime_src, rbac_src, web_sse_src, skill_registry_src, acp_event_bridge_src, acp_client_src, channel_core_src, qqbot_src, wecom_channel_src, wecom_src, lawyer_web_chat_src, practice_profile_src),
+            (gateway_src, platform_src, platform_runtime_src, rbac_src, skill_registry_src, acp_event_bridge_src, acp_client_src, channel_core_src, qqbot_src, wecom_channel_src, wecom_src, practice_profile_src),
         ),
         Gate(
             "router-service",
@@ -178,11 +170,6 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (admin_web_ui_src, admin_api_src, rbac_src, read_view_src, feedback_src, contract_src, platform_src, platform_runtime_src, operator_config_src),
         ),
         Gate(
-            "lawyer-web-chat",
-            (py, "-m", "unittest", "discover", "-s", "services/lawyer-web-chat/tests"),
-            (lawyer_web_chat_src, rbac_src, web_sse_src, channel_core_src, contract_src, platform_src, platform_runtime_src),
-        ),
-        Gate(
             "rbac",
             (py, "-m", "unittest", "discover", "-s", "packages/rbac/tests"),
             (rbac_src, admin_api_src, platform_src, platform_runtime_src, read_view_src, feedback_src, contract_src, operator_config_src),
@@ -204,11 +191,6 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "qqbot-service",
             (py, "-m", "unittest", "discover", "-s", "services/qqbot-service/tests"),
             (qqbot_service_src, qqbot_src, channel_core_src, platform_src, contract_src, platform_runtime_src, feedback_src, operator_config_src),
-        ),
-        Gate(
-            "web-sse-channel",
-            (py, "-m", "unittest", "discover", "-s", "packages/channels/web_sse/tests"),
-            (web_sse_src, channel_core_src, platform_src, contract_src, platform_runtime_src),
         ),
         Gate(
             "wecom-channel",
@@ -264,7 +246,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "contract-test-suite",
             (py, "-m", "unittest", "discover", "-s", "packages/contract-test-suite/tests"),
-            (contract_src, platform_src, platform_runtime_src, wecom_src, wecom_channel_src, operator_config_src, hermes_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, provider_model_backend_src, admin_api_src, rbac_src, channel_core_src, qqbot_src, qqbot_service_src, mcp_registry_src, model_gateway_src, gateway_src, web_sse_src),
+            (contract_src, platform_src, platform_runtime_src, wecom_src, wecom_channel_src, operator_config_src, read_view_src, feedback_src, solution_loader_src, lawfirm_solution_src, demo_non_legal_solution_src, skill_registry_src, router_service_src, provider_model_backend_src, admin_api_src, rbac_src, channel_core_src, qqbot_src, qqbot_service_src, mcp_registry_src, model_gateway_src, gateway_src),
         ),
         Gate(
             "v2-acceptance-traceability",
@@ -299,10 +281,8 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/practice-profile/src",
                 "packages/agent-core/src",
                 "services/admin-web-ui/src",
-                "services/lawyer-web-chat/src",
                 "services/gateway/src",
                 "services/wecom-service/src",
-                "services/hermes-contract-layer/src",
                 "services/feedback-service/src",
                 "services/conversation-read-view/src",
                 "services/admin-console-api/src",
