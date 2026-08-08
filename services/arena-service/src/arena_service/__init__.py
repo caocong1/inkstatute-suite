@@ -19,7 +19,16 @@ from .config import ArenaServiceConfig
 from .event_buffer import ArenaEventBuffer, BufferedArenaEvent
 from .openapi import build_openapi_document, render_openapi_json
 from .output_boundary import ArenaOutputBoundary
+from .permission_safety import (
+    check_no_auto_approve_dangerous,
+    check_no_batch_approve,
+    check_permission_request_forwarding,
+    get_dangerous_kinds,
+    is_dangerous_kind,
+    simulate_approval,
+)
 from .sse import ArenaSseStream, encode_arena_sse_event, parse_last_event_id
+from .staggered_startup import StaggeredStartupSemaphore
 from .subprocess_control import PartialResult, SubprocessController
 
 __all__ = [
@@ -34,6 +43,7 @@ __all__ = [
     "AuthContext",
     "BufferedArenaEvent",
     "PartialResult",
+    "StaggeredStartupSemaphore",
     "SubprocessController",
     "build_openapi_document",
     "encode_arena_sse_event",
