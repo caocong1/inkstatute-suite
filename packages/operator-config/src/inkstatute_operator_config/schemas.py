@@ -17,6 +17,7 @@ __all__ = [
     "ProviderDoc",
     "CatalogSelectionDoc",
     "VisionPolicyDoc",
+    "BackendSelectionDoc",
     "OperatorConfigDocument",
 ]
 
@@ -119,6 +120,26 @@ class VisionPolicyDoc:
 
 
 @dataclass(frozen=True, slots=True)
+class BackendSelectionDoc:
+    """Backend selection policy for per-tenant backend routing (Phase 103).
+
+    The self-built agent core (``inkstatute``) is the default backend but has
+    no architectural privilege — swapping ``backend_id`` from ``hermes`` to
+    ``inkstatute`` requires zero changes to any channel or UI code.
+
+    Attributes:
+        default_backend_id: The backend used when no tenant-specific override
+            applies.  Default ``"inkstatute"``.
+        backend_overrides: Per-tenant backend overrides.  When a tenant_id
+            is present in this mapping, the mapped backend_id takes
+            precedence over ``default_backend_id``.
+    """
+
+    default_backend_id: str = "inkstatute"
+    backend_overrides: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
 class OperatorConfigDocument:
     """Root operator config document persisted by the InkStatute store."""
 
@@ -127,3 +148,4 @@ class OperatorConfigDocument:
     providers: tuple[ProviderDoc, ...] = ()
     catalog: CatalogSelectionDoc = field(default_factory=CatalogSelectionDoc)
     vision: VisionPolicyDoc = field(default_factory=VisionPolicyDoc)
+    backend_selection: BackendSelectionDoc = field(default_factory=BackendSelectionDoc)

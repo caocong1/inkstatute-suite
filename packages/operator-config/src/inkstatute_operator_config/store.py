@@ -19,6 +19,7 @@ from platform_runtime.feature_flags import RuntimeFeatureFlags
 from .errors import OperatorConfigStoreError
 from .flags import require_operator_config_writable
 from .schemas import (
+    BackendSelectionDoc,
     CatalogSelectionDoc,
     ChannelsDoc,
     OperatorConfigDocument,
@@ -80,6 +81,18 @@ def _schema_version(value: object) -> int:
         raise OperatorConfigStoreError("schema_version must be an integer") from exc
 
 
+def _str_dict(value: object, label: str) -> dict[str, str]:
+    """Accept None or a mapping of str→str; reject other types."""
+    if value is None:
+        return {}
+    if not isinstance(value, Mapping):
+        raise OperatorConfigStoreError(f"{label} must be an object")
+    result: dict[str, str] = {}
+    for key, val in value.items():
+        result[str(key)] = str(val)
+    return result
+
+
 def document_from_payload(payload: Mapping[str, Any]) -> OperatorConfigDocument:
     """Parse a JSON mapping into a frozen ``OperatorConfigDocument``.
 
@@ -100,6 +113,7 @@ def document_from_payload(payload: Mapping[str, Any]) -> OperatorConfigDocument:
 
     catalog_raw = _as_object(payload.get("catalog"), "catalog")
     vision_raw = _as_object(payload.get("vision"), "vision")
+    backend_selection_raw = _as_object(payload.get("backend_selection"), "backend_selection")
 
     providers: list[ProviderDoc] = []
     for index, item in enumerate(providers_raw):
@@ -175,6 +189,12 @@ def document_from_payload(payload: Mapping[str, Any]) -> OperatorConfigDocument:
             ),
             vision_provider_id=_optional_str(
                 vision_raw.get("vision_provider_id"), "vision.vision_provider_id"
+            ),
+        ),
+        backend_selection=BackendSelectionDoc(
+            default_backend_id=str(backend_selection_raw.get("default_backend_id", "inkstatute")),
+            backend_overrides=_str_dict(
+                backend_selection_raw.get("backend_overrides"), "backend_selection.backend_overrides"
             ),
         ),
     )
