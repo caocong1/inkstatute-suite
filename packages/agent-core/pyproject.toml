@@ -13,6 +13,9 @@ authors = [
 ]
 dependencies = []
 
+[project.scripts]
+inkstatute-agent = "inkstatute_agent_core.__main__:main"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 
