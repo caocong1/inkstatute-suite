@@ -5,6 +5,10 @@ enforce safety and persistence invariants at the arena edge:
 
 - ``mock_acp`` — deterministic offline ``BackendAdapter`` for testing
 - ``slot_runner`` — asyncio exception-isolated slot execution with retry
+- ``artifact_store`` — reference-first structured output persistence (ENGINE-07)
+- ``guardrail_boundary`` — post-hoc citation audit + de-AI polish +
+  high-risk review enforcement on external ACP agents (SAFE-01..04)
+- ``provenance`` — per-claim agent → reviewer → source chain logging (SAFE-07)
 
 These modules are pure functions/classes with no LLM provider dependencies.
 The orchestrator never produces content — no ``openai``, ``anthropic``, or
@@ -14,8 +18,18 @@ Every run uses a fresh context — no ``session/resume`` calls (ENGINE-06).
 
 from __future__ import annotations
 
+from .artifact_store import ArtifactStore, RoundArtifact
+from .guardrail_boundary import GuardrailResult, apply_post_hoc_guardrails
+from .provenance import ProvenanceChain, ProvenanceLogger
+
 __version__ = "0.1.0"
 
 __all__ = [
+    "ArtifactStore",
+    "GuardrailResult",
+    "ProvenanceChain",
+    "ProvenanceLogger",
+    "RoundArtifact",
     "__version__",
+    "apply_post_hoc_guardrails",
 ]
