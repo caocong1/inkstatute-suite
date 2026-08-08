@@ -1,9 +1,9 @@
 ---
 phase: 110
 slug: arena-ui-integration
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-08-09
 ---
 
@@ -43,17 +43,17 @@ created: 2026-08-09
 - [x] Validation strategy complete (110-VALIDATION.md)
 
 ### Wave 1 (Core reducer + state — no dependencies)
-- [ ] arenaEventReducer.ts — compose reduce() per slot (UI-05)
-- [ ] arenaStream.ts — SSE consumer with slot state persistence (UI-06)
+- [x] arenaEventReducer.ts — compose reduce() per slot (UI-05)
+- [x] arenaStream.ts — SSE consumer with slot state persistence (UI-06)
 
 ### Wave 2 (UI components — depend on Wave 1)
-- [ ] ArenaWorkflowCreator.tsx + ParallelStreamPanel.tsx (UI-01, UI-02)
-- [ ] ScoreCard.tsx + ReviewSummary.tsx + SynthesisViewer.tsx (UI-03, UI-04)
+- [x] ArenaWorkflowCreator.tsx + ParallelStreamPanel.tsx (UI-01, UI-02)
+- [x] ScoreCard.tsx + ReviewSummary.tsx + SynthesisViewer.tsx (UI-03, UI-04)
 
 ### Wave 3 (Integration + gates — depend on Wave 1+2)
-- [ ] E2E integration tests — all 4 modes (GATE-01)
-- [ ] demo_non_legal composability test (GATE-02)
-- [ ] Gate registration + baseline update (UI-07, GATE-03)
+- [x] E2E integration tests — all 4 modes (GATE-01)
+- [x] demo_non_legal composability test (GATE-02)
+- [x] Gate registration + baseline update (UI-07, GATE-03)
 
 ## Acceptance Criteria
 

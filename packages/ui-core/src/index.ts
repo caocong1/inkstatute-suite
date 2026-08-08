@@ -203,3 +203,10 @@ export { ParallelStreamPanel } from "./components/ParallelStreamPanel";
 export type { ParallelStreamPanelProps } from "./components/ParallelStreamPanel";
 export { SlotStreamView } from "./components/SlotStreamView";
 export type { SlotStreamViewProps } from "./components/SlotStreamView";
+// Arena UI — score card + review summary + synthesis viewer (UI-03/UI-04)
+export { ScoreCard } from "./components/ScoreCard";
+export type { ScoreCardProps } from "./components/ScoreCard";
+export { ReviewSummary } from "./components/ReviewSummary";
+export type { ReviewSummaryProps } from "./components/ReviewSummary";
+export { SynthesisViewer } from "./components/SynthesisViewer";
+export type { SynthesisViewerProps } from "./components/SynthesisViewer";

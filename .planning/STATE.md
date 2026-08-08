@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Legal AI Arena
-status: completed
-stopped_at: v3.1 roadmap created — 6 phases (105-110), 45 requirements mapped, ready to plan Phase 105
-last_updated: "2026-08-08T18:34:16.439Z"
-last_activity: 2026-08-08 -- Phase 109 marked complete
+status: complete
+stopped_at: v3.1 milestone complete — all 6 phases (105-110) shipped, 28/28 plans done, 41 gates green
+last_updated: "2026-08-09T00:00:00.000Z"
+last_activity: 2026-08-09 -- Phase 110 complete, milestone v3.1 ready for audit/complete
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 23
-  completed_plans: 23
-  percent: 83
+  completed_phases: 6
+  total_plans: 28
+  completed_plans: 28
+  percent: 100
 ---
 
 # Project State
@@ -22,14 +22,14 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Phase 109 — Arena Service
+**Current focus:** Milestone v3.1 complete — ready for audit/complete/cleanup
 
 ## Current Position
 
-Phase: 109 — COMPLETE
-Plan: 1 of 6
-Status: Phase 109 complete
-Last activity: 2026-08-08 -- Phase 109 marked complete
+Phase: 110 (Arena UI + Integration) — COMPLETE
+Plan: 5 of 5
+Status: All plans executed, code review passed, verification passed
+Last activity: 2026-08-09 -- Phase 110 complete, milestone v3.1 ready for audit/complete
 
 ## Milestone v3.1 Overview
 
@@ -135,4 +135,6 @@ v1.x archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Begin Phase 105 (Arena Contract Extension) with /gsd-plan 105
+- Run milestone audit (`/gsd-audit-uat`) to confirm all UAT items resolved
+- Run `/gsd-complete-milestone` to archive v3.1 and prepare for next version
+- Carried human gates (HG-1, HG-4, HG-2, HG-3, QQ --live) remain HUMAN_NEEDED — do not auto-close
