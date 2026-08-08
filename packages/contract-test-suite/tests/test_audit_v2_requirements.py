@@ -434,7 +434,6 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("v2-acceptance-traceability", gate_names)
         self.assertIn("skill-registry", gate_names)
         self.assertIn("router-service", gate_names)
-        self.assertIn("codex-backend", gate_names)
         self.assertIn("provider-model-backend", gate_names)
         self.assertIn("admin-console-api", gate_names)
         self.assertIn("rbac", gate_names)
@@ -458,7 +457,7 @@ class TestAuditGateList(unittest.TestCase):
         self.assertIn("skill-index", gate_names)
         self.assertIn("skill-materializer", gate_names)
         self.assertIn("agent-core", gate_names)
-        self.assertEqual(len(gate_names), 38)
+        self.assertEqual(len(gate_names), 37)
 
 
 if __name__ == "__main__":

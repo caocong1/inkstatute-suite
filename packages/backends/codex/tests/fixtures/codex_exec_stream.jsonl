@@ -1,4 +1,0 @@
-{"type":"thread.started","thread_id":"thread-001"}
-{"type":"item.completed","item":{"type":"assistant_message","text":"Hello "}}
-{"type":"item.completed","item":{"type":"assistant_message","text":"world"}}
-{"type":"turn.completed","usage":{"input_tokens":10,"output_tokens":5}}

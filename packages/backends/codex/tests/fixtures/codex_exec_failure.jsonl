@@ -1,4 +1,0 @@
-{"type":"thread.started","thread_id":"thread-fail-001"}
-{"type":"turn.started"}
-{"type":"turn.failed","message":"rate limit exceeded","error":{"kind":"rate_limit","message":"rate limit exceeded for model gpt-4"}}
-{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":0}}
