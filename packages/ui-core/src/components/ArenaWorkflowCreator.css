@@ -1,0 +1,241 @@
+/* ArenaWorkflowCreator — mode/agent/task/directory selection UI (UI-01).
+ * Follows existing ui-core CSS conventions: BEM-like, plain classes, no
+ * CSS modules. */
+
+.arena-creator {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.arena-creator-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.arena-creator-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-fg, #1f2933);
+}
+
+/* Mode selector — 2x2 grid of cards */
+.arena-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.arena-mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--ink-border, #d6d9e0);
+  border-radius: 8px;
+  background: var(--ink-surface, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.arena-mode-card:hover:not(:disabled) {
+  border-color: var(--ink-accent, #3b6db8);
+}
+
+.arena-mode-card.selected {
+  border-color: var(--ink-accent, #3b6db8);
+  box-shadow: 0 0 0 2px rgba(59, 109, 184, 0.18);
+}
+
+.arena-mode-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arena-mode-card-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-fg, #1f2933);
+}
+
+.arena-mode-card-desc {
+  font-size: 12px;
+  color: var(--ink-fg-muted, #62707d);
+  line-height: 1.5;
+}
+
+/* Agent checkbox list */
+.arena-agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arena-agent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-border, #d6d9e0);
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--ink-surface, #fff);
+}
+
+.arena-agent-item.checked {
+  border-color: var(--ink-accent, #3b6db8);
+  background: rgba(59, 109, 184, 0.06);
+}
+
+.arena-agent-item input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.arena-agent-name {
+  font-size: 13px;
+  color: var(--ink-fg, #1f2933);
+}
+
+.arena-agent-empty {
+  font-size: 13px;
+  color: var(--ink-fg-muted, #62707d);
+  padding: 8px 0;
+}
+
+/* Task textarea */
+.arena-task-input {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-border, #d6d9e0);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--ink-surface, #fff);
+  color: var(--ink-fg, #1f2933);
+  box-sizing: border-box;
+}
+
+.arena-task-input:focus {
+  outline: none;
+  border-color: var(--ink-accent, #3b6db8);
+}
+
+.arena-task-input:disabled {
+  opacity: 0.5;
+}
+
+/* Reference dir + max rounds row */
+.arena-creator-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.arena-ref-section {
+  flex: 1;
+}
+
+.arena-rounds-section {
+  width: 140px;
+}
+
+.arena-ref-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.arena-ref-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--ink-border, #d6d9e0);
+  border-radius: 6px;
+  background: var(--ink-surface, #fff);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-fg, #1f2933);
+}
+
+.arena-ref-btn:hover:not(:disabled) {
+  border-color: var(--ink-accent, #3b6db8);
+}
+
+.arena-ref-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arena-ref-path {
+  font-size: 13px;
+  color: var(--ink-fg-muted, #62707d);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.arena-ref-clear {
+  padding: 4px 10px;
+  border: 1px solid var(--ink-border, #d6d9e0);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-fg-muted, #62707d);
+}
+
+.arena-ref-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.arena-rounds-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-border, #d6d9e0);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--ink-surface, #fff);
+  color: var(--ink-fg, #1f2933);
+  box-sizing: border-box;
+}
+
+.arena-rounds-input:focus {
+  outline: none;
+  border-color: var(--ink-accent, #3b6db8);
+}
+
+.arena-rounds-input:disabled {
+  opacity: 0.5;
+}
+
+/* Submit */
+.arena-creator-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.arena-submit-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--ink-accent, #3b6db8);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.arena-submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.arena-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

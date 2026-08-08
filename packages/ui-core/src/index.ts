@@ -195,3 +195,7 @@ export { highlightJson, looksLikeJson, prettyJson } from "./utils/jsonHighlight"
 
 // Conversation title validation
 export { validateConversationTitle, CONVERSATION_TITLE_MIN, CONVERSATION_TITLE_MAX } from "./utils/conversationTitle";
+
+// Arena UI — multi-agent arena workflow creator + parallel stream panel (UI-01/UI-02)
+export { ArenaWorkflowCreator, ARENA_MODES, clampMaxRounds } from "./components/ArenaWorkflowCreator";
+export type { ArenaWorkflowCreatorProps, ArenaModeOption } from "./components/ArenaWorkflowCreator";
