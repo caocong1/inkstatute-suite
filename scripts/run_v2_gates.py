@@ -82,6 +82,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     agent_core_src = repo_root / "packages" / "agent-core" / "src"
     arena_engine_src = repo_root / "packages" / "arena-engine" / "src"
     arena_service_src = repo_root / "services" / "arena-service" / "src"
+    contract_tests_dir = repo_root / "packages" / "contract-test-suite" / "tests"
     web_src = repo_root / "apps" / "web" / "src"
     desktop_src = repo_root / "apps" / "desktop" / "src"
 
@@ -215,6 +216,22 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (ui_core_src, sdk_ts_src, platform_src, contract_src, platform_runtime_src),
         ),
         Gate(
+            "ui-arena",
+            (
+                "bash",
+                "-c",
+                "cd packages/ui-core && npx vitest run "
+                "tests/test_arena_event_reducer.ts "
+                "tests/test_arena_stream.ts "
+                "tests/test_arena_workflow_creator.tsx "
+                "tests/test_parallel_stream_panel.tsx "
+                "tests/test_score_card.tsx "
+                "tests/test_review_summary.tsx "
+                "tests/test_synthesis_viewer.tsx",
+            ),
+            (),
+        ),
+        Gate(
             "web",
             (py, "-m", "unittest", "discover", "-s", "apps/web/tests"),
             (web_src, ui_core_src, sdk_ts_src, platform_src, contract_src, platform_runtime_src),
@@ -258,6 +275,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             "arena-service",
             (py, "-m", "unittest", "discover", "-s", "services/arena-service/tests"),
             (arena_service_src, acp_client_src, acp_event_bridge_src, platform_src, platform_runtime_src, arena_engine_src),
+        ),
+        Gate(
+            "arena-e2e",
+            (py, "-m", "unittest", "packages/contract-test-suite/tests/test_arena_e2e.py"),
+            (contract_src, platform_src, platform_runtime_src, arena_engine_src, agent_core_src, arena_service_src, acp_client_src, acp_event_bridge_src, contract_tests_dir),
         ),
         Gate(
             "phase7-privacy-boundary",
