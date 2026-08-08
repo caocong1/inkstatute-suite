@@ -132,6 +132,7 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 - ✓ CORE-08: 四条法律护栏代码级强制（research-gate / ask-user / citation audit / de-AI polish） — Phase 102
 - ✓ SAFE-01: skill_candidate.requires_human_review 恒为 true，高风险法律结论人审 — Phase 102
 - ✓ SAFE-04: research-gate 与 citation 审计不可绕过 — Phase 102
+- ✓ CORE-10: 双入口（in-process BackendAdapter + inkstatute-agent acp） — Phase 103
 
 ### Active
 
@@ -324,8 +325,8 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 ## Current State
 
 - **Last shipped:** v1.11 Product Console (Phases 79–87) — product-grade operations control plane with process orchestration, observability dashboards, session auth, and end-to-end smoke verification.
-- **Active milestone:** v3.0 Unified Legal Core (Phases 88–104) — Stage D 自研核心 in progress.
-- **Phase 102 complete:** Legal Guardrail Port — 5 plans, 235 new tests (785 total), 6/6 requirements satisfied (CORE-05..08, SAFE-01, SAFE-04). All four legal guardrails (research-gate, ask-user, citation audit, de-AI polish) enforced at code level. 36 Rust golden fixtures replicated. C-1 code review finding (SAFE-01 bypass) fixed. HG-1 (法律质量) remains human gate.
+- **Active milestone:** v3.0 Unified Legal Core (Phases 88–104) — Stage D 自研核心 in progress, final phase remaining.
+- **Phase 103 complete:** Dual Entry Points — 3 plans, 94 new tests (879 total), CORE-10 satisfied. InProcessAgentCoreAdapter (9 BackendAdapter methods) + `inkstatute-agent acp` CLI (ACP v1 server). Both share same run_turn() implementation. Backend selection configurable via operator-config. W-1 sentinel race + W-7 system prompt parity fixed.
 - **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
 - **Carried human gates:** Phase 5 live WeCom UAT; Phase 8 five-workday lawyer trial; operator `--live` QQ OpenAPI acceptance.
 - **Tech debt (v1.11):** Missing SUMMARY.md for phases 82-85; unchecked REQUIREMENTS.md checkboxes for OBS-04..10; incomplete Nyquist validation for 7/9 phases. All non-blocking.
@@ -351,4 +352,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-08-08 — Phase 102 (Legal Guardrail Port) complete, milestone v3.0 in progress*
+*Last updated: 2026-08-08 — Phase 103 (Dual Entry Points) complete, milestone v3.0 in progress*
