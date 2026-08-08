@@ -56,8 +56,8 @@ class TestGateCoverage(unittest.TestCase):
         )
 
     def test_gate_count_meets_baseline(self):
-        """Gate count meets the Phase 106 baseline (35 gates: 34 existing + fs-sandbox-escape)."""
-        self.assertGreaterEqual(len(_gates()), 35)
+        """Gate count meets the Phase 107 baseline (36 gates: 35 existing + arena-engine)."""
+        self.assertGreaterEqual(len(_gates()), 36)
 
 
 if __name__ == "__main__":

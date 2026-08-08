@@ -80,6 +80,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
     ui_core_src = repo_root / "packages" / "ui-core" / "src"
     practice_profile_src = repo_root / "packages" / "practice-profile" / "src"
     agent_core_src = repo_root / "packages" / "agent-core" / "src"
+    arena_engine_src = repo_root / "packages" / "arena-engine" / "src"
     web_src = repo_root / "apps" / "web" / "src"
     desktop_src = repo_root / "apps" / "desktop" / "src"
 
@@ -238,6 +239,11 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
             (agent_core_src, platform_src, platform_runtime_src, model_gateway_src, acp_client_src),
         ),
         Gate(
+            "arena-engine",
+            (py, "-m", "unittest", "discover", "-s", "packages/arena-engine/tests"),
+            (arena_engine_src, platform_src, platform_runtime_src, agent_core_src),
+        ),
+        Gate(
             "phase7-privacy-boundary",
             (
                 py,
@@ -285,6 +291,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
                 "packages/multi-agent-adapter/src",
                 "packages/practice-profile/src",
                 "packages/agent-core/src",
+                "packages/arena-engine/src",
                 "services/admin-web-ui/src",
                 "services/gateway/src",
                 "services/wecom-service/src",
