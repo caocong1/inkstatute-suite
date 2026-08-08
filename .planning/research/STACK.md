@@ -1,196 +1,173 @@
-# Stack Research: v1.11 Product Console
+# Technology Stack
 
-**Domain:** Runnable service entry points, process orchestration, observability (reports / logs / audit / health), auth (token management + login session interface), product polish.
-**Researched:** 2026-07-13
+**Milestone:** v3.1 Legal AI Arena — multi-agent workflow engine, local arena service, desktop arena UI
+**Researched:** 2026-08-09
 **Confidence:** HIGH
-**Runtime:** Python 3.14.6 (CI floor `requires-python = ">=3.11"`)
+**Runtime:** Python 3.11+ (CI floor `requires-python = ">=3.11"`; dev runs 3.14), Node/TypeScript via Bun workspace
 
 ## Scope Boundary
 
-This research covers **only** stack additions/changes for the v1.11 Product Console milestone. The following are **already validated** and must not be re-researched:
+This research covers **only** stack additions for the v3.1 Legal AI Arena milestone. The following are **already validated in v3.0** and must not be re-researched or duplicated:
 
-| Already shipped (reuse) | Do not re-research |
-|-------------------------|--------------------|
-| `admin-web-ui` SSR (`BaseHTTPRequestHandler` + `html.escape` + CSP + CSRF) | New SPA / new frontend toolchain |
-| `admin-console-api` read views + `/config/*` mutate (`handle_admin_get` / `handle_admin_put`) | New mega-API service |
-| `rbac` HMAC-SHA256 token auth + `RbacGuard` matrix (admin/operator/lawyer/viewer) | New auth framework / JWT library |
-| `qqbot-service` `QQBotWebhookServer` (`BaseHTTPRequestHandler`) + `wiring` | QQ OpenAPI client / channel crypto |
-| `wecom-service` `wiring` + adapter (library, no HTTP host yet) | WeCom crypto / send path |
-| `conversation-read-view` `ContractLogReadModel.from_records` over JSONL | New read-store / new DB |
-| `feedback-service` feedback queue + normalization | Feedback classification ML |
-| `platform-runtime` `RuntimeFeatureFlags` (default OFF) | Flag framework redesign |
-| `operator-config` refs-only JSON store + validators | Config schema redesign |
+| Already shipped (reuse as-is) | Do NOT re-research / re-add |
+|-------------------------------|----------------------------|
+| `packages/acp-client` — `ACPClient`, `StdioACPTransport`, `ACPBackendAdapter`, per-session subprocess lifecycle (`agent-client-protocol>=0.12,<0.13`) | New ACP client library / new JSON-RPC transport |
+| `packages/agent-core` — async streaming turn loop, 4 legal guardrails (research-gate / citation audit / ask-user / de-AI polish), `acp_server.py` (deliberately does NOT declare `fs/*` or `terminal/*`) | New guardrail engine / new agent runtime |
+| `packages/skill-index` — 396 legal skills indexed from read-only vendored repos | New skill indexing / new corpus copying |
+| `packages/ui-core` — 23 SolidJS components, 3 themes, `createEventStream` SSE consumer with Last-Event-ID reconnection, `event-reducer.ts` with `RenderState` | New UI component library / new SSE consumer primitive |
+| `packages/platform-contract` — 13-category event vocabulary (15 JSON Schemas, 18 Python dataclasses, 18 TypeScript interfaces), isomorphic to ACP `session/update` | New event vocabulary / new schema format |
+| `packages/platform-sdk-ts` — `PlatformApiClient`, `RunEventEnvelope`, generated from OpenAPI | New TS SDK / new API client |
+| `services/gateway` — framework-free stdlib ASGI, `encode_sse_event`, `RunEventBuffer`, output boundary enforcement | New HTTP framework (FastAPI / Starlette / aiohttp) / new SSE library |
+| `packages/platform-runtime` — `RunEvent`, `RunRequest`, `RunHandle`, `Run` dataclasses, `BackendAdapter` Protocol | New runtime abstractions |
+| `apps/desktop` — Tauri 2 shell with SolidJS 1.9, `@tauri-apps/api`, `@tauri-apps/plugin-dialog`, `@tauri-apps/plugin-fs`, `useEventStream` hook | New desktop shell / new Tauri plugins for SSE |
 
-**Milestone goal:** Make the admin console a runnable, product-grade operations control plane — start/stop channel host subprocesses, view real-time logs, aggregate report stats, audit contract events, manage RBAC tokens, and provide an extensible login-session interface. Local/single-machine ops; no TLS/reverse-proxy/production-stack requirement.
-
----
-
-## Existing Stack (validated, do not change)
-
-- **Python stdlib `http.server`** — `BaseHTTPRequestHandler` subclasses (`AdminWebUiServer`, `QQBotWebhookServer`) are library handlers; **no port binding / `__main__` exists yet**. Entry points must bind these via `ThreadingHTTPServer`, not replace them.
-- **`rbac` package** — `issue_token` / `verify_token` (HMAC-SHA256, `base64url(payload).base64url(sig)`, TTL 900s), `RbacGuard.check(role, endpoint)`, `resolve_identity`. Token carried via `Authorization: Bearer <token>`.
-- **`admin-console-api`** — `handle_admin_get` / `handle_admin_put` pure callables (testable without port bind); `auth.py` resolves `RBAC_TOKEN_SECRET` from env.
-- **`admin-web-ui`** — `handle_admin_web_ui_request` pure core + `AdminWebUiServer(BaseHTTPRequestHandler)` thin wrapper; config via `self.server.*` attributes; CSP + CSRF (`csrf.py` HMAC-SHA256, route-bound).
-- **`qqbot-service`** — `http_server.py` has `QQBotWebhookServer(BaseHTTPRequestHandler)` + `default_post_ack_scheduler` (daemon thread); `wiring.build_qqbot_wired_runtime` composes runtime. **No `__main__` / port bind.**
-- **`wecom-service`** — `wiring.build_wecom_wired_runtime` + adapter; **no HTTP host wrapper exists** (library only).
-- **`conversation-read-view`** — `ContractLogReadModel.from_records` + `load_records_from_jsonl`; cursor pagination, trace reconstruction, CSV/JSON export, privacy scrubbing.
-- **`feedback-service`** — feedback queue (`list[dict]`) + normalization.
-- **`operator-config`** — atomic JSON store (`OperatorConfigStore`), refs-only, validators.
-- **All packages/services:** `dependencies = []`, `requires-python = ">=3.11"`, stdlib-only, `unittest` test patterns, pure-handler testability.
+**Milestone goal:** Lawyers create a legal task in the desktop app, select multiple ACP backend agents to process in parallel, each agent self-scores and iterates, agents cross-review each other, an independent session synthesizes the final version — all streaming live to the desktop UI, with legal guardrails non-bypassable throughout.
 
 ---
 
-## New Stack Additions
+## Recommended Stack
 
-### 1. Runnable HTTP Server Entry Points
+### Core Framework
 
-- **`http.server.ThreadingHTTPServer` + `socketserver`**: Bind existing `BaseHTTPRequestHandler` subclasses to a host/port with threaded request handling. **Why:** Current handlers are library-only; entry points need a real listening socket. `ThreadingHTTPServer` (stdlib, Python 3.7+) handles concurrent browser requests without blocking the single-threaded `HTTPServer`. **Version:** stdlib (ships with Python ≥3.11). **Integration:** New `__main__.py` modules in `admin-web-ui` and `admin-console-api` construct `ThreadingHTTPServer((host, port), AdminWebUiServer)`, set `server.feature_flags` / `server.handle_admin_get` / `server.read_model` / `server.rbac_secret` etc. (the existing `self.server.*` attribute contract), then `serve_forever()`. No change to handler classes.
-- **`argparse`**: CLI for `--host`, `--port`, `--config-path`, `--log-dir`, `--log-level`. **Why:** Entry points need operator-tunable bind/config paths without editing code. **Version:** stdlib. **Integration:** Each `__main__.py` parses args → builds `RuntimeFeatureFlags` from env → builds read model / config store / feedback queue → starts server.
-- **`signal`**: `signal.signal(signal.SIGINT, ...)` + `signal.signal(signal.SIGTERM, ...)` → `server.shutdown()` graceful stop. **Why:** Ctrl-C / `kill` must close the listening socket cleanly, not leave subprocesses orphaned. **Version:** stdlib. **Integration:** Register handlers before `serve_forever()`; handler calls `httpd.shutdown()` from a separate thread (stdlib requirement — `shutdown()` must be called from another thread to avoid deadlock).
-- **`os` / `pathlib` / `json`**: Load config paths, resolve env, build feature flags. **Why:** Already the monorepo pattern for config resolution. **Version:** stdlib. **Integration:** Reuse existing `_resolve_rbac_secret` / `OperatorConfigStore` / `RuntimeFeatureFlags` factories.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| **Python stdlib `asyncio.TaskGroup`** | 3.11+ (stdlib) | Parallel agent execution — spawn N ACP subprocess sessions concurrently, await all, collect results | Structural concurrency with strong safety guarantees (exception propagation, automatic cancellation). Already the platform's concurrency model — `acp-client` uses `asyncio.create_subprocess_exec` throughout. Zero new dependencies. `TaskGroup` is the idiomatic Python 3.11+ replacement for `asyncio.gather` with built-in error containment. The arena runs N agents as independent `ACPBackendAdapter.submit_run()` coroutines inside one `TaskGroup`; each spawns its own stdio subprocess via the existing `StdioACPTransport`. |
+| **Python stdlib ASGI (framework-free)** | 3.11+ (stdlib) | Local arena HTTP+SSE service — same pattern as the existing Gateway | The Gateway (`services/gateway/src/gateway/app.py`) is explicitly "framework-free (stdlib pattern, zero external dependencies)". The arena service must follow the same pattern for architectural consistency, output-boundary parity, and zero new runtime deps. Reuses `encode_sse_event` from `gateway/sse.py` and `RunEventBuffer` from `gateway/event_buffer.py`. SSE is just `Content-Type: text/event-stream` + `wfile.flush()` on a stdlib handler — no library needed. |
+| **SolidJS signals + `createMemo`** | solid-js 1.9.14 (existing `^1.9.0` pin) | Desktop arena UI — demultiplex parallel agent streams by `agent_id` | The existing `createEventStream` in `ui-core` produces a single `RenderState` signal per SSE connection. The arena multiplexes N agent streams into one SSE endpoint (tagged with `agent_id` in `RunEvent.metadata`), so the UI needs one `createEventStream` per arena run + a `createMemo` that partitions events by `agent_id` into per-agent `RenderState` slices. SolidJS fine-grained reactivity means only the agent panel whose state changed re-renders — no virtual DOM diffing across N parallel streams. No new library; extends the existing `event-reducer.ts` pattern. |
+| **Tauri 2 IPC (`@tauri-apps/api/event`)** | @tauri-apps/api 2.11.1 (existing `^2.11.0` pin) | Desktop ↔ Rust backend IPC for arena lifecycle commands (start/stop arena, directory selection handoff) | Already a desktop dependency. `listen()` / `emit()` for Tauri event IPC. The arena service is a local Python HTTP+SSE server (not a Tauri Rust command), so the desktop app consumes it via the same `createEventStream` + `fetch` path used for the Gateway. Tauri IPC is used only for: (1) directory selection via `@tauri-apps/plugin-dialog` `open({ directory: true })`, (2) passing the selected directory path to the arena service, (3) arena service process lifecycle if managed by Tauri. No new Tauri plugin required. |
 
-### 2. Process Orchestration (start/stop WeCom/QQBot host subprocesses)
+### Supporting Libraries
 
-- **`subprocess.Popen`**: Launch channel host processes (`python -m qqbot_service` / `python -m wecom_service`) as managed subprocesses with captured stdout/stderr → log files. **Why:** Console is the control plane; channel hosts run as separate OS processes so a channel crash never takes down the console. `Popen` gives PID, exit code, signal control. **Version:** stdlib. **Integration:** New `packages/process-orchestration` (or `services/admin-console-api` orchestration module) keeps a `dict[channel_name, Popen]` registry; `start` spawns with `stdout=open(log_path, "ab")`; `stop` sends `SIGTERM` then `Popen.wait(timeout=...)` with `SIGKILL` escalation; `inspect` returns `poll()` status + PID. Config save → `stop` + `start` to apply (matches existing "restart runtime to apply" semantics).
-- **`subprocess.Popen` env injection**: Pass `env=os.environ | {channel-specific refs/values}` to each child. **Why:** Channel hosts resolve `*_REF` / values at process edge (`qqbot_service.secrets.resolve_secret_ref`); the orchestrator constructs the child env from operator config + secret values without writing them to disk. **Version:** stdlib. **Integration:** Reuse `OperatorConfigStore` config + `resolve_secret_ref` to build child env; never log child env.
-- **`signal` / `psutil`-free PID management**: Use `Popen.pid` + `Popen.poll()` for liveness; `os.kill(pid, signal.SIGTERM)` only as fallback. **Why:** Avoids a `psutil` hard dependency; `Popen` API is sufficient for single-machine start/stop/inspect. **Version:** stdlib. **Integration:** Registry persists PIDs to a small JSON state file (`runbook`-style) so a console restart can re-adopt or warn about orphaned hosts; do not auto-kill unknown PIDs on startup (safety).
-- **`threading.Lock`**: Guard the process registry against concurrent start/stop calls. **Why:** `ThreadingHTTPServer` dispatches requests on threads; orchestration mutations must be atomic. **Version:** stdlib. **Integration:** `Lock` around registry `dict` mutations in the orchestration module.
-
-### 3. Real-Time Log File Viewing via HTTP
-
-- **`pathlib` + `io` + `os` (byte-offset tail)**: Read log files from a configurable `--log-dir` using a `since` byte offset cursor; return new bytes since last cursor. **Why:** Channel hosts write stdout/stderr to log files (set by orchestrator's `Popen` redirection); the console reads the same files. Byte-offset polling is the simplest stdlib approach — no WebSocket/SSE framing, no extra thread, no file-watch dependency. **Version:** stdlib. **Integration:** New `admin-web-ui` route `/logs/<channel>` + `admin-console-api` view: open file, `seek(offset)`, read to end, return `{"lines": [...], "next_offset": N}`. Client polls with `?offset=N&level=...`. Level filter via `line.startswith("LEVEL")` parse on stdlib `logging` format.
-- **`logging` + `logging.handlers.RotatingFileHandler` / `TimedRotatingFileHandler`**: Channel hosts and the console itself write structured logs to rotating files under `--log-dir`. **Why:** Rotating files cap disk usage on a long-running single-machine deploy; the log-viewer reads the current active file. **Version:** stdlib. **Integration:** Each host `__main__.py` configures `RotatingFileHandler(log_dir / f"{service}.log", maxBytes=5MB, backupCount=5)` + `StreamHandler` for console. Use a consistent `%asctime\t%(levelname)s\t%(name)s\t%(message)s` format so the viewer's level filter works across all hosts.
-- **`re` (optional)**: Light search filter on log lines. **Why:** Operator search box over a tail window. **Version:** stdlib. **Integration:** `re.search(pattern, line)` over the returned window only (not full file scan — cap to last N MB to avoid OOM on large logs).
-
-> **Note on SSE/WebSocket:** Full streaming (Server-Sent Events / WebSocket) is *possible* with stdlib `http.server` (chunked response + `wfile.flush()` loop on a dedicated thread), but it adds threading/lifetime complexity and risks blocking a `ThreadingHTTPServer` worker indefinitely. For v1.11 local ops, **byte-offset polling every 2–3s is sufficient and far simpler**. SSE is explicitly deferred (see What NOT to Add).
-
-### 4. Report / Statistics Aggregation
-
-- **`conversation-read-view.ContractLogReadModel` (existing) + pure-Python aggregation**: Compute session/task volume, completion rate, long-task success rate, feedback distribution by iterating already-loaded records. **Why:** The read model already loads + scrubs + indexes JSONL contract events; reports are derived counts over the same in-memory records. No new store. **Version:** in-repo 0.1.0. **Integration:** New `admin-console-api` view `/reports` (or extend `views.py`) calls `read_model._tasks` / `_conversations` / `feedback_queue` and returns aggregate dicts: `{"session_count", "task_count", "completion_rate", "long_task_success_rate", "feedback_distribution"}`. Render via `admin-web-ui` SSR table/cards with `html.escape`.
-- **`collections.Counter` / `collections.defaultdict`**: Tally feedback classes, status distributions. **Why:** stdlib histogram primitive; avoids pandas/numpy. **Version:** stdlib. **Integration:** Inside the report handler.
-- **`datetime` / `time`**: Time-window bucketing (e.g. per-day counts) for trend charts. **Why:** stdlib date math. **Version:** stdlib. **Integration:** Bucket records by `iat` / `event_time` into day keys; render as SSR `<table>` or inline SVG (no JS chart library — keep CSP `script-src 'self'`).
-
-> **No new DB / no pandas / no numpy.** Aggregation is over the in-memory read model rebuilt on each report request (acceptable for local single-machine volumes). If volumes grow, swap behind a `ReportSource` protocol later — do not pre-optimize.
-
-### 5. Session-Based Auth (alongside existing token auth)
-
-- **`http.cookies.SimpleCookie`**: Parse `Cookie` request header and emit `Set-Cookie` response header for a session cookie. **Why:** stdlib cookie parsing/serialization; no third-party session lib. **Version:** stdlib. **Integration:** New `admin-web-ui` `/login` GET (form) + POST (username/password → issue session). On success, set `Set-Cookie: inkstatute_session=<signed-session>; HttpOnly; SameSite=Strict; Path=/`. Existing `Authorization: Bearer` token path stays unchanged.
-- **`secrets.token_urlsafe`**: Generate session IDs (32-byte entropy). **Why:** stdlib CSPRNG; matches `csrf.py` token pattern. **Version:** stdlib. **Integration:** Session ID → server-side store mapping `{sid: {role, tenant_id, exp}}`.
-- **`hmac` + `hashlib` + `json` + `base64` (reuse `rbac.token` pattern)**: Sign session cookies with the same `RBAC_TOKEN_SECRET` so sessions are tamper-proof without a DB. **Why:** The `rbac` token is already `base64url(payload).base64url(hmac_sha256(secret, payload))`; a session cookie can be the same shape with a longer TTL and a `session: true` claim, OR a stateless signed cookie. **Version:** in-repo `rbac` 0.1.0 + stdlib. **Integration:** New `admin_web_ui/sessions.py` `issue_session` / `verify_session` mirroring `rbac.token.issue_token` / `verify_token` but with `session` claim + configurable TTL (e.g. 8h). `resolve_identity` extended to accept a session cookie as an alternative to the Bearer header (MVP: token-only, session path gated by a new `session_auth_enabled` flag default OFF).
-- **`sqlite3` (optional, deferred)**: Server-side session store if stateful sessions become required (revocation lists, active session enumeration). **Why:** stdlib embedded DB; no external service. **Version:** stdlib. **Integration:** **MVP does NOT need this** — stateless signed cookies suffice for v1.11. Reserve as a protocol-swappable `SessionStore` behind `issue_session`/`verify_session` so a later phase can add `sqlite3` revocation without changing the auth surface. Do not introduce `sqlite3` as a hard dependency this milestone.
-
-### 6. Token Management UI
-
-- **`rbac.token.issue_token` / `verify_token` (existing) + new admin views**: List active tokens, issue new tokens (role + tenant + TTL), revoke (add to a revocation list). **Why:** Operators need a UI to mint/revoke tokens without hand-crafting HMAC. **Version:** in-repo `rbac` 0.1.0. **Integration:** New `admin-console-api` `/tokens` GET (list) / POST (issue) / DELETE (revoke by jti/id). Revocation requires a small store — use the same atomic JSON pattern as `operator-config` (a `revoked_tokens.json` of token IDs/expirations, checked in `verify_token` or a wrapper). Keep `dependencies = []`.
-
-### 7. Product Polish
-
-- **`html` / `string.Template` / f-string SSR (existing pattern)**: Error pages (404/403/500), responsive layout via CSS (stdlib-served static CSS under `default-src 'self'`), navigation. **Why:** Existing SSR approach; no JS framework. **Version:** stdlib. **Integration:** Extend `dashboard.py` render helpers; add a `/static/style.css` route served by `admin-web-ui` (read file, set `Content-Type: text/css`, respect CSP).
-- **One-click startup script (`scripts/start_console.sh` or `python -m admin_web_ui`)**: Shell/Python wrapper that exports env from `.env`, starts admin-web-ui + admin-console-api (+ optionally channel hosts). **Why:** Operator usability milestone goal. **Version:** stdlib `subprocess` / bash. **Integration:** Reuse `start-hindsight.sh` pattern already in `scripts/`.
-
----
-
-## What NOT to Add
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| **Flask / FastAPI / Starlette / Django** | Introduces hard deps; breaks `dependencies = []` monorepo convention; diverges from existing stdlib `http.server` hosts | `ThreadingHTTPServer` + existing `BaseHTTPRequestHandler` subclasses |
-| **React / Next / Vite / any JS SPA** | Overkill for operator console; CSP/`innerHTML` risk; new frontend toolchain; milestone is SSR | SSR templates + `html.escape` + inline SVG |
-| **uvicorn / gunicorn / waitress** | ASGI/WSGI servers incompatible with existing sync `BaseHTTPRequestHandler` design; unneeded for local single-machine | `ThreadingHTTPServer.serve_forever()` |
-| **WebSocket / Server-Sent Events libraries (`websockets`, `sse-starlette`)** | Adds hard deps + threading complexity; `ThreadingHTTPServer` worker would block on long stream | Byte-offset HTTP polling for log viewing |
-| **`psutil`** | Hard dep for process inspection when `Popen.poll()` + `Popen.pid` suffice for single-machine start/stop/inspect | `subprocess.Popen` API |
-| **`celery` / `dramatiq` / `rq` / any task queue** | AGENTS.md forbids new queue unless plan requires; orchestration is synchronous start/stop | `subprocess.Popen` + `threading.Lock` |
-| **PostgreSQL / Redis / MongoDB** | AGENTS.md forbids new DB unless justified; reports derive from in-memory read model; sessions are stateless signed cookies | `ContractLogReadModel` + signed cookies + atomic JSON |
-| **`sqlite3` as a hard dep this milestone** | Stateless signed session cookies suffice for MVP; only justify if revocation/active-session enumeration becomes a hard requirement | `rbac.token`-pattern signed cookies; reserve `SessionStore` protocol for later |
-| **`pandas` / `numpy`** | Report aggregation is simple counts over small local volumes; heavy deps break `dependencies = []` | `collections.Counter` + pure-Python loops |
-| **Pydantic / jsonschema as hard deps** | Monorepo is `dependencies = []`; hand validators already proven | Dataclasses + explicit validators |
-| **`httpx` / `aiohttp`** | Rejected repeatedly; console proxies via in-process callables (`handle_admin_get`), not HTTP client calls | In-process callable proxy (`AdminApiClient`) |
-| **JWT library (`pyjwt`)** | `rbac` already implements HMAC-SHA256 signed tokens with stdlib | Extend `rbac.token` / mirror pattern for sessions |
-| **`watchdog` / `inotify` file-watch libs** | Log viewer polling is simpler and dependency-free | Byte-offset polling |
-| **Auto-killing unknown PIDs on console startup** | Safety: could kill unrelated processes matching a stale registry | Warn operator about orphaned registry entries; require explicit re-adopt |
-
----
-
-## Integration Points
-
-| Surface | Change | Keep unchanged |
-|---------|--------|----------------|
-| `admin-web-ui` `__main__.py` (new) | `ThreadingHTTPServer` bind + `argparse` + `signal` graceful shutdown; set `server.*` attributes | `AdminWebUiServer` handler class; `handle_admin_web_ui_request` pure core; CSP/CSRF |
-| `admin-console-api` `__main__.py` (new) | `ThreadingHTTPServer` bind for the API port; same signal/argparse pattern | `handle_admin_get` / `handle_admin_put` pure callables; auth.py |
-| `qqbot-service` `__main__.py` (new) | Bind `QQBotWebhookServer` to QQBot port; build wired runtime from env/config; redirect logs to `--log-dir` | `QQBotWebhookServer`; `wiring.build_qqbot_wired_runtime`; `default_post_ack_scheduler` |
-| `wecom-service` `__main__.py` (new) | **Add a thin `http_server.py` mirroring `qqbot_service.http_server`** (WeCom has no HTTP host yet) + bind in `__main__` | `wiring.build_wecom_wired_runtime`; adapter; crypto; send path |
-| `admin-console-api` orchestration module (new) | `subprocess.Popen` registry; `/orchestrate/<channel>` start/stop/inspect routes; `threading.Lock` guard | Existing read/config routes |
-| `admin-console-api` `/logs` view (new) | Byte-offset tail read from `--log-dir`; level/search filter | Existing views pattern |
-| `admin-console-api` `/reports` view (new) | Aggregate over `ContractLogReadModel` + `feedback_queue` | Read model loading; privacy scrubbing |
-| `admin-console-api` `/tokens` views (new) | Issue/list/revoke via `rbac.token` + revoked-tokens JSON | `rbac` token shape; `RBAC_TOKEN_SECRET` |
-| `admin-web-ui` `/login` + `sessions.py` (new) | `SimpleCookie` + signed session cookie (HMAC, reuse `RBAC_TOKEN_SECRET`); `session_auth_enabled` flag default OFF | `Authorization: Bearer` token path; `RbacGuard`; CSRF |
-| `RuntimeFeatureFlags` | Add `session_auth_enabled: bool = False`, `process_orchestration_enabled: bool = False`, `log_viewing_enabled: bool = False`, `reports_enabled: bool = False`, `token_management_enabled: bool = False` (all default OFF) | Existing flags + `require_enabled` gate |
-| `logging` config | Each host `__main__.py` configures `RotatingFileHandler` under `--log-dir` with shared format | No change to library-level log calls |
-| `.env.example` | Add `ADMIN_WEB_UI_HOST/PORT`, `ADMIN_CONSOLE_API_HOST/PORT`, `INKSTATUTE_LOG_DIR`, `INKSTATUTE_LOG_LEVEL`, session TTL, orchestration flags | Existing refs-only secret pattern |
-
-**Data flow (orchestration):**
-```text
-Operator browser
-  → admin-web-ui /orchestrate/<channel> (SSR button, CSRF, RBAC admin/operator)
-  → admin-console-api orchestration module
-  → subprocess.Popen(python -m <channel>_service, env=resolved_refs, stdout=log_file)
-  → channel host process (binds its own port, writes logs to --log-dir)
-  → console /logs/<channel> reads the same log file via byte-offset polling
-```
-
-**Data flow (reports):**
-```text
-Operator browser
-  → admin-web-ui /reports (SSR, RBAC admin/operator)
-  → admin-console-api /reports
-  → ContractLogReadModel.from_records(load_records_from_jsonl(contract_log.jsonl))
-  → collections.Counter aggregation over tasks/conversations/feedback
-  → SSR table/cards (html.escape, no JS)
-```
-
-**Data flow (session auth, MVP extensible):**
-```text
-Operator browser /login (POST username/password)
-  → admin-web-ui sessions.issue_session (secrets.token_urlsafe + HMAC sign with RBAC_TOKEN_SECRET)
-  → Set-Cookie: inkstatute_session=<signed>; HttpOnly; SameSite=Strict
-  → subsequent requests: resolve_identity accepts Cookie OR Authorization: Bearer
-  → RbacGuard.check (unchanged)
-```
-
----
-
-## Version Compatibility
-
-| Component | Version | Notes |
-|-----------|---------|-------|
-| Python | ≥3.11 (CI floor), 3.14.6 runtime | `ThreadingHTTPServer`, `signal.SIGTERM`, `logging.handlers.RotatingFileHandler`, `http.cookies.SimpleCookie`, `secrets.token_urlsafe` all stable since 3.7–3.11 |
-| `subprocess.Popen` | stdlib | `Popen.poll()`, `Popen.wait(timeout=)`, `Popen.send_signal()` stable across 3.11+ |
-| `rbac` | 0.1.0 (in-repo) | Reuse `issue_token`/`verify_token` HMAC pattern for sessions; do not change token shape |
-| `conversation-read-view` | 0.1.0 (in-repo) | `ContractLogReadModel.from_records` is the report data source |
-| `operator-config` | 0.1.0 (in-repo) | Atomic JSON store pattern reused for revoked-tokens list |
-| `openai` (optional) | `>=2.45.0,<3` | Unchanged from v1.10; only on hosts running live provider_model probe; not a console dep |
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| **`@tauri-apps/plugin-dialog`** | 2.7.2 (existing `^2.7.1` pin) | Native directory picker for user-selected reference directories | When the user selects a directory for ACP `fs/read_text_file` access. `open({ directory: true, recursive: true })` returns a path that the desktop app sends to the arena service. Already a desktop dependency — no addition needed, just new usage. |
+| **`@tauri-apps/plugin-fs`** | 2.5.1+ (existing `^2.5.1` pin) | Filesystem scope management for selected directories | When the selected directory path needs to be registered in Tauri's fs scope so the webview can later open result files. Already a desktop dependency. |
+| **`asyncio.Queue`** | 3.11+ (stdlib) | Multiplex N agent event streams into one SSE response | Each parallel agent's `ACPBackendAdapter.submit_run()` yields `RunEvent` objects. The arena engine pushes each event (tagged with `agent_id` and `phase` — parallel / self-score / cross-review / synthesis) into a shared `asyncio.Queue`. The SSE handler drains the queue and encodes each event via `encode_sse_event`. This is the same producer-consumer pattern the Gateway uses with `RunEventBuffer`, extended to multiplex multiple producers. |
+| **`dataclasses` + `enum`** | 3.11+ (stdlib) | Arena workflow state machine — 4-level workflow modes, phase transitions, scoring records | The arena engine models workflow state (Level 1–4, phases: parallel → self-score → cross-review → synthesis) as frozen dataclasses and enums, mirroring the existing `platform-contract` pattern (18 dataclasses, `RunEventType` enum). No new schema library — reuse `platform-contract`'s `RunEvent` with arena-specific `metadata` fields (`arena_id`, `agent_id`, `phase`, `score`, `iteration`). |
+| **`json` + `pathlib`** | 3.11+ (stdlib) | Agent registration directory — backend agent config discovery | A simple JSON config directory (e.g. `config/agents/`) listing available ACP backends (`backend_id`, `command`, `env_refs`, `capabilities`, `display_name`). The arena service scans this directory at startup. No new config library — same `pathlib` + `json` pattern used by `operator-config` and `gateway/config.py`. |
+| **`uuid` + `time`** | 3.11+ (stdlib) | Arena run IDs, event sequencing, scoring timestamps | Same pattern as `platform-contract` events (`event_id`, `occurred_at`, `seq`). Arena run IDs are `uuid4().hex`; per-agent sub-runs get their own `run_id` within the arena's event stream. |
 
 ---
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| `ThreadingHTTPServer` (stdlib) | `asyncio` + `aiohttp` / `uvicorn` | Only if async streaming/SSE becomes a hard product requirement — would force a rewrite of all existing sync `BaseHTTPRequestHandler` hosts; not justified for local ops |
-| Byte-offset polling for logs | SSE via chunked `wfile` loop | If real-time push (sub-second) becomes a product must-have and the threading cost is acceptable; deferred from v1.11 |
-| `subprocess.Popen` registry | `multiprocessing.Process` | `Popen` gives clean OS-process isolation + separate Python interpreter per channel host (matches "channel host as separate process"); `multiprocessing` couples to parent interpreter and complicates restart |
-| Stateless signed session cookies | `sqlite3` server-side sessions | Only if token revocation / active-session enumeration becomes a hard requirement; reserve `SessionStore` protocol now, swap later |
-| Pure-Python aggregation over read model | `sqlite3` + SQL aggregation | If contract-log volume grows beyond in-memory rebuild cost; keep `ReportSource` protocol swappable |
-| New `wecom-service` thin `http_server.py` | Merge wecom host into qqbot host | WeCom and QQBot have distinct webhook shapes/crypto; mirroring the qqbot thin-host pattern keeps channel isolation (matches v1.9 host-composition design) |
+| Category | Recommended | Alternative | Why Not |
+|----------|-------------|-------------|---------|
+| **Python workflow orchestration** | stdlib `asyncio.TaskGroup` (no framework) | LangGraph 1.2.10 | LangGraph models agents as in-process graph nodes with its own state/checkpointing. InkStatute agents are **external ACP stdio subprocesses** — the arena engine is a scheduler/relay, not an agent runtime. LangGraph's durable execution, checkpointing, and state graphs are redundant with ACP's own `session/update` streaming and the platform's `RunEventBuffer`. Adding LangGraph would introduce a second event model (LangGraph's `StreamPart`) alongside the existing ACP-isomorphic `RunEvent` vocabulary — a net liability per Key Decision "通道层不对齐 AG-UI / Vercel AI SDK" (same reasoning: zero interop benefit, double event vocabulary). LangGraph also pulls in `langchain-core` as a transitive dep, violating the platform's zero-external-dep Python philosophy. |
+| **Python workflow orchestration** | stdlib `asyncio.TaskGroup` (no framework) | CrewAI 1.15.1 | CrewAI's role/goal/backstory model and `Crew` process manager assume the framework controls agent execution and LLM calls. InkStatute agents are opaque ACP subprocesses — the platform cannot inject CrewAI's `Agent` abstraction into them. CrewAI's routing/ delegation model conflicts with the arena's explicit 4-level workflow (parallel → self-score → cross-review → synthesis) which is orchestrated by the engine, not by agent-to-agent conversation. |
+| **Python workflow orchestration** | stdlib `asyncio.TaskGroup` (no framework) | AutoGen 0.7.5 / Microsoft Agent Framework 1.0 | AutoGen is in maintenance mode (Microsoft moved to MAF April 2026). Both assume conversational agent-to-agent messaging with framework-managed LLM calls. The arena's cross-review is not a free-form conversation — it's a structured workflow where each agent receives specific inputs (another agent's output + scoring rubric) and produces structured review output. ACP `session/update` already provides the streaming primitive; the arena engine just orchestrates which agent gets which input at which phase. |
+| **Python workflow orchestration** | stdlib `asyncio.TaskGroup` (no framework) | Prefect / Temporal | Durable workflow engines for long-running distributed pipelines with external state stores. The arena is a local single-machine workflow that completes in minutes (agent turns), not hours/days. ACP's own subprocess lifecycle (`SubprocessLifecycleManager` with SIGTERM/SIGKILL/restart) already handles crash recovery. Adding Prefect/Temporal would require a database and a separate worker process — massive overkill for ≤50 lawyers on one machine. |
+| **Local HTTP+SSE service** | stdlib ASGI (framework-free, same as Gateway) | FastAPI / Starlette + uvicorn | The Gateway is deliberately framework-free with zero external deps. Introducing FastAPI in the arena service would create an architectural split (two HTTP patterns in the same monorepo) and pull in `starlette`, `pydantic`, `uvicorn` as hard deps. The arena service needs only 4–6 endpoints (create arena, stream events, list agents, select directory, get result) — trivially implementable on stdlib ASGI. The existing `encode_sse_event` and `RunEventBuffer` are reusable as-is. |
+| **Tauri SSE consumption** | `createEventStream` from `ui-core` (existing, uses `fetch` + `ReadableStream`) | `tauri-plugin-sse` 0.1.1 | The desktop app already consumes the Gateway's SSE via `createEventStream` using standard `fetch` + `ReadableStream` reader (see `ui-core/src/stores/eventStream.ts`). This works in Tauri's webview because Tauri 2 supports standard Fetch API. `tauri-plugin-sse` routes SSE through Rust, which is unnecessary when the webview's native `fetch` already works. Adding it would create a second SSE consumption path (Rust-backed vs. webview-native) — inconsistent and redundant. |
+| **SolidJS SSE primitive** | `createEventStream` from `ui-core` (existing) | `@solid-primitives/sse` | `ui-core` already ships `createEventStream` with Last-Event-ID reconnection, exponential backoff, and `RenderState` reduction. `@solid-primitives/sse` provides `createSSE` / `createSSEStream` / `makeSSEWorker` but would be a third-party dep redundant with the existing primitive. The arena UI extends `event-reducer.ts` to handle multiplexed `agent_id`-tagged events, not replaces the stream consumer. |
+| **SolidJS event composition** | SolidJS signals + `createMemo` (existing) | RxJS / `solid-events` / `solid-parallel` | The arena needs to demultiplex one SSE stream into N per-agent `RenderState` slices. This is a pure function: `events.filter(e => e.metadata.agent_id === agentId)` reduced per-agent. SolidJS `createMemo` computes this reactively with fine-grained updates. RxJS observables are a heavier abstraction for the same result; SolidJS author (ryansolid) explicitly recommends signals over streams for this kind of state derivation. |
+| **ACP fs/* handler** | New `fs/read_text_file` handler in arena-service (Python) | `tauri-plugin-fs` Rust-side file reading | ACP `fs/read_text_file` is a JSON-RPC method that the **ACP client** (arena-service) must handle when an agent requests it. The agent sends `fs/read_text_file` over stdio; the arena-service resolves the path within the user-selected directory and returns file contents. This is a Python-side handler in the arena service, not a Tauri Rust command. `tauri-plugin-fs` is for the webview ↔ Rust filesystem access, a different layer. |
+| **Agent registration** | JSON config directory + `pathlib` scan (stdlib) | SQLite registry / skill-index extension | Agent registration is a small static config (backend_id, command, env_refs, display_name, capabilities) read at startup. A JSON directory is consistent with `operator-config`'s pattern. SQLite is overkill for ≤20 agent configs that change rarely. `skill-index` indexes skills, not agents — conflating them would violate the existing separation of concerns. |
+
+---
+
+## Integration with Existing v3.0 Packages
+
+### `packages/acp-client` (reuse — no changes)
+
+The arena engine drives N parallel ACP sessions by instantiating N `ACPBackendAdapter` objects (one per selected agent) and calling `submit_run()` on each within an `asyncio.TaskGroup`. Each adapter spawns its own stdio subprocess via `StdioACPTransport`, negotiates capabilities at `initialize`, creates a session, and streams `session/update` notifications as `RunEvent` objects.
+
+**Key integration point:** `ACPBackendAdapter.submit_run()` returns `AsyncIterator[RunEvent]` — the arena engine consumes this iterator and forwards events to the multiplexed SSE queue, tagging each with `agent_id` and `phase` in `RunEvent.metadata`.
+
+**ACP fs/* handler:** The existing `acp-client` does NOT implement `fs/read_text_file` (the `agent-core`'s `acp_server.py` deliberately does not declare `fs/*` per AGENTS.md safety rule). The arena service adds a new fs handler layer: when an agent sends `fs/read_text_file`, the arena-service's ACP client intercepts the request, resolves the path within the user-selected directory (sandboxed), reads the file, and returns contents. This handler lives in the arena-service, NOT in `acp-client` or `agent-core`, to preserve the safety boundary.
+
+### `packages/agent-core` (reuse — guardrails non-bypassable)
+
+The arena engine does NOT re-implement legal guardrails. Guardrails are enforced inside each ACP agent session:
+- If the agent is `agent-core` (self-built backend), guardrails run inside the `turn_loop.py` — non-bypassable by design.
+- If the agent is an external ACP backend (Hermes, Codex, etc.), the arena engine wraps the agent's output through `agent-core`'s guardrail functions (`guardrails.py`) as a post-processing step before scoring.
+
+**Key integration point:** `agent_core.guardrails` functions are importable as pure functions that take `AgentResult` + context and return pass/fail + citations. The arena engine calls these after each agent's run completes, before self-scoring.
+
+### `packages/skill-index` (reuse — agent registration augmentation)
+
+The agent registration directory maps each registered ACP backend to its skill capabilities. `skill-index` provides the skill catalog; the arena service cross-references selected agents' declared skills against the task's skill requirements to help the user choose appropriate agents.
+
+**Key integration point:** `skill_index` exposes `search_skills(query)` and `get_skill(skill_id)` — the arena service calls these to show "recommended agents for this task type" in the desktop UI.
+
+### `packages/ui-core` (extend — new arena components + reducer extension)
+
+The arena UI extends `ui-core` with:
+1. **New `ArenaEventReducer`** — extends `event-reducer.ts` to handle multiplexed events. The existing `reduce(state, event)` function processes one agent's events into one `RenderState`. The arena reducer maintains a `Map<agent_id, RenderState>` plus arena-level state (current phase, scores, cross-review assignments, synthesis status). Implemented as a new `arena-reducer.ts` that delegates per-agent reduction to the existing `reduce()` and merges arena-level metadata.
+2. **New arena components** — `AgentPanel` (per-agent streaming view), `ScoreCard` (self-score display with 10-point framework), `CrossReviewMatrix` (agent × agent review grid), `SynthesisViewer` (final result with review opinions). These extend the existing component pattern (props-driven, CSS-co-located, theme-aware).
+3. **Existing `createEventStream`** — reused as-is. One stream per arena run. The arena service multiplexes all agent events into one SSE endpoint (`/v1/arenas/{arena_id}/events`).
+
+**Key integration point:** `createEventStream({ client, runId })` → the arena passes `arenaId` as the `runId`. The existing Last-Event-ID reconnection works because the arena service buffers events in an `RunEventBuffer` (reused from Gateway) keyed by `arena_id`.
+
+### `packages/platform-contract` (reuse — extend metadata, no new event types)
+
+The arena does NOT add new event types to the 13-category vocabulary. Instead, it uses existing `RunEvent` with arena-specific `metadata` fields:
+- `metadata.arena_id` — identifies the arena run
+- `metadata.agent_id` — identifies which agent produced this event
+- `metadata.phase` — `"parallel"` | `"self_score"` | `"cross_review"` | `"synthesis"`
+- `metadata.score` — self-score or cross-review score (10-point framework)
+- `metadata.iteration` — self-score iteration count
+- `metadata.review_target` — which agent's output is being reviewed (for cross-review phase)
+
+This preserves the isomorphic ACP `session/update` mapping — each agent's events are still standard `RunEvent`s, just tagged with arena context. The existing `encode_sse_event` in `gateway/sse.py` serializes `metadata` as-is.
+
+### `services/gateway` (reuse patterns — do NOT merge)
+
+The arena service is a **separate local service** (`services/arena-service`), not merged into the Gateway. Rationale: the Gateway is the multi-tenant client-facing entry point for all channels; the arena service is a local-only workflow orchestrator that spawns ACP subprocesses (which must be local per the "agents are local stdio subprocesses" constraint). However, the arena service reuses:
+- `encode_sse_event` from `gateway/sse.py` — identical SSE frame encoding
+- `RunEventBuffer` from `gateway/event_buffer.py` — identical event buffering for Last-Event-ID reconnection
+- `GatewayConfig.from_env` pattern — identical env-based config
+- Output boundary enforcement — identical `_assert_no_forbidden_payload_keys` check
+
+**Key integration point:** Extract `encode_sse_event` and `RunEventBuffer` into a shared module (e.g. `packages/platform-runtime` or a new `packages/sse-core`) OR import directly from `gateway` — the arena service depends on `gateway` as a library (it already has zero external deps).
+
+### `apps/desktop` (extend — new arena page + contexts)
+
+The desktop app extends with:
+1. **New `ArenaPage.tsx`** — workflow creation form (task input, agent selection, workflow level 1–4, directory selection), live arena view (parallel agent panels, scores, cross-review matrix, synthesis viewer).
+2. **New `ArenaContext.tsx`** — SolidJS context providing arena state (selected agents, workflow level, directory path, arena run ID) to child components.
+3. **Existing `useEventStream` hook** — reused with `arenaId` as the `runId` parameter. The hook's `createEventStream` call hits the arena service's SSE endpoint instead of the Gateway's (configurable via `config/gateway.ts` — add an `arenaBaseUrl` alongside the existing `baseUrl`).
+4. **Existing `@tauri-apps/plugin-dialog`** — `open({ directory: true, recursive: true })` for reference directory selection. Already a dependency.
+
+**Key integration point:** `config/gateway.ts` exports `gateway` (PlatformApiClient pointing at the Gateway). Add `arena` (PlatformApiClient pointing at `http://127.0.0.1:<arena_port>`). The `useEventStream` hook accepts a `client` parameter — pass the arena client for arena runs.
+
+### `packages/platform-sdk-ts` (reuse — no regeneration needed)
+
+`PlatformApiClient` is a thin HTTP client with `fetchImpl` and `baseUrl`. The arena service speaks the same HTTP+SSE protocol (same endpoint shapes, same `RunEventEnvelope` format). The desktop app constructs a second `PlatformApiClient` with `baseUrl` pointing at the arena service — no SDK regeneration needed.
+
+---
+
+## What NOT to Add (no redundant dependencies)
+
+| Do NOT add | Reason |
+|------------|--------|
+| LangGraph, CrewAI, AutoGen, MAF, Prefect, Temporal | Heavy workflow frameworks that model agents as in-process nodes. InkStatute agents are external ACP stdio subprocesses. The arena engine is a scheduler/relay, not an agent runtime. Adding any of these introduces a second event model, a second state management system, and hard deps — all redundant with ACP `session/update` + `RunEvent` + `asyncio.TaskGroup`. |
+| FastAPI / Starlette / aiohttp / uvicorn | HTTP frameworks. The Gateway is framework-free stdlib ASGI. The arena service follows the same pattern for consistency and zero deps. |
+| `tauri-plugin-sse` | Tauri SSE plugin. The desktop webview's native `fetch` + `ReadableStream` already consumes SSE (proven by existing `createEventStream`). Adding a Rust-side SSE path is redundant. |
+| `@solid-primitives/sse` | SolidJS SSE primitive. `ui-core` already ships `createEventStream` with reconnection. Redundant. |
+| RxJS / `solid-events` / `solid-parallel` | Event composition libraries. SolidJS signals + `createMemo` handle demultiplexing. Overkill. |
+| New ACP client library | `packages/acp-client` already drives any ACP v1 agent over stdio. Reuse as-is. |
+| New event vocabulary / schema format | `packages/platform-contract` provides the isomorphic event vocabulary. Arena extends `metadata`, not event types. |
+| New UI component library | `packages/ui-core` provides 23 components + 3 themes. Arena adds new components in the same package. |
+| SQLite / database for agent registration | Agent registration is ≤20 static configs. JSON directory is sufficient (matches `operator-config` pattern). |
+| Pydantic / dataclass validation library | `platform-contract` uses stdlib `dataclasses` + `json` + JSON Schema. Arena follows the same pattern. |
 
 ---
 
 ## Sources
 
-- In-repo: `services/admin-web-ui/src/admin_web_ui/server.py` (`AdminWebUiServer`, `handle_admin_web_ui_request`, `self.server.*` contract), `services/admin-web-ui/src/admin_web_ui/api_client.py`, `services/admin-web-ui/src/admin_web_ui/csrf.py`, `services/qqbot-service/src/qqbot_service/http_server.py` (`QQBotWebhookServer`, `default_post_ack_scheduler`), `services/qqbot-service/src/qqbot_service/wiring.py`, `services/wecom-service/src/wecom_service/wiring.py` (no HTTP host), `packages/rbac/src/rbac/token.py` (`issue_token`/`verify_token` HMAC pattern), `services/admin-console-api/src/admin_console_api/api.py` (`handle_admin_get`/`handle_admin_put`), `services/conversation-read-view/src/conversation_read_view/read_model.py` (`ContractLogReadModel.from_records`), `packages/platform-runtime/src/platform_runtime/feature_flags.py`, `.env.example`, `.planning/PROJECT.md` (v1.11 milestone), AGENTS.md — **HIGH**
-- Prior research: `.planning/research/STACK.md` (v1.10) — empty-deps + stdlib HTTP host pattern + refs-only config — **HIGH**
-- Python stdlib docs: `http.server`, `subprocess`, `signal`, `logging.handlers`, `http.cookies`, `secrets`, `argparse` — stable across 3.11–3.14 — **HIGH**
-
----
-*Stack research for: v1.11 Product Console*
-*Researched: 2026-07-13*
+- [agent-client-protocol PyPI](https://pypi.org/project/agent-client-protocol/) — latest 0.11.0 (Jul 5, 2026); project pins `>=0.12,<0.13` (existing, not re-researched)
+- [agentclientprotocol/python-sdk GitHub](https://github.com/agentclientprotocol/python-sdk) — ACP Python SDK, Apache 2.0
+- [LangGraph PyPI](https://pypi.org/project/langgraph/) — latest 1.2.10; MIT; graph-based orchestration
+- [CrewAI vs AutoGen vs LangGraph comparison (SimilarLabs, 2026)](https://similarlabs.com/blog/crewai-vs-autogen-vs-langgraph) — framework landscape
+- [AI Agent Frameworks Mid-2026 Landscape (The Agent Report)](https://the-agent-report.com/2026/07/ai-agent-frameworks-comparison-2026-langgraph-crewai-autogen/) — AutoGen maintenance mode, MAF 1.0
+- [Tauri releases](https://v2.tauri.app/release/tauri/) — latest 2.11.5 (Jul 1, 2026)
+- [@tauri-apps/api npm](https://www.npmjs.com/package/@tauri-apps/api) — latest 2.11.1 (Jun 17, 2026)
+- [@tauri-apps/plugin-dialog npm](https://www.npmjs.com/package/@tauri-apps/plugin-dialog) — latest 2.7.2 (Jul 18, 2026); `open({ directory: true })` for directory selection
+- [tauri-plugin-sse docs.rs](https://docs.rs/crate/tauri-plugin-sse/latest) — 0.1.1 (Nov 2025); NOT recommended (redundant with webview native fetch)
+- [Tauri Emitter trait docs](https://docs.rs/tauri/latest/tauri/trait.Emitter.html) — `emit()` / `emit_to()` IPC API
+- [solid-js npm](https://www.npmjs.com/package/solid-js) — latest 1.9.14 (Jul 1, 2026)
+- [@solid-primitives/sse JSR](https://jsr.io/@solid-primitives/sse) — `createSSE` / `createSSEStream`; NOT recommended (redundant with ui-core `createEventStream`)
+- [Python 3.11 asyncio.TaskGroup docs](https://docs.python.org/3.11/library/asyncio-task.html) — structural concurrency, added 3.11
+- [Python 3.11 asyncio-subprocess docs](https://docs.python.org/3.11/library/asyncio-subprocess.html) — parallel subprocess management
+- Existing codebase: `services/gateway/src/gateway/{app.py,sse.py,event_buffer.py,config.py}`, `packages/acp-client/src/inkstatute_acp_client/{client.py,adapter.py,lifecycle.py,process_mode.py,event_mapping.py}`, `packages/agent-core/src/inkstatute_agent_core/{acp_server.py,guardrails.py,turn_loop.py}`, `packages/ui-core/src/{event-reducer.ts,stores/eventStream.ts}`, `apps/desktop/src/{hooks/useEventStream.ts,contexts/ConnectionContext.tsx,config/gateway.ts}`, `apps/desktop/src-tauri/Cargo.toml`, `apps/desktop/package.json`

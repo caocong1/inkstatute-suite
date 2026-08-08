@@ -1,268 +1,268 @@
-# Features Research: v1.11 Product Console
+# Feature Landscape: v3.1 Legal AI Arena
 
-**Domain:** Local/single-machine ops control plane — process orchestration, observability, auth, product polish
-**Milestone:** v1.11 Product Console
-**Researched:** 2026-07-13
-**Confidence:** HIGH (InkStatute shipped admin-console-api/admin-web-ui/rbac/conversation-read-view/contract events; systemd/supervisor/pm2/admin-console patterns; SSE vs WebSocket tradeoffs for stdlib http.server)
+**Domain:** Multi-agent legal AI arena — parallel generation, self-score iteration, cross-review, adversarial refinement, independent final synthesis
+**Milestone:** v3.1 Legal AI Arena
+**Researched:** 2026-08-08
+**Confidence:** HIGH (studied Crossfire, ultra-review, cross-agent-reviews, LLM4Review + related literature; v3.0 shipped ACP client, agent-core guardrails, skill-index, ui-core, event vocabulary)
 
 ## Scope Note
 
-**Already shipped — do not re-scope as new table stakes:**
-- Read-only Admin Console API + Admin Web UI (sessions/tasks/feedback/health/gates), RBAC roles (admin/operator/lawyer/viewer), feature flags default OFF
-- WeCom + QQBot channel packages/hosts; dual-knob enable + secret refs at process edge
-- Operator config store (channels/providers/catalog/vision) with CSRF-protected SSR forms
-- Conversation read-view with cursor pagination, CSV/JSON export, `trace_id` reconstruction
-- Contract event recording (AgentTurn, FeedbackEvent) via hermes-contract-layer
-- Feedback service with dedup + classification
-- Gate honesty banners + human gate status card
-- HMAC-SHA256 signed RBAC tokens (`packages/rbac`) with role+tenant claims, 900s default TTL
+**Already shipped in v3.0 — do not re-scope as new work:**
+- ACP client (`packages/acp-client`) — session lifecycle, `session/update` streaming, `elicitation`, `request_permission`, `fs/*` handlers
+- Agent core (`packages/agent-core`) — 4 legal guardrails (research-gate, citation audit, ask-user, de-AI polish), context budget, tool layer, Word-native track-changes docx
+- Skill index (`packages/skill-index`) — 396 legal skills indexed + per-backend materialization
+- UI core (`packages/ui-core`) — 23 components, 3 themes, streaming chat, clarification cards
+- Event vocabulary — 13-category isomorphic to ACP `session/update`, HTTP+SSE to clients
+- Gateway (`services/gateway`) — multi-tenant HTTP+SSE, output boundary, channel degradation
+- Dual entry points — in-process `BackendAdapter` + `inkstatute-agent acp` CLI
 
-**This document covers ONLY NEW v1.11 features:** process orchestration UI, real-time log viewing, report dashboards, contract event audit, token management, login session interface, product polish.
-
-**Deployment constraint:** Local/single-machine, stdlib `http.server` SSR, no React SPA / new DB / new queue / TLS / reverse-proxy (per AGENTS.md + PROJECT.md).
+The arena builds **on top of** these capabilities. The arena-engine is new orchestration logic; it reuses acp-client for every agent session, agent-core for guardrails, skill-index for legal capability, and ui-core / event vocabulary for user-facing streaming.
 
 ---
 
-## Feature Categories
+## Table Stakes
 
-### Process Orchestration
+Features expected in any multi-agent arena/cross-review workflow. Omitting these would make the product feel broken or amateurish.
 
-Console as control plane: start/stop/restart/status of WeCom/QQBot host child processes from the web UI, with config-save → orchestrate-restart to apply.
-
-**Table stakes:**
-- **Process status panel** — per-host (WeCom, QQBot) card showing running/stopped/unknown state, PID, uptime, last exit code, last started-at timestamp. Operators cannot operate blind. Complexity: LOW–MEDIUM. Depends on: existing host process entry points (new in this milestone), a small process registry (PID + state file or in-memory dict in the console process).
-- **Start / stop / restart actions** — buttons that spawn/terminate the channel host subprocess via `subprocess.Popen` and signal handling (SIGTERM graceful, SIGKILL fallback after timeout). Complexity: MEDIUM. Depends on: runnable service entry points (stdlib `http.server` + signal handlers) shipped in this milestone; CSRF tokens (existing `admin_web_ui/csrf.py`) on every mutating action.
-- **Config-save → restart-to-apply wiring** — today the runbook says "restart runtime to apply" manually; v1.11 should offer a one-click "Save & Restart" that persists config then restarts the affected host. Complexity: MEDIUM. Depends on: existing config POST handlers + new orchestration actions.
-- **Honest state, not fake health** — show actual process state from the OS, not a guessed "enabled" boolean. If the console cannot see the PID, show "unknown / not managed by this console." Complexity: LOW. Aligns with existing gate-honesty pattern.
-- **Graceful shutdown ordering** — stop waits for in-flight turns (or a bounded timeout) before killing; restart = stop-then-start, not kill-and-hope. Complexity: MEDIUM. Depends on: signal handlers in host entry points.
-- **Failure visibility** — if start fails (port in use, missing env ref, import error), surface the stderr tail in the status card, not a silent 500. Complexity: LOW–MEDIUM.
-
-**Differentiators:**
-- **Effective-config + process-state combined view** — show dual-knob enable AND actual running state side by side ("enabled=true but process stopped" is the most common ops confusion). Complexity: MEDIUM. Builds on: existing dual-knob config view + new process status.
-- **Per-host independent control** — WeCom can run while QQBot stopped, independent of provider selection (already architecturally true; console should make it obvious). Complexity: LOW.
-- **Restart-only-affected-host** — saving WeCom config restarts only WeCom host, not QQBot. Complexity: LOW–MEDIUM. Depends on: per-section config handlers (existing).
-- **Startup script / one-click launch** — `scripts/start_inkstatute.sh` (or `.ps1`) that boots admin-web-ui, admin-console-api, and enabled channel hosts with sane env defaults. Complexity: LOW. Pairs with `.env.example` completion (product polish).
-- **Process ownership honesty** — console only manages processes it spawned; if an operator started a host manually outside the console, show "externally managed — restart not available" rather than fighting the OS. Complexity: LOW. Differentiator vs naive supervisors that double-spawn.
-
-**Anti-features:**
-- **Full process supervisor / init system (systemd/circumvent)** — rebuilding systemd/supervisord inside a stdlib HTTP server is scope explosion, race-prone, and worse than the OS. Local single-machine ops already have systemd/launchd/Terminal. *Alternative:* console spawns/inspects child processes it owns; document that production persistence should use systemd unit files. Complexity to build properly: VERY HIGH; value: LOW for local.
-- **Auto-restart on crash with backoff (watchdog loop)** — tempting but a watchdog inside the same process that serves the UI creates single-point-of-failure coupling and infinite-restart storms. *Alternative:* surface crash + exit code; let operator or systemd restart. Complexity: HIGH; anti for local MVP.
-- **Distributed process orchestration / remote hosts** — multi-node control plane is a cloud feature; v1.11 is single-machine. *Alternative:* local-only; remote orchestration is a later milestone if ever. Complexity: VERY HIGH.
-- **Hot-reload of secrets/config into running processes** — partial-apply races, dual-knob desync, hard to test (already an anti-feature in v1.10 research). *Alternative:* restart-to-apply with one-click restart.
-- **CPU/memory metrics streaming per process** — ops dashboard eye-candy; `psutil` dependency + polling load for a local console. *Alternative:* show PID + uptime + exit code; deep metrics belong in OS tooling. Complexity: MEDIUM; value: LOW.
-- **Killing processes the console did not spawn** — PID-recycling safety hazard. *Alternative:* only manage PIDs recorded by this console's start action.
+| Feature | Why Expected | Complexity | Notes |
+|---|---|---|---|
+| Parallel agent execution | Core premise of "arena" — N agents process simultaneously. Every reference project runs generation/review in parallel. | Low-Medium | arena-engine dispatches N ACP sessions concurrently via acp-client. asyncio gather or task group. Complexity is in backpressure + cancellation, not parallelism itself. |
+| Real-time streaming of intermediate results | User must see each agent's output as it streams. v3.0 already streams ACP `session/update` over HTTP+SSE. Lawyers won't trust a black box. | Low | Reuse existing event vocabulary + SSE. arena-engine forwards each agent's `session/update` events to the client with agent identity tags. No new transport. |
+| Heterogeneous agent backends | Crossfire, ultra-review, and cross-agent-reviews all emphasize mixing LLMs for diversity. Our agents are Kimi-M3, Devin CLI, Codex — different families by design. | Low | ACP abstracts backend differences. Each agent is a stdio subprocess speaking ACP v1. arena-engine is backend-agnostic. |
+| User can stop / pause / cancel | Self-score iteration (Mode 2) is user-manually-stopped. All modes need cancellation. | Medium | ACP session cancellation + subprocess termination. Must handle partial results gracefully (stream what was produced, persist incomplete state). Cancellation propagation through asyncio task tree. |
+| Artifact persistence (all intermediate results) | Crossfire archives "every candidate, every review, every synthesis decision." ultra-review writes per-round markdown. LLM4Review yields "auditable artifacts at every step." Lawyers need audit trails. | Medium | arena-engine writes structured artifacts per round per agent. Reference-first logging (reuse v3.0 `raw_payload_ref` pattern). Store as JSON + markdown under arena session directory. |
+| Orchestrator never produces content | ultra-review: "This separation is load-bearing — it keeps the orchestrator's judgment clean." PROJECT.md: "arena-engine 只调度和汇总，自己不产出内容." | Low | Architectural constraint, not a feature to build. Enforced by design: arena-engine only schedules, aggregates scores, and dispatches. Final version comes from an agent session, never the orchestrator. |
+| Agent isolation / fresh contexts per round | Crossfire: "Fresh contexts prevent the same model from believing its own improvements are great." cross-agent-reviews: "fresh-session preflight before audit rounds." | Low-Medium | Each ACP session is a fresh subprocess. arena-engine creates new sessions per round, never reuses context. Mode 2 self-score iteration reuses the same session (agent iterates on its own work); Modes 3-4 use fresh sessions for cross-review. |
+| User selects result (Mode 1) | Standard mode is "user picks result." Trivial but must exist. | Low | UI presents N streamed results side-by-side. User clicks one. arena-engine records selection. No scoring or synthesis. |
+| Agent roster configuration | User must be able to select which agents participate and how many. ultra-review infers roster from diff; we let user pick. | Low | UI checkbox list of available ACP backends. arena-engine reads selection, spawns subprocesses. |
+| Task instruction input | User must be able to describe the legal task. | Low | Reuse existing chat input from ui-core. arena-engine wraps instruction + selected reference directory path into ACP session prompt. |
+| Reference directory selection | User selects a directory; agents use ACP `fs/read_text_file` to autonomously read reference files. | Low-Medium | UI directory picker (Tauri native dialog). arena-engine passes directory path to ACP `fs/*` handler. v3.0 already has ACP fs handlers; arena reuses them with a user-selected root instead of a fixed one. |
+| Error handling / agent failure recovery | ultra-review: "agent crashes or times out mid-round → retry, reassign, or proceed without coverage and note the gap." | Medium | Per-agent timeout, retry policy, partial-result handling. arena-engine must not block all agents if one crashes. asyncio exception isolation. |
 
 ---
 
-### Log Viewing
+## Differentiators
 
-Real-time online viewing of WeCom/QQBot/adapter runtime logs with level filter and search.
+Features that distinguish our arena from generic multi-agent tools. These are where legal-specific value and research-project patterns combine.
 
-**Table stakes:**
-- **Log file discovery + tail view** — console reads the channel host log files (paths from config/env), renders the last N lines (e.g., 200) on a `/logs` page. Operators expect `tail -f` equivalent without SSH. Complexity: LOW–MEDIUM. Depends on: hosts writing to known log paths (structured or plain).
-- **Level filter (DEBUG/INFO/WARN/ERROR)** — dropdown that filters displayed lines by severity. Complexity: LOW. Depends on: logs having parseable level prefixes (structured logging or convention).
-- **Text search / grep** — substring filter over the visible log window. Complexity: LOW.
-- **Per-host log source selector** — choose WeCom / QQBot / adapter / admin-console logs. Complexity: LOW. Depends on: per-host log path config.
-- **Refresh / manual reload** — a "Refresh" button that re-reads the tail. Complexity: TRIVIAL. Table stakes because real-time streaming (below) is the differentiator, not the baseline.
-- **No raw secrets in log display** — logs may contain ref names but must not echo resolved tokens/keys; display-time scrubbing or fail-closed logging policy. Complexity: LOW. Aligns with SAFE-02 + existing output boundary.
-
-**Differentiators:**
-- **Server-Sent Events (SSE) live tail** — `text/event-stream` endpoint that pushes new log lines as they arrive. SSE is the right choice for stdlib `http.server`: unidirectional (server→browser), works over plain HTTP, no WebSocket upgrade handshake, trivial to implement with a generator + `wfile.write`. Complexity: MEDIUM. This is the recommended real-time mechanism for this stack.
-- **Follow / pause / clear-view controls** — like `tail -f` pause; stops the SSE stream from scrolling while operator reads. Complexity: LOW–MEDIUM.
-- **trace_id correlation jump** — click a `trace_id` in a log line → jump to the contract event audit view filtered to that trace. Complexity: LOW–MEDIUM. Depends on: contract event audit view (this milestone) + trace_id present in logs.
-- **Level color coding via CSS only** — server renders `<span class="log-warn">`; CSP already allows `style-src 'self' 'unsafe-inline'`. Complexity: TRIVIAL. Polish, not function.
-- **Bounded buffer + backpressure** — SSE stream holds at most N lines in memory; if the browser is slow, drop oldest rather than OOM the console. Complexity: LOW–MEDIUM. Important for a long-running local server.
-
-**Anti-features:**
-- **WebSocket for log streaming** — bidirectional, requires upgrade handshake + frame handling + ping/pong in stdlib `http.server` (no async framework); adds complexity for zero benefit since log streaming is one-way. *Alternative:* SSE. Complexity to do well in stdlib: HIGH; value over SSE: NONE.
-- **Polling every 1s for "real-time"** — wastes CPU, feels laggy, generates noise. *Alternative:* SSE push, or manual refresh with a longer poll interval (5–10s) only if SSE is deferred. Complexity: LOW but UX-poor.
-- **Full-text search across all historical logs (Elasticsearch/Loki stack)** — scope explosion, new dependency, not local-single-machine friendly. *Alternative:* grep over the current tail window; ship historical search only if a later milestone adds a log store. Complexity: VERY HIGH.
-- **Log aggregation from remote machines** — cloud feature. *Alternative:* local files only.
-- **Storing logs in a database** — violates "no new DB" constraint and duplicates what the filesystem already does. *Alternative:* read log files directly.
-- **Streaming logs that contain raw legal payloads** — privacy + SAFE-02 violation. *Alternative:* logs use `raw_payload_ref`; display scrubbing.
+| Feature | Value Proposition | Complexity | Notes |
+|---|---|---|---|
+| Free-form scoring (10-point framework only) | Lawyers think in legal reasoning quality, not fixed dimensions like "clarity" or "novelty." A 10-point framework gives structure without forcing irrelevant criteria. Avoids the LLM4Review rubric-rigidity problem. | Low-Medium | arena-engine sends the 10-point framework as scoring guidance; agent returns free-form score + justification. No fixed dimensions to parse or validate. The framework is a prompt, not a schema. |
+| Non-bypassable legal guardrails | research-gate, citation audit, ask-user, de-AI polish run inside every agent session regardless of mode. No agent can skip "search before concluding" or citation verification. This is impossible in Crossfire/ultra-review (they have no domain guardrails). | Medium | Reuse agent-core guardrails. The key work is ensuring guardrails fire inside ACP subprocess sessions, not just in-process. agent-core's dual entry point (`inkstatute-agent acp`) already enforces this. arena-engine must not bypass by using a raw ACP backend. |
+| Independent session for final synthesis | Mode 3-4: a separate agent session takes the highest-scored result + all review opinions and produces the final version. The orchestrator doesn't synthesize — an agent does. This is our analogue to Crossfire's synthesizer and LLM4Review's Meta-Reviewer, but the synthesizer is a full agent session with guardrails, not a single LLM call. | Medium | arena-engine selects highest-scored result, collects all cross-review opinions, spawns a fresh ACP session with a synthesis prompt. The synthesis agent has guardrails + skill-index access. Output is the final version. |
+| Adversarial weakness-finding (Mode 4) | Agents don't just review — they actively try to find weaknesses in the highest-scored result. From Crossfire ("attack them for weaknesses") and ultra-review ("try to DISPROVE findings"). For legal work, this means probing for citation gaps, logical flaws, missing counterarguments, jurisdiction errors. | Medium-High | arena-engine dispatches adversarial review sessions. Each gets the target result + a "find weaknesses" prompt. Results are structured weakness reports. Complexity is in prompt design + structuring output for the synthesis session to consume. |
+| Early stopping (Mode 4) | Crossfire: "stops early if reviewers find no material weaknesses." cross-agent-reviews: "clean 3a → pipeline terminates." Saves tokens and time when convergence is reached. | Medium | arena-engine evaluates stopping condition after each round: if adversarial reviewers find no material weaknesses (or score delta below threshold), stop. Requires a structured "weaknesses found" signal from review sessions. |
+| Self-score with self-model bias awareness | LLM4Review: "predictable biases (order, verbosity, self-model) mitigated by independence, aggregation, and optional cross-review." Our Mode 2 self-score is explicitly designed with this in mind — the 10-point framework is free-form to avoid anchoring, and Mode 3 cross-review exists precisely to counter self-score bias. | Low | Prompt design: self-score instruction includes awareness of self-model bias ("score as if reviewing a colleague's work, not your own"). No code complexity; this is a prompt engineering differentiator. |
+| Reliability-weighted score aggregation | LLM4Review: "aggregate reviewer scores with reliability-aware weighting." Instead of simple averaging, weight each reviewer's score by their demonstrated reliability (e.g., did their weaknesses get confirmed by other reviewers?). | Medium-High | arena-engine tracks per-reviewer confirmation rate across rounds. Reviewers whose findings are independently confirmed get higher weight. Requires structured review output + cross-reference tracking. Could be deferred to post-MVP. |
+| Cross-examination / disprove pattern | ultra-review Round 2: "Reviewers try to DISPROVE findings, not validate them. Survivors must be defensible." Applied to legal: cross-reviewers don't just score — they try to disprove the primary agent's legal reasoning, citation accuracy, and factual claims. | Medium | arena-engine structures cross-review as "attempt to disprove" not "rate quality." Prompt instructs reviewer to find specific disproofs. Output is structured: confirmed / disproven / cannot-verify per claim. |
+| Review profiles by task risk | cross-agent-reviews: `patch` / `feature` / `greenfield` profiles set minimum review breadth. Our analogue: simple legal tasks (Mode 1-2) vs high-stakes (Mode 3-4). User picks mode = picks risk profile. | Low | Mode selection IS the profile. No separate config needed. Mode 4 (adversarial) is the "greenfield" equivalent — maximum scrutiny. |
+| Prompt enrichment | Crossfire: "prompt enrichment step is especially useful for one-line instructions." For legal tasks, enrichment could expand a terse instruction into a structured legal task description with relevant skill references. | Medium | arena-engine (or a pre-processing agent session) expands the user's instruction using skill-index lookup. E.g., "review this contract" → enriched with relevant contract review skills + reference file context. Must not produce content — only enrich the prompt. |
+| Categorical confidence labels | ultra-review: "Confidence is categorical, not numeric: Certain / Likely / Possible. Numeric confidence is theatre." For legal findings, categorical confidence is more honest and actionable than percentages. | Low | Review output schema includes confidence field with 3 levels. Lawyers understand "verified citation" vs "plausible but unverified" better than "67% confident." |
+| Fresh-context multi-round synthesis (Mode 4) | Crossfire: "Each round starts clean, which avoids local optima." Multi-round synthesis with fresh contexts prevents the synthesis agent from anchoring on its own previous output. | Medium | Each synthesis round is a new ACP session. Input: previous round's output + new adversarial findings. arena-engine manages the round loop + stopping condition. |
+| Independent confirmation as signal | ultra-review: "Two independent Likelys ≈ Certain. Overlap is a feature." When multiple cross-reviewers independently flag the same weakness, it's the strongest signal. | Low-Medium | arena-engine deduplicates findings and counts independent confirmations. Findings confirmed by 2+ reviewers get elevated priority in the synthesis input. |
+| Word-native track-changes output | Legal-specific: the final synthesized version must be deliverable as a Word document with native track-changes for lawyer review and negotiation. No reference project does this. | Low | Reuse agent-core's `contract_review_trackchanges.py` (41,185 bytes, shipped in v3.0). The synthesis agent's output is post-processed into track-changes docx. |
+| Provenance logging for legal documents | LLM4Review: "sanitization and provenance logging substantially reduce decision drift." For legal work, every claim must trace to a source (citation, statute, reference file). | Medium | arena-engine logs which agent produced which claim, which reviewer confirmed/disproved it, and which source it cites. Reuse v3.0 reference-first logging pattern. |
+| Document-borne prompt injection sanitization | LLM4Review: "document-borne prompt injections can shift recommendations." Legal reference files (contracts, evidence) could contain adversarial text. | Medium | Sanitize reference file content before passing to agent sessions. Strip or flag embedded instructions. This is a legal-specific security concern — opposing counsel's documents could contain hidden instructions. |
 
 ---
 
-### Reports & Dashboards
+## Anti-Features
 
-Aggregation from event logs: session/task volume, completion rate, long-task success rate, feedback distribution.
+Things we explicitly will NOT do, even though some multi-agent tools do them.
 
-**Table stakes:**
-- **Volume counts** — sessions, tasks, turns, feedback events over a selectable time window (today / 7d / 30d). Complexity: LOW–MEDIUM. Depends on: conversation-read-view (existing) + contract event log (existing) as data sources; a small aggregation function that scans the read-view.
-- **Completion / success rate** — % of tasks in terminal success state vs failed/cancelled; long-task success rate separately. Complexity: MEDIUM. Depends on: task state machine in platform-contract (existing) + read-view exposing status.
-- **Feedback distribution** — counts by classification (positive/negative/neutral/escalated) and dedup-aware unique counts. Complexity: LOW–MEDIUM. Depends on: feedback service classification (existing).
-- **Time-window selector** — today / 7d / 30d / custom range. Complexity: LOW. Custom range is MEDIUM if it needs date pickers in SSR.
-- **Static snapshot, not live-updating** — reports are point-in-time aggregations; a "Refresh" button re-runs the query. Complexity: LOW. Table stakes because live-updating dashboards are a differentiator, not baseline.
-- **CSV/JSON export of report tables** — operators expect to pull numbers into their own tools. Complexity: LOW. Reuse: existing conversation-read-view export patterns.
-- **Empty-state honesty** — "No sessions in this window" rather than a blank chart. Complexity: TRIVIAL. Aligns with gate-honesty culture.
-
-**Differentiators:**
-- **Gate pass-rate dashboard** — extend existing `/gates` with pass-rate-over-time and feature-flag status visualization (PROJECT.md calls this out). Complexity: MEDIUM. Depends on: existing gates view (read-only) + gate results store.
-- **Human-gate status visualization** — Phase 5 WeCom UAT / Phase 8 lawyer trial / QQ `--live` acceptance as explicit "not yet accepted" cards with evidence links. Complexity: LOW. Builds on: existing carried-human-gates card.
-- **trace_id-linked drill-down** — click a metric (e.g., "3 failed long-tasks") → filtered contract event audit view for those traces. Complexity: MEDIUM. Depends on: contract event audit view (this milestone).
-- **Feedback → turn linkage** — show which AgentTurns received negative feedback, jump to audit. Complexity: MEDIUM. Depends on: feedback dedup + AgentTurn recording (existing).
-- **Cost/latency hints from model-gateway** — if model-gateway is enabled, surface per-provider token spend + p50/p95 latency. Complexity: MEDIUM–HIGH. Depends on: model-gateway cost_tracker (exists). Differentiator but optional; defer if gateway not in deployment.
-
-**Anti-features:**
-- **Time-series database (Prometheus/Influx)** — new dependency, new ops burden, violates "no new DB." *Alternative:* compute aggregations on-demand from the event log/read-view. Complexity: VERY HIGH.
-- **Live-updating animated charts (React SPA)** — violates no-SPA constraint; SSR + refresh button is enough. *Alternative:* server-rendered tables/SVG on refresh. Complexity: HIGH if SPA; LOW if SSR.
-- **Custom report builder / SQL editor** — scope explosion, security surface. *Alternative:* fixed report templates + CSV export for custom analysis. Complexity: HIGH.
-- **Predictive analytics / anomaly detection** — ML feature, not ops console table stakes. *Alternative:* raw numbers + operator judgment. Complexity: VERY HIGH.
-- **Multi-tenant spend allocation / billing** — cloud SaaS feature. *Alternative:* single-tenant aggregate. Complexity: HIGH.
-- **Claiming report numbers as live-acceptance evidence** — reports show operational volume, not human-gate closure. *Alternative:* gate-honesty notice on every report page (existing pattern).
+| Anti-Feature | Why Avoid | What to Do Instead |
+|---|---|---|
+| Orchestrator produces content | ultra-review proves the separation is load-bearing. If the orchestrator writes legal content, its judgment is contaminated by generation bias. It also creates a liability path — who is responsible for orchestrator-generated legal text? | arena-engine only schedules, aggregates scores, and dispatches. Final version always comes from an agent session with guardrails. |
+| Fixed scoring dimensions | LLM4Review uses rubric-based critiques, but fixed dimensions (novelty, clarity, etc.) are irrelevant to legal work and create anchoring bias. Lawyers score on legal reasoning quality, which is task-dependent. | Free-form 10-point framework. The framework is a prompt, not a schema. Agent decides what dimensions matter for this specific task. |
+| Numeric confidence percentages | ultra-review: "nobody can calibrate 67% confident meaningfully." Numeric confidence in legal findings is misleading and creates false precision. | Categorical confidence: Certain / Likely / Possible, with explicit "what would close the gap" statements. |
+| Auto-approve high-risk legal conclusions | v3.0 SAFE-01: `requires_human_review` is always true for legal conclusion skills. Automating this would violate a binding safety constraint. | All high-risk legal conclusions flow through human review gates. arena-engine records `skill_candidate` with `requires_human_review=true`. |
+| Fixed agent type catalog | ultra-review: "No fixed catalog of agent types. Every review is custom-designed from the diff." Fixed roles (Author, Reviewer, etc. from LLM4Review) are too rigid for diverse legal tasks. | User selects which ACP backends participate. Roles emerge from mode (generator, self-scorer, cross-reviewer, adversary, synthesizer) — same agent can play different roles in different modes. |
+| Mid-flight agent coordination | ultra-review: "No mid-flight coordination. No splitting work between agents." Coordination introduces coupling and destroys independence, which is the whole point. | Agents work in isolated sessions. Communication happens through structured artifacts (files), not real-time messaging. |
+| Speed optimization | ultra-review: "It will not run quickly. A medium review can take an hour. That is the point." Legal work is high-stakes; trading thoroughness for speed is the wrong optimization. | Modes 1-2 are fast (parallel, no iteration or user-stopped). Modes 3-4 are deliberately thorough. No "turbo mode" that skips guardrails or reduces review depth. |
+| Auto-synthesize or auto-modify legal conclusion skills | Binding v3.0 constraint (SAFE-01, SAFE-04). The arena must not create new legal skills or modify existing ones. | Arena produces task outputs (documents, analyses), not skills. Skill candidates go through human review. |
+| Bypass guardrails for "efficiency" | The 4 legal guardrails are non-bypassable by design. Any mode that skips them is a liability. | All 4 modes enforce guardrails inside every agent session. arena-engine must use agent-core's ACP entry point, not raw ACP backends. |
+| Commit secrets or raw legal payloads | Binding privacy constraint. Arena artifacts could contain sensitive legal content. | Reference-first logging. Artifacts stored locally under arena session directory, never committed. Reuse v3.0 privacy patterns. |
 
 ---
 
-### Contract Event Audit
+## Feature Dependencies
 
-AgentTurn/FeedbackEvent stream view with trace_id tracking.
+```
+v3.0 Shipped Capabilities (foundation — no new work)
+├── packages/acp-client ──────────────────► Arena agent session management
+│                                              (spawn, stream, cancel ACP subprocesses)
+├── packages/agent-core ──────────────────► Legal guardrails in every session
+│   ├── research-gate                         (non-bypassable, enforced in ACP entry)
+│   ├── citation audit                        (verified/retrieved/unverified)
+│   ├── ask-user enforcement                  (block drafting when facts missing)
+│   └── de-AI polish                          (remove AI-speak)
+├── packages/skill-index ─────────────────► Legal capability for all agents
+│                                              (396 skills, per-backend materialization)
+├── packages/ui-core ─────────────────────► Arena UI (streaming, cards, selection)
+├── services/gateway (event vocabulary) ──► HTTP+SSE streaming to desktop app
+└── ACP fs/* handlers ────────────────────► Reference file reading
 
-**Table stakes:**
-- **Event stream view** — `/audit` page listing AgentTurn + FeedbackEvent records in reverse-chronological order with cursor pagination (reuse conversation-read-view pagination). Complexity: LOW–MEDIUM. Depends on: contract event log (existing) + conversation-read-view read model (existing).
-- **trace_id filter + reconstruction** — enter/select a `trace_id` → see the full ordered event chain (turn → feedback → sub-events) for that trace. Complexity: MEDIUM. Depends on: `get_task_by_trace_id` already in tenant_read_model; `execution_trace.trace_id` in platform-contract schema (existing).
-- **Event type filter** — AgentTurn only / FeedbackEvent only / all. Complexity: LOW.
-- **Field allowlist (no secrets, no raw payloads)** — display refs (`raw_payload_ref`) not resolved values; reuse admin-console-api field allowlist (existing). Complexity: LOW. Aligns with SAFE-02.
-- **Timestamp + actor + role per event** — who/when/what-type. Complexity: LOW. Depends on: contract event fields (existing).
-- **CSV/JSON export** — pull an audit slice for compliance review. Complexity: LOW. Reuse: existing export module.
+v3.1 New Work
+├── packages/arena-engine (NEW)
+│   ├── Mode 1: Standard parallel ─────────► depends on: acp-client, event vocabulary
+│   ├── Mode 2: Self-score iteration ──────► depends on: Mode 1 + 10-point framework prompt
+│   ├── Mode 3: Arena review ──────────────► depends on: Mode 2 + cross-review dispatch
+│   │   └── Independent synthesis session ──► depends on: acp-client, agent-core, skill-index
+│   └── Mode 4: Adversarial arena ─────────► depends on: Mode 3 + adversarial prompts
+│       ├── Early stopping ────────────────► depends on: structured weakness output
+│       └── Multi-round synthesis ─────────► depends on: fresh-context round loop
+│
+├── services/arena-service (NEW)
+│   ├── HTTP+SSE endpoint ─────────────────► depends on: event vocabulary (reuse Gateway patterns)
+│   └── ACP fs/* handler (user-selected dir)► depends on: acp-client fs handlers
+│
+├── Arena UI (desktop app, NEW screens)
+│   ├── Agent roster selection ────────────► depends on: ui-core
+│   ├── Reference directory picker ────────► depends on: Tauri native dialog
+│   ├── Mode selector ─────────────────────► depends on: ui-core
+│   ├── Multi-agent streaming view ────────► depends on: ui-core, event vocabulary
+│   ├── Score display ─────────────────────► depends on: ui-core
+│   └── Result selection ──────────────────► depends on: ui-core
+│
+└── Cross-cutting
+    ├── Artifact persistence ──────────────► depends on: arena-engine + reference-first logging
+    ├── Provenance logging ────────────────► depends on: arena-engine + v3.0 contract log patterns
+    └── Prompt injection sanitization ─────► depends on: arena-engine + reference file handler
+```
 
-**Differentiators:**
-- **Turn ↔ feedback linkage view** — for a given AgentTurn, show attached FeedbackEvent(s) with classification + dedup state. Complexity: MEDIUM. Depends on: feedback service dedup (existing) + AgentTurn recording (existing).
-- **trace_id jump from logs and reports** — cross-link from log lines and report metrics into the audit view (bidirectional with log viewing + reports). Complexity: LOW–MEDIUM. High UX value; ties the three observability surfaces together.
-- **Event ordering guarantee visualization** — show sequence numbers / occurred_at so operators can verify causal order, not just list order. Complexity: LOW.
-- **Privacy-scrubbed preview** — optional `raw_payload_ref` preview that resolves only if the operator has admin role and the payload is non-sensitive; fail-closed otherwise. Complexity: MEDIUM. Must respect output boundary + SAFE-02.
-- **Audit of config changes** — who changed which config field when (field-level diff, refs redacted). Complexity: MEDIUM. Note: v1.10 research listed this as a differentiator for config; in v1.11 it becomes part of the unified audit surface. Depends on: config change logging (may need a small append-only change log).
-
-**Anti-features:**
-- **Storing raw legal payloads / full text in audit** — SAFE-02 violation; contract logs prefer refs. *Alternative:* refs only, with admin-gated preview. Complexity: LOW to avoid.
-- **Immutable blockchain-style event chaining** — over-engineering for a local ops console; HMAC + append-only file is enough. *Alternative:* append-only JSONL with sequence numbers. Complexity: VERY HIGH; value: NONE for local.
-- **Real-time event stream over WebSocket** — same reasoning as logs; SSE if live is wanted. *Alternative:* SSE or refresh. Complexity: HIGH for WS.
-- **Editing / redacting past audit events from the UI** — audit trails must be append-only; mutable audit destroys the purpose. *Alternative:* append-only; corrections are new events. Complexity: LOW to avoid building.
-- **Full-text search over event payloads** — privacy + performance; payloads are refs. *Alternative:* search over metadata fields (trace_id, type, actor, time). Complexity: MEDIUM if scoped to metadata; VERY HIGH + unsafe if payloads.
-- **Cross-tenant audit without explicit tenant filter** — tenant isolation must be enforced (existing RBAC tenant claim). *Alternative:* tenant-scoped queries only. Complexity: LOW to enforce.
-
----
-
-### Auth (Token + Session)
-
-Token management (issue/revoke/expire) + login session interface (reserved username/password + session cookie, MVP token-only but extensible).
-
-**Table stakes:**
-- **Token management page** — `/auth/tokens` listing issued tokens (role, tenant, issued-at, expires-at, last-used-at) with issue + revoke actions. Complexity: MEDIUM. Depends on: existing `packages/rbac` token issue/verify (existing) + a token registry (new: in-memory or JSON file since no new DB).
-- **Issue token with role + tenant + TTL** — form to mint a new RBAC token for a given role/tenant with selectable TTL. Complexity: LOW–MEDIUM. Reuse: `rbac.token.issue_token` (existing).
-- **Revoke token** — mark a token as revoked before its natural expiry. Complexity: MEDIUM. *Note:* current RBAC tokens are stateless HMAC — revocation requires a revocation list (denylist) checked at verify time. This is the main new piece of logic. Depends on: a small revocation store (JSON file or in-memory with persistence).
-- **Expiry visibility** — show exp timestamp; expired tokens auto-fail (existing `verify_token` already rejects expired). Complexity: LOW.
-- **CSRF on all token mutate actions** — reuse existing `admin_web_ui/csrf.py`. Complexity: TRIVIAL (existing).
-- **Never display token secret after first issuance** — show token once on issue, then only a fingerprint/hash thereafter. Complexity: LOW. Aligns with secret-ref-only culture.
-- **Login session interface (reserved, MVP token-only)** — a `/login` page that accepts username/password but in MVP validates against a configured operator credential (env or config) and issues an RBAC token stored in a session cookie. Complexity: MEDIUM. *Extensible:* swap the credential check for a real user store later. Depends on: existing RBAC token + a session cookie helper (stdlib `http.cookies`).
-- **Session cookie + token coexistence** — requests may authenticate via either `Authorization: Bearer` (API/tooling) or `session_cookie` (browser UI). Complexity: MEDIUM. The auth resolver checks cookie first, then bearer header. Depends on: existing `admin-console-api/auth.py` extended to accept both.
-
-**Differentiators:**
-- **Role-aware token issuance guardrails** — admin can issue operator/lawyer/viewer tokens but not escalate beyond own role; operator cannot issue admin tokens. Complexity: LOW–MEDIUM. Depends on: existing RBAC matrix.
-- **Token last-used-at tracking** — update a timestamp on each successful verify; helps spot stale tokens. Complexity: MEDIUM. Requires a small side-store (not in the stateless HMAC token itself).
-- **Session timeout + re-login** — session cookie expires; UI redirects to `/login`. Complexity: LOW. Aligns with 900s default TTL.
-- **Audit log of token issue/revoke** — who issued/revoked which token when; feeds the contract event audit surface. Complexity: LOW–MEDIUM. Depends on: audit view (this milestone).
-- **Reserved username/password from `.env`** — `INKSTATUTE_OPERATOR_USER` / `INKSTATUTE_OPERATOR_PASSWORD_HASH` for the MVP login; no user database needed. Complexity: LOW. Keeps "no new DB" constraint.
-- **Logout (revoke session)** — clear cookie + mark session token revoked. Complexity: LOW.
-
-**Anti-features:**
-- **Full user management database (users table, password reset flow, email verification)** — scope explosion, new DB, cloud-SaaS feature. *Alternative:* env-based operator credential for MVP; document extensibility. Complexity: VERY HIGH.
-- **OAuth/OIDC/SAML SSO** — cloud/enterprise feature; local single-machine does not need it. *Alternative:* token + simple session. Complexity: VERY HIGH.
-- **MFA/TOTP** — valuable but not table stakes for a local ops console behind a trusted network; defer. *Alternative:* strong operator password + token TTL. Complexity: HIGH.
-- **Storing raw passwords** — store a hash (or env ref to a hash) only. *Alternative:* `secrets.compare_digest` against a pre-hashed env value. Complexity: LOW to avoid the anti-feature.
-- **Long-lived non-expiring tokens** — current default TTL is 900s; do not ship "never expires" as a UI option. *Alternative:* max TTL cap (e.g., 24h) in the issue form. Complexity: LOW.
-- **Token issuance by non-admin roles** — lawyer/viewer must not mint tokens. *Alternative:* admin-only issuance. Complexity: LOW to enforce.
-- **JWT with embedded claims + no revocation** — stateless JWT cannot be revoked without a denylist; if revocation is required (it is), plain HMAC token + revocation list is simpler and already shipped. *Alternative:* extend existing RBAC token with revocation list. Complexity: HIGH to retrofit JWT; LOW to extend existing.
-- **Session storage in a database** — violates no-new-DB. *Alternative:* signed session cookie containing the RBAC token (stateless session). Complexity: LOW.
+**Critical path:** Mode 1 (Standard) → Mode 2 (Self-score) → Mode 3 (Arena review) → Mode 4 (Adversarial). Each mode builds on the previous. Mode 1 alone is a usable product (parallel comparison). Mode 3 is the differentiator (cross-review + independent synthesis). Mode 4 is the high-stakes variant.
 
 ---
 
-### Product Polish
+## Pattern Mapping
 
-Error pages, navigation, responsive layout, one-click startup, `.env.example` completion.
+Which patterns from the four reference projects map to our 4 workflow modes.
 
-**Table stakes:**
-- **404 / 500 error pages** — server-rendered, CSP-compliant, no stack trace leakage to browser (log full trace server-side, show generic message + request id to user). Complexity: LOW. Depends on: existing server error handling.
-- **Consistent navigation** — sidebar or top nav present on every page with active-state highlighting; today's dashboard has cards but sub-pages may lack consistent nav. Complexity: LOW.
-- **Responsive layout** — CSS so the console is usable on a laptop (not just desktop); mobile is bonus, not required for ops console. Complexity: LOW. CSP allows `style-src 'self' 'unsafe-inline'`.
-- **`.env.example` completion** — every env var the runnable services need (ports, tokens, log paths, operator credential, RBAC secret) documented with safe placeholder values. Complexity: LOW. Critical for one-click startup.
-- **One-click startup script** — `scripts/start_inkstatute.sh` (+ `.ps1`) that sources `.env`, starts admin-web-ui + admin-console-api + enabled channel hosts. Complexity: LOW. Pairs with process orchestration.
-- **Loading / empty / error states on every data view** — no blank pages; "Loading…", "No data", "Failed to reach API" states. Complexity: LOW. Aligns with gate-honesty culture.
-- **Gate-honesty notices on new pages** — every new observability/auth page carries the existing "this console does not close live acceptance gates" notice where relevant. Complexity: TRIVIAL. Reuse existing pattern.
-- **README + runbook updates** — document the new endpoints, startup, token management, log paths. Complexity: LOW. Depends on: runbook pattern (existing).
+### Crossfire (ianreppel.org/crossfire)
 
-**Differentiators:**
-- **Request-id correlation across pages** — every error shows a short request id that maps to a log line; operator can grep logs. Complexity: LOW–MEDIUM. Pairs with log viewing.
-- **Keyboard-accessible nav** — tabbable, focus-visible; ops users value speed. Complexity: LOW. Pure HTML/CSS, no JS framework.
-- **Dark mode via CSS `prefers-color-scheme`** — ops consoles are often used at night. Complexity: LOW. CSP-safe.
-- **Per-page "Last refreshed" timestamp** — explicit freshness indicator on read views. Complexity: TRIVIAL.
-- **Status badges consistent across pages** — running/stopped, enabled/disabled, pass/fail, accepted/not-accepted use a shared badge component. Complexity: LOW. Reduces cognitive load.
+| Pattern | Our Mode | How We Adopt |
+|---|---|---|
+| Generation → review → synthesis loop | Mode 3, 4 | Mode 3: agents generate → cross-review → independent synthesis. Mode 4: same loop + adversarial + multi-round. |
+| Fresh contexts per round | Mode 3, 4 | Each cross-review and synthesis round is a fresh ACP session. Prevents anchoring. Mode 2 self-score reuses session (agent iterates on own work — intentional). |
+| Prompt enrichment | All modes | Pre-processing step expands terse legal instructions using skill-index lookup. Optional; skipable for expert users. |
+| Early stopping when no material weaknesses | Mode 4 | Adversarial reviewers find no material weaknesses → stop. Saves tokens on converged results. |
+| Synthesizer picks best parts, discards weak | Mode 3, 4 | Independent synthesis session takes highest-scored result + all review opinions. Synthesizer is a full agent (with guardrails), not a single LLM call. |
+| All artifacts archived locally | All modes | arena-engine writes structured artifacts per round per agent. Audit trail for legal work. |
+| Parallel generation and review within rounds | All modes | N agents generate in parallel (Mode 1). N cross-reviewers review in parallel (Mode 3-4). asyncio concurrency. |
 
-**Anti-features:**
-- **JavaScript SPA framework (React/Vue/Svelte)** — violates architecture constraint; SSR + minimal vanilla JS only. *Alternative:* stdlib `http.server` SSR + tiny inline JS for SSE/refresh. Complexity: HIGH to introduce; anti by constraint.
-- **Heavy client-side charting library (Chart.js/D3 bundle)** — CSP + bundle size + no-SPA constraint. *Alternative:* server-rendered SVG/HTML tables. Complexity: MEDIUM if SVG; HIGH if JS lib.
-- **Internationalization (i18n) framework** — scope expansion; console is operator-facing English/Chinese as-is. *Alternative:* hardcoded bilingual strings if needed. Complexity: HIGH.
-- **Custom theming / white-label controls** — SaaS feature. *Alternative:* single fixed theme. Complexity: HIGH.
-- **Onboarding wizard / tour** — overkill for a local ops console used by trained operators. *Alternative:* runbook + README. Complexity: MEDIUM.
-- **Exposing stack traces / internal paths to the browser** — security + unprofessional. *Alternative:* generic error + server-side log. Complexity: LOW to avoid.
-- **Auto-refresh meta-refresh on every page** — causes flicker + wasted requests. *Alternative:* explicit Refresh button + SSE where live matters. Complexity: LOW.
+### ultra-review (alexrolls/ultra-review)
 
----
+| Pattern | Our Mode | How We Adopt |
+|---|---|---|
+| Orchestrator never writes findings | All modes | arena-engine only schedules and aggregates. Final version from agent session. Binding architectural constraint. |
+| 4-round adversarial deep review | Mode 4 | Our Mode 4 is adversarial. We don't fix 4 rounds — we use early stopping + user-configurable max rounds. But the discovery → cross-examine → finalize → digest shape maps directly. |
+| Cross-examination: try to DISPROVE | Mode 3, 4 | Cross-reviewers attempt to disprove the primary agent's legal reasoning, not just rate it. Structured output: confirmed / disproven / cannot-verify. |
+| Categorical confidence (Certain/Likely/Possible) | Mode 3, 4 | Review output includes categorical confidence with "what would close the gap" statements. No numeric percentages. |
+| Multiple agents on hot areas (overlap is a feature) | Mode 3, 4 | Multiple cross-reviewers examine the same result from different angles. Independent confirmation = strongest signal. |
+| No fixed agent type catalog | All modes | User selects ACP backends. Roles emerge from mode, not from a fixed roster. |
+| Agents communicate via files, not return values | All modes | arena-engine passes structured artifacts between rounds via files / in-memory structured objects. Agents don't message each other directly. |
+| High-impact override | Mode 4 | Legal high-risk areas (citation accuracy, jurisdiction, statutory interpretation) keep Likely/Possible findings regardless of confidence policy. |
+| 80/20 effort split | Mode 3, 4 | Cross-reviewers focus on highest-risk aspects of the legal output (citation accuracy, logic, missing counterarguments) rather than evenly distributing attention. |
 
-## Complexity Notes
+### cross-agent-reviews (j7an/cross-agent-reviews)
 
-| Feature | Complexity | Why |
-|---------|------------|-----|
-| Process status panel | LOW–MEDIUM | PID + state file; OS calls are cheap. |
-| Start/stop/restart actions | MEDIUM | `subprocess.Popen` + signal handling + CSRF + failure capture. |
-| Graceful shutdown ordering | MEDIUM | Bounded-timeout SIGTERM→SIGKILL; needs host signal handlers. |
-| SSE log tail | MEDIUM | Generator + `wfile.write` + bounded buffer; no new deps. |
-| WebSocket log tail | HIGH (anti) | Upgrade + frames + ping/pong in stdlib; not worth it. |
-| Log level filter + search | LOW | String ops over a tail window. |
-| Report volume counts | LOW–MEDIUM | Scan read-view; no aggregation store. |
-| Completion/success rate | MEDIUM | Needs task state machine awareness. |
-| Gate pass-rate dashboard | MEDIUM | Extend existing `/gates`. |
-| Contract event stream view | LOW–MEDIUM | Reuses conversation-read-view pagination. |
-| trace_id reconstruction | MEDIUM | `get_task_by_trace_id` exists; UI wiring is new. |
-| Token management page | MEDIUM | Issue is trivial; revocation list is the new logic. |
-| Token revocation | MEDIUM | Stateless HMAC needs a denylist + verify-time check. |
-| Login session (MVP) | MEDIUM | Cookie + env credential; extensible later. |
-| Session + token coexistence | MEDIUM | Auth resolver accepts cookie or bearer. |
-| 404/500 pages | LOW | Stdlib error handlers. |
-| One-click startup script | LOW | Shell + `.env`. |
-| `.env.example` completion | LOW | Documentation. |
-| Cost/latency hints | MEDIUM–HIGH | Only if model-gateway deployed; optional. |
-| Full process supervisor | VERY HIGH (anti) | Rebuilding systemd. |
-| Time-series DB | VERY HIGH (anti) | New dependency. |
+| Pattern | Our Mode | How We Adopt |
+|---|---|---|
+| 3-round audit → settle pipeline | Mode 3, 4 | Mode 3: self-score (audit) → cross-review (audit) → synthesis (settle). Mode 4 adds adversarial + multi-round. We don't fix 3 rounds — mode determines depth. |
+| Review profiles by risk (patch/feature/greenfield) | All modes | Mode selection IS the profile. Mode 1 = patch (quick). Mode 4 = greenfield (maximum scrutiny). No separate config. |
+| Fresh session per audit round | Mode 3, 4 | Cross-review rounds use fresh ACP sessions. Self-score (Mode 2) may reuse session (agent iterates on own work). Synthesis uses fresh session. |
+| Clean final audit → terminate early | Mode 4 | If final adversarial round finds no material weaknesses, terminate. Maps to cross-agent-reviews "clean 3a → READY_FOR_IMPLEMENTATION." |
+| State-driven pipeline | All modes | arena-engine maintains arena session state (current mode, round, agent results, scores). Enables pause/resume. |
+| Terminal status (READY / CORRECTED) | Mode 3, 4 | arena-engine produces terminal status: user-selected (Mode 1), user-stopped (Mode 2), synthesized (Mode 3), adversarially-confirmed (Mode 4). |
 
-**Simplest wins (do first):** `.env.example`, startup script, 404/500 pages, nav consistency, log tail view, report volume counts, token issue page.
-**Hardest justified work:** process start/stop/restart with graceful shutdown, token revocation list, SSE log streaming, trace_id cross-linking across log/audit/report.
+### LLM4Review (OpenReview 7dJ7BFv9AT)
+
+| Pattern | Our Mode | How We Adopt |
+|---|---|---|
+| Author / Reviewer / Reviser / Meta-Reviewer roles | Mode 3, 4 | Generator (Author) → Cross-reviewer (Reviewer) → Synthesis session (Reviser + Meta-Reviewer combined). We collapse Reviser + Meta-Reviewer into one independent synthesis session because the synthesizer is a full agent with guardrails, not a threshold-based gate. |
+| Rubric-based critiques | Mode 2, 3 | Our 10-point framework is a lightweight rubric. But it's free-form (no fixed dimensions) — the agent decides what matters. This is a deliberate departure from LLM4Review's fixed rubric. |
+| Reliability-aware weighting | Mode 3, 4 (post-MVP) | Weight cross-reviewer scores by confirmation rate. Reviewers whose findings are independently confirmed get higher weight. Deferred to post-MVP — simple averaging first. |
+| Self-model bias mitigation | Mode 2, 3 | Mode 2 self-score prompt includes bias awareness. Mode 3 cross-review exists specifically to counter self-score bias. The progression from self-score to cross-review is our bias mitigation strategy. |
+| Round-based protocol with quality tracking | Mode 2, 3, 4 | Track score across rounds. Mode 2: self-score should improve across iterations. Mode 4: synthesis quality should converge. |
+| Document-borne prompt injection → sanitization + provenance | All modes | Legal reference files (contracts, evidence) could contain adversarial text. Sanitize before passing to agents. Log provenance of every claim. |
+| Auditable artifacts at every step | All modes | Every agent output, score, review, synthesis decision is persisted. Legal audit trail. |
+| Accept/continue/reject decision under thresholds | Mode 4 | Early stopping condition = "reject further rounds" when no material weaknesses found. "Continue" = another adversarial round. "Accept" = synthesize final version. |
+| Quality-cost trade-off measurement | All modes (optional) | Track tokens, time, rounds per arena session. Display to user. Not a core feature but useful for mode selection guidance. |
 
 ---
 
-## Dependencies on Existing Features
+## MVP Recommendation
 
-| New Feature | Builds On (Already Shipped) | New Component Required |
-|-------------|------------------------------|------------------------|
-| Process orchestration (start/stop/restart) | Runnable host entry points (new this milestone), CSRF (`admin_web_ui/csrf.py`), dual-knob config view | Process registry (PID + state), orchestration route handlers, signal handlers in hosts |
-| Config-save → restart | Existing config POST handlers (`config_api.py`) | Orchestration action wiring |
-| Log viewing | Host log file paths (config/env), CSP, `html.escape` | `/logs` route, SSE endpoint, log path config |
-| SSE log tail | stdlib `http.server`, CSP (`style-src 'unsafe-inline'`) | `text/event-stream` handler + bounded buffer |
-| Reports (volume/completion/feedback) | `conversation-read-view` (cursor pagination, export), contract event log, feedback service classification, task state machine (`platform-contract`) | Aggregation functions, `/reports` route |
-| Gate pass-rate dashboard | Existing `/gates` read view, gate results store | Time-series aggregation + visualization extension |
-| Contract event audit view | Contract event log (hermes-contract-layer), `tenant_read_model.get_task_by_trace_id`, `execution_trace.trace_id` schema, field allowlist (`admin_console_api`) | `/audit` route, trace_id filter UI, event type filter |
-| trace_id cross-link (logs↔audit↔reports) | `trace_id` in logs + contract events + read-view | Hyperlinks between pages with `?trace_id=` query param |
-| Token issue | `packages/rbac` `issue_token` (HMAC, role+tenant, TTL) | `/auth/tokens` route, token registry (JSON file) |
-| Token revoke | `packages/rbac` `verify_token` | Revocation list (denylist) + verify-time check |
-| Token expiry visibility | `verify_token` already rejects expired | Display exp from token payload |
-| Login session (MVP) | `packages/rbac` token, `admin-console-api/auth.py` | `/login` route, session cookie (stdlib `http.cookies`), env operator credential |
-| Session + token coexistence | `auth.py` bearer check | Auth resolver: cookie-first, then bearer |
-| Audit of auth actions | Contract event audit view (this milestone) | Append-only auth event log |
-| 404/500 pages | `admin_web_ui/server.py` error handling | Error handler routes + templates |
-| Navigation / responsive | Existing SSR templates, CSP | Shared nav partial + CSS |
-| One-click startup | Runnable entry points (new this milestone) | `scripts/start_inkstatute.sh` |
-| `.env.example` | Existing env var usage across services | Documented placeholder file |
-| Gate-honesty notices on new pages | Existing gate-honesty banner pattern | Reuse partial on `/logs`, `/reports`, `/audit`, `/auth/tokens` |
+**Ship Mode 1 (Standard) + Mode 2 (Self-score iteration) first. Mode 3 (Arena review) is the differentiator milestone. Mode 4 (Adversarial) is the high-stakes variant.**
 
-**Key dependency chain:** Runnable service entry points (new) → process orchestration → config-save-restart. Contract event log (existing) → audit view → trace_id cross-link ← log viewing + reports. RBAC token (existing) → token management page → revocation list → login session → session+token coexistence.
+### Phase 1: MVP — Mode 1 + Mode 2 (usable product)
 
-**No new DB / queue / SPA dependency introduced by any table-stakes or differentiator feature above.** All new state (process registry, token revocation list, auth event log) can live as JSON files or in-memory dicts with file persistence, consistent with the operator config store pattern already shipped in v1.10.
+| Feature | Priority | Complexity | Depends On |
+|---|---|---|---|
+| arena-engine core (session orchestration, parallel dispatch) | P0 | Medium | acp-client |
+| Mode 1: N agents parallel, user picks result | P0 | Low | arena-engine, ui-core |
+| Mode 2: self-score iteration with 10-point framework | P0 | Low-Medium | Mode 1 + scoring prompt |
+| Real-time multi-agent streaming view | P0 | Low | event vocabulary, ui-core |
+| Reference directory selection + ACP fs handler | P0 | Low-Medium | acp-client fs handlers |
+| Artifact persistence (per agent, per round) | P0 | Medium | arena-engine |
+| User stop/pause/cancel | P0 | Medium | arena-engine, ACP cancellation |
+| arena-service HTTP+SSE endpoint | P0 | Medium | event vocabulary (reuse Gateway patterns) |
+| Agent roster selection UI | P0 | Low | ui-core |
+| Mode selector UI | P0 | Low | ui-core |
+
+**Rationale:** Mode 1+2 is immediately useful (lawyers compare agent outputs, iterate on quality). It proves the arena-engine, streaming, and artifact persistence without the complexity of cross-review or synthesis. It's a complete product on its own.
+
+### Phase 2: Differentiator — Mode 3 (Arena review)
+
+| Feature | Priority | Complexity | Depends On |
+|---|---|---|---|
+| Cross-review dispatch (N reviewers examine each result) | P0 | Medium | Mode 2 |
+| Structured review output (findings, confidence, confirmed/disproved) | P0 | Medium | arena-engine |
+| Independent synthesis session (highest-scored + all opinions → final) | P0 | Medium | acp-client, agent-core, skill-index |
+| Cross-examination / disprove prompt design | P0 | Medium | arena-engine |
+| Categorical confidence labels in review output | P1 | Low | structured review output |
+| Independent confirmation tracking | P1 | Low-Medium | structured review output |
+| Score display UI (per agent, per round) | P0 | Low | ui-core |
+| Word-native track-changes output for final version | P1 | Low | agent-core (shipped) |
+
+**Rationale:** Mode 3 is the core differentiator. Cross-review + independent synthesis is what makes this an "arena" not just "parallel comparison." This is where the research-project patterns (Crossfire synthesis, ultra-review cross-examination, LLM4Review roles) converge.
+
+### Phase 3: High-stakes — Mode 4 (Adversarial arena)
+
+| Feature | Priority | Complexity | Depends On |
+|---|---|---|---|
+| Adversarial weakness-finding prompts | P0 | Medium-High | Mode 3 |
+| Multi-round synthesis with fresh contexts | P0 | Medium | Mode 3 |
+| Early stopping (no material weaknesses → terminate) | P0 | Medium | structured weakness output |
+| Reliability-weighted score aggregation | P2 | Medium-High | cross-review tracking |
+| Prompt enrichment (skill-index lookup) | P2 | Medium | skill-index |
+| Prompt injection sanitization for reference files | P1 | Medium | arena-engine |
+| Provenance logging (claim → source → reviewer) | P1 | Medium | arena-engine |
+| Quality-cost trade-off display | P2 | Low | arena-engine |
+
+**Rationale:** Mode 4 is for high-stakes legal tasks where thoroughness matters more than speed. It builds directly on Mode 3. Early stopping and multi-round synthesis are the key additions. Reliability-weighted aggregation and prompt enrichment are post-MVP polish.
+
+### What NOT to build in v3.1
+
+- Reliability-weighted aggregation (defer to post-MVP — simple averaging first)
+- Fixed scoring dimensions (anti-feature — never build)
+- Numeric confidence percentages (anti-feature)
+- Auto-approve legal conclusions (binding constraint — never build)
+- Fixed agent type catalog (anti-feature)
+- Mid-flight agent coordination (anti-feature)
+- Speed optimization / turbo mode (anti-feature)
+
+---
+
+## Sources
+
+| Source | URL | Key Patterns Extracted |
+|---|---|---|
+| Crossfire | https://ianreppel.org/crossfire | generation→review→synthesis loop, fresh contexts per round, prompt enrichment, early stopping, synthesizer picks best parts, parallel within rounds, all artifacts archived |
+| ultra-review | https://github.com/alexrolls/ultra-review | 4-round adversarial review, orchestrator never writes findings, cross-examination (disprove not validate), categorical confidence, overlap is a feature, no fixed agent catalog, agents communicate via files, high-impact override, 80/20 effort split |
+| cross-agent-reviews | https://github.com/j7an/cross-agent-reviews | 3-round audit→settle pipeline, review profiles by risk (patch/feature/greenfield), fresh session per audit round, clean final audit terminates early, state-driven pipeline, terminal status |
+| LLM4Review | https://openreview.net/forum?id=7dJ7BFv9AT | Author/Reviewer/Reviser/Meta-Reviewer roles, rubric-based critiques, reliability-aware weighting, self-model bias mitigation, round-based protocol, document-borne prompt injection → sanitization + provenance, auditable artifacts, accept/continue/reject thresholds, quality-cost trade-offs |
+| LLM-REVal | https://arxiv.org/html/2510.12367 | LLM reviewers systematically inflate scores for LLM-authored work; linguistic feature bias; revisions guided by LLM reviews yield quality gains — validates our self-score → cross-review progression |
+| PRE (Peer Review Evaluator) | https://arxiv.org/html/2401.15641 | Single-LLM evaluation has biasness; peer review mechanism outperforms baselines — validates multi-agent cross-review over single-agent scoring |
+| RubricReviewer | https://arxiv.org/html/2608.00005 | Explicit rubric generation as intermediate step; rubric-conditioned review; robustness against prompt injection — supports our 10-point framework + injection sanitization |
+| PROJECT.md | /home/sorawatcher/workspace/inkstatute-suite/.planning/PROJECT.md | v3.0 shipped capabilities, 4-mode workflow definition, architecture, binding decisions, legal guardrails, human gates |

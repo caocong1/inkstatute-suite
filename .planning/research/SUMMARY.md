@@ -1,303 +1,91 @@
-# Research Summary: v1.11 Product Console
-
-**Milestone:** v1.11 Product Console
-**Researched:** 2026-07-13
-**Confidence:** HIGH
-**Deployment:** Local/single-machine, stdlib `http.server` SSR, no TLS/reverse-proxy/production-stack
-
-**Milestone goal:** Make the admin console a runnable, product-grade operations control plane — start/stop channel host subprocesses, view real-time logs, aggregate report stats, audit contract events, manage RBAC tokens, and provide an extensible login-session interface.
-
-**Already shipped (do not re-scope as new):** Read-only admin console API + web UI (sessions/tasks/feedback/health/gates), RBAC roles (admin/operator/lawyer/viewer) with HMAC-SHA256 tokens (900s TTL), feature flags default OFF, WeCom + QQBot channel packages with dual-knob enable + secret refs, operator config store with CSRF-protected SSR forms, conversation read-view with cursor pagination + CSV/JSON export + trace_id reconstruction, contract event recording (AgentTurn/FeedbackEvent), feedback service with dedup + classification, gate honesty banners + human gate status card.
-
----
-
-## Stack Additions
-
-All additions are **stdlib-only** (`dependencies = []` preserved). No new third-party deps, no new DB, no new queue, no SPA. Full detail: [STACK.md](STACK.md).
-
-### What to use
-
-| Addition | Stdlib module | Purpose |
-|----------|---------------|---------|
-| Runnable HTTP entry points | `http.server.ThreadingHTTPServer` + `argparse` + `signal` | Bind existing `BaseHTTPRequestHandler` subclasses to host/port with threaded handling + graceful SIGINT/SIGTERM shutdown |
-| Process orchestration | `subprocess.Popen` + `threading.Lock` + `os.kill` | Start/stop/inspect WeCom/QQBot host subprocesses; PID registry guarded by lock; no `psutil` |
-| Log viewing | `pathlib` + `io` + `os` (byte-offset tail) + `logging.handlers.RotatingFileHandler` | Tail-style seek+readline reader with level/search filter; rotating files cap disk; byte-offset polling every 2–3s |
-| Report aggregation | `ContractLogReadModel` (existing) + `collections.Counter` + `datetime` | Pure-Python counts over in-memory read model; no pandas/numpy; SSR tables + inline SVG |
-| Session auth | `http.cookies.SimpleCookie` + `secrets.token_urlsafe` + `hmac`/`hashlib`/`base64` (reuse `rbac.token` pattern) | HMAC-signed stateless session cookies; `RBAC_TOKEN_SECRET` reused; `SessionStore` protocol reserved for later `sqlite3` swap |
-| Token management | `rbac.token.issue_token`/`verify_token` (existing) + atomic JSON revocation list | Issue/list/revoke RBAC tokens; revocation denylist in `revoked_tokens.json` |
-| Product polish | `html` / `string.Template` / f-string SSR (existing) + `subprocess`/bash startup script | Error pages, nav, responsive CSS, one-click startup, `.env.example` completion |
-
-### What NOT to add
-
-| Avoid | Use instead |
-|-------|-------------|
-| Flask / FastAPI / Starlette / Django / uvicorn / gunicorn | `ThreadingHTTPServer` + existing `BaseHTTPRequestHandler` subclasses |
-| React / Next / Vite / any JS SPA | SSR templates + `html.escape` + inline SVG |
-| WebSocket / SSE libraries (`websockets`, `sse-starlette`) | Byte-offset HTTP polling for log viewing (SSE explicitly deferred) |
-| `psutil` | `subprocess.Popen` API (`poll()`, `pid`, `terminate()`) |
-| `celery` / `dramatiq` / `rq` / any task queue | `subprocess.Popen` + `threading.Lock` |
-| PostgreSQL / Redis / MongoDB | `ContractLogReadModel` + signed cookies + atomic JSON |
-| `sqlite3` as a hard dep this milestone | `rbac.token`-pattern signed cookies; reserve `SessionStore` protocol for later |
-| `pandas` / `numpy` | `collections.Counter` + pure-Python loops |
-| Pydantic / jsonschema as hard deps | Dataclasses + explicit validators |
-| `httpx` / `aiohttp` | In-process callable proxy (`AdminApiClient`) |
-| JWT library (`pyjwt`) | Extend `rbac.token` / mirror pattern for sessions |
-| `watchdog` / `inotify` file-watch libs | Byte-offset polling |
-| Auto-killing unknown PIDs on console startup | Warn operator about orphaned entries; require explicit re-adopt |
-
----
-
-## Feature Table Stakes
-
-Must-have features for v1.11. Full detail: [FEATURES.md](FEATURES.md).
-
-### Process Orchestration
-- **Process status panel** — per-host card: running/stopped/unknown state, PID, uptime, last exit code, started-at. LOW–MEDIUM.
-- **Start / stop / restart actions** — `subprocess.Popen` spawn, SIGTERM graceful + SIGKILL fallback after timeout. CSRF on every mutating action. MEDIUM.
-- **Config-save → restart-to-apply wiring** — one-click "Save & Restart" persists config then restarts affected host. MEDIUM.
-- **Honest state, not fake health** — actual OS process state, not guessed "enabled" boolean; "unknown / not managed" when PID invisible. LOW.
-- **Graceful shutdown ordering** — stop waits for in-flight turns (bounded timeout) before killing; restart = stop-then-start. MEDIUM.
-- **Failure visibility** — start failure (port in use, missing env ref, import error) surfaces stderr tail in status card, not silent 500. LOW–MEDIUM.
-
-### Log Viewing
-- **Log file discovery + tail view** — last N lines (e.g. 200) on `/logs` page. LOW–MEDIUM.
-- **Level filter (DEBUG/INFO/WARN/ERROR)** — dropdown filters displayed lines. LOW.
-- **Text search / grep** — substring filter over visible window. LOW.
-- **Per-host log source selector** — WeCom / QQBot / adapter / admin-console. LOW.
-- **Refresh / manual reload** — re-reads the tail. TRIVIAL.
-- **No raw secrets in log display** — display-time scrubbing or fail-closed logging policy. LOW.
-
-### Reports & Dashboards
-- **Volume counts** — sessions, tasks, turns, feedback events over selectable time window (today/7d/30d). LOW–MEDIUM.
-- **Completion / success rate** — % tasks in terminal success vs failed/cancelled; long-task success rate separately. MEDIUM.
-- **Feedback distribution** — counts by classification + dedup-aware unique counts. LOW–MEDIUM.
-- **Time-window selector** — today / 7d / 30d / custom range. LOW.
-- **Static snapshot, not live-updating** — point-in-time aggregation; Refresh button re-runs query. LOW.
-- **CSV/JSON export of report tables** — reuse existing export patterns. LOW.
-- **Empty-state honesty** — "No sessions in this window" not blank chart. TRIVIAL.
-
-### Contract Event Audit
-- **Event stream view** — `/audit` page listing AgentTurn + FeedbackEvent reverse-chronological with cursor pagination. LOW–MEDIUM.
-- **trace_id filter + reconstruction** — full ordered event chain for a trace. MEDIUM.
-- **Event type filter** — AgentTurn only / FeedbackEvent only / all. LOW.
-- **Field allowlist (no secrets, no raw payloads)** — display refs not resolved values. LOW.
-- **Timestamp + actor + role per event**. LOW.
-- **CSV/JSON export** — audit slice for compliance review. LOW.
-
-### Auth (Token + Session)
-- **Token management page** — `/auth/tokens` listing issued tokens with issue + revoke actions. MEDIUM.
-- **Issue token with role + tenant + TTL** — reuse `rbac.token.issue_token`. LOW–MEDIUM.
-- **Revoke token** — revocation denylist checked at verify time (main new logic). MEDIUM.
-- **Expiry visibility** — show exp; expired tokens auto-fail. LOW.
-- **CSRF on all token mutate actions**. TRIVIAL (existing).
-- **Never display token secret after first issuance** — show once, then fingerprint/hash only. LOW.
-- **Login session interface (reserved, MVP token-only)** — `/login` page validates against env operator credential, issues RBAC token in session cookie. MEDIUM.
-- **Session cookie + token coexistence** — auth resolver checks cookie first, then bearer header. MEDIUM.
-
-### Product Polish
-- **404 / 500 error pages** — server-rendered, CSP-compliant, no stack trace leakage. LOW.
-- **Consistent navigation** — sidebar/top nav on every page with active-state highlighting. LOW.
-- **Responsive layout** — usable on laptop (mobile bonus, not required). LOW.
-- **`.env.example` completion** — every env var documented with safe placeholders. LOW.
-- **One-click startup script** — `scripts/start_inkstatute.sh` sources `.env`, starts all services. LOW.
-- **Loading / empty / error states on every data view**. LOW.
-- **Gate-honesty notices on new pages**. TRIVIAL.
-- **README + runbook updates**. LOW.
-
----
+# Project Research Summary: Legal AI Arena
 
-## Feature Differentiators
+**Domain:** Multi-agent legal AI arena desktop app with iterative self-scoring, cross-review, and final synthesis
+**Researched:** 2026-08-08
+**Overall confidence:** HIGH
 
-High-value optional features. Full detail: [FEATURES.md](FEATURES.md).
+## Executive Summary
 
-### Process Orchestration
-- **Effective-config + process-state combined view** — dual-knob enable AND actual running state side by side ("enabled=true but process stopped"). MEDIUM.
-- **Per-host independent control** — WeCom runs while QQBot stopped, independent of provider selection. LOW.
-- **Restart-only-affected-host** — saving WeCom config restarts only WeCom. LOW–MEDIUM.
-- **Startup script / one-click launch** — `scripts/start_inkstatute.sh` (+ `.ps1`). LOW.
-- **Process ownership honesty** — "externally managed — restart not available" for non-console-spawned processes. LOW.
+The v3.1 Legal AI Arena extends the already-shipped v3.0 Unified Legal Core platform with a multi-agent workflow engine, a local arena service, and a desktop arena UI. The arena lets a lawyer describe a legal task, select multiple ACP backend agents to process it in parallel, have each agent self-score and iterate, have agents cross-review each other, and have an independent agent session synthesize the final version — all streaming live to the desktop app, with the four legal guardrails (research-gate, citation audit, ask-user, de-AI polish) non-bypassable throughout. The research confirms this is achievable with **zero new runtime dependencies**: the arena builds entirely on stdlib `asyncio.TaskGroup` for parallel orchestration, framework-free stdlib ASGI for the local HTTP+SSE service (mirroring the existing Gateway), and SolidJS signals + `createMemo` for demultiplexing parallel agent streams in the desktop UI. No workflow framework (LangGraph, CrewAI, AutoGen, Prefect/Temporal) is needed because InkStatute agents are external ACP stdio subprocesses — the arena engine is a scheduler/relay, not an agent runtime.
 
-### Log Viewing
-- **Server-Sent Events (SSE) live tail** — `text/event-stream` push; recommended real-time mechanism for stdlib `http.server` if threading cost acceptable. MEDIUM. *(Deferred from v1.11 per STACK.md — byte-offset polling is MVP.)*
-- **Follow / pause / clear-view controls** — `tail -f` pause. LOW–MEDIUM.
-- **trace_id correlation jump** — click trace_id in log line → audit view filtered to that trace. LOW–MEDIUM.
-- **Level color coding via CSS only** — `<span class="log-warn">`. TRIVIAL.
-- **Bounded buffer + backpressure** — SSE stream holds at most N lines; drop oldest if browser slow. LOW–MEDIUM.
+The architecture introduces **two new local components** (`packages/arena-engine` and `services/arena-service`) and **one new UI surface** (Arena UI in `apps/desktop`), reusing the existing 13-category event vocabulary, `acp-client`, `agent-core` guardrails, `skill-index`, and `ui-core` without modifying their contracts. The arena-service is a separate local service (bound to `127.0.0.1:8001`), not merged into the Gateway, because it must run locally to spawn stdio subprocesses and must handle ACP `fs/read_text_file` requests that the Gateway does not provide. Arena-specific metadata travels in the existing `RunEvent.metadata` field (`arena_id`, `agent_slot`, `arena_phase`, `score`, `iteration`); arena lifecycle events (`arena.workflow_started`, `arena.score_recorded`, `arena.review_completed`, `arena.synthesis_started/completed`, `arena.adversarial_challenge_completed`, `arena.early_stop_triggered`) are added additively to the vocabulary following the existing `_meta`/`_` prefix convention. The `acp-client` is extended minimally to advertise `clientCapabilities.fs.readTextFile` at `initialize` and to route inbound `fs/read_text_file` requests to a registered handler — backward compatible with the Gateway path.
 
-### Reports & Dashboards
-- **Gate pass-rate dashboard** — extend `/gates` with pass-rate-over-time + feature-flag status visualization. MEDIUM.
-- **Human-gate status visualization** — Phase 5/8/QQ-live as explicit "not yet accepted" cards with evidence links. LOW.
-- **trace_id-linked drill-down** — click a metric → filtered audit view for those traces. MEDIUM.
-- **Feedback → turn linkage** — show which AgentTurns received negative feedback, jump to audit. MEDIUM.
-- **Cost/latency hints from model-gateway** — per-provider token spend + p50/p95 latency. MEDIUM–HIGH. Optional; defer if gateway not deployed.
+The feature landscape maps four reference projects (Crossfire, ultra-review, cross-agent-reviews, LLM4Review) onto four workflow modes of increasing depth: Mode 1 (standard parallel, user picks result), Mode 2 (self-score iteration), Mode 3 (cross-review + independent synthesis — the core differentiator), and Mode 4 (adversarial challenge + multi-round synthesis with early stopping). Table-stakes features include parallel execution, real-time streaming, heterogeneous backends, cancellation, artifact persistence, and orchestrator-never-produces-content. Differentiators include the free-form 10-point scoring framework, non-bypassable legal guardrails, independent synthesis session, adversarial weakness-finding, categorical confidence labels, and Word-native track-changes output. The critical path is Mode 1 → Mode 2 → Mode 3 → Mode 4, where each mode builds on the previous and Mode 1 alone is a usable product.
 
-### Contract Event Audit
-- **Turn ↔ feedback linkage view** — for a given AgentTurn, show attached FeedbackEvent(s) with classification + dedup state. MEDIUM.
-- **trace_id jump from logs and reports** — bidirectional cross-link tying the three observability surfaces together. LOW–MEDIUM.
-- **Event ordering guarantee visualization** — sequence numbers / occurred_at for causal order verification. LOW.
-- **Privacy-scrubbed preview** — admin-gated `raw_payload_ref` preview, fail-closed otherwise. MEDIUM.
-- **Audit of config changes** — who changed which config field when (field-level diff, refs redacted). MEDIUM.
+The most consequential research finding is the set of **24 documented pitfalls**, of which the critical ones are: (1) self-preference bias — LLMs systematically score their own outputs and same-family outputs higher, which can be mitigated only by cross-family review and a synthesizer from a different model family; (2) orchestrator-produces-content — the single most seductive shortcut, which bypasses all guardrails and the output boundary, preventable by a gate test asserting the arena-engine imports no LLM provider; (3) guardrail bypass for external ACP agents — v3.0 guardrails live in `turn_loop.py`, which external agents do not run, requiring post-hoc citation audit + de-AI polish at the arena-engine boundary; (4) ACP subprocess death leaving zombie processes and unrecoverable runs, requiring liveness checks, per-run timeouts, and partial-result acceptance; (5) `fs/read_text_file` scope escape via path traversal or symlinks, requiring resolve + prefix-check + symlink rejection + extension allowlist + size cap; (6) batch auto-approval of dangerous permissions under N-agent UX pressure — the direct descendant of the Buzz `rm -rf` incident, preventable by preserving `_DANGEROUS_PERMISSION_KINDS` exactly and never offering a batch-approve path. Each pitfall has a concrete prevention strategy and a gate-test detection mechanism.
 
-### Auth (Token + Session)
-- **Role-aware token issuance guardrails** — admin can issue operator/lawyer/viewer tokens but not escalate beyond own role. LOW–MEDIUM.
-- **Token last-used-at tracking** — timestamp on each successful verify. MEDIUM.
-- **Session timeout + re-login** — cookie expires; UI redirects to `/login`. LOW.
-- **Audit log of token issue/revoke** — feeds contract event audit surface. LOW–MEDIUM.
-- **Reserved username/password from `.env`** — `INKSTATUTE_OPERATOR_USER` / `INKSTATUTE_OPERATOR_PASSWORD_HASH`. LOW.
-- **Logout (revoke session)** — clear cookie + mark session token revoked. LOW.
+## Key Findings
 
-### Product Polish
-- **Request-id correlation across pages** — error shows short request id mapping to log line. LOW–MEDIUM.
-- **Keyboard-accessible nav** — tabbable, focus-visible. LOW.
-- **Dark mode via CSS `prefers-color-scheme`**. LOW.
-- **Per-page "Last refreshed" timestamp**. TRIVIAL.
-- **Status badges consistent across pages** — shared badge component for running/stopped, enabled/disabled, pass/fail, accepted/not-accepted. LOW.
+**Stack:** Zero new runtime dependencies — stdlib `asyncio.TaskGroup` for parallel orchestration, framework-free stdlib ASGI for the local arena service (mirroring the Gateway), SolidJS signals + `createMemo` for demultiplexing parallel streams; no LangGraph/CrewAI/AutoGen/FastAPI/`tauri-plugin-sse`/`@solid-primitives/sse`.
 
----
+**Architecture:** Two new local components (`packages/arena-engine` pure orchestration library + `services/arena-service` local HTTP+SSE on `127.0.0.1:8001`) and one new UI surface, reusing the 13-category event vocabulary additively (arena metadata in `RunEvent.metadata` + new `arena.*` lifecycle events) and extending `acp-client` minimally for `fs/read_text_file` inbound request handling.
 
-## Architecture Integration
+**Critical pitfall:** Self-preference bias (Pitfall 1) — LLMs systematically favor their own and same-family outputs; the arena's "highest score wins" selection picks the most self-confident agent, not the most legally sound one, unless cross-family review is enforced, the synthesizer comes from a different model family, and scores are reliability-weighted. Closely followed by orchestrator-produces-content (Pitfall 2) and guardrail bypass for external ACP agents (Pitfall 3), both of which silently strip the legal safety invariants that make the "arena-validated" label meaningful.
 
-Key integration points and build order. Full detail: [ARCHITECTURE.md](ARCHITECTURE.md).
+**Feature table stakes:** Parallel agent execution, real-time streaming of intermediate results, heterogeneous agent backends, user stop/pause/cancel, artifact persistence (all intermediate results), orchestrator never produces content, fresh contexts per round, user selects result (Mode 1), agent roster configuration, task instruction input, reference directory selection, error handling / agent failure recovery.
 
-### New Components
+**Differentiators:** Free-form 10-point scoring framework (no fixed dimensions), non-bypassable legal guardrails in every agent session, independent agent session for final synthesis, adversarial weakness-finding (Mode 4), early stopping on convergence, self-score with self-model bias awareness, reliability-weighted score aggregation (post-MVP), cross-examination / disprove pattern, review profiles by task risk (mode = profile), prompt enrichment, categorical confidence labels (Certain/Likely/Possible), fresh-context multi-round synthesis, independent confirmation as signal, Word-native track-changes output, provenance logging, document-borne prompt injection sanitization.
 
-1. **Service Entry Points (`__main__.py`)** — `admin-web-ui`, `admin-console-api`, `qqbot-service`, `wecom-service` become runnable as `python -m <pkg>`. Each is a thin adapter: resolve env → build deps → `ThreadingHTTPServer` bind → `serve_forever` → signal graceful shutdown. wecom-service also needs a new thin `http_server.py` (mirrors qqbot-service pattern: POST callback + GET `/health`).
+## Implications for Roadmap
 
-2. **Process Orchestrator (`ProcessSupervisor`)** — `services/admin-console-api/src/admin_console_api/orchestrator.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/processes.py` (NEW SSR page). Stdlib-only class holding `dict[channel, Popen]`. State persists to JSONL (`INKSTATUTE_PROCESS_STATE_PATH`) for console-restart re-adoption. Health checks reuse each child's `/health` endpoint. Config save → `restart(channel)` (stop then start).
+Based on research, suggested phase structure:
 
-3. **Log Viewer (`LogReader`)** — `services/admin-console-api/src/admin_console_api/logs.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/logs.py` (NEW SSR page). Pure stdlib `open`/`seek`/`readline`. `LOG_SOURCES` registry maps names → file paths. Every line passes through `scrub_contract_payload` before rendering.
+1. **Arena Contract Extension** - Establish the isomorphic event vocabulary before any component can emit or consume arena events.
+   - Addresses: Arena lifecycle events (`arena.workflow_started`, `arena.score_recorded`, `arena.review_completed`, `arena.synthesis_*`, `arena.adversarial_challenge_completed`, `arena.early_stop_triggered`), `ArenaWorkflowConfig`/`Handle`/`Status`/`UserAction` dataclasses, `ArenaWorkflow` Protocol in `platform-runtime`, arena client methods + event types in `platform-sdk-ts`.
+   - Avoids: Pitfall 17 (desktop app event vocabulary mismatch) and Pitfall 24 (gate-coverage meta-test) — schemas and gates are established before any code lands.
 
-4. **Reports Aggregator (`ReportsAggregator`)** — `services/admin-console-api/src/admin_console_api/reports.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/reports.py` (NEW SSR page). Pure function over existing `ContractLogReadModel` + `feedback_queue` + `run_gate_summary`. No new data source.
+2. **ACP fs/* Handler** - Extend `acp-client` to advertise `clientCapabilities.fs.readTextFile` and route inbound `fs/read_text_file` requests, with full path sandboxing.
+   - Addresses: Reference directory selection (table-stakes feature), agent autonomous file reading.
+   - Avoids: Pitfall 5 (fs/read_text_file scope escape) — resolve + prefix-check + symlink rejection + extension allowlist + size cap are built in from the start; backward compatibility with the Gateway path (no `client_capabilities` passed) is preserved.
 
-5. **Contract Event Audit View (`AuditView`)** — `services/admin-console-api/src/admin_console_api/audit.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/audit.py` (NEW SSR page). Thin read-only view over existing `ContractLogReadModel._trace_events`. Reuses `scrub_contract_payload` per line.
+3. **Arena Engine** - Pure-Python orchestration library implementing the `ArenaWorkflow` Protocol across all 4 modes, testable with mock ACP clients before the service exists.
+   - Addresses: Mode 1–4 workflow logic, parallel dispatch via `asyncio.TaskGroup`, self-score iteration loop, cross-review pairing, independent synthesis dispatch, adversarial challenge + multi-round synthesis + early stop, guardrail enforcement hooks (prompt enrichment for third-party agents, post-hoc citation audit + de-AI polish), event tagging with `metadata.agent_slot`/`arena_phase`.
+   - Avoids: Pitfall 2 (orchestrator produces content — gate test asserts no LLM provider imports), Pitfall 3 (guardrail bypass — post-hoc enforcement at boundary), Pitfall 8 (fresh-context invariant — gate test asserts no `session/resume` calls), Pitfall 14 (double de-AI polish — track `polish_applied` in candidate metadata).
 
-6. **Session Auth (`SessionStore` + login route)** — `services/admin-web-ui/src/admin_web_ui/sessions.py` (NEW) + `packages/rbac/src/rbac/session.py` (NEW). HMAC-signed session cookie (same stdlib pattern as csrf.py and rbac/token.py). Ordered auth fallback: Bearer header first (existing API path), then session cookie (browser path). Both produce same `Identity` → same `RbacGuard`. MVP credential store is env vars (`ADMIN_LOGIN_USER`, `ADMIN_LOGIN_PASS_HASH` via `hashlib.pbkdf2_hmac`).
+4. **Arena Service** - Local framework-free HTTP+SSE service wiring together the engine, acp-client, and contract; binds to `127.0.0.1:8001`.
+   - Addresses: HTTP+SSE endpoints (create/stream/cancel/action/status), SSE multiplexing of N agent streams, event buffering for reconnection, output boundary enforcement (ACP output filter + default boundary), permission safety (dangerous kinds denied immediately), fs handler registration with user-selected roots.
+   - Avoids: Pitfall 4 (subprocess death — liveness check + per-run timeout + partial-result acceptance), Pitfall 6 (batch auto-approval — no batch endpoint, `_DANGEROUS_PERMISSION_KINDS` preserved), Pitfall 9 (output boundary bypass — same filter as Gateway), Pitfall 10 (backpressure — cap SSE buffer, drop non-critical events), Pitfall 13 (initialize contention — stagger startup with semaphore), Pitfall 18 (non-localhost binding — `127.0.0.1` only + local token auth).
 
-7. **Token Management UI** — `services/admin-console-api/src/admin_console_api/tokens.py` (NEW) + `services/admin-web-ui/src/admin_web_ui/tokens.py` (NEW SSR page). Issue is a pure call to existing `rbac.issue_token`. Lightweight token registry JSONL (`INKSTATUTE_TOKEN_REGISTRY_PATH`) records metadata (never the token itself). Revocation MVP = TTL + secret rotation + denylist.
+5. **Arena UI** - Desktop arena surface in `apps/desktop` with new `ui-core` components and a multi-stream `ArenaEventReducer`.
+   - Addresses: `ArenaWorkflowCreator` (mode/agent/task/directory selection), `ParallelStreamPanel` (N demultiplexed streams), `ScoreCard`, `ReviewSummary`, `SynthesisViewer`, `ArenaEventReducer` (composes existing `reduce()` per slot), `ArenaApiClient`, `useArenaEventStream` hook, `ArenaContext`.
+   - Avoids: Pitfall 15 (refresh loses state — persist run state, SSE reconnection by run ID), Pitfall 17 (vocabulary mismatch — consumes only validated event types from Phase 1).
 
-### Modified Components
+6. **Integration Testing + Gate Updates** - End-to-end tests across modes, fs/* sandbox tests, permission safety tests, output boundary tests, gate-coverage meta-test update, composability test.
+   - Addresses: Full-mode verification, gate-coverage baseline bump (34 → 36+), `solutions/demo_non_legal` arena variant for industry-neutrality.
+   - Avoids: Pitfall 23 (orphaned subprocesses on cancel — assert zero PIDs after cancellation), Pitfall 24 (gate-coverage — register arena packages before code lands), regression of the existing 34 green gates.
 
-| Component | Change | Keep unchanged |
-|-----------|--------|----------------|
-| `admin-web-ui/server.py` | Extend `_SECTION_MAP` + `_POST_ROUTES` with new routes; add Cookie parsing (bearer-then-cookie); thread new deps through kwargs | `handle_admin_web_ui_request` pure core; CSP/CSRF |
-| `admin-console-api/api.py` | Add route dispatch for `/processes`, `/logs`, `/reports`, `/audit`, `/tokens`; extend `_authenticate_admin` for optional cookie resolver | `handle_admin_get`/`handle_admin_put` pure callables; auth.py |
-| `rbac/matrix.py` | Add `/processes` (ADMIN/OPERATOR), `/logs` (ADMIN/OPERATOR), `/reports` (all roles read), `/audit` (ADMIN/OPERATOR/LAWYER), `/tokens` (ADMIN) to `PERMISSIONS_MATRIX` | Existing matrix entries |
-| `platform-runtime/feature_flags.py` | Add `process_orchestration_enabled`, `log_viewing_enabled`, `session_auth_enabled` (all default OFF) | Existing flags + `require_enabled` gate |
-| `wecom-service/` | Add `http_server.py` (NEW) + `__main__.py` (NEW) | `wiring.build_wecom_wired_runtime`; adapter; crypto; send path |
-| `qqbot-service/` | Add `__main__.py` (NEW) binding `QQBotWebhookServer` to `ThreadingHTTPServer` + signal + GET `/health` | `QQBotWebhookServer`; `wiring`; `default_post_ack_scheduler` |
-| `.env.example` | Complete `ADMIN_WEB_UI_HOST/PORT`, `ADMIN_CONSOLE_API_HOST/PORT`, `INKSTATUTE_CONTRACT_LOG_PATH`, `INKSTATUTE_RUNTIME_DIR`, `INKSTATUTE_PROCESS_STATE_PATH`, `ADMIN_LOGIN_USER`, `ADMIN_LOGIN_PASS_HASH`, orchestration/session flags | Existing refs-only secret pattern |
-| `scripts/` | Add `start-console.sh` (one-click startup) | Existing scripts |
+**Phase ordering rationale:**
+- Contract first because every component emits or consumes arena events; the isomorphic JSON Schema → Python dataclass → TypeScript interface pattern must exist before any code can be written (ARCHITECTURE.md Phase 1 rationale).
+- ACP fs/* handler second because the arena-service needs fs/* handling to spawn agents that read reference files; it extends `acp-client` without breaking the Gateway path (ARCHITECTURE.md Phase 2 rationale).
+- Arena engine third because it is pure orchestration logic depending only on the contract and extended acp-client; it can be fully tested with mock agents before the service exists, de-risking the most complex logic early (ARCHITECTURE.md Phase 3 rationale).
+- Arena service fourth because it wires engine + acp-client + contract into an HTTP-exposed unit; it depends on all three prior phases (ARCHITECTURE.md Phase 4 rationale).
+- Arena UI last because it depends on everything below it; building it last means it is developed against a running arena-service with real agents (ARCHITECTURE.md Phase 5 rationale).
+- Integration testing + gate updates run throughout but finalize in Phase 6 once all components exist.
 
-### Suggested Build Order
+**Research flags for phases:**
+- Phase 3 (Arena Engine): Likely needs deeper research — the 4-mode workflow logic, cross-review pairing matrix, early-stop convergence threshold, and reliability-weighted aggregation (deferred to post-MVP) are the most algorithmically complex parts. Prompt design for self-score bias awareness, cross-examination/disprove, and adversarial weakness-finding is novel and may require iterative tuning against real legal tasks.
+- Phase 4 (Arena Service): Likely needs deeper research — SSE multiplexing of N interleaved streams with backpressure handling, subprocess liveness detection, and reconnection semantics for multiplexed streams are not patterns the existing Gateway exercises (it handles single runs). The staggered-startup semaphore and per-run timeout values need empirical tuning.
+- Phase 1 (Contract Extension): Standard patterns — additive event types following the existing isomorphic convention; low risk.
+- Phase 2 (ACP fs/* Handler): Standard patterns with one well-understood security boundary (path sandboxing); the ACP spec clearly defines `fs/read_text_file` as a client-side capability. Mitigations are concrete and testable.
+- Phase 5 (Arena UI): Standard patterns — extends existing `ui-core` component/reducer conventions; the `ArenaEventReducer` composes the existing `reduce()` per slot. Main novelty is demultiplexing, which is a pure `createMemo` filter.
+- Phase 6 (Integration Testing): Standard patterns — reuses existing gate infrastructure; main work is registering new packages in `run_v2_gates.py`.
 
-1. **Service entry points** (`__main__.py` + wecom `http_server.py`) — no orchestration yet. Lowest-risk thin wrappers over existing pure cores. Every later feature depends on runnable services with `/health` endpoints.
-2. **Feature flags + RBAC matrix + `.env.example` completion** — new routes need default-OFF gates and matrix entries before handlers dispatch; CI scan enforces matrix coverage.
-3. **Health/gate dashboard enhancement + Reports aggregator** — pure read-only over existing `ContractLogReadModel` + `feedback_queue` + `run_gate_summary`; proves the observability data path with no subprocess risk.
-4. **Contract event audit view (trace_id stream)** — thin read-only over existing `_trace_events`; complements reports; no new infra.
-5. **Log viewer (`LogReader` + `/logs` routes + SSR page)** — introduces file-read + scrub pattern; needed before orchestration (operators watch logs of processes they start). Privacy scrub is the main risk.
-6. **Process orchestrator (`ProcessSupervisor` + `/processes` routes + SSR page)** — highest-complexity new component (subprocess lifecycle, health probes, restart-on-config-save). Needs runnable services (#1) + log viewing (#5) to be useful and debuggable.
-7. **Token management UI (`/tokens` issue/verify)** — wraps existing `rbac.issue_token`; lower risk; admin-only.
-8. **Session auth (`SessionStore` + `/login` + cookie coexistence)** — interface-reserving layer; MVP is token-only so session login is polish, not a blocker. Putting it last avoids destabilizing the auth pipeline early.
-9. **Product polish** — error pages, navigation, responsive layout, one-click script finalization. Depends on all pages existing.
+## Confidence Assessment
 
-**Parallelism:** After #2, items #3, #4, #5, #7 can proceed in parallel waves (all read-only, independent routes). #6 waits for #1 + #5. #8 waits for #7.
+| Area | Confidence | Notes |
+|------|------------|-------|
+| Stack | HIGH | Zero new dependencies; all recommended technologies (stdlib asyncio/ASGI, SolidJS signals, Tauri IPC) are already proven in v3.0. Alternatives (LangGraph, CrewAI, AutoGen, FastAPI, tauri-plugin-sse) are rejected with clear rationale. Version pins verified against PyPI/npm as of Jul 2026. |
+| Features | HIGH | Four reference projects (Crossfire, ultra-review, cross-agent-reviews, LLM4Review) studied in depth with pattern mapping per mode. MVP recommendation (Mode 1+2 first, Mode 3 differentiator, Mode 4 high-stakes) is well-supported by the critical-path dependency graph. Anti-features explicitly scoped out with rationale. |
+| Architecture | HIGH | Component boundaries, data flow diagrams for all 4 modes, integration points with 9 existing v3.0 packages, and a 6-phase build order are all specified with file-level precision. The "separate local service, not Gateway merge" decision is well-justified. ACP fs/* handling flow and SSE multiplexing strategy are concrete. Minor uncertainty on backpressure and reconnection semantics for multiplexed streams (flagged for Phase 4 research). |
+| Pitfalls | HIGH | 24 pitfalls documented across critical (9), moderate (9), and minor (6) tiers, each with what/why/consequences/prevention/detection. Sources include 24 academic and industry references (self-preference bias, multi-agent collusion, ACP subprocess death, Buzz incident). Phase-specific warning table maps each pitfall to the phase where it is most likely to manifest. Prevention strategies are concrete and gate-testable. |
 
----
+## Gaps to Address
 
-## Watch Out For
-
-Top pitfalls that must be addressed early. Full detail: [PITFALLS.md](PITFALLS.md) (30 pitfalls total).
-
-### Must-address in Phase 79 (ENTRY-RUN) — before any feature work
-
-1. **Threading decision is the first artifact (Pitfalls 1, 7, 20)** — `BaseHTTPRequestHandler` is single-threaded by default; blocking subprocess waits or log reads freeze the entire UI. If adopting `ThreadingHTTPServer`, **audit every `server.*` attribute for thread safety** (`OperatorConfigStore`, `feedback_queue`, process table, `ContractLogReadModel` are all shared mutable state with no locks). Either stay single-threaded with bounded non-blocking handlers, or go threaded with per-store `threading.Lock` + copy-on-rebuild read model. Do not mix. This decision gates Phases 80–82.
-
-2. **Entry points have zero test coverage today (Pitfall 19)** — every existing test dispatches directly to `handle_*` cores, bypassing the socket. Add a socket-level integration test per service: boot `HTTPServer(("127.0.0.1", 0), Handler)` on ephemeral port, send real HTTP request via `urllib.request`, assert 200. Test signal handling by sending SIGINT.
-
-3. **Per-route POST body cap (Pitfall 22)** — current `MAX_CHANNELS_POST_BYTES = 64KB` is global. New endpoints (log search, report config) may need different limits. Make the cap per-route with a `{route: max_bytes}` map before new POST routes ship.
-
-4. **No new DB/queue, flags default OFF (Pitfall 23)** — enforce at Phase 79 via checklist: no `sqlite3`, no `redis`, no `multiprocessing.Manager`, no `queue.Queue`-as-broker. Every new feature flag defaults to `False`. Run existing `test_read_only.py` + flag-default-OFF gate test in every phase.
-
-### Must-address in Phase 80 (ORCHESTRATION)
-
-5. **Zombie processes + leaked handles (Pitfall 2)** — write PID file per managed process; on console startup reconcile PID file against live PIDs (`os.kill(pid, 0)`); after `terminate()` always `wait()` with `SIGKILL` escalation to reap. Persist process metadata in atomic JSON for re-adoption. Regression test: start→crash→restart→verify adoption.
-
-6. **Signal handling orphans channel hosts (Pitfall 3)** — shutdown sequence: (1) `httpd.shutdown()`, (2) SIGTERM each child, (3) wait N seconds, (4) SIGKILL survivors, (5) reap all. Use `start_new_session=True` at `Popen` for process-group signaling. Test: SIGINT console → no managed PID survives.
-
-7. **Port conflicts + rapid start/stop races (Pitfall 4)** — status from liveness (`os.kill(pid, 0)`) + readiness (port check), not from Popen return. Per-process lock + idempotency guard (reuse CSRF token binding). `SO_REUSEADDR` on channel host sockets. Test: double-submit start → one process; stop→immediate-start → waits for port release.
-
-8. **Config-save → restart race applies half-written config (Pitfall 5)** — strict ordering: `store.save()` returns success (atomic write committed) **then** enqueue restart. Never read `.tmp` sibling. Child calls `store.load()` at startup. Test: save+restart under concurrency → child always sees post-save document.
-
-9. **Secrets passed via argv visible in `ps` (Pitfall 25)** — pass all secrets to children via **environment variables**, never argv. Children resolve `*_REF` at their own edge. Test: inspect spawned child's cmdline (or mock Popen, assert env not argv).
-
-10. **Over-engineering orchestration (Pitfall 24)** — scope to: start one named process, stop one named process, show status (alive + port), apply config → restart. No retries, no rolling, no clustering. Process table is a flat dict. If a feature needs >1 screen of design, it's over-engineered for this milestone.
-
-### Must-address in Phase 82 (LOG-VIEW)
-
-11. **Loading entire log files into memory (Pitfall 6)** — do **not** reuse `load_event_stream`/`load_records_from_jsonl` for runtime log viewing (those read the whole file). Use tail-style `seek` + buffered readline, cap returned lines (500–2000). Test with synthetic 100MB log asserting bounded memory + sub-second response.
-
-12. **Log rotation breaks offset cursor (Pitfall 8)** — detect rotation by comparing file size + mtime (or inode) against last-seen; when file shrinks or inode changes, reset cursor to 0 and signal "log rotated." Test viewer against actively-rotating log.
-
-13. **Secrets + raw legal payloads leak into log viewer (Pitfall 9)** — redaction filter **before** `html.escape`: mask `Bearer ...`, `sk-...`, `BotSecret`, AES keys, `secret://...` refs, `*_REF` resolutions. Test: inject synthetic secret → viewer shows `[REDACTED]`.
-
-14. **Path traversal in log/report file selection (Pitfall 26)** — validate service/file name against fixed allowlist (`{"wecom", "qqbot", "adapter", "admin"}`). Resolve full path + assert starts with canonical base dir. Reject `..`, absolute paths, symlinks. Test: `/logs/../../etc/passwd` → 404/400.
-
-### Must-address in Phase 81 (REPORTS)
-
-15. **Rebuilding full read model per request (Pitfall 10)** — build read model once at startup (or refresh cadence) and reuse. For large logs, single streaming pass with counters. Cache aggregate with mtime-based invalidation. Perf test: 50k-event fixture → <1s response + bounded memory.
-
-16. **Stale report data after restarts (Pitfall 11)** — "last built at" timestamp on reports page. Explicit refresh action (POST with CSRF) and/or mtime auto-invalidation. Never auto-close human gate based on stale aggregate. Document staleness in UI.
-
-17. **Timezone inconsistency (Pitfall 12)** — normalize all `occurred_at` to aware UTC at parse time; convert to display tz only at render. Bucket by display tz. Test: crosses midnight in non-UTC tz → correct day buckets.
-
-18. **Unbounded JSONL scan (Pitfall 13)** — default reports to bounded window (last 7 days); wider ranges opt-in. Reverse-iterate from EOF for recent windows + early-exit. Document "all time" as intentionally slow.
-
-### Must-address in auth phases (85–86)
-
-19. **Token leakage in new logs (Pitfall 14)** — extend "no tokens logged" invariant to all new code. Never log `Authorization`, `ADMIN_API_TOKEN`, RBAC secrets, issued token values. Error responses return generic "invalid token." Grep-based gate test: no token/secret/bearer literals in log files under tests.
-
-20. **Session fixation + weak session IDs (Pitfall 15)** — `secrets.token_urlsafe(32)` for session IDs. Rotate session ID on successful login. `HttpOnly; SameSite=Strict; Path=/` cookie attributes. Sweep expired sessions on each load. Fixation test: pre-login cookie invalid after login.
-
-21. **CSRF gap on new endpoints (Pitfall 16)** — add every new state-changing route to `_POST_ROUTES` with CSRF validation. For login: issue CSRF token on GET `/login` (anonymous role), validate on POST, rotate both session cookie + CSRF token after login. Test: POST without/wrong CSRF → 403.
-
-22. **Privilege escalation via dual auth paths (Pitfall 17)** — unify auth resolution into single function returning `Identity` from either Bearer or cookie, then run **every** route through `RbacGuard.check`. No route bypasses the guard. Guard test per role per new route.
-
-23. **Session/token store race under ThreadingHTTPServer (Pitfall 18)** — wrap all read-modify-write cycles on shared JSON stores in `threading.Lock` (one per store). Concurrency test: N threads revoke/issue tokens → no lost updates.
-
-24. **Self-revocation / last-admin lockout (Pitfall 30)** — prevent revoking own active token. Always honor `ADMIN_API_TOKEN` env var as bootstrap override (cannot be revoked via UI). Require CSRF'd confirmation for revoke. Test: revoke-own → 400; env token works after all UI tokens revoked.
-
-### Must-address across all rendering phases
-
-25. **XSS via unescaped content (Pitfall 29)** — every value interpolated into HTML passes through `html.escape` or `AdminUiBoundary.escape_value` — no exceptions. Grep/AST gate test: no f-string or `.format` producing HTML with unescaped variable. Reflected-XSS test per new route: inject `<script>` into every user-controlled field → escaped.
-
-26. **CSP / no-JS constraint (Pitfall 21)** — stay SSR: bounded snapshot + manual Refresh button (POST with CSRF) or long-ish `meta refresh` (≥5s) only if threaded. No inline JS, no `EventSource`, no WebSocket. CSP stays exactly as-is.
-
-27. **Human gates auto-closed by "green" display (Pitfall 28)** — render human gates with distinct visual state ("HUMAN GATE — carried, not auto-closed") that cannot turn green from fixture evidence. Preserve Phase 78 `not_live_acceptance` label. Test: human-gate rows never render as "passed." Never add "mark human gate passed" button.
-
----
-
-## Suggested Phase Themes
-
-Suggested phase grouping based on all 4 research docs. Phases continue from **79**. Roadmap may renumber.
-
-| Phase | Theme | Key deliverables | Depends on |
-|-------|-------|------------------|------------|
-| **79 ENTRY-RUN** | Runnable entry points + threading decision | `__main__.py` for admin-web-ui, admin-console-api, qqbot-service, wecom-service (+ wecom `http_server.py`); `ThreadingHTTPServer` bind + `argparse` + `signal` graceful shutdown; `start-console.sh`; threading model decision artifact + thread-safety audit; per-route POST body cap framework; socket-level integration tests | Nothing new (existing pure handlers + env) |
-| **80 ORCHESTRATION** | Process control plane | `ProcessSupervisor` + `/processes` routes + SSR page; start/stop/restart/inspect; PID file + re-adoption; config-save → restart wiring; non-blocking handlers; env-injected secrets (never argv); graceful child drain on console shutdown | 79 |
-| **81 REPORTS** | Report dashboards | `ReportsAggregator` + `/reports` route + SSR page; volume counts, completion/success rate, feedback distribution; time-window selector; CSV/JSON export; cached read model with mtime invalidation; tz-normalized bucketing; bounded scan windows; empty-state honesty | 79 (flags/matrix) |
-| **82 LOG-VIEW** | Real-time log viewing | `LogReader` + `/logs` routes + SSR page; byte-offset tail + level filter + search; per-host source selector; `RotatingFileHandler` on channel hosts; rotation-aware cursor; secret/payload redaction filter; path traversal guard; bounded memory (no full-file reads) | 79, 80 (host logging config) |
-| **83 AUDIT-EVENTS** | Contract event audit | `AuditView` + `/audit` route + SSR page; AgentTurn/FeedbackEvent stream; trace_id filter + reconstruction; event type filter; field allowlist; CSV/JSON export; trace_id cross-link from logs + reports | 79 (flags/matrix), 81/82 (cross-link) |
-| **84 HEALTH-GATE-DASH** | Health + gate dashboard | Enhanced `/gates` with pass-rate-over-time; feature-flag status visualization; human-gate status cards (distinct non-green visual); service health from child `/health` endpoints; carried-gate honesty preserved | 79, 80 (health probes) |
-| **85 AUTH-TOKEN** | RBAC token management | `/tokens` issue/list/revoke; revocation denylist (`revoked_tokens.json`); token registry JSONL (metadata only); admin-only; role-aware issuance guardrails; self-revocation prevention; env bootstrap override; audit log of issue/revoke | 79 (flags/matrix) |
-| **86 AUTH-SESSION** | Login session interface | `SessionStore` + `/login` + `/logout`; HMAC-signed session cookie (reuse `RBAC_TOKEN_SECRET`); env operator credential (`ADMIN_LOGIN_USER`/`ADMIN_LOGIN_PASS_HASH`); cookie-then-bearer auth fallback; session fixation prevention (rotate ID); login CSRF token; `session_auth_enabled` flag default OFF | 79, 85 (token issue reused for session inner token) |
-| **87 POLISH** | Product polish | 404/500 error pages; consistent navigation; responsive CSS; one-click startup script finalization; `.env.example` completion; loading/empty/error states; gate-honesty notices on new pages; request-id correlation; dark mode; status badge component; README + runbook updates | 79–86 |
-
-**Parallelism:** After Phase 79, Phases 81, 82, 83, 85 can proceed in parallel waves (all read-only or admin-only, independent routes). Phase 80 waits for 79. Phase 84 waits for 79 + 80. Phase 86 waits for 85. Phase 87 waits for all.
-
-**Explicit non-goals:** live WeCom UAT / lawyer trial / QQ `--live` acceptance (carried human gates); TLS/reverse-proxy; external DB/queue; React SPA; unfreezing ChannelAdapter/BackendAdapter Protocols; Hermes profile editing from console; hot-reload (restart-to-apply remains MVP); full process supervisor/systemd rebuild; auto-restart watchdog; distributed/remote orchestration; WebSocket log streaming; time-series DB; OAuth/OIDC/SAML SSO; MFA/TOTP; full user management database.
-
----
-
-*Research summary for: v1.11 Product Console*
-*Synthesized from: STACK.md, FEATURES.md, ARCHITECTURE.md, PITFALLS.md*
-*Researched: 2026-07-13*
+- **Reliability-weighted score aggregation:** Researched as a differentiator (LLM4Review) but explicitly deferred to post-MVP. The weighting algorithm (confirmation-rate tracking, bias-correction factor for same-family reviews) needs phase-specific research when Mode 3 is productionized.
+- **Early-stop convergence threshold:** Mode 4 early stopping requires a "no material weaknesses" signal, but the free-form 10-point framework has no clear threshold. Pitfall 16 notes a hard round cap (4) + ≥8/10 + zero high-severity findings, but the exact threshold values need empirical tuning against real legal tasks.
+- **SSE multiplexing backpressure:** Pitfall 10 proposes a 1000-event cap with dropping of non-critical events, but the drop policy (which event types are "critical" vs "non-critical" in the arena context) and the `buffer_overflow` notification protocol need design work in Phase 4.
+- **Cross-family review enforcement:** Pitfall 1/7 mitigation requires `backend_family(A) != backend_family(B)` at assignment time, but the `backend_family` taxonomy (is Hermes "Claude-based"? is Codex "GPT-based"?) and the fallback behavior when only same-family agents are available need to be defined in the agent registration schema.
+- **Prompt design for self-score bias awareness, cross-examination, and adversarial weakness-finding:** These are prompt-engineering differentiators flagged as low code complexity but high novelty. They need iterative tuning against real legal tasks and may require a lawyer review gate (analogous to HG-1) before Mode 3/4 ship.
+- **Prompt injection sanitization for legal reference files:** Identified as a differentiator and a pitfall (Pitfall 22), but the sanitization implementation (delimiter wrapping, pattern removal, detection logging) is defense-in-depth and not a complete fix. Needs phase-specific research in Phase 3 or a dedicated security review.
+- **Arena run state persistence format:** Pitfall 15 recommends atomic JSON or SQLite, but the choice and the reconnection-by-run-ID protocol need design in Phase 4/5.
+- **Composability / industry-neutrality of arena events:** The `solutions/demo_non_legal` arena variant test is specified in Phase 6 but the legal-specific vs platform-level field split for arena metadata has not been fully specified.
