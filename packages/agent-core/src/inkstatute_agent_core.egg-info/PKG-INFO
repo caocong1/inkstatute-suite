@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: inkstatute-agent-core
+Version: 0.1.0
+Summary: InkStatute self-built Python agent core — async streaming turn loop with unified events.
+Author: InkStatute
+License: Proprietary
+Requires-Python: >=3.11
