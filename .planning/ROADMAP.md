@@ -307,7 +307,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | 105. Arena Contract Extension | A | 4/4 | Complete   | 2026-08-08 |
 | 106. ACP fs Handler | B | 3/3 | Complete   | 2026-08-08 |
 | 107. Arena Engine — Modes 1+2 | C | 6/6 | Complete   | 2026-08-08 |
-| 108. Arena Engine — Modes 3+4 | D | 0/? | Not started | — |
+| 108. Arena Engine — Modes 3+4 | D | 4/4 | Complete   | 2026-08-08 |
 | 109. Arena Service | E | 0/? | Not started | — |
 | 110. Arena UI + Integration | F | 0/? | Not started | — |
 
