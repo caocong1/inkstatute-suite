@@ -1,4 +1,4 @@
-"""InkStatute Arena Engine — Modes 1+2.
+"""InkStatute Arena Engine — Modes 1+2 + Modes 3+4 primitives.
 
 This package implements the arena-engine boundary-layer modules that
 enforce safety and persistence invariants at the arena edge:
@@ -9,6 +9,10 @@ enforce safety and persistence invariants at the arena edge:
 - ``guardrail_boundary`` — post-hoc citation audit + de-AI polish +
   high-risk review enforcement on external ACP agents (SAFE-01..04)
 - ``provenance`` — per-claim agent → reviewer → source chain logging (SAFE-07)
+- ``review`` — structured review output (ReviewFinding, ConfidenceLevel,
+  SeverityLevel) for Modes 3+4 cross-review phases
+- ``families`` — cross-family review enforcement (SAFE-06) with explicit
+  degradation when only same-family agents are available
 
 These modules are pure functions/classes with no LLM provider dependencies.
 The orchestrator never produces content — no ``openai``, ``anthropic``, or
@@ -20,6 +24,12 @@ from __future__ import annotations
 
 from .artifact_store import ArtifactStore, RoundArtifact
 from .engine import ArenaEngine
+from .families import (
+    CrossFamilyPairingResult,
+    DEFAULT_FAMILY_MAP,
+    _pair_cross_family,
+    get_backend_family,
+)
 from .guardrail_boundary import GuardrailResult, apply_post_hoc_guardrails
 from .mode1 import Mode1Result, run_mode1_parallel
 from .mode2 import (
@@ -30,12 +40,16 @@ from .mode2 import (
     run_mode2_iteration,
 )
 from .provenance import ProvenanceChain, ProvenanceLogger
+from .review import ConfidenceLevel, ReviewFinding, SeverityLevel
 
 __version__ = "0.1.0"
 
 __all__ = [
     "ArenaEngine",
     "ArtifactStore",
+    "ConfidenceLevel",
+    "CrossFamilyPairingResult",
+    "DEFAULT_FAMILY_MAP",
     "EventEmitter",
     "GuardrailResult",
     "IterationState",
@@ -43,9 +57,12 @@ __all__ = [
     "Mode2Result",
     "ProvenanceChain",
     "ProvenanceLogger",
+    "ReviewFinding",
     "RoundArtifact",
+    "SeverityLevel",
     "__version__",
     "apply_post_hoc_guardrails",
+    "get_backend_family",
     "run_mode1_parallel",
     "run_mode2_iteration",
 ]
