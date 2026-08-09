@@ -309,7 +309,15 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
   8. E2E integration test covers the export flow (create → stream → synthesis → export docx) — GATE-01 closure
   9. All 41 gates green (qqbot-channel recall test pre-existing failure accepted as carry)
 
-**Plans**: TBD (est. 4-5)
+**Plans**: 6 plans
+
+Plans:
+- [ ] 111-01-PLAN.md — ui-core export gap (add createArenaStream, ArenaStreamStore, arenaEventReducer, arenaMetaReducer to barrel)
+- [ ] 111-02-PLAN.md — BackendAdapter test-fix (update 4 count/hash assertions across 3 gates)
+- [ ] 111-03-PLAN.md — Desktop arena page + arena client (wire 5 ui-core arena components + createArenaStream store)
+- [ ] 111-04-PLAN.md — arena-service export endpoint (POST /v1/arena/{id}/export delegating to agent-core track-changes)
+- [ ] 111-05-PLAN.md — arena-engine reference_dir wiring (FSSandbox + ReferenceSanitizer into _build_run_request)
+- [ ] 111-06-PLAN.md — E2E export flow test + SynthesisViewer onExport wiring + final 41-gate run
 **UI hint**: yes
 
 ---
@@ -336,7 +344,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | 108. Arena Engine — Modes 3+4 | D | 4/4 | Complete   | 2026-08-08 |
 | 109. Arena Service | E | 6/6 | Complete   | 2026-08-08 |
 | 110. Arena UI + Integration | F | 5/5 | Complete   | 2026-08-09 |
-| 111. v3.1 Closure | G | 0/? | Not Started | — |
+| 111. v3.1 Closure | G | 0/6 | Not Started | — |
 
 ### v3.0 Unified Legal Core — COMPLETE
 
