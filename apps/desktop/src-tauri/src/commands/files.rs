@@ -221,7 +221,7 @@ pub async fn classify_dropped_paths(paths: Vec<String>) -> Result<Vec<DroppedPat
 #[tauri::command]
 pub async fn grant_path_access(
     path: String,
-    app: tauri::AppHandle,
+    app: tauri::AppHandle<tauri::Wry>,
     sandbox: tauri::State<'_, Arc<RwLock<PathSandbox>>>,
 ) -> Result<Vec<String>, String> {
     let data_dir = app
@@ -255,7 +255,7 @@ pub async fn grant_path_access(
 /// Get the current list of allowed directories.
 #[tauri::command]
 pub async fn get_allowed_file_dirs(
-    app: tauri::AppHandle,
+    app: tauri::AppHandle<tauri::Wry>,
 ) -> Result<Vec<String>, String> {
     let data_dir = app
         .path()
@@ -268,7 +268,7 @@ pub async fn get_allowed_file_dirs(
 #[tauri::command]
 pub async fn set_allowed_file_dirs(
     dirs: Vec<String>,
-    app: tauri::AppHandle,
+    app: tauri::AppHandle<tauri::Wry>,
     sandbox: tauri::State<'_, Arc<RwLock<PathSandbox>>>,
 ) -> Result<Vec<String>, String> {
     let data_dir = app

@@ -76,7 +76,7 @@ pub fn run() {
             Ok(())
         })
         .on_menu_event(|app, event| {
-            menu::on_menu_event(app.handle(), &event);
+            menu::on_menu_event(app, &event);
         })
         .invoke_handler(tauri::generate_handler![
             commands::files::read_file_content,

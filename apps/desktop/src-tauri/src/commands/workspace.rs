@@ -38,7 +38,7 @@ pub struct SearchWorkspaceHit {
 }
 
 fn emit_index_progress(
-    app: &AppHandle,
+    app: &AppHandle<tauri::Wry>,
     root_id: &str,
     root_path: &str,
     conversation_id: Option<&str>,
@@ -65,7 +65,7 @@ fn emit_index_progress(
 /// Grants sandbox access via grant_path_access, then spawns indexing task.
 #[tauri::command]
 pub async fn bind_workspace(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     path: String,
     conversation_id: Option<String>,
 ) -> Result<BindWorkspaceResult, String> {
@@ -205,7 +205,7 @@ pub async fn search_workspace(
 }
 
 /// Start indexing in background (used from chat when directory ref is attached).
-pub fn spawn_bind_and_index(app: &AppHandle, root_path: String, conversation_id: Option<String>) {
+pub fn spawn_bind_and_index(app: &AppHandle<tauri::Wry>, root_path: String, conversation_id: Option<String>) {
     let app_handle = app.clone();
     let root_id = hash_root_path(&root_path);
     let conv_id = conversation_id;

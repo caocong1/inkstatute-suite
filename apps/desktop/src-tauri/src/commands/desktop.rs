@@ -16,7 +16,7 @@ pub struct AppSettings {
 }
 
 /// Get the path to the app settings JSON file.
-fn settings_file_path(app: &AppHandle) -> Result<PathBuf, String> {
+fn settings_file_path(app: &AppHandle<tauri::Wry>) -> Result<PathBuf, String> {
     let data_dir = app
         .path()
         .app_data_dir()
@@ -25,7 +25,7 @@ fn settings_file_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 /// Load settings from the JSON file. Returns empty settings if file doesn't exist.
-fn load_settings(app: &AppHandle) -> AppSettings {
+fn load_settings(app: &AppHandle<tauri::Wry>) -> AppSettings {
     let path = match settings_file_path(app) {
         Ok(p) => p,
         Err(_) => return AppSettings::default(),
@@ -37,7 +37,7 @@ fn load_settings(app: &AppHandle) -> AppSettings {
 }
 
 /// Save settings to the JSON file.
-fn save_settings(app: &AppHandle, settings: &AppSettings) -> Result<(), String> {
+fn save_settings(app: &AppHandle<tauri::Wry>, settings: &AppSettings) -> Result<(), String> {
     let path = settings_file_path(app)?;
     let content = serde_json::to_string_pretty(settings)
         .map_err(|e| format!("failed to serialize settings: {}", e))?;
@@ -50,7 +50,7 @@ fn save_settings(app: &AppHandle, settings: &AppSettings) -> Result<(), String> 
 /// Returns null if the key doesn't exist.
 #[tauri::command]
 pub async fn get_app_setting(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     key: String,
 ) -> Result<Option<serde_json::Value>, String> {
     let settings = load_settings(&app);
@@ -61,7 +61,7 @@ pub async fn get_app_setting(
 /// Writes the entire settings map back to disk.
 #[tauri::command]
 pub async fn set_app_setting(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     key: String,
     value: serde_json::Value,
 ) -> Result<(), String> {

@@ -58,7 +58,7 @@ pub struct CachedArtifact {
 // ── Commands ────────────────────────────────────────────────────────────
 
 /// Helper: get the app data dir path for the offline cache database.
-fn cache_db_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
+fn cache_db_path(app: &AppHandle<tauri::Wry>) -> Result<std::path::PathBuf, String> {
     let data_dir = app
         .path()
         .app_data_dir()
@@ -67,7 +67,7 @@ fn cache_db_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
 }
 
 /// Helper: open a sqlx SQLite pool for the offline cache database.
-async fn open_cache_pool(app: &AppHandle) -> Result<sqlx::SqlitePool, String> {
+async fn open_cache_pool(app: &AppHandle<tauri::Wry>) -> Result<sqlx::SqlitePool, String> {
     let db_path = cache_db_path(app)?;
     if let Some(parent) = db_path.parent() {
         std::fs::create_dir_all(parent)
@@ -95,7 +95,7 @@ async fn open_cache_pool(app: &AppHandle) -> Result<sqlx::SqlitePool, String> {
 
 #[tauri::command]
 pub async fn cache_session(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     session_id: String,
     tenant_id: String,
     title: Option<String>,
@@ -123,7 +123,7 @@ pub async fn cache_session(
 
 #[tauri::command]
 pub async fn cache_run(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     run_id: String,
     session_id: String,
     status: String,
@@ -148,7 +148,7 @@ pub async fn cache_run(
 
 #[tauri::command]
 pub async fn cache_event(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     event_id: String,
     run_id: String,
     seq: i64,
@@ -175,7 +175,7 @@ pub async fn cache_event(
 
 #[tauri::command]
 pub async fn cache_artifact(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     artifact_id: String,
     session_id: String,
     local_path: String,
@@ -201,7 +201,7 @@ pub async fn cache_artifact(
 }
 
 #[tauri::command]
-pub async fn get_cached_sessions(app: AppHandle) -> Result<Vec<CachedSession>, String> {
+pub async fn get_cached_sessions(app: AppHandle<tauri::Wry>) -> Result<Vec<CachedSession>, String> {
     let pool = open_cache_pool(&app).await?;
     let rows = sqlx::query_as::<_, CachedSession>(
         "SELECT session_id, tenant_id, title, created_at, updated_at, last_viewed_at
@@ -215,7 +215,7 @@ pub async fn get_cached_sessions(app: AppHandle) -> Result<Vec<CachedSession>, S
 
 #[tauri::command]
 pub async fn get_cached_runs(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     session_id: String,
 ) -> Result<Vec<CachedRun>, String> {
     let pool = open_cache_pool(&app).await?;
@@ -232,7 +232,7 @@ pub async fn get_cached_runs(
 
 #[tauri::command]
 pub async fn get_cached_events(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     run_id: String,
 ) -> Result<Vec<CachedEvent>, String> {
     let pool = open_cache_pool(&app).await?;
@@ -249,7 +249,7 @@ pub async fn get_cached_events(
 
 #[tauri::command]
 pub async fn get_cached_artifact(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     artifact_id: String,
 ) -> Result<Option<CachedArtifact>, String> {
     let pool = open_cache_pool(&app).await?;
@@ -266,7 +266,7 @@ pub async fn get_cached_artifact(
 
 #[tauri::command]
 pub async fn get_cached_artifacts_by_session(
-    app: AppHandle,
+    app: AppHandle<tauri::Wry>,
     session_id: String,
 ) -> Result<Vec<CachedArtifact>, String> {
     let pool = open_cache_pool(&app).await?;

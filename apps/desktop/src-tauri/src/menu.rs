@@ -22,7 +22,7 @@ use tauri::{Emitter, AppHandle};
 /// 4. 视图 (View) — theme submenu, zoom, fullscreen
 /// 5. 窗口 (Window) — minimize, maximize, close
 /// 6. 帮助 (Help) — search workspace, check update
-pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<()>> {
+pub fn build_menu(app: &AppHandle<tauri::Wry>) -> tauri::Result<Menu<tauri::Wry>> {
     // 1. 墨律 InkStatute (app menu)
     let app_menu = Submenu::with_items(
         app,
@@ -146,7 +146,7 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<()>> {
 /// Each menu item's ID is emitted as a "menu-event" payload.
 /// The frontend's `menuHandlers.ts` listens for this event and
 /// dispatches to the appropriate callback.
-pub fn on_menu_event(app: &AppHandle, event: &tauri::menu::MenuEvent) {
+pub fn on_menu_event(app: &AppHandle<tauri::Wry>, event: &tauri::menu::MenuEvent) {
     let id = event.id().as_ref();
     let _ = app.emit("menu-event", id);
 }
