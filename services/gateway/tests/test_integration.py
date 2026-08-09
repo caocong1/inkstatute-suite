@@ -306,12 +306,13 @@ class TestGatewayIntegration(unittest.TestCase):
         # submit_approval, and list_sessions (Plan 93-03-04).
         # The key requirement is that all endpoint PATHS exist and are
         # routable (not 404). Verify via OPERATIONS count.
-        self.assertEqual(len(OPERATIONS), 18, "Should have 18 operations across 17 paths")
+        self.assertEqual(len(OPERATIONS), 19, "Should have 19 operations across 18 paths")
 
     def test_success_criteria_1_openapi_document(self) -> None:
-        """Verify OpenAPI document contains all 15 paths."""
+        """Verify OpenAPI document contains all 16 paths."""
         doc = build_openapi_document()
         expected_paths = [
+            "/v1/health",
             "/v1/sessions",
             "/v1/sessions/{session_id}",
             "/v1/sessions/{session_id}/runs",
@@ -330,7 +331,7 @@ class TestGatewayIntegration(unittest.TestCase):
         ]
         for path in expected_paths:
             self.assertIn(path, doc["paths"], f"Missing path in OpenAPI: {path}")
-        self.assertEqual(len(doc["paths"]), 15)
+        self.assertEqual(len(doc["paths"]), 16)
 
     # ------------------------------------------------------------------
     # SC-2: SSE Last-Event-ID reconnection

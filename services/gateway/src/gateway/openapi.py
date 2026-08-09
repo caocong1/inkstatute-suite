@@ -85,6 +85,9 @@ def render_openapi_json(document: Mapping[str, Any]) -> str:
 
 def _build_paths(base_path: str) -> dict[str, Any]:
     return {
+        f"{base_path}/health": {
+            "get": _health_operation(),
+        },
         f"{base_path}/sessions": {
             "post": _create_session_operation(),
         },
@@ -131,6 +134,19 @@ def _build_paths(base_path: str) -> dict[str, Any]:
         },
         f"{base_path}/practice-profile/interview/answers": {
             "post": _submit_interview_answers_operation(),
+        },
+    }
+
+
+def _health_operation() -> dict[str, Any]:
+    return {
+        "tags": ["Health"],
+        "summary": "Health check.",
+        "description": "Unauthenticated health check endpoint. Used by desktop/web clients to detect if the Gateway is reachable.",
+        "operationId": "health",
+        "parameters": [],
+        "responses": {
+            "200": _json_response("HealthResponse", {"status": "ok", "service": "gateway"}),
         },
     }
 
@@ -482,6 +498,7 @@ def _build_components() -> dict[str, Any]:
             "Run": _run_schema(),
             "RunListResponse": _run_list_response_schema(),
             "RunEventFrame": _run_event_frame_schema(),
+            "HealthResponse": _health_response_schema(),
             "Error": _error_schema(),
         },
         "securitySchemes": {
@@ -893,6 +910,18 @@ def _error_schema() -> dict[str, Any]:
             "code": {"type": "string"},
             "message": {"type": "string"},
             "details": {"type": "object"},
+        },
+        "additionalProperties": False,
+    }
+
+
+def _health_response_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["status", "service"],
+        "properties": {
+            "status": {"type": "string", "enum": ["ok"]},
+            "service": {"type": "string", "enum": ["gateway"]},
         },
         "additionalProperties": False,
     }

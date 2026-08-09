@@ -1,6 +1,6 @@
 """Tests for the full OpenAPI 3.1 document of the InkStatute Gateway.
 
-Verifies that the OpenAPI document covers all 15 endpoints, has complete
+Verifies that the OpenAPI document covers all 16 endpoints, has complete
 schemas with tenant_id in all response schemas, security schemes, the
 Last-Event-ID header parameter, deterministic rendering, and basic
 validation passes.
@@ -22,6 +22,7 @@ from gateway.openapi import (
 
 
 EXPECTED_PATHS = [
+    "/v1/health",
     "/v1/sessions",
     "/v1/sessions/{session_id}",
     "/v1/sessions/{session_id}/runs",
@@ -80,14 +81,14 @@ class TestOpenApiDocument(unittest.TestCase):
         self.assertEqual(self.document["info"]["title"], "InkStatute Gateway API")
 
     # ------------------------------------------------------------------
-    # 3. All 15 paths present
+    # 3. All 16 paths present
     # ------------------------------------------------------------------
 
-    def test_all_15_paths_present(self) -> None:
+    def test_all_16_paths_present(self) -> None:
         paths = self.document["paths"]
         for expected in EXPECTED_PATHS:
             self.assertIn(expected, paths, f"Missing path: {expected}")
-        self.assertEqual(len(paths), 15, f"Expected 15 paths, got {len(paths)}")
+        self.assertEqual(len(paths), 16, f"Expected 16 paths, got {len(paths)}")
 
     # ------------------------------------------------------------------
     # 4. All operations have operationId
@@ -132,12 +133,19 @@ class TestOpenApiDocument(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_all_response_schemas_have_tenant_id(self) -> None:
-        """Every schema referenced in a 200/201 JSON response must include tenant_id."""
+        """Every schema referenced in a 200/201 JSON response must include tenant_id.
+
+        The health endpoint (/v1/health) is exempt — it is an unauthenticated
+        liveness probe with no tenant context.
+        """
         schemas = self.document["components"]["schemas"]
         response_schema_names: set[str] = set()
-        for path_item in self.document["paths"].values():
+        for path_str, path_item in self.document["paths"].items():
             for method, op in path_item.items():
                 if method not in _HTTP_METHODS:
+                    continue
+                # Health endpoint is unauthenticated — no tenant_id.
+                if path_str == "/v1/health":
                     continue
                 for status_code, response in op.get("responses", {}).items():
                     if status_code not in ("200", "201"):

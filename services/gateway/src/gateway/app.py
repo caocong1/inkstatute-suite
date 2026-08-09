@@ -72,6 +72,7 @@ OPERATION_GET_PROFILE = "get_practice_profile"
 OPERATION_PUT_PROFILE = "put_practice_profile"
 OPERATION_START_INTERVIEW = "start_interview"
 OPERATION_SUBMIT_INTERVIEW_ANSWERS = "submit_interview_answers"
+OPERATION_HEALTH = "health"
 
 OPERATIONS: tuple[str, ...] = (
     OPERATION_CREATE_SESSION,
@@ -92,6 +93,7 @@ OPERATIONS: tuple[str, ...] = (
     OPERATION_PUT_PROFILE,
     OPERATION_START_INTERVIEW,
     OPERATION_SUBMIT_INTERVIEW_ANSWERS,
+    OPERATION_HEALTH,
 )
 
 
@@ -228,6 +230,10 @@ class GatewayApp:
                 return self._login_handler.handle_login(body_dict)
             except GatewayError as exc:
                 return _error_response(exc.code, str(exc), status=exc.status, details=exc.details)
+
+        # Health endpoint bypasses auth — used by connection probes.
+        if operation == OPERATION_HEALTH:
+            return {"status": "ok", "service": "gateway"}
 
         # Auth is applied BEFORE routing to any handler — no bypass.
         try:
@@ -579,6 +585,10 @@ def _parse_route(method: str, path: str, base_path: str) -> tuple[str, dict[str,
     # POST /v1/auth/login — unauthenticated login endpoint
     if method == "POST" and parts == ["auth", "login"]:
         return OPERATION_LOGIN, {}
+
+    # GET /v1/health — unauthenticated health check (for connection probes)
+    if method == "GET" and parts == ["health"]:
+        return OPERATION_HEALTH, {}
 
     # GET /v1/sessions — list all sessions for the authenticated tenant
     if method == "GET" and parts == ["sessions"]:
