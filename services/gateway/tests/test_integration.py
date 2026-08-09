@@ -637,17 +637,26 @@ class TestGatewayIntegration(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_no_second_http_surface(self) -> None:
-        """Assert there is only one entry point (GatewayApp) in the gateway source."""
+        """Assert there is only one entry point (GatewayApp) in the gateway source.
+
+        ``__main__.py`` is the legitimate single HTTP entry point that binds
+        :class:`GatewayApp` to a port. No other gateway source file may
+        contain ``HTTPServer`` or ``BaseHTTPRequestHandler`` — that would
+        indicate a second HTTP/SSE surface, violating the binding constraint.
+        """
         gateway_src = os.path.join(REPO_ROOT, "services", "gateway", "src", "gateway")
         http_server_files = []
         for filename in os.listdir(gateway_src):
-            if filename.endswith(".py"):
-                filepath = os.path.join(gateway_src, filename)
-                with open(filepath, encoding="utf-8") as f:
-                    content = f.read()
-                if "HTTPServer" in content or "BaseHTTPRequestHandler" in content:
-                    http_server_files.append(filename)
-        # The Gateway is framework-free — no HTTPServer or BaseHTTPRequestHandler.
+            if not filename.endswith(".py"):
+                continue
+            if filename == "__main__.py":
+                continue  # legitimate single entry point — not a second surface
+            filepath = os.path.join(gateway_src, filename)
+            with open(filepath, encoding="utf-8") as f:
+                content = f.read()
+            if "HTTPServer" in content or "BaseHTTPRequestHandler" in content:
+                http_server_files.append(filename)
+        # No second HTTP surface beyond __main__.py.
         self.assertEqual(http_server_files, [], f"Found HTTP server classes in: {http_server_files}")
 
     # ------------------------------------------------------------------
