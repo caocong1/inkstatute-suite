@@ -5,7 +5,7 @@ import { useAdapters } from "../adapters";
 import "./TitleBar.css";
 
 export interface TitleBarProps {
-  screen: "home" | "workspace";
+  screen: "home" | "workspace" | "arena";
   onGoHome: () => void;
   onOpenConversations: () => void;
   onOpenSettings: () => void;

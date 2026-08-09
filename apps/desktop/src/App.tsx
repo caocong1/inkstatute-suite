@@ -31,6 +31,7 @@ import { desktopAdapters } from "./adapters/desktopAdapters";
 import { desktopWindowAdapter } from "./adapters/desktopWindowAdapter";
 import { HomePage } from "./pages/HomePage";
 import { WorkspacePage } from "./pages/WorkspacePage";
+import { ArenaPage } from "./pages/ArenaPage";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { AppUpdateBanner } from "./components/AppUpdateBanner";
@@ -42,7 +43,7 @@ const AppContent: Component = () => {
   const conn = useConnection();
   const convs = useConversations();
   const { setTheme } = useTheme();
-  const [screen, setScreen] = createSignal<"home" | "workspace">("home");
+  const [screen, setScreen] = createSignal<"home" | "workspace" | "arena">("home");
   const [settingsOpen, setSettingsOpen] = createSignal(false);
   const [settingsTab, setSettingsTab] = createSignal<"workspace" | "autoupdate" | "files" | "about">("workspace");
   const [ftsSearchOpen, setFtsSearchOpen] = createSignal(false);
@@ -133,7 +134,10 @@ const AppContent: Component = () => {
           </div>
           <div class="main-content">
             <Show when={screen() === "home"}>
-              <HomePage onNavigateToWorkspace={() => setScreen("workspace")} />
+              <HomePage
+                onNavigateToWorkspace={() => setScreen("workspace")}
+                onNavigateToArena={() => setScreen("arena")}
+              />
             </Show>
             <Show when={screen() === "workspace"}>
               <WorkspacePage />
@@ -142,6 +146,9 @@ const AppContent: Component = () => {
                   <FTS5SearchPanel onClose={() => setFtsSearchOpen(false)} />
                 </div>
               </Show>
+            </Show>
+            <Show when={screen() === "arena"}>
+              <ArenaPage onGoHome={() => setScreen("home")} />
             </Show>
           </div>
         </div>
