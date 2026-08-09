@@ -66,3 +66,47 @@ export async function createArena(config: ArenaWorkflowConfig): Promise<ArenaHan
   }
   return parsed as ArenaHandle;
 }
+
+/**
+ * Export an arena's synthesis to a Word-native track-changes docx via
+ * `POST /v1/arena/{arena_id}/export`.
+ *
+ * Uses the arena client's internals (baseUrl / defaultHeaders / fetchImpl)
+ * — same pattern as `createArena`. The endpoint delegates to agent-core's
+ * track-changes tool which writes the docx server-side at `output_path`
+ * (arena-service is local-only, 127.0.0.1:8001).
+ *
+ * Output boundary: only arena-domain fields are returned to the caller;
+ * backend/gateway/system notices are filtered by arena-service itself.
+ * The caller must NOT display raw backend error details to the lawyer.
+ *
+ * Returns `{ ok: boolean; output_path?: string; error?: string }`.
+ */
+export async function exportArena(
+  arenaId: string,
+  outputPath: string,
+): Promise<{ ok: boolean; output_path?: string; error?: string }> {
+  const client = arenaClient as unknown as {
+    baseUrl: string;
+    defaultHeaders: Record<string, string>;
+    fetchImpl: typeof fetch;
+  };
+  const response = await client.fetchImpl(
+    `${client.baseUrl}/v1/arena/${arenaId}/export`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...client.defaultHeaders,
+      },
+      body: JSON.stringify({ output_path: outputPath }),
+    },
+  );
+  const text = await response.text();
+  const parsed = text.length > 0 ? (JSON.parse(text) as unknown) : null;
+  if (!response.ok) {
+    const errorBody = (parsed ?? {}) as { error?: string; message?: string };
+    throw new Error(errorBody.error ?? errorBody.message ?? `export failed: ${response.status}`);
+  }
+  return parsed as { ok: boolean; output_path?: string; error?: string };
+}

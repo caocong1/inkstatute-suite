@@ -54,11 +54,17 @@ vi.mock("@tauri-apps/api/webview", () => ({
 // The mock arenaClient has a fetchImpl that returns an empty SSE stream,
 // so createArenaStream's streamEvents() resolves immediately without
 // trying to connect to a real arena-service.
-function mockSseResponse(): Response {
+function mockSseResponse(events?: object[]): Response {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
-      controller.enqueue(encoder.encode(""));
+      if (events && events.length > 0) {
+        for (const evt of events) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(evt)}\n\n`));
+        }
+      } else {
+        controller.enqueue(encoder.encode(""));
+      }
       controller.close();
     },
   });
@@ -68,8 +74,17 @@ function mockSseResponse(): Response {
   });
 }
 
-const { mockCreateArena, mockArenaClient } = vi.hoisted(() => ({
+/** SSE event for arena.synthesis_completed with content (enables export button). */
+const SYNTHESIS_COMPLETED_EVENT = {
+  event_type: "arena.synthesis_completed",
+  seq: 1,
+  payload: { content: "综合最终版：合同审查报告内容", round: 1 },
+  metadata: {},
+};
+
+const { mockCreateArena, mockArenaClient, mockExportArena } = vi.hoisted(() => ({
   mockCreateArena: vi.fn(),
+  mockExportArena: vi.fn(),
   mockArenaClient: {
     baseUrl: "http://127.0.0.1:8001",
     defaultHeaders: { Authorization: "Bearer test-token" },
@@ -80,6 +95,7 @@ const { mockCreateArena, mockArenaClient } = vi.hoisted(() => ({
 vi.mock("../src/config/arena", () => ({
   arenaClient: mockArenaClient,
   createArena: mockCreateArena,
+  exportArena: mockExportArena,
 }));
 
 // ---------------------------------------------------------------------------
@@ -180,11 +196,13 @@ describe("ArenaPage integration", () => {
       created_at: "2026-08-09T00:00:00Z",
     });
     mockArenaClient.fetchImpl.mockReset();
-    mockArenaClient.fetchImpl.mockImplementation(async (_input?: unknown, _init?: unknown) => mockSseResponse());
+    mockArenaClient.fetchImpl.mockImplementation(async (_input?: unknown, _init?: unknown) => mockSseResponse() as Response);
     mockFileAdapter.open.mockReset();
     mockFileAdapter.open.mockResolvedValue(null);
     mockFileAdapter.save.mockReset();
     mockFileAdapter.save.mockResolvedValue("/tmp/test-export.docx");
+    mockExportArena.mockReset();
+    mockExportArena.mockResolvedValue({ ok: true, output_path: "/tmp/test-export.docx" });
   });
 
   afterEach(() => {
@@ -254,6 +272,92 @@ describe("ArenaPage integration", () => {
     const idPill = container.querySelector(".arena-id-pill");
     expect(idPill).toBeTruthy();
     expect(idPill!.textContent).toContain("test-arena-1");
+
+    dispose();
+  });
+
+  it("onExport calls exportArena (POST /v1/arena/{id}/export) with correct params and shows success", async () => {
+    // Use SSE stream with synthesis_completed event so SynthesisViewer's
+    // export button is enabled (hasContent() returns true).
+    mockArenaClient.fetchImpl.mockImplementation(
+      async (_input?: unknown, _init?: unknown) =>
+        mockSseResponse([SYNTHESIS_COMPLETED_EVENT]) as Response,
+    );
+
+    const { container, dispose } = renderArenaPage();
+
+    await fillAndSubmit(container);
+    await flush();
+    await flush();
+
+    // SynthesisViewer is rendered after arena creation
+    const synthesisViewer = container.querySelector(".synthesis-viewer");
+    expect(synthesisViewer).toBeTruthy();
+
+    // The export button should be enabled (synthesis content is populated)
+    const exportBtn = container.querySelector<HTMLButtonElement>(".syn-btn.prim");
+    expect(exportBtn).toBeTruthy();
+    expect(exportBtn!.disabled).toBe(false);
+
+    // Click the export button — SynthesisViewer calls file.save() then onExport.
+    // The mock file.save() returns "/tmp/test-export.docx".
+    exportBtn!.click();
+
+    // Wait for async file.save() + onExport handler to complete
+    await flush();
+    await flush();
+    await flush();
+
+    // Assert exportArena was called with the arena ID and the save path
+    expect(mockExportArena).toHaveBeenCalledTimes(1);
+    const [calledArenaId, calledOutputPath] = mockExportArena.mock.calls[0];
+    expect(calledArenaId).toBe("test-arena-1");
+    expect(calledOutputPath).toBe("/tmp/test-export.docx");
+
+    // Assert the success status indicator is displayed
+    await flush();
+    const successStatus = container.querySelector(".arena-export-success");
+    expect(successStatus).toBeTruthy();
+    expect(successStatus!.textContent).toContain("导出成功");
+
+    dispose();
+  });
+
+  it("onExport shows error status when export endpoint fails", async () => {
+    // Use SSE stream with synthesis_completed event so export button is enabled
+    mockArenaClient.fetchImpl.mockImplementation(
+      async (_input?: unknown, _init?: unknown) =>
+        mockSseResponse([SYNTHESIS_COMPLETED_EVENT]) as Response,
+    );
+
+    // Make exportArena reject (network error)
+    mockExportArena.mockRejectedValue(new Error("network error"));
+
+    const { container, dispose } = renderArenaPage();
+
+    await fillAndSubmit(container);
+    await flush();
+    await flush();
+
+    const exportBtn = container.querySelector<HTMLButtonElement>(".syn-btn.prim");
+    expect(exportBtn).toBeTruthy();
+    expect(exportBtn!.disabled).toBe(false);
+    exportBtn!.click();
+
+    await flush();
+    await flush();
+    await flush();
+
+    // exportArena was called
+    expect(mockExportArena).toHaveBeenCalledTimes(1);
+
+    // Error status indicator is displayed (user-friendly message, not raw error)
+    await flush();
+    const errorStatus = container.querySelector(".arena-export-error");
+    expect(errorStatus).toBeTruthy();
+    expect(errorStatus!.textContent).toContain("导出失败");
+    // Must NOT contain raw backend error details
+    expect(errorStatus!.textContent).not.toContain("network error");
 
     dispose();
   });

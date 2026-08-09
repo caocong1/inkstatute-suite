@@ -12,10 +12,13 @@
  *   2. ParallelStreamPanel   → slotStates() from createArenaStream store
  *   3. ScoreCard             → metaState().scores
  *   4. ReviewSummary         → metaState().reviews
- *   5. SynthesisViewer       → metaState().synthesisContent + onExport (placeholder)
+ *   5. SynthesisViewer       → metaState().synthesisContent + onExport
  *
- * The `onExport` handler is a PLACEHOLDER for now (console.log). Plan 111-06
- * will replace it with the real export endpoint call + desktopFileAdapter.save.
+ * The `onExport` handler calls `POST /v1/arena/{id}/export` via the arena
+ * client and displays a user-friendly success/error status. The docx is
+ * generated server-side by agent-core's track-changes tool (arena-service
+ * is local-only, 127.0.0.1:8001) and written to the path chosen by the
+ * native save dialog (already called inside SynthesisViewer).
  *
  * `availableAgents` is a static list for now (Plan 03 scope); a future plan
  * may fetch it from arena-service status. This is intentional task sequencing.
@@ -31,7 +34,7 @@ import {
   type ArenaStreamStore,
 } from "@inkstatute/ui-core";
 import type { ArenaWorkflowConfig } from "@inkstatute/platform-sdk-ts/events";
-import { arenaClient, createArena } from "../config/arena";
+import { arenaClient, createArena, exportArena } from "../config/arena";
 
 export interface ArenaPageProps {
   onGoHome: () => void;
@@ -49,6 +52,7 @@ export const ArenaPage: Component<ArenaPageProps> = (props) => {
   const [agentSlots, setAgentSlots] = createSignal<string[]>([]);
   const [creating, setCreating] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
+  const [exportStatus, setExportStatus] = createSignal<"idle" | "success" | "error">("idle");
 
   // Clean up the stream store when the component is destroyed.
   onCleanup(() => {
@@ -95,17 +99,34 @@ export const ArenaPage: Component<ArenaPageProps> = (props) => {
   }
 
   /**
-   * Export placeholder — Plan 111-06 will wire the real export endpoint call
-   * (POST /v1/arena/{id}/export) + desktopFileAdapter.save to write the docx.
+   * Handle export: call `POST /v1/arena/{id}/export` with the user-chosen
+   * path. SynthesisViewer already called `file.save()` to get the path
+   * (native save dialog) — ArenaPage does NOT call file.save() again.
+   *
+   * The export endpoint delegates to agent-core's track-changes tool which
+   * writes the docx server-side at `output_path` (arena-service is
+   * local-only, 127.0.0.1:8001).
+   *
+   * Output boundary (T-111-06-02): only user-friendly messages are shown
+   * to the lawyer; raw backend error details / stack traces / internal
+   * paths are never displayed.
    */
-  function handleExport(params: { format: "docx"; path: string }): void {
-    // TODO(111-06): call arenaClient POST /v1/arena/{arenaId}/export with
-    // { format, path } and write the returned docx bytes via
-    // desktopFileAdapter.save. For now this is a no-op placeholder.
-    console.log("export requested (placeholder — Plan 111-06)", {
-      arenaId: arenaId(),
-      ...params,
-    });
+  async function handleExport(params: { format: "docx"; path: string }): Promise<void> {
+    const id = arenaId();
+    if (!id) return;
+    setExportStatus("idle");
+    try {
+      const result = await exportArena(id, params.path);
+      if (result.ok) {
+        setExportStatus("success");
+      } else {
+        // User-friendly error — do NOT expose raw backend error field.
+        setExportStatus("error");
+      }
+    } catch {
+      // Network errors or unexpected failures — generic message only.
+      setExportStatus("error");
+    }
   }
 
   /**
@@ -154,6 +175,16 @@ export const ArenaPage: Component<ArenaPageProps> = (props) => {
                 round={meta()?.currentRound ?? 0}
                 onExport={handleExport}
               />
+              <Show when={exportStatus() === "success"}>
+                <div class="arena-export-status arena-export-success">
+                  导出成功，Word 修订稿已保存。
+                </div>
+              </Show>
+              <Show when={exportStatus() === "error"}>
+                <div class="arena-export-status arena-export-error">
+                  导出失败，请检查 arena-service 是否运行。
+                </div>
+              </Show>
             </div>
           </Show>
         }
