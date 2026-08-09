@@ -83,7 +83,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 G — v3.1 Closure
 
-- [ ] **Phase 111: v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix** - 桌面 arena UI 真正集成 + Word 导出端点 + FS handler 接线 + BackendAdapter 测试回归修复 (UI-01..07, GATE-01 closure)
+- [x] **Phase 111: v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix** - 桌面 arena UI 真正集成 + Word 导出端点 + FS handler 接线 + BackendAdapter 测试回归修复 (UI-01..07, GATE-01 closure) (completed 2026-08-09)
 
 ---
 
@@ -352,7 +352,7 @@ Plans:
 | 108. Arena Engine — Modes 3+4 | D | 4/4 | Complete   | 2026-08-08 |
 | 109. Arena Service | E | 6/6 | Complete   | 2026-08-08 |
 | 110. Arena UI + Integration | F | 5/5 | Complete   | 2026-08-09 |
-| 111. v3.1 Closure | G | 6/6 | Complete   | 2026-08-09 |
+| 111. v3.1 Closure | G | 6/6 | Complete    | 2026-08-09 |
 
 ### v3.0 Unified Legal Core — COMPLETE
 
