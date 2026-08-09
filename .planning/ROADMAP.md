@@ -310,14 +310,22 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
   9. All 41 gates green (qqbot-channel recall test pre-existing failure accepted as carry)
 
 **Plans**: 6 plans
-
 Plans:
+**Wave 1**
+
 - [ ] 111-01-PLAN.md — ui-core export gap (add createArenaStream, ArenaStreamStore, arenaEventReducer, arenaMetaReducer to barrel)
 - [ ] 111-02-PLAN.md — BackendAdapter test-fix (update 4 count/hash assertions across 3 gates)
-- [ ] 111-03-PLAN.md — Desktop arena page + arena client (wire 5 ui-core arena components + createArenaStream store)
 - [ ] 111-04-PLAN.md — arena-service export endpoint (POST /v1/arena/{id}/export delegating to agent-core track-changes)
 - [ ] 111-05-PLAN.md — arena-engine reference_dir wiring (FSSandbox + ReferenceSanitizer into _build_run_request)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 111-03-PLAN.md — Desktop arena page + arena client (wire 5 ui-core arena components + createArenaStream store)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 111-06-PLAN.md — E2E export flow test + SynthesisViewer onExport wiring + final 41-gate run
+
 **UI hint**: yes
 
 ---
