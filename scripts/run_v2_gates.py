@@ -259,7 +259,7 @@ def _gates(repo_root: Path) -> tuple[Gate, ...]:
         Gate(
             "arena-engine",
             (py, "-m", "unittest", "discover", "-s", "packages/arena-engine/tests"),
-            (arena_engine_src, platform_src, platform_runtime_src, agent_core_src),
+            (arena_engine_src, platform_src, platform_runtime_src, agent_core_src, acp_client_src),
         ),
         Gate(
             "arena-permission-safety",

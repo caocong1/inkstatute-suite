@@ -31,6 +31,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, Protocol
 
 from platform_contract.arena_contract import ArenaWorkflowConfig
@@ -223,14 +224,108 @@ async def run_mode1_parallel(
 # ---------------------------------------------------------------------------
 
 
+def _collect_reference_context(config: ArenaWorkflowConfig) -> str:
+    """Read + sanitize reference files from ``config.reference_dir``.
+
+    When ``config.reference_dir`` is set, every text file inside it is
+    read through :class:`FSSandbox.read_text_file` (Phase 106's
+    five-layer path-validation sandbox — the *only* sanctioned path for
+    reference file reading; raw ``open()`` / ``Path.read_text()`` are
+    never used) and then wrapped via :class:`ReferenceSanitizer.sanitize`
+    so the agent receives the content as untrusted, delimiter-wrapped
+    reference material rather than instructions.
+
+    The sanitized blocks are joined and returned as a single string
+    suitable for appending to the task instruction.  When
+    ``reference_dir`` is ``None`` or empty, an empty string is returned
+    and no sandbox call is made (no regression for the common case).
+
+    File-reading errors (``FSSandboxError`` or any I/O error) are caught
+    and logged per-file; the offending file is skipped so a single bad
+    reference file never crashes the whole arena run.  The arena
+    proceeds with the task instruction alone if every reference file
+    fails.
+
+    Imports of ``inkstatute_acp_client`` are performed lazily inside this
+    function so that ``mode1`` remains importable in environments where
+    the acp-client package is not on ``sys.path`` (e.g. the arena-engine
+    gate, whose ``PYTHONPATH`` does not include ``acp-client/src``).
+    """
+    if not config.reference_dir:
+        return ""
+
+    # Lazy imports — acp-client is an optional runtime dependency for
+    # the arena-engine boundary layer; importing at module top would
+    # break the arena-engine gate (no acp_client_src on PYTHONPATH).
+    from inkstatute_acp_client.fs_sandbox import (
+        FSSandbox,
+        FSSandboxConfig,
+        FSSandboxError,
+    )
+    from inkstatute_acp_client.sanitizer import ReferenceSanitizer
+
+    import logging
+
+    logger = logging.getLogger("arena_engine.mode1")
+
+    root = Path(config.reference_dir)
+    sandbox = FSSandbox(FSSandboxConfig(allowed_root=root))
+    sanitizer = ReferenceSanitizer()
+
+    blocks: list[str] = []
+    # rglob walks the reference tree; we filter to regular files whose
+    # extension is on the sandbox allowlist.  Each candidate is read via
+    # sandbox.read_text_file, which re-runs all five validation layers
+    # (traversal / symlink / resolve / prefix / extension) plus the size
+    # cap — path sandboxing is never bypassed.
+    for candidate in sorted(root.rglob("*")):
+        if not candidate.is_file():
+            continue
+        try:
+            content = sandbox.read_text_file(candidate)
+        except FSSandboxError as exc:
+            # Sandbox rejected the path (traversal / symlink / outside
+            # root / bad extension / oversized).  Skip the file; the
+            # arena run continues without it.
+            logger.warning(
+                "reference_file_skipped",
+                extra={"path": str(candidate), "reason": exc.reason},
+            )
+            continue
+        except OSError as exc:
+            # Transient I/O error — skip the file, do not crash the run.
+            logger.warning(
+                "reference_file_read_error",
+                extra={"path": str(candidate), "error": str(exc)},
+            )
+            continue
+
+        result = sanitizer.sanitize(content, str(candidate))
+        blocks.append(result.sanitized_content)
+
+    if not blocks:
+        return ""
+
+    reference_section = "\n\n".join(blocks)
+    return f"\n\n--- 参考文件 ---\n{reference_section}\n--- 参考文件结束 ---\n"
+
+
 def _build_run_request(config: ArenaWorkflowConfig, slot_id: str) -> RunRequest:
     """Build a fresh ``RunRequest`` for a single slot.
 
     Each slot gets a unique ``turn_id`` of the form
     ``"{arena_id}-{slot_id}-round0"`` so that runs are distinguishable
     across slots and rounds.
+
+    When ``config.reference_dir`` is set, sanitized reference file
+    content (read through :class:`FSSandbox` and wrapped by
+    :class:`ReferenceSanitizer`) is appended to the task instruction so
+    the agent sees the reference material as untrusted, delimiter-wrapped
+    context.  When ``reference_dir`` is ``None`` the behaviour is
+    exactly as before — no sandbox call, no reference content.
     """
     turn_id = f"{config.arena_id}-{slot_id}-round0"
+    instruction = config.task_instruction + _collect_reference_context(config)
     return RunRequest(
         turn=AgentTurn(
             turn_id=turn_id,
@@ -239,7 +334,7 @@ def _build_run_request(config: ArenaWorkflowConfig, slot_id: str) -> RunRequest:
             user_id="arena-user",
             message_type="text",
             received_at=datetime.now(UTC).isoformat(),
-            content=config.task_instruction,
+            content=instruction,
         ),
         solution=SolutionBinding(solution_id=f"arena-{config.arena_id}"),
     )
