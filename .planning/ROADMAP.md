@@ -324,7 +324,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 111-06-PLAN.md — E2E export flow test + SynthesisViewer onExport wiring + final 41-gate run
+- [x] 111-06-PLAN.md — E2E export flow test + SynthesisViewer onExport wiring + final 41-gate run
 
 **UI hint**: yes
 
@@ -352,7 +352,7 @@ Plans:
 | 108. Arena Engine — Modes 3+4 | D | 4/4 | Complete   | 2026-08-08 |
 | 109. Arena Service | E | 6/6 | Complete   | 2026-08-08 |
 | 110. Arena UI + Integration | F | 5/5 | Complete   | 2026-08-09 |
-| 111. v3.1 Closure | G | 5/6 | In Progress|  |
+| 111. v3.1 Closure | G | 6/6 | Complete   | 2026-08-09 |
 
 ### v3.0 Unified Legal Core — COMPLETE
 
