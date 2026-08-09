@@ -313,10 +313,10 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 Plans:
 **Wave 1**
 
-- [ ] 111-01-PLAN.md — ui-core export gap (add createArenaStream, ArenaStreamStore, arenaEventReducer, arenaMetaReducer to barrel)
-- [ ] 111-02-PLAN.md — BackendAdapter test-fix (update 4 count/hash assertions across 3 gates)
-- [ ] 111-04-PLAN.md — arena-service export endpoint (POST /v1/arena/{id}/export delegating to agent-core track-changes)
-- [ ] 111-05-PLAN.md — arena-engine reference_dir wiring (FSSandbox + ReferenceSanitizer into _build_run_request)
+- [x] 111-01-PLAN.md — ui-core export gap (add createArenaStream, ArenaStreamStore, arenaEventReducer, arenaMetaReducer to barrel)
+- [x] 111-02-PLAN.md — BackendAdapter test-fix (update 4 count/hash assertions across 3 gates)
+- [x] 111-04-PLAN.md — arena-service export endpoint (POST /v1/arena/{id}/export delegating to agent-core track-changes)
+- [x] 111-05-PLAN.md — arena-engine reference_dir wiring (FSSandbox + ReferenceSanitizer into _build_run_request)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -352,7 +352,7 @@ Plans:
 | 108. Arena Engine — Modes 3+4 | D | 4/4 | Complete   | 2026-08-08 |
 | 109. Arena Service | E | 6/6 | Complete   | 2026-08-08 |
 | 110. Arena UI + Integration | F | 5/5 | Complete   | 2026-08-09 |
-| 111. v3.1 Closure | G | 0/6 | Not Started | — |
+| 111. v3.1 Closure | G | 4/6 | In Progress|  |
 
 ### v3.0 Unified Legal Core — COMPLETE
 
