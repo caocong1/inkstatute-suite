@@ -22,8 +22,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import tempfile
 import unittest
+from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 from arena_engine.mock_acp import MockACPBackendAdapter
 from arena_service import ArenaServiceApp, ArenaServiceAuth, ArenaServiceConfig
@@ -559,6 +563,195 @@ class ArenaE2EIntegrationTests(unittest.IsolatedAsyncioTestCase):
                         or et == _MOCK_MESSAGE_DELTA_TYPE,
                         f"Event type {et!r} is not in the user-facing allowlist",
                     )
+
+
+# ---------------------------------------------------------------------------
+# Mock track-changes module for export tests (no lawfirm-profile dependency)
+# ---------------------------------------------------------------------------
+
+
+class _MockTrackChangesBuilder:
+    """Mock TrackChangesBuilder — does not require lxml or a real docx."""
+
+    def __init__(self, input_path: str) -> None:
+        self._input_path = input_path
+
+    def process(self) -> list[tuple]:
+        return [(1, "P2", "applied", "mock comment")]
+
+    def save(self, output_path: str) -> None:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_path).write_bytes(b"mock docx content")
+
+
+class _MockTrackChangesModule:
+    """Mock module mimicking contract_review_trackchanges.py interface."""
+
+    TrackChangesBuilder = _MockTrackChangesBuilder
+    REVIEWER = "mock-reviewer"
+    REVIEW_ITEMS: list[dict] = []
+
+
+# ---------------------------------------------------------------------------
+# Test 11: Export flow — create → stream → synthesis → export docx
+# ---------------------------------------------------------------------------
+
+
+class ArenaExportFlowTests(unittest.IsolatedAsyncioTestCase):
+    """E2E export flow test: create → stream → synthesis → export docx.
+
+    Uses Mode 3 fixtures (which produce synthesis content + review findings)
+    and mocks the track-changes module so the test does NOT depend on the
+    ``lawfirm-profile`` sibling repo being cloned in CI.
+    """
+
+    def _auth_headers(self, token: str = _TEST_TOKEN) -> dict[str, str]:
+        return {"Authorization": f"Bearer {token}"}
+
+    async def _setup_service(
+        self,
+        fixture_fn: Any,
+    ) -> tuple[ArenaServiceApp, ArenaServiceEngine, ArenaServiceConfig, dict]:
+        """Create the arena service with mock adapters from the fixture."""
+        fixtures = fixture_fn()
+        config = ArenaServiceConfig(token=_TEST_TOKEN)
+        auth = ArenaServiceAuth(config)
+        arena_id = fixtures["config"].arena_id
+
+        adapters: dict[str, MockACPBackendAdapter] = fixtures["adapters"]
+
+        def adapter_factory(slot_id: str, body: dict) -> MockACPBackendAdapter:
+            return adapters[slot_id]
+
+        engine = ArenaServiceEngine(config, adapter_factory=adapter_factory)
+
+        if fixtures.get("synthesis_adapter") is not None:
+            engine.arena_engine.register_synthesis_adapter(
+                arena_id, fixtures["synthesis_adapter"],
+            )
+        if fixtures.get("adversarial_adapter") is not None:
+            engine.arena_engine.register_adversarial_adapter(
+                arena_id, fixtures["adversarial_adapter"],
+            )
+
+        engine._sse_stream = ArenaSseStream(output_filter=ArenaTestOutputFilter())
+
+        app = ArenaServiceApp(config, auth=auth, engine=engine)
+        return app, engine, config, fixtures
+
+    async def _create_arena_with_metadata(
+        self,
+        app: ArenaServiceApp,
+        engine: ArenaServiceEngine,
+        fixtures: dict,
+        headers: dict[str, str],
+        metadata: dict[str, Any],
+    ) -> str:
+        """Create an arena via POST /v1/arena with extra metadata in the body."""
+        wf_config = fixtures["config"]
+        body = {
+            "arena_id": wf_config.arena_id,
+            "mode": wf_config.mode,
+            "agent_slots": list(wf_config.agent_slots),
+            "task": wf_config.task_instruction,
+            "metadata": metadata,
+        }
+        result = await app.dispatch("POST", "/v1/arena", headers, body)
+        assert result["status"] == 201, f"arena creation failed: {result}"
+        arena_id = result["body"]["arena_id"]
+
+        # Wait for the background task to create the event queue.
+        for _ in range(500):
+            if arena_id in engine._event_queues:
+                break
+            await asyncio.sleep(0.001)
+        assert arena_id in engine._event_queues
+
+        return arena_id
+
+    @staticmethod
+    def _parse_frames(frames: list[str]) -> list[dict[str, Any]]:
+        events: list[dict[str, Any]] = []
+        for frame in frames:
+            for line in frame.split("\n"):
+                if line.startswith("data: "):
+                    events.append(json.loads(line[6:]))
+                    break
+        return events
+
+    async def test_export_flow(self) -> None:
+        """E2E export flow: create → stream → synthesis → export docx.
+
+        Creates a Mode 3 arena (which produces synthesis content + review
+        findings), streams events until synthesis_completed, then calls
+        POST /v1/arena/{id}/export with a mocked track-changes module.
+
+        The track-changes module is mocked via patching
+        ``_load_trackchanges_module`` so the test does NOT depend on
+        ``lawfirm-profile/scripts/contract_review_trackchanges.py``
+        being present in the CI environment.
+        """
+        app, engine, config, fixtures = await self._setup_service(
+            make_mode3_fixtures,
+        )
+        headers = self._auth_headers()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_docx = Path(tmpdir) / "input_contract.docx"
+            input_docx.write_bytes(b"mock input docx content")
+            output_docx = Path(tmpdir) / "test_arena_export.docx"
+
+            # Create the arena with input_docx_path in metadata (required
+            # by the export endpoint to locate the original contract).
+            arena_id = await self._create_arena_with_metadata(
+                app, engine, fixtures, headers,
+                metadata={"input_docx_path": str(input_docx)},
+            )
+
+            # Collect SSE frames (stream ends when the background run completes)
+            frames: list[str] = []
+            async for frame in app.stream(
+                "GET",
+                f"/v1/arena/{arena_id}/stream",
+                headers,
+                client_address="127.0.0.1",
+            ):
+                frames.append(frame)
+            events = self._parse_frames(frames)
+
+            # Verify synthesis_completed was emitted
+            self.assertGreater(len(events), 0)
+            synth_completed = [
+                e for e in events
+                if e["event_type"] == RunEventType.ARENA_SYNTHESIS_COMPLETED.value
+            ]
+            self.assertGreaterEqual(
+                len(synth_completed), 1,
+                "synthesis_completed event not found in stream",
+            )
+
+            # Call POST /v1/arena/{id}/export with mocked track-changes module.
+            # The mock avoids depending on lawfirm-profile/scripts/
+            # contract_review_trackchanges.py in CI.
+            with patch(
+                "inkstatute_agent_core.tools.document_generate._load_trackchanges_module",
+                return_value=_MockTrackChangesModule,
+            ):
+                result = await app.dispatch(
+                    "POST",
+                    f"/v1/arena/{arena_id}/export",
+                    headers,
+                    {"output_path": str(output_docx)},
+                )
+
+            # Assert 200 + ok: True
+            self.assertEqual(result["status"], 200)
+            self.assertTrue(result["body"]["ok"])
+            self.assertEqual(result["body"]["output_path"], str(output_docx))
+
+            # Verify the output file was created by the mock builder
+            self.assertTrue(output_docx.exists())
+            self.assertEqual(output_docx.read_bytes(), b"mock docx content")
 
 
 if __name__ == "__main__":
