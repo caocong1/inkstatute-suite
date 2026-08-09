@@ -22,7 +22,7 @@ from inkstatute_skill_registry.registry import SkillRegistryPort
 class ContractCountFreezeTests(unittest.TestCase):
     """Assert contract surface counts remain frozen at the v1.5 baseline."""
 
-    BACKEND_ADAPTER_METHOD_COUNT = 9
+    BACKEND_ADAPTER_METHOD_COUNT = 10
     ADAPTER_CAPABILITY_SET_FIELD_COUNT = 15
     CHANNEL_ADAPTER_METHOD_COUNT = 6
     ROUTER_PORT_METHOD_COUNT = 1
