@@ -31,7 +31,7 @@ from .sse import parse_last_event_id
 JsonObject = dict[str, Any]
 
 # ---------------------------------------------------------------------------
-# Operation constants — 6 operations across 5 arena endpoint paths + OpenAPI
+# Operation constants — 7 operations across 6 arena endpoint paths + OpenAPI
 # ---------------------------------------------------------------------------
 
 OPERATION_CREATE_ARENA = "create_arena"
@@ -39,6 +39,7 @@ OPERATION_STREAM_ARENA = "stream_arena"
 OPERATION_CANCEL_ARENA = "cancel_arena"
 OPERATION_USER_ACTION = "user_action"
 OPERATION_STATUS_ARENA = "status_arena"
+OPERATION_EXPORT_ARENA = "export_arena"
 OPERATION_GET_OPENAPI = "get_openapi"
 
 OPERATIONS: tuple[str, ...] = (
@@ -47,6 +48,7 @@ OPERATIONS: tuple[str, ...] = (
     OPERATION_CANCEL_ARENA,
     OPERATION_USER_ACTION,
     OPERATION_STATUS_ARENA,
+    OPERATION_EXPORT_ARENA,
     OPERATION_GET_OPENAPI,
 )
 
@@ -158,6 +160,8 @@ class ArenaServiceApp:
                 return await self._handle_user_action(ctx, path_params, body_dict)
             if operation == OPERATION_STATUS_ARENA:
                 return await self._handle_status_arena(ctx, path_params)
+            if operation == OPERATION_EXPORT_ARENA:
+                return await self._handle_export_arena(ctx, path_params, body_dict)
             return _error_response("unknown_operation", f"Unknown operation: {operation}", status=404)
         except ArenaServiceError as exc:
             return _error_response(exc.code, str(exc), status=exc.status, details=exc.details)
@@ -380,6 +384,42 @@ class ArenaServiceApp:
             data = {"arena_id": arena_id, "status": getattr(result, "status", "running")}
         return {"status": 200, "body": data}
 
+    async def _handle_export_arena(
+        self,
+        ctx: AuthContext,
+        path_params: dict[str, str],
+        body: Mapping[str, object],
+    ) -> JsonObject:
+        """Handle POST /v1/arena/{arena_id}/export — export arena to docx.
+
+        Delegates to ``engine.export_arena(arena_id, body_dict)`` which
+        lazy-imports agent-core's ``create_document_generate_tool``
+        (TrackChangesBuilder) to produce a Word-native track-changes
+        docx at the given ``output_path``.
+
+        This handler is a THIN CALLER — it NEVER re-implements docx
+        generation (binding constraint, AGENTS.md decision 3).
+        """
+        arena_id = path_params.get("arena_id", "")
+        if not arena_id:
+            return _error_response("invalid_request", "arena_id is required", status=400)
+        output_path = str(body.get("output_path") or "")
+        if not output_path:
+            return _error_response("invalid_request", "output_path is required", status=400)
+        if self._engine is None:
+            return _not_implemented("export_arena")
+        export = getattr(self._engine, "export_arena", None)
+        if not callable(export):
+            return _not_implemented("export_arena")
+        result = export(arena_id, dict(body))
+        if inspect.isawaitable(result):
+            result = await result
+        if isinstance(result, Mapping):
+            data = dict(result)
+        else:
+            data = {"arena_id": arena_id, "ok": False, "error": "unexpected_result_type"}
+        return {"status": 200, "body": data}
+
 
 # ---------------------------------------------------------------------------
 # Path routing
@@ -430,6 +470,10 @@ def _parse_route(method: str, path: str, base_path: str) -> tuple[str, dict[str,
     if method == "GET" and len(parts) == 3 and parts[0] == "arena" and parts[2] == "status":
         return OPERATION_STATUS_ARENA, {"arena_id": parts[1]}
 
+    # POST /v1/arena/{arena_id}/export — export arena to docx
+    if method == "POST" and len(parts) == 3 and parts[0] == "arena" and parts[2] == "export":
+        return OPERATION_EXPORT_ARENA, {"arena_id": parts[1]}
+
     # GET /v1/openapi — OpenAPI document
     if method == "GET" and parts == ["openapi"]:
         return OPERATION_GET_OPENAPI, {}
@@ -467,6 +511,7 @@ __all__ = [
     "OPERATIONS",
     "OPERATION_CANCEL_ARENA",
     "OPERATION_CREATE_ARENA",
+    "OPERATION_EXPORT_ARENA",
     "OPERATION_GET_OPENAPI",
     "OPERATION_STATUS_ARENA",
     "OPERATION_STREAM_ARENA",

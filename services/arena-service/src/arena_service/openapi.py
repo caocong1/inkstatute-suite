@@ -92,6 +92,9 @@ def _build_paths(base_path: str) -> dict[str, Any]:
         f"{base_path}/arena/{{arena_id}}/status": {
             "get": _status_arena_operation(),
         },
+        f"{base_path}/arena/{{arena_id}}/export": {
+            "post": _export_arena_operation(),
+        },
         f"{base_path}/openapi": {
             "get": _get_openapi_operation(),
         },
@@ -204,6 +207,32 @@ def _status_arena_operation() -> dict[str, Any]:
     }
 
 
+def _export_arena_operation() -> dict[str, Any]:
+    return {
+        "tags": ["Arena"],
+        "summary": "Export an arena's synthesis to a Word-native track-changes docx.",
+        "description": (
+            "Export the arena's synthesis content + review findings to a "
+            "Word-native track-changes docx at the given output_path. "
+            "Delegates to agent-core's create_document_generate_tool "
+            "(TrackChangesBuilder) — never re-implements docx generation."
+        ),
+        "operationId": "exportArena",
+        "parameters": [_path_param("arena_id", "Arena identifier.")],
+        "requestBody": _json_request_body(
+            schema_ref="ExportArenaRequest",
+            examples={"sanitized": _export_arena_example()},
+        ),
+        "responses": {
+            "200": _json_response("ExportArenaResult", _export_arena_result_example()),
+            "400": _error_response("invalid_request"),
+            "401": _error_response("unauthorized"),
+            "403": _error_response("forbidden_remote"),
+            "404": _error_response("not_found"),
+        },
+    }
+
+
 def _get_openapi_operation() -> dict[str, Any]:
     return {
         "tags": ["OpenAPI"],
@@ -231,6 +260,8 @@ def _build_components() -> dict[str, Any]:
             "ArenaHandle": _arena_handle_schema(),
             "ArenaStatus": _arena_status_schema(),
             "UserActionRequest": _user_action_request_schema(),
+            "ExportArenaRequest": _export_arena_request_schema(),
+            "ExportArenaResult": _export_arena_result_schema(),
             "ArenaEventFrame": _arena_event_frame_schema(),
             "OpenApiDocument": _openapi_document_schema(),
             "Error": _error_schema(),
@@ -297,6 +328,33 @@ def _user_action_request_schema() -> dict[str, Any]:
             "action": {"type": "string", "enum": ["select", "stop", "pause", "resume"]},
             "selection": {"type": ["string", "null"]},
             "metadata": {"type": "object"},
+        },
+        "additionalProperties": False,
+    }
+
+
+def _export_arena_request_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["output_path"],
+        "properties": {
+            "output_path": {
+                "type": "string",
+                "description": "Filesystem path for the output track-changes docx.",
+            },
+        },
+        "additionalProperties": False,
+    }
+
+
+def _export_arena_result_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "required": ["ok"],
+        "properties": {
+            "ok": {"type": "boolean"},
+            "output_path": {"type": ["string", "null"]},
+            "error": {"type": ["string", "null"]},
         },
         "additionalProperties": False,
     }
@@ -387,6 +445,25 @@ def _user_action_example() -> dict[str, Any]:
         "value": {
             "action": "select",
             "selection": "slot-0",
+        },
+    }
+
+
+def _export_arena_example() -> dict[str, Any]:
+    return {
+        "summary": "Export arena request",
+        "value": {
+            "output_path": "/tmp/arena_export.docx",
+        },
+    }
+
+
+def _export_arena_result_example() -> dict[str, Any]:
+    return {
+        "summary": "Export arena result",
+        "value": {
+            "ok": True,
+            "output_path": "/tmp/arena_export.docx",
         },
     }
 

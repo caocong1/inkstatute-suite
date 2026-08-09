@@ -370,6 +370,148 @@ class ArenaServiceEngine:
         }
 
     # ------------------------------------------------------------------
+    # Export — delegates to agent-core track-changes tool (thin caller)
+    # ------------------------------------------------------------------
+
+    async def export_arena(
+        self,
+        arena_id: str,
+        body: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Export an arena's synthesis to a Word-native track-changes docx.
+
+        This is a **thin caller** — it NEVER re-implements docx generation
+        (binding constraint, AGENTS.md decision 3).  It delegates to
+        agent-core's ``create_document_generate_tool`` which lazy-imports
+        ``TrackChangesBuilder`` from
+        ``lawfirm-profile/scripts/contract_review_trackchanges.py``.
+
+        Steps:
+        1. Look up the arena's synthesis content + review findings from
+           the engine's stored arena state (``_results``).
+        2. Extract ``output_path`` from *body*.
+        3. Extract ``input_docx_path`` from the arena config metadata
+           (if available).
+        4. Map review findings to the tool's ``review_items`` format.
+        5. Lazy-import ``create_document_generate_tool`` (avoids circular
+           imports).
+        6. Create a ``PathSandbox`` + ``EventEmitter`` and call the tool
+           handler.
+        7. Return ``{"ok": True, "output_path": ...}`` on success or
+           ``{"ok": False, "error": ...}`` on failure.
+
+        Returns
+        -------
+        dict
+            ``{"ok": True, "output_path": str}`` on success,
+            ``{"ok": False, "error": str}`` on failure.
+        """
+        output_path = str(body.get("output_path") or "")
+        if not output_path:
+            return {"ok": False, "error": "output_path is required"}
+
+        # 1. Look up the arena's synthesis result from the engine's
+        #    internal state.  The ArenaEngine stores results in
+        #    ``_results: dict[str, Mode3Result | Mode4Result | ...]``.
+        result = self._engine._results.get(arena_id)
+        if result is None:
+            return {"ok": False, "error": "no_synthesis_result"}
+
+        # Extract synthesis content + review findings from the result.
+        # Mode3Result has ``synthesis_content`` + ``review_findings``.
+        # Mode4Result has ``final_synthesis_content`` + the Mode3Result.
+        synthesis_content: str | None = None
+        review_findings: dict[str, list[Any]] = {}
+        mode3_result = result
+        if hasattr(result, "final_synthesis_content"):
+            # Mode4Result — unwrap the inner Mode3Result.
+            mode3_result = result.mode3_result
+            synthesis_content = result.final_synthesis_content
+        else:
+            synthesis_content = getattr(result, "synthesis_content", None)
+        review_findings = getattr(mode3_result, "review_findings", {})
+
+        if synthesis_content is None:
+            return {"ok": False, "error": "no_synthesis_result"}
+
+        # 2. Extract input_docx_path from arena config metadata.
+        config = self._engine._configs.get(arena_id)
+        input_docx_path = ""
+        if config is not None:
+            input_docx_path = str(config.metadata.get("input_docx_path") or "")
+        if not input_docx_path:
+            return {"ok": False, "error": "no_input_docx"}
+
+        # 3. Map review findings to the tool's review_items format.
+        #    ReviewFinding → {id, find_text, old_text, new_text, comment, level}
+        severity_to_level = {"High": "P0", "Medium": "P1", "Low": "P2"}
+        review_items: list[dict[str, Any]] = []
+        item_id = 0
+        for _reviewed_slot, findings in review_findings.items():
+            for finding in findings:
+                item_id += 1
+                severity_val = (
+                    finding.severity.value
+                    if hasattr(finding.severity, "value")
+                    else str(finding.severity)
+                )
+                review_items.append({
+                    "id": item_id,
+                    "find_text": finding.description,
+                    "old_text": "",
+                    "new_text": None,
+                    "comment": finding.description,
+                    "level": severity_to_level.get(severity_val, "P2"),
+                })
+        # If no structured review findings, use synthesis content as a
+        # single comment-only review item.
+        if not review_items:
+            review_items = [{
+                "id": 1,
+                "find_text": synthesis_content[:200] if synthesis_content else "",
+                "old_text": "",
+                "new_text": None,
+                "comment": "综合最终版",
+                "level": "P2",
+            }]
+
+        # 4. Lazy-import create_document_generate_tool (avoids circular
+        #    imports at module load time).
+        from inkstatute_agent_core.tools.document_generate import (
+            create_document_generate_tool,
+        )
+        from inkstatute_agent_core.tools.path_sandbox import PathSandbox
+        from inkstatute_agent_core.event_emitter import EventEmitter
+
+        # 5. Create a PathSandbox allowing the input + output directories.
+        from pathlib import Path
+        output_dir = str(Path(output_path).resolve().parent)
+        input_dir = str(Path(input_docx_path).resolve().parent)
+        sandbox = PathSandbox(allowed_roots=[output_dir, input_dir])
+
+        # 6. Create a simple EventEmitter (no live SSE — just for the
+        #    tool's artifact.created side-channel).
+        emitter = EventEmitter(run_id=f"export-{arena_id}")
+
+        # 7. Create the tool handler and invoke it.
+        handler = create_document_generate_tool(sandbox, emitter, script_path=None)
+        try:
+            tool_result = await handler({
+                "input_docx_path": input_docx_path,
+                "review_items": review_items,
+                "output_path": output_path,
+                "reviewer": "arena-synthesis",
+            })
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+        # 8. Check the tool result for errors.
+        if tool_result.error is not None:
+            return {"ok": False, "error": tool_result.error.message}
+
+        return {"ok": True, "output_path": output_path}
+
+    # ------------------------------------------------------------------
     # SSE streaming
     # ------------------------------------------------------------------
 
