@@ -105,6 +105,22 @@ def resolve_identity(
 
     if check_auth_header(auth_header, static_token):
         return Identity(role=Role.ADMIN, tenant_id="default")
+
+    # Dev-mode cookie fallback: when rbac is off but a session cookie is
+    # present (e.g. desktop app logged in via POST /v1/auth/login), verify
+    # the cookie with the dev secret so cookie-based auth works in dev mode.
+    if session_cookie is not None and rbac_secret is not None and session_store is not None:
+        from .session import verify_session_cookie
+
+        record = verify_session_cookie(session_cookie, rbac_secret, session_store, now=now)
+        if record is not None:
+            try:
+                role = Role(record.role)
+            except ValueError:
+                role = None
+            if role is not None:
+                return Identity(role=role, tenant_id=record.tenant_id)
+
     return None
 
 

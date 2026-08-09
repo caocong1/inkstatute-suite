@@ -140,6 +140,7 @@ class _ArenaRequestHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(payload)
 
@@ -245,6 +246,15 @@ class _ArenaRequestHandler(BaseHTTPRequestHandler):
 
     def do_PATCH(self) -> None:
         self._dispatch("PATCH")
+
+    def do_OPTIONS(self) -> None:
+        """Handle CORS preflight requests from desktop/web WebView clients."""
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Tenant-Id, X-Session-Id, Last-Event-ID")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.end_headers()
 
     def log_message(self, format: str, *args: Any) -> None:
         # Concise access log to stderr.

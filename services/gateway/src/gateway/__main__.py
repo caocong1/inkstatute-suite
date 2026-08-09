@@ -66,6 +66,7 @@ from gateway.artifacts import GatewayArtifactStore
 from gateway.auth import GatewayAuth, GatewayAuthError
 from gateway.config import GatewayConfig
 from gateway.event_buffer import RunEventBuffer
+from gateway.login import GatewayLoginHandler
 from gateway.sessions import GatewaySessionManager
 from gateway.sse import GatewaySseStream
 from platform_runtime.feature_flags import RuntimeFeatureFlags
@@ -256,16 +257,19 @@ def create_app(
         raise SystemExit("GATEWAY_RBAC_ENABLED=true requires GATEWAY_RBAC_SECRET")
 
     shared_store = InMemorySessionStore()
+    # In dev mode (rbac off), use a dev secret for cookie signing/verification
+    # so that session cookies from POST /v1/auth/login work for cookie-based auth.
+    cookie_secret = rbac_secret or "dev-secret"
     auth = GatewayAuth(
         rbac_enabled=rbac_enabled,
         static_token=static_token if not rbac_enabled else None,
-        rbac_secret=rbac_secret,
+        rbac_secret=cookie_secret,
         session_store=shared_store,
         default_tenant_id=config.default_tenant_id,
     )
     session_mgr = GatewaySessionManager(
         session_store=shared_store,
-        rbac_secret=rbac_secret or "dev-secret",
+        rbac_secret=cookie_secret,
         default_ttl=int(source.get("SESSION_TTL_SECONDS", "3600") or "3600"),
     )
     sse = GatewaySseStream()
@@ -275,6 +279,12 @@ def create_app(
     if runtime is None:
         runtime = _build_runtime(source)
 
+    login_handler = GatewayLoginHandler(
+        session_manager=session_mgr,
+        auth=auth,
+        config=config,
+    )
+
     app = GatewayApp(
         config,
         runtime=runtime,
@@ -283,6 +293,7 @@ def create_app(
         sse_stream=sse,
         event_buffer=event_buffer,
         artifact_store=artifact_store,
+        login_handler=login_handler,
     )
     token_out = static_token or "(rbac session — login via POST /v1/login)"
     return app, config, token_out
@@ -322,6 +333,7 @@ class _GatewayRequestHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
         self.wfile.write(payload)
 
@@ -376,6 +388,7 @@ class _GatewayRequestHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Access-Control-Allow-Origin", "*")
         if set_cookie:
             self.send_header("Set-Cookie", set_cookie)
         self.end_headers()
@@ -430,6 +443,21 @@ class _GatewayRequestHandler(BaseHTTPRequestHandler):
 
     def do_PATCH(self) -> None:
         self._dispatch("PATCH")
+
+    def do_OPTIONS(self) -> None:
+        """Handle CORS preflight requests from desktop/web WebView clients.
+
+        The Tauri WebView2 / browser webview treats ``tauri://localhost`` →
+        ``http://127.0.0.1:8000`` as cross-origin, so it sends an OPTIONS
+        preflight before POST/PUT. We respond with permissive CORS headers
+        since all clients are first-party.
+        """
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Tenant-Id, X-Session-Id, Last-Event-ID")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.end_headers()
 
     def log_message(self, format: str, *args: Any) -> None:
         sys.stderr.write("%s - %s\n" % (self.address_string(), format % args))
