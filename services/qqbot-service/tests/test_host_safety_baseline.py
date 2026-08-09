@@ -27,6 +27,7 @@ CHANNEL_ADAPTER_METHODS = frozenset(
 BACKEND_ADAPTER_METHODS = frozenset(
     {
         "backend_id",
+        "backend_family",
         "capabilities",
         "bootstrap_check",
         "submit_run",
@@ -45,9 +46,9 @@ class HostSafetyBaselineTests(unittest.TestCase):
         self.assertEqual(len(methods), 6)
         self.assertEqual(set(methods), CHANNEL_ADAPTER_METHODS)
 
-    def test_backend_adapter_has_exactly_9_methods(self) -> None:
+    def test_backend_adapter_has_exactly_10_methods(self) -> None:
         methods = [m for m in dir(BackendAdapter) if not m.startswith("_")]
-        self.assertEqual(len(methods), 9)
+        self.assertEqual(len(methods), 10)
         self.assertEqual(set(methods), BACKEND_ADAPTER_METHODS)
 
     def test_qqbot_channel_enabled_defaults_false(self) -> None:

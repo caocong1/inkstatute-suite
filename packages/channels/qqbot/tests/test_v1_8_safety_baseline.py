@@ -53,9 +53,9 @@ class V18SafetyBaselineTests(unittest.TestCase):
         methods = [m for m in dir(ChannelAdapter) if not m.startswith("_")]
         self.assertEqual(len(methods), 6)
 
-    def test_backend_adapter_has_exactly_9_methods(self) -> None:
+    def test_backend_adapter_has_exactly_10_methods(self) -> None:
         methods = [m for m in dir(BackendAdapter) if not m.startswith("_")]
-        self.assertEqual(len(methods), 9)
+        self.assertEqual(len(methods), 10)
 
     # SC-3: Feature flag default-off
     def test_qqbot_channel_enabled_defaults_false(self) -> None:
