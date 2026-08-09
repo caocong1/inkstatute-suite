@@ -210,3 +210,8 @@ export { ReviewSummary } from "./components/ReviewSummary";
 export type { ReviewSummaryProps } from "./components/ReviewSummary";
 export { SynthesisViewer } from "./components/SynthesisViewer";
 export type { SynthesisViewerProps } from "./components/SynthesisViewer";
+
+// Arena stream store + reducers (UI-06) — SSE consumption + demultiplexing
+export { createArenaStream } from "./stores/arenaStream";
+export type { ArenaStreamStore, ArenaStreamOptions } from "./stores/arenaStream";
+export { arenaEventReducer, arenaMetaReducer, getSlotState, getAllSlotStates } from "./reducers/arenaEventReducer";
