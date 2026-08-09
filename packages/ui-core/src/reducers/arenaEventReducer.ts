@@ -248,7 +248,7 @@ export function arenaMetaReducer(
       const p = event.payload as ArenaSynthesisCompletedPayload | undefined;
       const content =
         typeof (p as { content?: unknown } | undefined)?.content === "string"
-          ? (p as { content: string }).content
+          ? (p as unknown as { content: string }).content
           : meta.synthesisContent;
       return {
         ...base,
