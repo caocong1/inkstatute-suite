@@ -320,7 +320,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 111-03-PLAN.md — Desktop arena page + arena client (wire 5 ui-core arena components + createArenaStream store)
+- [x] 111-03-PLAN.md — Desktop arena page + arena client (wire 5 ui-core arena components + createArenaStream store)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -352,7 +352,7 @@ Plans:
 | 108. Arena Engine — Modes 3+4 | D | 4/4 | Complete   | 2026-08-08 |
 | 109. Arena Service | E | 6/6 | Complete   | 2026-08-08 |
 | 110. Arena UI + Integration | F | 5/5 | Complete   | 2026-08-09 |
-| 111. v3.1 Closure | G | 4/6 | In Progress|  |
+| 111. v3.1 Closure | G | 5/6 | In Progress|  |
 
 ### v3.0 Unified Legal Core — COMPLETE
 
