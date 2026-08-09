@@ -49,10 +49,11 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | D 竞技引擎 — 模式 3+4 | 108 | 交叉评审 + 对抗竞技 + 独立 session 综合最终版可用 |
 | E 竞技服务 | 109 | 本地 HTTP+SSE 服务暴露全部竞技能力，多流复用 + 权限安全 + 子进程受控 |
 | F 竞技 UI + 集成 | 110 | 桌面 app 内完整竞技体验，gate 体系更新，端到端集成测试全绿 |
+| G v3.1 Closure | 111 | 桌面 arena UI 真正集成 + Word 导出端点 + FS handler 接线 + 测试回归修复 |
 
-**关键路径：** 105 → 106 → 107 → 108 → 109 → 110（Mode 1 在 107 完成时即为可用产品）
+**关键路径：** 105 → 106 → 107 → 108 → 109 → 110 → 111（Mode 1 在 107 完成时即为可用产品；111 闭合 v3.1 audit tech debt）
 
-**并行机会：** 105 之后 106 可与 107 的 mock-agent 测试并行准备；109 依赖 107+108；110 依赖 109。
+**并行机会：** 105 之后 106 可与 107 的 mock-agent 测试并行准备；109 依赖 107+108；110 依赖 109；111 依赖 110。
 
 ## Phases
 
@@ -79,6 +80,10 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 ### 阶段 F — 竞技 UI + 集成
 
 - [ ] **Phase 110: Arena UI + Integration** - 桌面竞技 UI + 多流解复用 + 评分/评审/综合展示 + 状态持久化 + gate 更新 + 端到端集成 (UI-01..07, GATE-01..03)
+
+### 阶段 G — v3.1 Closure
+
+- [ ] **Phase 111: v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix** - 桌面 arena UI 真正集成 + Word 导出端点 + FS handler 接线 + BackendAdapter 测试回归修复 (UI-01..07, GATE-01 closure)
 
 ---
 
@@ -287,13 +292,33 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 </details>
 
+### Phase 111: v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix
+
+**Goal**: Wire arena UI components into the desktop app so lawyers can actually use the arena workflow end-to-end (create → stream → score → review → synthesis → export), add the missing Word export endpoint to arena-service, wire Phase 106 FS handler into arena-engine for reference_dir reading, and fix the BackendAdapter method count test regression introduced by SAFE-06's `backend_family()` addition
+**Depends on**: Phase 110
+**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, GATE-01 (closure of partial items from v3.1 audit)
+**Success Criteria** (what must be TRUE):
+
+  1. `apps/desktop/src/` imports and renders arena UI components (ArenaWorkflowCreator, ParallelStreamPanel, ScoreCard, ReviewSummary, SynthesisViewer) from `@inkstatute/ui-core` — an arena page or route exists in the desktop app
+  2. ArenaWorkflowCreator → `POST /v1/arena` on arena-service is wired end-to-end in the desktop app (lawyer can create an arena workflow from the UI)
+  3. `arenaStream.ts` store is wired into the desktop app's arena page — SSE events from arena-service are consumed and demultiplexed via ArenaEventReducer
+  4. `POST /v1/arena/{arena_id}/export` endpoint exists in arena-service, calling agent-core's track-changes generation to produce Word-native docx
+  5. SynthesisViewer's `onExport` callback calls the new export endpoint and triggers docx download via desktopFileAdapter
+  6. arena-engine uses Phase 106 FS handler (FSSandbox.read_text_file) when `ArenaWorkflowConfig.reference_dir` is set — reference files are read, sanitized, and injected into agent context
+  7. `test_backend_adapter_has_exactly_9_methods` updated to expect 10 methods (reflecting `backend_family()` addition for SAFE-06) — qqbot-channel gate returns to green (excluding pre-existing recall test)
+  8. E2E integration test covers the export flow (create → stream → synthesis → export docx) — GATE-01 closure
+  9. All 41 gates green (qqbot-channel recall test pre-existing failure accepted as carry)
+
+**Plans**: TBD (est. 4-5)
+**UI hint**: yes
+
 ---
 
 ## Progress
 
 ### v3.1 Legal AI Arena
 
-**Execution Order:** 105 → 106 → 107 → 108 → 109 → 110
+**Execution Order:** 105 → 106 → 107 → 108 → 109 → 110 → 111
 
 **Parallelization opportunities** (for wave-based execution):
 
@@ -301,6 +326,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 - After 107: Phase 108 depends on 107 (Modes 3+4 build on Modes 1+2)
 - After 108 + 106: Phase 109 wires engine + fs handler into service
 - After 109: Phase 110 builds UI against running arena-service
+- After 110: Phase 111 closes tech debt (desktop integration + export + wiring + test fix)
 
 | Phase | Stage | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
@@ -310,6 +336,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | 108. Arena Engine — Modes 3+4 | D | 4/4 | Complete   | 2026-08-08 |
 | 109. Arena Service | E | 6/6 | Complete   | 2026-08-08 |
 | 110. Arena UI + Integration | F | 5/5 | Complete   | 2026-08-09 |
+| 111. v3.1 Closure | G | 0/? | Not Started | — |
 
 ### v3.0 Unified Legal Core — COMPLETE
 

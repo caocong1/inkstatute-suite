@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Legal AI Arena
-status: complete
-stopped_at: v3.1 milestone complete — all 6 phases (105-110) shipped, 28/28 plans done, 41 gates green
+current_phase: 111
+current_phase_name: v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix
+status: in_progress
+stopped_at: v3.1 audit found tech_debt — Phase 111 inserted to close desktop arena UI integration + Word export + FS handler wiring + BackendAdapter test fix
 last_updated: "2026-08-09T00:00:00.000Z"
-last_activity: 2026-08-09 -- Phase 110 complete, milestone v3.1 ready for audit/complete
+last_activity: 2026-08-09
+last_activity_desc: Phase 111 added after audit found tech_debt (8/45 requirements partial)
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 6
   total_plans: 28
   completed_plans: 28
-  percent: 100
+  percent: 86
 ---
 
 # Project State
@@ -22,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-08-06)
 
 **Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
 
-**Current focus:** Milestone v3.1 complete — ready for audit/complete/cleanup
+**Current focus:** Phase 111 — v3.1 Closure (desktop arena UI integration + Word export + FS handler wiring + test fix)
 
 ## Current Position
 
-Phase: 110 (Arena UI + Integration) — COMPLETE
-Plan: 5 of 5
-Status: All plans executed, code review passed, verification passed
-Last activity: 2026-08-09 -- Phase 110 complete, milestone v3.1 ready for audit/complete
+Phase: 111 (v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix) — NOT STARTED
+Plan: 0 of ? (run /gsd-plan-phase 111)
+Status: Phase inserted after v3.1 audit found tech_debt — 8/45 requirements partial
+Last activity: 2026-08-09 -- Phase 111 added after audit found tech_debt (8/45 requirements partial)
 
 ## Milestone v3.1 Overview
 
@@ -41,8 +44,9 @@ Last activity: 2026-08-09 -- Phase 110 complete, milestone v3.1 ready for audit/
 | D 竞技引擎 — 模式 3+4 | 108 | 交叉评审 + 对抗竞技 + 独立 session 综合最终版 |
 | E 竞技服务 | 109 | 本地 HTTP+SSE 服务暴露全部竞技能力 |
 | F 竞技 UI + 集成 | 110 | 桌面 app 内完整竞技体验，gate 更新，端到端全绿 |
+| G v3.1 Closure | 111 | 桌面 arena UI 真正集成 + Word 导出端点 + FS handler 接线 + 测试回归修复 |
 
-**关键路径：** 105 → 106 → 107 → 108 → 109 → 110（Mode 1 在 107 完成时即为可用产品）
+**关键路径：** 105 → 106 → 107 → 108 → 109 → 110 → 111（Mode 1 在 107 完成时即为可用产品；111 闭合 v3.1 audit tech debt）
 
 **并行机会：** 105 之后 106 可与 107 的 mock-agent 测试并行准备；109 依赖 107+108；110 依赖 109。
 
@@ -65,6 +69,7 @@ Last activity: 2026-08-09 -- Phase 110 complete, milestone v3.1 ready for audit/
 - v3.0 roadmap created 2026-08-06: Phases 88–104, 61 requirements 全部映射, 四阶段（协议底座 → 通道统一 → 能力层 → 自研核心）— SHIPPED 2026-08-08
 - V2 及 v1.1–v1.11 共 87 个 phase 已归档至 `.planning/milestones/`
 - V3 重新定位的触发：V2 的四个范围前提全部失效（详见 PROJECT.md）
+- Phase 111 added after Phase 110: v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix (inserted after audit found tech_debt)
 
 ### Decisions
 
