@@ -69,7 +69,9 @@ class BudgetGate {
     List<String> skillDirs, {
     int budget = defaultBudget,
   }) {
-    final home = Platform.environment['HOME'] ?? '~';
+    final home = Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '~';
     final skillInfos = <_SkillInfo>[];
 
     for (final dir in skillDirs) {

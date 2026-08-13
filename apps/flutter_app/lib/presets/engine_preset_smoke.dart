@@ -314,8 +314,16 @@ export function apply(ctx) { ctx.llm.registerAdapter(['smoke-mock'], new SmokeMo
     );
 
     try {
-      // Read stdout for NDJSON responses, collect stderr for diagnostics.
+      // Read stdout for NDJSON responses, drain stderr to prevent pipe
+      // buffer fill from blocking the engine process (WR-04 fix).
       final responses = <Map<String, dynamic>>[];
+      final stderrLines = <String>[];
+      final stderrSub = process.stderr
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen((line) {
+        stderrLines.add(line);
+      });
       final stdoutSub = process.stdout
           .transform(utf8.decoder)
           .transform(const LineSplitter())
@@ -376,8 +384,9 @@ export function apply(ctx) { ctx.llm.registerAdapter(['smoke-mock'], new SmokeMo
       // Wait for prompt response (with extra time for the mock LLM to be called).
       await _waitForResponse(responses, promptId, const Duration(seconds: 20));
 
-      // Cancel the stdout subscription.
+      // Cancel the stream subscriptions.
       await stdoutSub.cancel();
+      await stderrSub.cancel();
 
       // Read the capture file.
       final captureFile = File(capturePath);
