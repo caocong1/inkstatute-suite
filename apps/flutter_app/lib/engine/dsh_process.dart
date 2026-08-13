@@ -223,15 +223,24 @@ class DshProcessManager {
     if (!_exitCompleter.isCompleted) return false;
 
     if (Platform.isWindows) {
+      // Use CSV output with /NH (no header) so the PID is a discrete field.
+      // A bare `output.contains(pid.toString())` check would false-match
+      // when the dead PID `123` is a substring of a live PID `1234`.
       final result = await Process.run(
         'tasklist',
-        ['/FI', 'PID eq $pid'],
+        ['/FI', 'PID eq $pid', '/FO', 'CSV', '/NH'],
         stdoutEncoding: utf8,
         stderrEncoding: utf8,
       );
-      // tasklist returns 0 even when no match; check output for the PID.
-      final output = result.stdout as String;
-      return !output.contains(pid.toString());
+      final output = (result.stdout as String).trim();
+      // tasklist emits "INFO: No tasks are running which match..." when the
+      // filter matches nothing; CSV rows begin with `"image.exe","PID",...`.
+      // No non-empty CSV row ⇒ process is gone ⇒ no orphan.
+      final dataLines = output
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty && !l.startsWith('INFO:'));
+      return dataLines.isEmpty;
     }
 
     // Linux / WSL / macOS.
@@ -265,5 +274,8 @@ class DshProcessManager {
       _acpClient = null;
     }
     _transport = null;
+    // Null out the process reference so a second shutdown/dispose call is
+    // a cheap no-op rather than re-awaiting an already-completed exit code.
+    _process = null;
   }
 }

@@ -240,7 +240,13 @@ class AcpClient {
   }
 
   void _handleResponse(Map<String, dynamic> message) {
-    final id = message['id'] as int;
+    // Wire-boundary validation: JSON-RPC 2.0 permits string/number/null ids.
+    // We only correlate integer ids (DSH uses integers); silently drop others
+    // so a malformed server response cannot crash the stream listener.
+    final id = message['id'];
+    if (id is! int) {
+      return;
+    }
     final completer = _pending.remove(id);
     if (completer == null) {
       // No pending request for this id — ignore (stale or duplicate).
@@ -248,12 +254,16 @@ class AcpClient {
     }
 
     if (message.containsKey('error')) {
-      final error = JsonRpcError.fromJson(
-        message['error'] as Map<String, dynamic>,
-      );
-      completer.completeError(
-        AcpRpcException(error.code, error.message),
-      );
+      try {
+        final error = JsonRpcError.fromJson(
+          message['error'] as Map<String, dynamic>,
+        );
+        completer.completeError(
+          AcpRpcException(error.code, error.message),
+        );
+      } catch (e) {
+        completer.completeError(AcpRpcException(-32603, e.toString()));
+      }
     } else {
       final result = message['result'] as Map<String, dynamic>? ?? {};
       completer.complete(result);
@@ -289,34 +299,60 @@ class AcpClient {
   }
 
   Future<void> _handleServerRequest(Map<String, dynamic> message) async {
-    final request = JsonRpcRequest.fromJson(message);
-
-    // Route session/request_permission through the policy hook.
-    if (request.method == 'session/request_permission' &&
-        request.params != null) {
-      await _handlePermissionRequest(request);
-      return;
-    }
-
-    // Other server requests: send empty result response.
+    // Wire-boundary defense: parse failures (non-integer id, malformed
+    // method/params) must not become unhandled async errors or hang the
+    // server. We send a JSON-RPC error response when id is recoverable,
+    // otherwise drop silently.
+    int? id;
     try {
+      final rawId = message['id'];
+      if (rawId is! int) {
+        return;
+      }
+      id = rawId;
+      final request = JsonRpcRequest.fromJson(message);
+
+      // Route session/request_permission through the policy hook.
+      if (request.method == 'session/request_permission' &&
+          request.params != null) {
+        await _handlePermissionRequest(request);
+        return;
+      }
+
+      // Other server requests: send empty result response.
       await sendResponse(request.id, <String, dynamic>{});
     } catch (e) {
-      await _transport.send({
-        'jsonrpc': '2.0',
-        'id': request.id,
-        'error': {'code': -32603, 'message': e.toString()},
-      });
+      // Best-effort error response — id may be null if the parse failed
+      // before assignment; in that case the server's request is dropped.
+      if (id != null) {
+        try {
+          await _transport.send({
+            'jsonrpc': '2.0',
+            'id': id,
+            'error': {'code': -32603, 'message': e.toString()},
+          });
+        } catch (_) {
+          // Transport closed — nothing more we can do.
+        }
+      }
     }
   }
 
   /// Handles a `session/request_permission` server request via the policy hook.
   ///
-  /// If no policy is set, defaults to `reject-once` (default deny).
+  /// If no policy is set, defaults to `reject-once` (default deny). Any
+  /// parse failure or policy-callback throw also defaults to `reject-once`
+  /// (safe default per AGENTS.md: unknown conditions always deny).
   Future<void> _handlePermissionRequest(JsonRpcRequest request) async {
-    final params = RequestPermissionParams.fromJson(request.params!);
-    final outcome = _permissionPolicy?.call(params) ??
-        const PermissionOutcome.selected('reject-once');
+    PermissionOutcome outcome;
+    try {
+      final params = RequestPermissionParams.fromJson(request.params!);
+      outcome = _permissionPolicy?.call(params) ??
+          const PermissionOutcome.selected('reject-once');
+    } catch (_) {
+      // Parse failure or policy throw → safe default: reject-once.
+      outcome = const PermissionOutcome.selected('reject-once');
+    }
 
     await sendResponse(request.id, {'outcome': outcome.toJson()});
   }

@@ -133,6 +133,16 @@ fi
 
 echo "Building DSH engine $VERSION from commit $COMMIT"
 
+# --- Tool availability checks ---
+if ! command -v zip >/dev/null 2>&1; then
+  echo "ERROR: zip not found — install zip (apt-get install zip / brew install zip)" >&2
+  exit 1
+fi
+if ! command -v sha256sum >/dev/null 2>&1; then
+  echo "ERROR: sha256sum not found — install coreutils" >&2
+  exit 1
+fi
+
 # --- Workspace setup ---
 WORKDIR=$(mktemp -d)
 ENGINE_DIR_NAME="engine-$VERSION"
@@ -147,21 +157,26 @@ trap cleanup EXIT
 # --- Clone and checkout ---
 echo "Cloning DSH repo to $WORKDIR/dsh..."
 git clone "$DSH_REPO" "$WORKDIR/dsh"
-cd "$WORKDIR/dsh"
-git checkout "$COMMIT"
+git -C "$WORKDIR/dsh" checkout "$COMMIT"
 
-# --- Install dependencies ---
+# --- Install dependencies (run inside a subshell so CWD is restored) ---
 echo "Installing dependencies..."
-if pnpm install --frozen-lockfile; then
-  echo "Install succeeded with --frozen-lockfile"
-else
-  echo "WARN: lockfile drift, retrying without --frozen-lockfile" >&2
-  pnpm install
-fi
+(
+  cd "$WORKDIR/dsh"
+  if pnpm install --frozen-lockfile; then
+    echo "Install succeeded with --frozen-lockfile"
+  else
+    echo "WARN: lockfile drift, retrying without --frozen-lockfile" >&2
+    pnpm install
+  fi
+)
 
 # --- Build ---
 echo "Building DSH..."
-pnpm run build
+(
+  cd "$WORKDIR/dsh"
+  pnpm run build
+)
 
 # --- Assemble engine directory ---
 ENGINE_DIR="$WORKDIR/$ENGINE_DIR_NAME"
@@ -189,11 +204,13 @@ fi
 # Copy product composition config
 cp "$CORDIS_FILE" "$ENGINE_DIR/acp.cordis.yml"
 
-# --- Zip ---
+# --- Zip (subshell keeps CWD at REPO_ROOT for any later commands) ---
 ZIP_PATH="$OUTPUT_DIR/engine-$VERSION.zip"
 echo "Zipping: $ZIP_PATH"
-cd "$WORKDIR"
-zip -r "$ZIP_PATH" "$ENGINE_DIR_NAME"
+(
+  cd "$WORKDIR"
+  zip -r "$ZIP_PATH" "$ENGINE_DIR_NAME"
+)
 
 # --- Generate manifest ---
 SHA256=$(sha256sum "$ZIP_PATH" | cut -d' ' -f1)

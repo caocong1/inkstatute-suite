@@ -34,6 +34,30 @@ class AcpTransport {
   /// Serialize writes to prevent concurrent IOSink access.
   Future<void> _writeQueue = Future.value();
 
+  /// Cached single-subscription message stream.
+  ///
+  /// The input byte stream is single-subscription; building a new transform
+  /// chain on every `messages` access would throw "Stream has already been
+  /// listened to" on the second subscription. Cache it once so the contract
+  /// is stable for any caller.
+  late final Stream<Map<String, dynamic>> _messagesStream = _buildMessages();
+
+  Stream<Map<String, dynamic>> _buildMessages() {
+    return _input
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .where((line) => line.trim().isNotEmpty)
+        .map((line) {
+      try {
+        return jsonDecode(line) as Map<String, dynamic>;
+      } on FormatException {
+        // T-112-01: validate each NDJSON line is valid JSON before parsing;
+        // skip unparseable lines without crashing the client.
+        return null;
+      }
+    }).where((m) => m != null).cast<Map<String, dynamic>>();
+  }
+
   /// Sends a JSON-RPC message as one NDJSON line.
   ///
   /// Writes `jsonEncode(message) + "\n"` to the output sink and flushes.
@@ -60,21 +84,7 @@ class AcpTransport {
   ///
   /// Lines that fail JSON parsing are skipped (T-112-01 mitigation: validate
   /// each line before parsing, handle errors gracefully without crashing).
-  Stream<Map<String, dynamic>> get messages {
-    return _input
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .where((line) => line.trim().isNotEmpty)
-        .map((line) {
-      try {
-        return jsonDecode(line) as Map<String, dynamic>;
-      } on FormatException {
-        // T-112-01: validate each NDJSON line is valid JSON before parsing;
-        // skip unparseable lines without crashing the client.
-        return null;
-      }
-    }).where((m) => m != null).cast<Map<String, dynamic>>();
-  }
+  Stream<Map<String, dynamic>> get messages => _messagesStream;
 
   /// Closes the output sink (signals EOF to the subprocess).
   Future<void> close() async {

@@ -25,10 +25,27 @@ class JsonRpcRequest {
   });
 
   /// Parses a JSON-RPC request from a decoded JSON map.
+  ///
+  /// Throws [FormatException] if `id` is not an integer or `method` is not
+  /// a string — callers at wire boundaries must catch this and send a
+  /// JSON-RPC error response (or drop the message) rather than letting it
+  /// propagate as an unhandled async error.
   factory JsonRpcRequest.fromJson(Map<String, dynamic> json) {
+    final id = json['id'];
+    if (id is! int) {
+      throw FormatException(
+        'JsonRpcRequest.id must be an integer, got ${id.runtimeType}',
+      );
+    }
+    final method = json['method'];
+    if (method is! String) {
+      throw FormatException(
+        'JsonRpcRequest.method must be a string, got ${method.runtimeType}',
+      );
+    }
     return JsonRpcRequest(
-      id: json['id'] as int,
-      method: json['method'] as String,
+      id: id,
+      method: method,
       params: json['params'] as Map<String, dynamic>?,
     );
   }
@@ -68,9 +85,18 @@ class JsonRpcResponse {
         );
 
   /// Parses a JSON-RPC response from a decoded JSON map.
+  ///
+  /// Throws [FormatException] if `id` is not an integer. Callers at wire
+  /// boundaries must catch this and drop the malformed response.
   factory JsonRpcResponse.fromJson(Map<String, dynamic> json) {
+    final id = json['id'];
+    if (id is! int) {
+      throw FormatException(
+        'JsonRpcResponse.id must be an integer, got ${id.runtimeType}',
+      );
+    }
     return JsonRpcResponse(
-      id: json['id'] as int,
+      id: id,
       result: json['result'] as Map<String, dynamic>?,
       error: json['error'] != null
           ? JsonRpcError.fromJson(json['error'] as Map<String, dynamic>)
