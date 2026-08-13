@@ -37,7 +37,9 @@ findings:
   warning: 6
   info: 4
   total: 12
-status: findings_found
+remediated: 2026-08-14
+remediation_commit: d2f7b64
+status: clean
 ---
 
 # Phase 112: Code Review Report
@@ -304,6 +306,33 @@ fi
 
 ---
 
+## Remediation
+
+All 2 Critical and 6 Warning findings were remediated in commit `d2f7b64`
+(`fix(112): wire-boundary defenses for CR-01/CR-02/WR-01..WR-06`). The 4
+Info findings were accepted as-is (no behavior change required for Phase 112).
+
+| ID | Severity | Resolution |
+|----|----------|------------|
+| CR-01 | Critical | `_handlePermissionRequest` now wraps policy callback + param parse in try/catch; defaults to `reject-once` on any error. Covered by `wire_boundary_test.dart` (2 tests). |
+| CR-02 | Critical | `_handleServerRequest` validates id type before parsing, wraps body in try/catch, sends -32603 error response when id is recoverable. Covered by `wire_boundary_test.dart` (2 tests). |
+| WR-01 | Warning | `assertNoOrphans` Windows path uses `tasklist /FO CSV /NH` and filters `INFO:` lines so the PID is matched as a discrete field. |
+| WR-02 | Warning | `_handleResponse` validates `id is int` before correlating; non-integer ids dropped silently. Covered by `wire_boundary_test.dart` (1 test). |
+| WR-03 | Warning | `JsonRpcRequest.fromJson` / `JsonRpcResponse.fromJson` throw `FormatException` with a clear message on non-integer ids / non-string methods. Covered by `wire_boundary_test.dart` (3 tests). |
+| WR-04 | Warning | `_cleanup()` nulls out `_process` so double-shutdown is a cheap no-op. |
+| WR-05 | Warning | `AcpTransport.messages` is a cached `late final` stream built once. |
+| WR-06 | Warning | `build_dsh_release.sh` checks `zip`/`sha256sum` availability up front and runs `cd`-based steps in subshells. |
+| IN-01..IN-04 | Info | Accepted as-is — no Phase 112 behavior change required. |
+
+**Post-remediation gate run:** all V4 gates pass
+(`dart-analyze` PASS, `flutter-test` PASS, `mock-e2e` PASS, `meta-test` PASS;
+`engine-manifest` and `docx-golden` SKIP per phase scope).
+
+**Status after remediation:** `clean` — all Critical and Warning findings closed.
+
+---
+
 _Reviewed: 2026-08-13T17:08:09Z_
+_Remediated: 2026-08-14_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
