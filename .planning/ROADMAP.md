@@ -129,7 +129,20 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
   5. SKL-07 预算门禁：核心集目录渲染（name+description）长度 ≤ 8,000 字符（可配置），超预算测试红灯；345 技能全量挂载被显式禁止并有无害断言说明
   6. 预设物化脚本：`scripts/materialize_presets.sh` 把 `presets/` 物化到引擎 `~/.agent-presets/<domain>/`（安装时执行）；随附安装目录只读纪律写进脚本注释
 
-**Plans**: TBD (est. 3-4)
+**Plans**: 4 plans
+**Wave 1**
+
+- [ ] 113-01-PLAN.md — Wave 1 tracer: legal-core preset + guardrail persona + ask_user_question removal + token budget gate utility (SKL-05, SKL-06, SKL-07)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 113-02-PLAN.md — Wave 2: Four domain presets (legal-commercial, legal-litigation, legal-family, legal-employment) with structural and budget tests (SKL-05, SKL-06, SKL-07)
+- [ ] 113-03-PLAN.md — Wave 2: Materialization script + token budget enforcement tests (345-skill prohibition, configurable budget) (SKL-07)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 113-04-PLAN.md — Wave 3: Real engine smoke test or structural fallback for legal-core preset (SKL-05, SKL-06)
+
 **UI hint**: no
 
 ### Phase 114: Skill Pipeline — dsh Target
@@ -401,7 +414,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | Phase | Stage | Plans Complete | Status | Completed |
 |-------|-------|----------------|--------|-----------|
 | 112. DSH Engine Integration (ACP over stdio) | A | 0/6 | Planned | — |
-| 113. Legal Presets & Domain Presets | B | 0 | Not started | — |
+| 113. Legal Presets & Domain Presets | B | 0/4 | Planned | — |
 | 114. Skill Pipeline — dsh Target | B | 0 | Not started | — |
 | 115. Skill Content Auto-Update | B | 0 | Not started | — |
 | 116. Chat UI & Output Boundary | C | 0 | Not started | — |
