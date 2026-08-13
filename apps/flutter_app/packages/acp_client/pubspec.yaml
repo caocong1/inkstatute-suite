@@ -7,8 +7,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
-  # Pure Dart — no UI framework dependency.
+  # Pure Dart — no UI framework dependency in library code.
 
 dev_dependencies:
   lints: ^6.0.0
-  test: ^1.25.6
