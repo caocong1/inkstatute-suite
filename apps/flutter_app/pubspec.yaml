@@ -35,6 +35,9 @@ dependencies:
   acp_client:
     path: packages/acp_client
 
+  # YAML parser for preset file parsing (SKL-05/06/07).
+  yaml: ^3.1.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
