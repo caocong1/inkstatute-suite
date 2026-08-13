@@ -1,142 +1,137 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.1
-milestone_name: Legal AI Arena
-status: completed
-stopped_at: v3.1 roadmap created — 6 phases (105-110), 45 requirements mapped, ready to plan Phase 105
-last_updated: "2026-08-09T07:02:39.150Z"
-last_activity: 2026-08-09
+milestone: v4.0
+milestone_name: Flutter Native + DSH Engine
+status: executing
+stopped_at: v4.0 roadmap created — 9 phases (112-120), 33 requirements mapped, ready to plan Phase 112
+last_updated: "2026-08-13T15:40:17.846Z"
+last_activity: 2026-08-13 — V4 规格/研究/需求/路线图落定，等待 `/gsd-autonomous` 从 Phase 112 开始
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 28
-  completed_plans: 28
-  percent: 100
+  total_phases: 9
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-06)
+See: .planning/PROJECT.md (updated 2026-08-13)
 
-**Core value:** 律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
+**Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
 
-**Current focus:** Phase 111 — close-v3-1-tech-debt-desktop-arena-ui-integration-word-expor
+**Current focus:** Phase 112 — DSH Engine Integration (ACP over stdio)
 
 ## Current Position
 
-Phase: 111
+Phase: 112 of 120 (DSH Engine Integration)
 Plan: Not started
-Status: Phase 111 complete
-Last activity: 2026-08-09
+Status: Ready to execute
+Last activity: 2026-08-13 — V4 规格/研究/需求/路线图落定，等待 `/gsd-autonomous` 从 Phase 112 开始
 
-## Milestone v3.1 Overview
+Progress: [░░░░░░░░░░] 0%
 
-| 阶段 | Phases | 完成后的状态 |
-|---|---|---|
-| A 契约扩展 | 105 | Arena 生命周期事件 + 数据类 + Protocol 定义完成 |
-| B fs 处理器 | 106 | ACP agent 可自主读取参考文件，路径沙箱不可逃逸 |
-| C 竞技引擎 — 模式 1+2 | 107 | N agent 并行 + 自评迭代可用，护栏不可绕过 |
-| D 竞技引擎 — 模式 3+4 | 108 | 交叉评审 + 对抗竞技 + 独立 session 综合最终版 |
-| E 竞技服务 | 109 | 本地 HTTP+SSE 服务暴露全部竞技能力 |
-| F 竞技 UI + 集成 | 110 | 桌面 app 内完整竞技体验，gate 更新，端到端全绿 |
-| G v3.1 Closure | 111 | 桌面 arena UI 真正集成 + Word 导出端点 + FS handler 接线 + 测试回归修复 |
-
-**关键路径：** 105 → 106 → 107 → 108 → 109 → 110 → 111（Mode 1 在 107 完成时即为可用产品；111 闭合 v3.1 audit tech debt）
-
-**并行机会：** 105 之后 106 可与 107 的 mock-agent 测试并行准备；109 依赖 107+108；110 依赖 109。
-
-## Milestone v3.0 Overview (SHIPPED)
+## Milestone v4.0 Overview
 
 | 阶段 | Phases | 完成后的状态 |
 |---|---|---|
-| A 协议底座 | 88-90 | Hermes 可通过 ACP 被平台驱动 |
-| B 通道统一 | 91-95 | 律师可在 web / 桌面 / WeCom / QQ 四处用同一套能力 |
-| C 能力层 | 96-99 | 396 个真实法律 skill 首次进入平台 |
-| D 自研核心 | 100-104 | 心脏换成自研 Python core，通道层零改动 |
+| A DSH 引擎底座 | 112 | Flutter 骨架 + Dart ACP 客户端 + 子进程管理 + 引擎发布脚本，mock 全链路冒烟通过 |
+| B 法律预设与能力层 | 113-115 | 分域预设 + dsh 物化管线 + 内容包自动更新可用，token 预算门禁生效 |
+| C 客户端与护栏 | 116-118 | 会话 UI / 批准与澄清 / 护栏双层 / Word 导出端到端可用 |
+| D 交付与收敛 | 119-120 | 单 exe 安装包 + 三层更新 + 律师试运行验收 + v3.x 冻结收敛 |
 
-**关键路径：** 88 → 89 → 90 → 91 → 92 → 93（走完即有可用 Web 产品）— ALL COMPLETE
+**关键路径：** 112 → 113 → 116 → 117 → 119 → 120
+
+**并行机会：** 114/115（技能管线）在 113 后与 116/117 并行；118（docx）依赖 113，与 116/117 并行；119 依赖 115+116+117+118。
+
+## Previous Milestones (SHIPPED)
+
+### v3.1 Legal AI Arena (shipped 2026-08-09)
+
+Phases 105-111：Arena 契约扩展、ACP fs handler、竞技引擎四模式、竞技服务、桌面竞技 UI、v3.1 Closure。归档待 `/gsd-complete-milestone`。
+
+### v3.0 Unified Legal Core (shipped 2026-08-08)
+
+Phases 88-104：统一事件词汇、Python ACP 客户端、多租户 Gateway、ui-core、396 技能索引/物化、自研 Python core、双入口、legacy 收敛。**V4 起自研 core 退役**（见 PROJECT.md Key Decisions）。
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- v3.1 roadmap created 2026-08-08: Phases 105–110, 45 requirements 全部映射, 六阶段（契约扩展 → fs 处理器 → 引擎模式 1+2 → 引擎模式 3+4 → 竞技服务 → 竞技 UI+集成）
-- v3.0 roadmap created 2026-08-06: Phases 88–104, 61 requirements 全部映射, 四阶段（协议底座 → 通道统一 → 能力层 → 自研核心）— SHIPPED 2026-08-08
-- V2 及 v1.1–v1.11 共 87 个 phase 已归档至 `.planning/milestones/`
-- V3 重新定位的触发：V2 的四个范围前提全部失效（详见 PROJECT.md）
-- Phase 111 added after Phase 110: v3.1 Closure — Desktop Arena Integration + Export + Wiring + Test Fix (inserted after audit found tech_debt)
+- v4.0 roadmap created 2026-08-13: Phases 112-120, 33 requirements 全部映射, 四阶段（DSH 引擎底座 → 法律预设与能力层 → 客户端与护栏 → 交付与收敛）
+- v3.1 shipped 2026-08-09 (Phases 105-111)
+- v3.0 shipped 2026-08-08 (Phases 88-104)
+- V2 及 v1.1-v1.11 共 87 个 phase 已归档至 `.planning/milestones/`
+- V4 触发：执行核心自研是军备竞赛（DSH 专职团队无法竞争）；V3 平台形态与"单用户双击即用"交付错配；业主选定 Flutter 全量重构并明确否决 WebView
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table. V3 的 15 条新决策全部记于 2026-08-06。
-最影响后续执行的几条：
+V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影响执行的：
 
-- 后端层对齐 ACP v1（`hermes acp --check` 已本机验证 OK）；锁 v1 不用 v2 draft
-- 通道层不对齐外部协议，但事件词汇与 ACP `session/update` 同构
-- 自研 agent core 用 **Python**（依据能力非成本：Word 原生修订 41K 字节 Python vs 74 行 Rust；skill 语料 140 个 .py）
-- 先定协议后换心脏：A+B+C 用 `hermes acp` 即可交付可用产品
-- skill 语料只读 vendoring，平台建索引 + 物化器，不复制不建执行 runtime
-- 共享 UI 沿用 SolidJS，从 lawyer-desktop 抽取；chat UI 必须单一实现
-- 移动原生 App 推 V4；SaaS 只留 `backend_process_mode` 契约口
-- 工具轮必须流式（修复 lawyer-desktop 的非流式缺陷）
+- 引擎 = DSH，集成缝 = automation-only ACP server（JSON-RPC stdio）；无 WebView
+- ACP 三个刻意限制由产品吸收：澄清走 `[CLARIFY:]` 约定文本 + 前置采集（DP-1）、工具活动不可见（DP-2）、批准卡唯一交互通道（DP-3）
+- DSH pre-release → 钉 commit、禁自动升级引擎、升级前真机回归
+- 技能语料唯一事实源 = ai-for-china-legal；新增 dsh 物化 target；内容包独立版本化自动更新
+- 分域预设 + 核心集 ≤30 + 目录渲染预算门禁（≤8,000 字符默认）——禁全量挂载 345 技能
+- docx 确定性变换在 app 侧（便携 Python 执行 41KB track-changes 脚本），模型不写 docx 字节
+- v3.x 平台冻结（gateway/wecom/qq/arena/agent-core/ui-core(Tauri)/web/desktop），验收后退役
 
 ### Pending Todos
 
-**V3-SELECTION.md §7 的 6 个待验证项已全部完成（2026-08-06）。** 结论见 `.planning/research/V3-SELECTION.md` §7。摘要：
+**V4-SELECTION.md §7 的 5 个待验证项全部落在 Phase 112 RESEARCH：**
 
-| # | 结论 | 关键行动项 |
+| # | 验证项 | 关键动作 |
 |---|---|---|
-| V1 | 标准 MCP（JSON-RPC 2.0，protocolVersion 2024-11-05） | Phase 101 无需协议适配；2/6 connector 已实现 |
-| V2 | codex-acp v1.1.13 + claude-agent-acp v0.65.0 均安装+initialize 通过 | Phase 89 健康检查用 `initialize` 握手而非 `--check` |
-| V3 | elicitation 可用但 UNSTABLE；`_meta` fallback 可行 | Phase 90 必须 `use_unstable_protocol=True`；0.12.0 已发布需 re-verify |
-| V4 | skill 加载 OK，但必须显式设 `HERMES_HOME`（issue #18594） | Phase 89 subprocess spawner 必须传 `HERMES_HOME`；实际 369 skill 非原记 312 |
-| V5 | 纯 Python + lxml，可移植，无平台特定代码 | 文件在 `lawfirm-profile/scripts/`（非 ai-for-china-legal） |
-| V6 | 手动注册：新包需加 path 变量 + Gate() 条目 + compileall | 每个引入新包的 phase plan 须含 gate 注册检查项 |
+| V1 | 真实启动 DSH ACP 组合全流程 | initialize → session/new → prompt → committed text；记录启动时间/env/退出码 |
+| V2 | 审批上抛 | 批准栈 terminal 默认拒绝 → `session/request_permission` 上抛实测 |
+| V3 | skill 目录进前缀 | `customSkillDirs` 挂 2-3 技能，目录进模型前缀、按名加载可用 |
+| V4 | 会话日志路径 | JSONL 路径与结构确认（RB2 依赖） |
+| V5 | 生产启动形态 | 构建后 bin（非 tsx）确认，供 `build_dsh_release.sh` 打包 |
 
 ### Blockers/Concerns
 
-- **v3.1 研究标记 Phase 107 (Arena Engine) 需要更深入研究** — 4-mode 工作流逻辑、交叉评审配对矩阵、提前停止收敛阈值是最复杂的算法部分；自评偏差意识、交叉质询/证伪、对抗式弱点查找的 prompt 设计是新颖的，可能需要针对真实法律任务迭代调优。
-- **v3.1 研究标记 Phase 109 (Arena Service) 需要更深入研究** — N 路交错流的 SSE 复用与背压处理、子进程存活检测、多路复用流的重连语义是现有 Gateway 不处理的模式（它只处理单 run）；错峰启动 semaphore 与 per-run timeout 值需经验调优。
-- **HG-1（Phase 102 法律质量）不得由自动化声称通过。** v3.0 遗留 human gate，律师抽样确认输出质量。
-- **HG-4（Phase 101 修订稿质量）不得由自动化声称通过。** v3.0 遗留 human gate，Word 原生修订 docx 须由律师确认。
-- Mode 3/4 的 prompt 设计（自评偏差意识、交叉质询、对抗式弱点查找）可能需要律师评审 gate（类似 HG-1）才能 ship。
-- ACP 生态变化较快，进入 Phase 105 前应重新核对协议版本状态。
+- **Phase 112 是技术风险闸口**：V1-V5 任一证伪即触发 PRD §12.1 回退评审（RB1 分步表单 / RB2 尾随日志展示），不得在证据不足时直接进入 113。
+- **DSH 是 pre-release**：每次升级必须真机回归（Phase 118 GATE-03 真机路径 + 一轮真实法律任务），禁自动升级引擎。
+- **HG-1 / HG-4 / HG-3 不得由自动化声称通过。** HG-4 挂 Phase 118，HG-1 与 HG-3 挂 Phase 120，签字权在律师。
+- 语料仓在 Windows 路径（`C:\Users\sorawatcher\workspace\ai-for-china-legal`），转换器执行环境（Windows CI 或 WSL 桥接）在 Phase 114 RESEARCH 定案。
+- GitHub Release 作为内容源在中国大陆网络环境的可用性在 Phase 115 RESEARCH 定案。
 
 ## Deferred Items
 
-### Carried Human Gates（v1.x / v3.0 遗留，v3.1 不得自动关闭）
+### Carried Human Gates（v4.0 不得自动关闭）
 
 | Category | Item | Status |
 |----------|------|--------|
-| Human gate | Phase 5 live WeCom UAT operator confirmation | HUMAN_NEEDED (carried from V2) |
-| Human gate | Phase 8 five-workday lawyer trial acceptance | HUMAN_NEEDED (carried from V2) |
-| Human gate | Operator `--live` QQ OpenAPI acceptance evidence | HUMAN GATE (carried from v1.9) |
+| Human gate | HG-1 法律质量：V4 基线（DSH+分域预设）经律师抽样确认不低于 lawyer-desktop/Hermes 基线 | HUMAN_NEEDED (Phase 120) |
+| Human gate | HG-4 修订稿质量：Word 原生修订 docx 经律师确认可用于对外谈判 | HUMAN_NEEDED (Phase 118) |
+| Human gate | HG-3 律师试运行：五工作日 / 15 真实任务 | HUMAN_NEEDED (Phase 120) |
+| Human gate | HG-2 真机通道（WeCom live UAT）| DEFERRED — 通道随 v3.x 平台冻结 |
+| Human gate | Operator `--live` QQ OpenAPI acceptance | DEFERRED — 通道随 v3.x 平台冻结 |
 
-### Deferred to V4
+### Deferred to post-v4.0
 
 | Category | Item |
 |----------|------|
-| MOBILE-01..03 | 移动原生 App（Android APK / iOS App Store 中国区 + ICP 备案 / Tauri-mobile vs Capacitor 选型） |
-| SCALE-01..03 | SaaS 规模化（ACP agent 进程池 / 远程 ACP 传输 / 水平扩容） |
-| OFFLINE-01..02 | 桌面端完全离线的本地 agent runtime |
-| FUTURE-01..06 | 定时监控 agent / WeChat 小程序 / 向量 RAG / A2A / AG-UI 适配 / multi-agent-adapter 产品化 |
-| v3.1 FUTURE-01..06 | 可靠性加权评分聚合 / skill-index prompt enrichment / 质量成本展示 / arena 状态持久化格式 / 跨族分类法 / arena 与远程 Gateway 组合 |
+| DEFER-01 | legal-skills 语料并入（51 个，CC-BY-NC 许可评估后） |
+| FUTURE-02..06 | 流式工具事件 / ACP elicitation 澄清卡 / 多用户远程引擎 / v3.x 平台复活评估 / Code Mode 预设 |
+| MOBILE | 移动端（沿用 V3 决定推后） |
 
 ## Session Continuity
 
-Last session: 2026-08-08
-Stopped at: v3.1 roadmap created — 6 phases (105-110), 45 requirements mapped, ready to plan Phase 105
-Product spec: .planning/PROJECT.md (v3.1 Legal AI Arena)
-Research: .planning/research/SUMMARY.md (Legal AI Arena, HIGH confidence)
-Requirements: .planning/REQUIREMENTS.md (45/45 mapped to phases 105-110, 100% coverage)
-Execution plan: .planning/ROADMAP.md (Phases 105-110, none started)
-Carried human gates (do not auto-complete): HG-1 (法律质量 — Phase 102), HG-4 (修订稿质量 — Phase 101), HG-2 (真机通道 — carried from V2), HG-3 (律师试运行 — carried from V2), QQ --live acceptance (carried from v1.9)
-v1.x archives: .planning/milestones/
+Last session: 2026-08-13
+Stopped at: v4.0 roadmap created — 9 phases (112-120), 33 requirements mapped, ready to plan Phase 112
+Product spec: docs/requirements/V4-PRD.md (Flutter Native + DSH Engine)
+Research: .planning/research/SUMMARY.md (v4.0, HIGH confidence) + .planning/research/V4-SELECTION.md (选型证据)
+Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage)
+Execution plan: .planning/ROADMAP.md (Phases 112-120, none started)
+Carried human gates (do not auto-complete): HG-1 (Phase 120), HG-4 (Phase 118), HG-3 (Phase 120)
+v1.x/v3.0 archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Run milestone audit (`/gsd-audit-uat`) to confirm all UAT items resolved
-- Run `/gsd-complete-milestone` to archive v3.1 and prepare for next version
-- Carried human gates (HG-1, HG-4, HG-2, HG-3, QQ --live) remain HUMAN_NEEDED — do not auto-close
+- Run `/gsd-autonomous`（从 Phase 112 开始；Phase 112 RESEARCH 必须先闭环 V4-SELECTION §7 的 V1-V5）
+- 或按阶段推进：`/gsd-discuss-phase 112` → `/gsd-plan-phase 112` → `/gsd-execute-phase 112`
+- 引擎升级（DSH commit 变更）必须先真机回归再发布，任何阶段不得绕过
+- Carried human gates（HG-1, HG-4, HG-3）保持 HUMAN_NEEDED — do not auto-close

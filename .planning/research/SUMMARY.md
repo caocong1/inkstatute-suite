@@ -1,91 +1,42 @@
-# Project Research Summary: Legal AI Arena
+# Project Research Summary: Flutter Native + DSH Engine
 
-**Domain:** Multi-agent legal AI arena desktop app with iterative self-scoring, cross-review, and final synthesis
-**Researched:** 2026-08-08
+**Domain:** 单用户 Windows 桌面法律助手：Flutter 原生 UI 经 ACP over stdio 驱动嵌入的 DeepSeek Harness（DSH）引擎，法律技能随版本化内容包自动更新
+**Researched:** 2026-08-13
 **Overall confidence:** HIGH
+
+> 前里程碑研究摘要（v3.1 Legal AI Arena，2026-08-08）已随 v3.1 归档（git 历史保留；归档待 `/gsd-complete-milestone` 收尾）。
 
 ## Executive Summary
 
-The v3.1 Legal AI Arena extends the already-shipped v3.0 Unified Legal Core platform with a multi-agent workflow engine, a local arena service, and a desktop arena UI. The arena lets a lawyer describe a legal task, select multiple ACP backend agents to process it in parallel, have each agent self-score and iterate, have agents cross-review each other, and have an independent agent session synthesize the final version — all streaming live to the desktop app, with the four legal guardrails (research-gate, citation audit, ask-user, de-AI polish) non-bypassable throughout. The research confirms this is achievable with **zero new runtime dependencies**: the arena builds entirely on stdlib `asyncio.TaskGroup` for parallel orchestration, framework-free stdlib ASGI for the local HTTP+SSE service (mirroring the existing Gateway), and SolidJS signals + `createMemo` for demultiplexing parallel agent streams in the desktop UI. No workflow framework (LangGraph, CrewAI, AutoGen, Prefect/Temporal) is needed because InkStatute agents are external ACP stdio subprocesses — the arena engine is a scheduler/relay, not an agent runtime.
+V4 把墨律重新定义为「法律能力包 + 律师可用外壳，套在 DSH 引擎上」。执行核心全面外包给 DSH（agent loop、工具注册表、批准栈、技能系统、会话持久化、子代理、工作流全部继承），墨律只保留三类真正属于它的资产：**法律技能语料（ai-for-china-legal 345 个 SKILL.md）、法律护栏（research-gate / citation audit / ask-user / de-AI polish / 人审标记）、律师可用性（Flutter 原生 UI、零操作安装、三层更新）**。V3 平台（gateway / wecom / qq / arena / 自研 Python core / Tauri 桌面）整体冻结，不再投入。
 
-The architecture introduces **two new local components** (`packages/arena-engine` and `services/arena-service`) and **one new UI surface** (Arena UI in `apps/desktop`), reusing the existing 13-category event vocabulary, `acp-client`, `agent-core` guardrails, `skill-index`, and `ui-core` without modifying their contracts. The arena-service is a separate local service (bound to `127.0.0.1:8001`), not merged into the Gateway, because it must run locally to spawn stdio subprocesses and must handle ACP `fs/read_text_file` requests that the Gateway does not provide. Arena-specific metadata travels in the existing `RunEvent.metadata` field (`arena_id`, `agent_slot`, `arena_phase`, `score`, `iteration`); arena lifecycle events (`arena.workflow_started`, `arena.score_recorded`, `arena.review_completed`, `arena.synthesis_started/completed`, `arena.adversarial_challenge_completed`, `arena.early_stop_triggered`) are added additively to the vocabulary following the existing `_meta`/`_` prefix convention. The `acp-client` is extended minimally to advertise `clientCapabilities.fs.readTextFile` at `initialize` and to route inbound `fs/read_text_file` requests to a registered handler — backward compatible with the Gateway path.
+集成缝选定为 DSH 的 automation-only ACP server（JSON-RPC stdio）：文本 prompt 进、已提交 assistant 文本出、一次性批准卡为唯一交互通道。该缝的三个刻意限制（无 elicitation、无工具流、无 transcript replay）由产品侧约定吸收：澄清走 `[CLARIFY: …]` 标记文本 + 前置结构化采集；工具活动以状态文案呈现；批准卡由 app 策略化处理（未知 kind 拒绝、terminal 默认拒绝、无批量批准）。用户明确否决 WebView，`dsh web` 浏览器面与 Typert RPC 协议面均不在考虑范围。
 
-The feature landscape maps four reference projects (Crossfire, ultra-review, cross-agent-reviews, LLM4Review) onto four workflow modes of increasing depth: Mode 1 (standard parallel, user picks result), Mode 2 (self-score iteration), Mode 3 (cross-review + independent synthesis — the core differentiator), and Mode 4 (adversarial challenge + multi-round synthesis with early stopping). Table-stakes features include parallel execution, real-time streaming, heterogeneous backends, cancellation, artifact persistence, and orchestrator-never-produces-content. Differentiators include the free-form 10-point scoring framework, non-bypassable legal guardrails, independent synthesis session, adversarial weakness-finding, categorical confidence labels, and Word-native track-changes output. The critical path is Mode 1 → Mode 2 → Mode 3 → Mode 4, where each mode builds on the previous and Mode 1 alone is a usable product.
+技能管线是一条低风险增量：DSH 技能格式（目录 + SKILL.md + name/description frontmatter）与语料仓现格式同构；语料仓已有的 `convert-skills.js --to kimi|opencode|standalone` 多端物化管线增加 `dsh` target，仅需两类语义改写（斜杠命令 → 按名加载技能；CLAUDE.md 写入 → 会话配置事实源文件）。内容包独立版本化（manifest + sha256 + 原子切换 + 回滚），是三层更新中唯一自动的一层；DSH 的 skill-filesystem watcher 使技能更新无需重启。
 
-The most consequential research finding is the set of **24 documented pitfalls**, of which the critical ones are: (1) self-preference bias — LLMs systematically score their own outputs and same-family outputs higher, which can be mitigated only by cross-family review and a synthesizer from a different model family; (2) orchestrator-produces-content — the single most seductive shortcut, which bypasses all guardrails and the output boundary, preventable by a gate test asserting the arena-engine imports no LLM provider; (3) guardrail bypass for external ACP agents — v3.0 guardrails live in `turn_loop.py`, which external agents do not run, requiring post-hoc citation audit + de-AI polish at the arena-engine boundary; (4) ACP subprocess death leaving zombie processes and unrecoverable runs, requiring liveness checks, per-run timeouts, and partial-result acceptance; (5) `fs/read_text_file` scope escape via path traversal or symlinks, requiring resolve + prefix-check + symlink rejection + extension allowlist + size cap; (6) batch auto-approval of dangerous permissions under N-agent UX pressure — the direct descendant of the Buzz `rm -rf` incident, preventable by preserving `_DANGEROUS_PERMISSION_KINDS` exactly and never offering a batch-approve path. Each pitfall has a concrete prevention strategy and a gate-test detection mechanism.
+风险最大的两点均有既定对策：DSH pre-release 兼容性 → 钉 commit、禁自动升级引擎、升级前真机回归；345 技能 token 成本 → 分域预设 + 核心集 ≤30 个 + 目录渲染长度预算门禁（超预算拒绝发货）。
 
 ## Key Findings
 
-**Stack:** Zero new runtime dependencies — stdlib `asyncio.TaskGroup` for parallel orchestration, framework-free stdlib ASGI for the local arena service (mirroring the Gateway), SolidJS signals + `createMemo` for demultiplexing parallel streams; no LangGraph/CrewAI/AutoGen/FastAPI/`tauri-plugin-sse`/`@solid-primitives/sse`.
+**引擎：** DSH ACP server 契约逐文件核实（initialize 仅 baseline 能力；session/new 要求绝对 cwd；单 in-flight prompt；`session/update` 只发已提交文本；断开零孤儿进程）。运行组合以 `examples/acp-agent/cordis.yml` 为模板，`provider`/`model` 必填，叶层供给沙箱/批准/fs/技能。
 
-**Architecture:** Two new local components (`packages/arena-engine` pure orchestration library + `services/arena-service` local HTTP+SSE on `127.0.0.1:8001`) and one new UI surface, reusing the 13-category event vocabulary additively (arena metadata in `RunEvent.metadata` + new `arena.*` lifecycle events) and extending `acp-client` minimally for `fs/read_text_file` inbound request handling.
+**预设：** Agent preset = 目录（preset.yml + agent.cordis.yml）挂单会话 scope；用户自创预设放 `${DSH_HOME}/.agent-presets/<id>/`；随附目录升级覆盖。V4 分域预设以 standard 为底、native 呈现；`cordis` 预设的 `customSkillDirs` 挂载写法即模板。
 
-**Critical pitfall:** Self-preference bias (Pitfall 1) — LLMs systematically favor their own and same-family outputs; the arena's "highest score wins" selection picks the most self-confident agent, not the most legally sound one, unless cross-family review is enforced, the synthesizer comes from a different model family, and scores are reliability-weighted. Closely followed by orchestrator-produces-content (Pitfall 2) and guardrail bypass for external ACP agents (Pitfall 3), both of which silently strip the legal safety invariants that make the "arena-validated" label meaningful.
+**技能：** 目录清单（name+description）进模型前缀 → 全量挂载不可行；模型经 `skill` 工具按名加载；`skill-filesystem` 自带 watcher → 内容包更新零重启。
 
-**Feature table stakes:** Parallel agent execution, real-time streaming of intermediate results, heterogeneous agent backends, user stop/pause/cancel, artifact persistence (all intermediate results), orchestrator never produces content, fresh contexts per round, user selects result (Mode 1), agent roster configuration, task instruction input, reference directory selection, error handling / agent failure recovery.
+**护栏：** 双层执行——预设提示词段（模型侧）+ app 呈现/强制（渲染侧），任一层缺失即绕过。批准栈 terminal 默认拒绝，经 ACP 上抛用户卡。
 
-**Differentiators:** Free-form 10-point scoring framework (no fixed dimensions), non-bypassable legal guardrails in every agent session, independent agent session for final synthesis, adversarial weakness-finding (Mode 4), early stopping on convergence, self-score with self-model bias awareness, reliability-weighted score aggregation (post-MVP), cross-examination / disprove pattern, review profiles by task risk (mode = profile), prompt enrichment, categorical confidence labels (Certain/Likely/Possible), fresh-context multi-round synthesis, independent confirmation as signal, Word-native track-changes output, provenance logging, document-borne prompt injection sanitization.
+**docx：** 模型产 JSON 变更清单，app 侧便携 Python 执行 41,185 字节 `contract_review_trackchanges.py` 做确定性变换——可审计、可测试、模型不碰 docx 字节。
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+- Phase 112（DSH 引擎底座）是技术风险闸口：V4-SELECTION §7 的 V1-V5 待验证项全部在该阶段 RESEARCH 闭环，任一项证伪即回退 PRD §12.1。
+- Phase 113 先于 114：预设形态（分域目录 + customSkillDirs 挂载）决定转换器输出结构。
+- Phase 116 承担两个产品级实测：澄清体验（R2）与可见性（R3），不达标启用 RB1/RB2。
+- 引擎升级纪律（钉版 + 真机回归 + 禁自动）写入发布脚本与 CI，不靠自觉。
 
-1. **Arena Contract Extension** - Establish the isomorphic event vocabulary before any component can emit or consume arena events.
-   - Addresses: Arena lifecycle events (`arena.workflow_started`, `arena.score_recorded`, `arena.review_completed`, `arena.synthesis_*`, `arena.adversarial_challenge_completed`, `arena.early_stop_triggered`), `ArenaWorkflowConfig`/`Handle`/`Status`/`UserAction` dataclasses, `ArenaWorkflow` Protocol in `platform-runtime`, arena client methods + event types in `platform-sdk-ts`.
-   - Avoids: Pitfall 17 (desktop app event vocabulary mismatch) and Pitfall 24 (gate-coverage meta-test) — schemas and gates are established before any code lands.
+## Open Questions
 
-2. **ACP fs/* Handler** - Extend `acp-client` to advertise `clientCapabilities.fs.readTextFile` and route inbound `fs/read_text_file` requests, with full path sandboxing.
-   - Addresses: Reference directory selection (table-stakes feature), agent autonomous file reading.
-   - Avoids: Pitfall 5 (fs/read_text_file scope escape) — resolve + prefix-check + symlink rejection + extension allowlist + size cap are built in from the start; backward compatibility with the Gateway path (no `client_capabilities` passed) is preserved.
-
-3. **Arena Engine** - Pure-Python orchestration library implementing the `ArenaWorkflow` Protocol across all 4 modes, testable with mock ACP clients before the service exists.
-   - Addresses: Mode 1–4 workflow logic, parallel dispatch via `asyncio.TaskGroup`, self-score iteration loop, cross-review pairing, independent synthesis dispatch, adversarial challenge + multi-round synthesis + early stop, guardrail enforcement hooks (prompt enrichment for third-party agents, post-hoc citation audit + de-AI polish), event tagging with `metadata.agent_slot`/`arena_phase`.
-   - Avoids: Pitfall 2 (orchestrator produces content — gate test asserts no LLM provider imports), Pitfall 3 (guardrail bypass — post-hoc enforcement at boundary), Pitfall 8 (fresh-context invariant — gate test asserts no `session/resume` calls), Pitfall 14 (double de-AI polish — track `polish_applied` in candidate metadata).
-
-4. **Arena Service** - Local framework-free HTTP+SSE service wiring together the engine, acp-client, and contract; binds to `127.0.0.1:8001`.
-   - Addresses: HTTP+SSE endpoints (create/stream/cancel/action/status), SSE multiplexing of N agent streams, event buffering for reconnection, output boundary enforcement (ACP output filter + default boundary), permission safety (dangerous kinds denied immediately), fs handler registration with user-selected roots.
-   - Avoids: Pitfall 4 (subprocess death — liveness check + per-run timeout + partial-result acceptance), Pitfall 6 (batch auto-approval — no batch endpoint, `_DANGEROUS_PERMISSION_KINDS` preserved), Pitfall 9 (output boundary bypass — same filter as Gateway), Pitfall 10 (backpressure — cap SSE buffer, drop non-critical events), Pitfall 13 (initialize contention — stagger startup with semaphore), Pitfall 18 (non-localhost binding — `127.0.0.1` only + local token auth).
-
-5. **Arena UI** - Desktop arena surface in `apps/desktop` with new `ui-core` components and a multi-stream `ArenaEventReducer`.
-   - Addresses: `ArenaWorkflowCreator` (mode/agent/task/directory selection), `ParallelStreamPanel` (N demultiplexed streams), `ScoreCard`, `ReviewSummary`, `SynthesisViewer`, `ArenaEventReducer` (composes existing `reduce()` per slot), `ArenaApiClient`, `useArenaEventStream` hook, `ArenaContext`.
-   - Avoids: Pitfall 15 (refresh loses state — persist run state, SSE reconnection by run ID), Pitfall 17 (vocabulary mismatch — consumes only validated event types from Phase 1).
-
-6. **Integration Testing + Gate Updates** - End-to-end tests across modes, fs/* sandbox tests, permission safety tests, output boundary tests, gate-coverage meta-test update, composability test.
-   - Addresses: Full-mode verification, gate-coverage baseline bump (34 → 36+), `solutions/demo_non_legal` arena variant for industry-neutrality.
-   - Avoids: Pitfall 23 (orphaned subprocesses on cancel — assert zero PIDs after cancellation), Pitfall 24 (gate-coverage — register arena packages before code lands), regression of the existing 34 green gates.
-
-**Phase ordering rationale:**
-- Contract first because every component emits or consumes arena events; the isomorphic JSON Schema → Python dataclass → TypeScript interface pattern must exist before any code can be written (ARCHITECTURE.md Phase 1 rationale).
-- ACP fs/* handler second because the arena-service needs fs/* handling to spawn agents that read reference files; it extends `acp-client` without breaking the Gateway path (ARCHITECTURE.md Phase 2 rationale).
-- Arena engine third because it is pure orchestration logic depending only on the contract and extended acp-client; it can be fully tested with mock agents before the service exists, de-risking the most complex logic early (ARCHITECTURE.md Phase 3 rationale).
-- Arena service fourth because it wires engine + acp-client + contract into an HTTP-exposed unit; it depends on all three prior phases (ARCHITECTURE.md Phase 4 rationale).
-- Arena UI last because it depends on everything below it; building it last means it is developed against a running arena-service with real agents (ARCHITECTURE.md Phase 5 rationale).
-- Integration testing + gate updates run throughout but finalize in Phase 6 once all components exist.
-
-**Research flags for phases:**
-- Phase 3 (Arena Engine): Likely needs deeper research — the 4-mode workflow logic, cross-review pairing matrix, early-stop convergence threshold, and reliability-weighted aggregation (deferred to post-MVP) are the most algorithmically complex parts. Prompt design for self-score bias awareness, cross-examination/disprove, and adversarial weakness-finding is novel and may require iterative tuning against real legal tasks.
-- Phase 4 (Arena Service): Likely needs deeper research — SSE multiplexing of N interleaved streams with backpressure handling, subprocess liveness detection, and reconnection semantics for multiplexed streams are not patterns the existing Gateway exercises (it handles single runs). The staggered-startup semaphore and per-run timeout values need empirical tuning.
-- Phase 1 (Contract Extension): Standard patterns — additive event types following the existing isomorphic convention; low risk.
-- Phase 2 (ACP fs/* Handler): Standard patterns with one well-understood security boundary (path sandboxing); the ACP spec clearly defines `fs/read_text_file` as a client-side capability. Mitigations are concrete and testable.
-- Phase 5 (Arena UI): Standard patterns — extends existing `ui-core` component/reducer conventions; the `ArenaEventReducer` composes the existing `reduce()` per slot. Main novelty is demultiplexing, which is a pure `createMemo` filter.
-- Phase 6 (Integration Testing): Standard patterns — reuses existing gate infrastructure; main work is registering new packages in `run_v2_gates.py`.
-
-## Confidence Assessment
-
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Zero new dependencies; all recommended technologies (stdlib asyncio/ASGI, SolidJS signals, Tauri IPC) are already proven in v3.0. Alternatives (LangGraph, CrewAI, AutoGen, FastAPI, tauri-plugin-sse) are rejected with clear rationale. Version pins verified against PyPI/npm as of Jul 2026. |
-| Features | HIGH | Four reference projects (Crossfire, ultra-review, cross-agent-reviews, LLM4Review) studied in depth with pattern mapping per mode. MVP recommendation (Mode 1+2 first, Mode 3 differentiator, Mode 4 high-stakes) is well-supported by the critical-path dependency graph. Anti-features explicitly scoped out with rationale. |
-| Architecture | HIGH | Component boundaries, data flow diagrams for all 4 modes, integration points with 9 existing v3.0 packages, and a 6-phase build order are all specified with file-level precision. The "separate local service, not Gateway merge" decision is well-justified. ACP fs/* handling flow and SSE multiplexing strategy are concrete. Minor uncertainty on backpressure and reconnection semantics for multiplexed streams (flagged for Phase 4 research). |
-| Pitfalls | HIGH | 24 pitfalls documented across critical (9), moderate (9), and minor (6) tiers, each with what/why/consequences/prevention/detection. Sources include 24 academic and industry references (self-preference bias, multi-agent collusion, ACP subprocess death, Buzz incident). Phase-specific warning table maps each pitfall to the phase where it is most likely to manifest. Prevention strategies are concrete and gate-testable. |
-
-## Gaps to Address
-
-- **Reliability-weighted score aggregation:** Researched as a differentiator (LLM4Review) but explicitly deferred to post-MVP. The weighting algorithm (confirmation-rate tracking, bias-correction factor for same-family reviews) needs phase-specific research when Mode 3 is productionized.
-- **Early-stop convergence threshold:** Mode 4 early stopping requires a "no material weaknesses" signal, but the free-form 10-point framework has no clear threshold. Pitfall 16 notes a hard round cap (4) + ≥8/10 + zero high-severity findings, but the exact threshold values need empirical tuning against real legal tasks.
-- **SSE multiplexing backpressure:** Pitfall 10 proposes a 1000-event cap with dropping of non-critical events, but the drop policy (which event types are "critical" vs "non-critical" in the arena context) and the `buffer_overflow` notification protocol need design work in Phase 4.
-- **Cross-family review enforcement:** Pitfall 1/7 mitigation requires `backend_family(A) != backend_family(B)` at assignment time, but the `backend_family` taxonomy (is Hermes "Claude-based"? is Codex "GPT-based"?) and the fallback behavior when only same-family agents are available need to be defined in the agent registration schema.
-- **Prompt design for self-score bias awareness, cross-examination, and adversarial weakness-finding:** These are prompt-engineering differentiators flagged as low code complexity but high novelty. They need iterative tuning against real legal tasks and may require a lawyer review gate (analogous to HG-1) before Mode 3/4 ship.
-- **Prompt injection sanitization for legal reference files:** Identified as a differentiator and a pitfall (Pitfall 22), but the sanitization implementation (delimiter wrapping, pattern removal, detection logging) is defense-in-depth and not a complete fix. Needs phase-specific research in Phase 3 or a dedicated security review.
-- **Arena run state persistence format:** Pitfall 15 recommends atomic JSON or SQLite, but the choice and the reconnection-by-run-ID protocol need design in Phase 4/5.
-- **Composability / industry-neutrality of arena events:** The `solutions/demo_non_legal` arena variant test is specified in Phase 6 but the legal-specific vs platform-level field split for arena metadata has not been fully specified.
+- 语料仓转换器是否由 CI 在 Windows 侧跑（业主语料仓在 Windows 路径），或由 WSL 桥接执行——Phase 114 RESEARCH 定。
+- GitHub Release 作为内容包源是否满足业主网络环境（中国大陆下载稳定性）——Phase 115 RESEARCH 定，必要时业主自有服务器。
+- 便携 Python（Windows embeddable）打包体积与 docx 脚本依赖（lxml）兼容性——Phase 118 RESEARCH 定。

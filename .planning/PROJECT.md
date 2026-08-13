@@ -2,62 +2,57 @@
 
 ## What This Is
 
-墨律 InkStatute 是一个统一的法律助手平台：**一套法律能力核心，通过同一套事件词汇同时服务所有客户端和所有 agent 后端**。
+墨律 InkStatute 是一个单用户 Windows 桌面法律助手：**法律能力包 + 律师可用外壳，套在 DeepSeek Harness（DSH）引擎上**。
 
-- **通道层**：Web（桌面/移动浏览器）、桌面 App（Windows/macOS）、WeCom bot、QQ bot；移动原生 App 规划中。全部共享一份 UI 核心，chat UI 只有一份实现。
-- **后端层**：任何说 ACP（Zed Agent Client Protocol）的 agent —— Hermes、Codex、Claude Code、Gemini CLI —— 加上墨律自研的 Python agent core。换后端不需要改任何通道代码。
-- **能力层**：`ai-for-china-legal`（345 个 SKILL.md）+ `legal-skills`（51 个）共 396 个真实中国法律 skill，以只读 vendoring 引用，平台提供索引与按后端物化，一份 skill 三处可用。
+- **引擎层**：DSH（钉版本、随安装包分发、经 automation-only ACP server over stdio 驱动）。agent loop / 工具注册表 / 批准栈 / 技能系统 / 会话持久化 / 子代理 / 工作流全部继承 DSH，墨律不再自研执行核心。
+- **能力层**：`ai-for-china-legal`（345 个 SKILL.md，唯一事实源，只读物化）经 `dsh` 物化管线进入分域预设；内容包独立版本化、启动时自动更新、失败回滚。`legal-skills` 并入推迟（DEFER-01）。
+- **产品层**：Flutter 原生桌面 app（**无 WebView**）——会话 UI、批准卡片、澄清卡片、引用/人审徽记、Word 原生修订导出、三层更新器、零操作安装。
 
-平台自己不执行法律任务，也不为每个后端写胶水。它做的是：定义一套事件词汇，让它同时跑在两条链路上——对客户端说 HTTP+SSE，对后端说 ACP over stdio——并负责扇出、租户、持久化、输出边界与通道降级。
+v3.x 平台（Gateway / WeCom / QQ / Arena / 自研 Python core / Tauri 桌面 / SolidJS ui-core）整体冻结，验收后退役（LEG-01/02）。
 
 ## Core Value
 
-律师可以在任意端（web / 桌面 / 手机浏览器 / 企业微信 / QQ）用到同一套法律能力，得到一致的流式体验、澄清卡片、带 Word 原生修订的文书产物与反馈回路；而平台可以在不动任何通道代码的前提下更换 agent 后端，在不复制 skill 语料的前提下让所有后端共享 396 个真实法律 skill。高风险法律结论始终人审。
+一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏（research-gate / citation audit / ask-user / de-AI polish）与人审标记不可绕过，Word 原生修订稿一键导出。高风险法律结论始终人审。
 
-## Current Milestone: v3.1 Legal AI Arena
+## Current Milestone: v4.0 Flutter Native + DSH Engine
 
-**Started:** 2026-08-08
-**Status:** Defining requirements
-**Predecessor:** v3.0 Unified Legal Core (shipped 2026-08-08, 17 phases, 937 tests, 34 gates)
+**Started:** 2026-08-13
+**Status:** Roadmap defined — Phases 112-120, 33 requirements mapped, ready to plan Phase 112
+**Predecessor:** v3.1 Legal AI Arena (shipped 2026-08-09) → v3.0 Unified Legal Core (shipped 2026-08-08)
 
-**目标：** 律师可在桌面 app 内创建法律任务，选择多个 ACP 后端 agent 并行处理，每个 agent 自评迭代到满意后交叉评审，最终由独立 session 综合评审意见产出最终版——全程流式可见、法律护栏不绕过。
+**目标：** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app（无 WebView）经 ACP over stdio 驱动本地嵌入的 DSH 引擎；分域法律预设 + 技能内容包自动更新；四条法律护栏与人审标记不可绕过；Word 原生修订稿一键导出；v3.x 平台整体冻结收敛。
 
-**为什么做这个：** v3.0 交付了统一法律能力核心（ACP 后端层 + Gateway + ui-core + 396 skill + 自研 Python core + 4 法律护栏），但律师使用时仍是单 agent 单轮交互。实际法律任务中，不同 agent 各有强弱，交叉评审能对冲单 agent 盲区。用户需要一个通用工作流：多 agent 并行 → 自评迭代 → 交叉评审 → 综合最终版，且全程可看到中间结果。
-
-**四级工作流模式：**
-
-| 级别 | 名称 | 流程 | 适用场景 |
-|---|---|---|---|
-| 1 | 标准 | N 个 agent 并行处理，无迭代无交叉评审，用户自选结果 | 快速对比，简单任务 |
-| 2 | 自评迭代 | 每个 agent 自评（10 分框架）+ 自优化迭代，用户手动停止 | 单 agent 质量提升 |
-| 3 | 竞技评审 | 自评迭代 + 多 agent 交叉评审 + 独立 session 综合最终版 | 需多方视角的重要任务 |
-| 4 | 对抗竞技 | 竞技评审 + 对抗式审查 + 多轮综合 + 提前停止 | 高风险/高复杂度法律任务 |
+**为什么做这个：** 执行核心自研是军备竞赛——DSH 专职团队的 agent loop / 工具 / 批准栈 / 技能 / 持久化 / 子代理 / 工作流无法以自研追赶；同时 V3 的平台形态（Gateway/多通道/Arena）与真实交付对象（一名"连基础软件都装不了"的律师朋友）错配。Flutter 全量重构已是进行时，V4 把"内嵌 DSH"合并进这一版（原称 v5 不再单独立版）。
 
 **架构：**
 
 ```
-Desktop App (Tauri + SolidJS + ui-core)
-    ↕ HTTP+SSE（与 Gateway 同构事件词汇）
-Local Arena Service (services/arena-service, Python)
-    ├── packages/arena-engine（4 级工作流编排）
-    ├── packages/acp-client（ACP 会话管理，复用）
-    ├── packages/agent-core（法律护栏，复用）
-    ├── packages/skill-index（法律 skill 索引，复用）
-    └── ACP fs/* handler（从用户选定目录提供文件）
-    ↕ ACP over stdio（每个 agent 一个子进程）
-Local Agents: Kimi-M3 (agent-core ACP) / Devin CLI / Codex
+apps/flutter_app (Flutter 原生, Windows)
+    ├── packages/acp_client (Dart, ACP v1 JSON-RPC stdio)
+    ├── 首启向导 │ 会话 UI │ 批准卡 │ 澄清卡 │ 引用/人审徽记
+    ├── 本地会话库(SQLite) │ Word 导出(便携 Python) │ 三层更新器
+    ↕ ACP over stdio（单 DSH 子进程）
+DSH 引擎（钉版本, engine\<version>\）
+    ├── engines/acp.cordis.yml（spine + persistence + 批准栈 + fs + 技能 + dsh-acp）
+    ├── DSH_HOME=%LOCALAPPDATA%\InkStatute\runtime\.dsh
+    └── .agent-presets/<domain>/ ← presets/ 物化；skills/<release>/ ← 内容包
 ```
 
 **关键设计决策：**
-- Agent 是本地 stdio 子进程 → 编排器必须本地运行
-- Python 编排器 → 可复用 acp-client / agent-core / skill-index
-- 本地服务暴露与 Gateway 同构的 HTTP+SSE → 桌面 app 复用 ui-core 和事件词汇
-- arena-engine 只调度和汇总，自己不产出内容；最终版由 agent session 产出
-- ACP fs/read_text_file 让 agent 自主读取用户选定目录内的参考文件
-- 法律护栏（research-gate / citation audit / ask-user / de-AI polish）在竞技工作流中不可绕过
-- 评分标准：自由评分（仅给 10 分框架），不限定维度
-- 最终优化：独立 session 拿最高分结果 + 所有评审意见产出最终版
-- 吸收 Crossfire / ultra-review / LLM4Review 模式：prompt enrichment、结构化评审输出、提前停止、自评偏差意识
+- 引擎 = DSH；集成缝 = automation-only ACP server（唯一面向外部产品进程的稳定缝）；用户明确否决 WebView
+- ACP 三个刻意限制由产品吸收：澄清走 `[CLARIFY:]` 约定文本 + 前置采集（DP-1）、工具活动以状态文案呈现（DP-2）、批准卡为唯一交互通道（DP-3）
+- DSH pre-release → 钉 commit、禁自动升级引擎、升级前真机回归（`scripts/build_dsh_release.sh` + `engines/dsh-pin.txt`）
+- 技能语料唯一事实源 = ai-for-china-legal；`convert-skills.js` 加 `dsh` target；内容包唯一自动更新层
+- 分域预设（core ≤30 + 四域）+ token 预算门禁（目录渲染 ≤8,000 字符默认）——禁全量挂载 345 技能
+- 护栏双层：预设提示词段（模型侧）+ app 呈现/强制（渲染侧），任一层缺失即绕过
+- docx 确定性变换在 app 侧（便携 Python 执行 41,185 字节 track-changes 脚本），模型不写 docx 字节
+- v3.x 平台冻结（LEG-01），律师试运行验收后退役（LEG-02）
+
+## Previous: v3.1 Legal AI Arena — SHIPPED
+
+**Shipped:** 2026-08-09
+**Status:** COMPLETE — Phases 105-111（Arena 契约、ACP fs handler、竞技引擎四模式、竞技服务、桌面竞技 UI、Closure）
+**Archived:** v3.1 文档随 `/gsd-complete-milestone` 归档（归档前 git 历史保留）
 
 ## Previous: v3.0 Unified Legal Core — SHIPPED
 
@@ -176,18 +171,20 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ### Active
 
-**v3.1 Legal AI Arena — requirements to be defined. See [REQUIREMENTS.md](REQUIREMENTS.md) once created.**
-
-**v3.0 Unified Legal Core — 61 requirements ALL SATISFIED (shipped 2026-08-08). See [v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md) for the archived full list.**
+**v4.0 Flutter Native + DSH Engine — 33 requirements（5 DSH + 7 SKL + 6 APP + 6 GRD + 4 PKG + 2 LEG + 3 GATE），全部映射到 Phases 112-120（100%）。权威列表见 [REQUIREMENTS.md](REQUIREMENTS.md)，规格真源 [V4-PRD.md](../docs/requirements/V4-PRD.md)。**
 
 **Human gates（不得由自动化声称通过）：**
 
-- [ ] HG-1 法律质量：移植后的 prompt 装配与法律护栏须由律师抽样确认 — Phase 102
-- [ ] HG-4 修订稿质量：Word 原生修订 docx 须由律师确认可用于对外谈判 — Phase 101
-- [ ] HG-2 / Phase 5 live WeCom UAT operator confirmation. (carried from V2)
-- [ ] HG-3 / 五工作日律师试运行验收. (carried from V2)
-- [ ] Operator `--live` QQ OpenAPI acceptance evidence. (carried from v1.9; not auto-claimed)
-- [ ] Future host/ops candidates from v1.9 archive: HOST-F01 durable wakeup stores; HOST-F02 async ACK queue; HOST-F03 health endpoints (deferred unless promoted)
+- [ ] HG-1 法律质量：V4 基线（DSH + 分域预设）须由律师抽样确认不低于 lawyer-desktop/Hermes 基线 — Phase 120
+- [ ] HG-4 修订稿质量：Word 原生修订 docx 须由律师确认可用于对外谈判 — Phase 118
+- [ ] HG-3 五工作日 / 15 真实任务律师试运行验收 — Phase 120
+- [ ] HG-2 / Phase 5 live WeCom UAT operator confirmation — DEFERRED（通道随 v3.x 平台冻结）
+- [ ] Operator `--live` QQ OpenAPI acceptance evidence — DEFERRED（通道随 v3.x 平台冻结）
+
+### Historical (superseded by v4.0)
+
+v3.0（61 条）与 v3.1（45 条）需求已随各自里程碑交付；v3.0 归档见 [v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md)。以下为 v1.x-v2 遗留条目，仅存档：
+
 - [x] Define the V2 platform contract package with five event schemas, async task states, error categories, JSON Schema, Python bindings, and fixtures.
 - [x] Model AgentTurn, AgentResult, FeedbackEvent, ExecutionTrace, and RouteDecision as platform events with traceable relationships.
 - [x] Build a contract test suite before production Hermes hook work.
@@ -221,22 +218,22 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 ## Context
 
-- **Source of truth: `docs/requirements/V3-PRD.md`.** 选型证据：`.planning/research/V3-SELECTION.md`。V1/V2-PRD 保留为历史文档，不再是活跃需求源。
+- **Source of truth: `docs/requirements/V4-PRD.md`.** 选型证据：`.planning/research/V4-SELECTION.md`。V1/V2/V3-PRD 保留为历史文档，不再是活跃需求源。
 - **相关仓库**（本仓之外，皆为 workspace 同级目录）：
-  - `ai-for-china-legal` — 345 个 SKILL.md，13 plugin，Claude-Code-plugin 格式，纯 prompt；含 `shared/inkstatute-integration/`（为墨律写的 ask_user 协议与 UX 待办）
-  - `legal-skills` — 51 个 SKILL.md，37/51 带 `scripts/`（140 个 .py），MIT + CC-BY-NC 双许可
-  - `lawyer-desktop` — 本项目前身，Tauri 2.11 + SolidJS；其 UI（23 组件 + 墨律三主题）与 agent 核心逻辑（router 627 / classifier 691 / tool_leak 392）是 V3 的迁入源
-  - `lawfirm-profile` — 生产中的 Hermes profile，312 skill；`scripts/router.py`（498 行强信号路由）与 `scripts/contract_review_trackchanges.py`（41,185 字节 Word 原生修订）是必须保住的能力
+  - `ai-for-china-legal` — 345 个 SKILL.md，Claude-Code-plugin 格式，纯 prompt；V4 技能语料唯一事实源（业主 Windows 路径 `C:\Users\sorawatcher\workspace\ai-for-china-legal`）；`convert-skills.js` 加 `dsh` target
+  - `deepseek-harness` — V4 引擎源（`/home/sorawatcher/deepseek-harness`）；钉 commit 构建；ACP server 契约见 `packages/acp/acp/README.md`
+  - `legal-skills` — 51 个 SKILL.md（37 带 .py，CC-BY-NC）；DEFER-01 许可评估后再议
+  - `lawfirm-profile` — `scripts/contract_review_trackchanges.py`（41,185 字节 Word 原生修订）是 V4 docx 导出的复用资产
+  - `lawyer-desktop` — Tauri 2.11 + SolidJS；V4 只取设计参照（23 组件 + 墨律三主题），agent 逻辑（router/classifier/tool_leak）不迁入、退役
   - `lawyer-ai` — OpenCode 原型，已搁置，不迁入
-- **Target runtime**: Python 为平台与 agent core 语言；TypeScript 为客户端与共享 UI；JSON Schema 为跨语言契约格式。
-- **Workflow**: 高自主 GSD，人工闸门保留给法律质量、真机通道与律师试运行。
-- **开发顺序具约束力**：协议底座（88-90）→ 通道统一（91-95）→ 能力层（96-99）→ 自研核心（100-104）。阶段 A+B+C 完成即可交付可用产品（后端用 `hermes acp`），阶段 D 换心脏。
+- **Target runtime**: Flutter/Dart 为产品层；DSH（Node）为引擎层；便携 Python 只服务 docx 确定性变换；JSON 为变更清单契约格式。
+- **Workflow**: 高自主 GSD，人工闸门保留给法律质量（HG-1）、修订稿质量（HG-4）与律师试运行（HG-3）。
+- **开发顺序具约束力**：DSH 引擎底座（112）→ 法律预设与能力层（113-115）→ 客户端与护栏（116-118）→ 交付与收敛（119-120）。Phase 112 RESEARCH 必须先闭环 V4-SELECTION §7 的 V1-V5，任一证伪触发 PRD §12.1 回退评审。
 
-- **Architecture**: 一套事件词汇，两条链路——对客户端 HTTP+SSE，对后端 ACP over stdio。平台只做扇出、租户、持久化、输出边界与通道降级，不执行法律任务也不为每个后端写胶水。
-- **Backend seam**: 对齐 Zed 的 Agent Client Protocol（v1）。已本机验证 `hermes acp --check` OK。一个 ACP client 取代 N 个自定义 adapter。
-- **Channel seam**: 不对齐外部协议（客户端全为第一方，零互操作收益），但事件词汇与 ACP `session/update` 同构，使平台退化为薄中继。
-- **Skill layer**: 只读 vendoring + 索引 + 按后端物化。平台不建 skill 执行 runtime，不复制语料。
-- **Self-built core**: 默认后端，但架构上无特权——与 hermes/codex 走同一 BackendAdapter 与同一事件词汇。一份实现两个入口（in-process + `inkstatute-agent acp`）。
+- **Architecture**: 单用户本地架构——Flutter app 直接 ACP 驱动本地 DSH 子进程；无 Gateway、无 WebView、无远程引擎。三层更新：app（安装器）/ 引擎（禁自动）/ 内容包（唯一自动层）。
+- **Engine seam**: DSH 的 automation-only ACP server（JSON-RPC stdio）——文本 prompt 进、已提交文本出、一次性批准卡。澄清与工具可见性按 DP-1/DP-2 产品化吸收。
+- **Skill layer**: 语料仓只读物化（`dsh` target）+ 分域预设挂载 + 内容包原子更新；禁全量挂载；token 预算门禁。
+- **Guardrails**: 双层（预设提示词段 + app 呈现/强制）；批准栈 terminal 默认拒绝；高风险结论恒人审。
 - **Privacy**: 契约日志 reference-first（`raw_payload_ref`），不存敏感全文。
 - **User-facing output**: 输出边界在 ACP 事件桥与 Gateway 双重执行；后端 meta/gateway/system/update/command 噪声不得到达普通律师用户。
 - **Permission safety**: ACP `session/request_permission` 服务端不得默认 allow；`terminal`/`execute_code` 类必须显式拒绝或上抛审批（参考 Buzz 的 auto-allow 事故）。
@@ -247,7 +244,19 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| **V3 PRD 取代 V2 成为活跃规格** | V2 的四个范围前提（单通道、单后端、无真实 skill、自研只留口）全部失效；且平台从未接上 396 个真实法律 skill | Decided 2026-08-06 |
+| **V4 PRD 取代 V3 成为活跃规格** | 执行核心自研是军备竞赛（DSH 专职团队无法追赶）；V3 平台形态与"单用户双击即用"交付错配；业主选定 Flutter 全量重构 | Decided 2026-08-13 |
+| **引擎 = DSH；集成缝 = automation-only ACP server（JSON-RPC stdio）** | 唯一面向外部产品进程的稳定缝；业主明确否决 WebView（Flutter 选型意义即原生 UI）；`dsh web` 的 Typert/WS 协议面不稳定 | Decided 2026-08-13 |
+| **ACP 三个刻意限制由产品吸收** | ACP 无 elicitation/工具流/transcript：澄清走 `[CLARIFY:]` 约定文本 + 前置采集（DP-1）；工具活动以状态文案呈现（DP-2）；批准卡为唯一交互通道（DP-3）；不达标启用 RB1/RB2 | Decided 2026-08-13 |
+| **DSH 钉版本 + 禁自动升级引擎** | DSH pre-release（首个 tagged release 前自由破坏兼容）；升级必须真机回归后随 app 版本发布 | Decided 2026-08-13 |
+| **技能语料唯一事实源 = ai-for-china-legal；`dsh` 物化 target** | 语料仓已有 `--to kimi|opencode|standalone` 多端管线；DSH 技能格式同构；只做两类语义改写（斜杠命令/CLAUDE.md 写入） | Decided 2026-08-13 |
+| **内容包 = 唯一自动更新层** | 技能迭代最频繁（业主不定期优化）；manifest + sha256 + 原子切换 + 回滚；DSH skill watcher 使更新零重启 | Decided 2026-08-13 |
+| **分域预设 + token 预算门禁，禁全量挂载** | DSH 把技能目录（name+description）渲染进模型前缀；345 全挂 = 每请求背整本目录。core ≤30 + 四域；目录渲染 ≤8,000 字符默认 | Decided 2026-08-13 |
+| **护栏双层（提示词段 + app 呈现/强制）** | ACP 无工具流，v3.0 的代码级强制（turn_loop.py）在引擎内不可移植；双层任一缺失即算绕过（回归锁定） | Decided 2026-08-13 |
+| **docx 确定性变换在 app 侧** | 41,185 字节 Python 脚本是既有资产；docx 生成可审计可测试；模型永不直接写 docx 字节 | Decided 2026-08-13 |
+| **v3.x 平台冻结，验收后退役** | gateway/wecom/qq/arena/agent-core/acp-client(TS)/ui-core(SolidJS)/apps/web/apps/desktop 不进 V4 交付物；单用户产品不需要 118K 行平台 | Decided 2026-08-13 |
+| **自研 agent core（Python）退役** | V3 决策"自研 core 是默认后端"被 V4 推翻：DSH 全面接管；`packages/agent-core` 冻结，不再投入 | Superseded 2026-08-13 |
+| **Tauri/SolidJS 桌面端退役** | 业主 Flutter 全量重构进行中；lawyer-desktop 只取设计参照 | Superseded 2026-08-13 |
+| V3 PRD 取代 V2 成为活跃规格 | V2 的四个范围前提（单通道、单后端、无真实 skill、自研只留口）全部失效；且平台从未接上 396 个真实法律 skill | Superseded by V4 on 2026-08-13 |
 | **后端层对齐 ACP（Zed Agent Client Protocol v1）** | 本机 `hermes acp --check` 已验证 OK；Codex/Claude Code/Gemini/OpenCode/Cursor/Cline 全支持，Registry 174+ agent；一个 client 取代 3,875 行自定义 adapter；`session/update`+`elicitation`+`request_permission` 与产品需求一一对应 | Decided 2026-08-06 |
 | **锁 ACP v1，不用 v2** | v2 为 draft，已知破坏性变更（移除 `fs/*`/`terminal/*`/`session/load`/`tool_call`）；`initialize` 做版本协商，v2 特性开关关闭 | Decided 2026-08-06 |
 | **通道层不对齐 AG-UI / Vercel AI SDK / A2A** | 所有客户端均为第一方，标准协议的互操作价值为零；引入第二套事件词汇 + 外部依赖是净负债。但事件词汇与 ACP 同构，保留 AG-UI 映射文档 | Decided 2026-08-06 |
@@ -355,12 +364,11 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Last shipped:** v3.0 Unified Legal Core (Phases 88–104) — 17 phases, 937 tests, 34 gates green, ~10,483 lines legacy retired.
-- **Active milestone:** v3.1 Legal AI Arena — defining requirements.
-- **v3.0 delivered:** Unified event vocabulary (ACP isomorphic), Python ACP client, multi-tenant HTTP+SSE Gateway, @inkstatute/ui-core (23 components, 3 themes), responsive web + Tauri desktop + WeCom/QQ Gateway consumers, 396 legal skills indexed/materialized, self-built Python async streaming agent core (context budget + tool layer + Word-native track-changes docx + 4 legal guardrails), dual entry points (in-process + `inkstatute-agent acp` CLI), legacy convergence.
-- **v1.8 accepted gaps:** closed by v1.9 (host composition, Protocol-path smoke, controlled live path docs/honesty).
-- **Carried human gates:** HG-1 法律质量 (Phase 102); HG-4 修订稿质量 (Phase 101); HG-2 真机通道 (carried from V2); HG-3 律师试运行 (carried from V2); operator `--live` QQ OpenAPI acceptance (carried from v1.9).
-- **Tech debt (v1.11):** Missing SUMMARY.md for phases 82-85; unchecked REQUIREMENTS.md checkboxes for OBS-04..10; incomplete Nyquist validation for 7/9 phases. All non-blocking.
+- **Active milestone:** v4.0 Flutter Native + DSH Engine — Phases 112-120, roadmap defined, none started.
+- **Last shipped:** v3.1 Legal AI Arena (2026-08-09) / v3.0 Unified Legal Core (2026-08-08).
+- **v4.0 deliverable:** Flutter 原生桌面 app（无 WebView）+ 嵌入 DSH 引擎（ACP over stdio）+ 分域法律预设 + 技能内容包自动更新 + 六条护栏双层 + Word 修订导出 + 单 exe 安装包。
+- **Frozen (LEG-01):** gateway / wecom / qq / arena / agent-core / acp-client(TS) / ui-core(SolidJS) / apps/web / apps/desktop。
+- **Carried human gates:** HG-1 法律质量（Phase 120）、HG-4 修订稿质量（Phase 118）、HG-3 律师试运行（Phase 120）；HG-2 / QQ `--live` 随通道冻结 DEFERRED。
 
 
 ## Evolution
@@ -383,4 +391,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-08-08 — Milestone v3.1 Legal AI Arena started (v3.0 shipped)*
+*Last updated: 2026-08-13 — Milestone v4.0 Flutter Native + DSH Engine started (v3.0/v3.1 shipped; v3.x platform frozen)*

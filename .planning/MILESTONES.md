@@ -1,5 +1,23 @@
 # Project Milestones: 墨律 InkStatute
 
+## v4.0 Flutter Native + DSH Engine (In progress — started 2026-08-13)
+
+**Planned:** Flutter 原生桌面 app（无 WebView）经 ACP over stdio 驱动本地嵌入的 DeepSeek Harness（DSH）引擎；分域法律预设（core ≤30 + 四域）+ 技能内容包自动更新；六条法律护栏双层落地；Word 原生修订导出（便携 Python 执行既有 track-changes 脚本）；单 exe 安装包 + 三层更新。v3.x 平台冻结、验收后退役。
+
+**Spec:** [V4-PRD.md](../docs/requirements/V4-PRD.md) · **Evidence:** [V4-SELECTION.md](research/V4-SELECTION.md) · **Requirements:** 33 条（100% 映射 Phases 112-120）
+
+**Human gates:** HG-1 法律质量（120）、HG-4 修订稿质量（118）、HG-3 律师试运行（120）——永不自动关闭。
+
+---
+
+## v3.1 Legal AI Arena (Shipped: 2026-08-09)
+
+**Delivered:** Arena 生命周期契约（CONTRACT-01..04）、ACP fs/read_text_file 入站处理器（五重路径沙箱）、四模式竞技引擎（并行 / 自评迭代 / 交叉评审 / 对抗竞技，编排器不产内容、护栏不可绕过）、本地 HTTP+SSE 竞技服务（多流复用 + 权限安全 + 子进程受控）、桌面竞技 UI、Word 导出端点、v3.1 Closure（6 plans）。归档待 `/gsd-complete-milestone`。
+
+**Phases completed:** 105-111 (7 phases, 38 plans)
+
+---
+
 ## v3.0 Unified Legal Core (Shipped: 2026-08-08)
 
 **Delivered:** Unified legal capability core with one event vocabulary, one ACP backend seam, one Gateway, one UI core across web/desktop/WeCom/QQ, 396 real legal skills indexed and materialized, and a self-built Python agent core with legal guardrails ported from Rust. Legacy backends (hermes, codex), legacy channels (web_sse), and legacy services (lawyer-web-chat, hermes-contract-layer) retired. ~10,483 lines of legacy code removed. 34 V2 gates green, 937 tests passing.

@@ -25,6 +25,7 @@ All v1.x phase details, requirements, and audits are archived under `.planning/m
 See `.planning/MILESTONES.md` for the consolidated history.
 
 Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
+
 - Phase 5 live WeCom UAT operator confirmation
 - Phase 8 five-workday lawyer trial acceptance
 - Operator `--live` QQ OpenAPI acceptance evidence
@@ -97,12 +98,21 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
   7. V4-SELECTION §7 的 V1（真实 ACP 全流程）、V2（审批上抛）、V3（skill 目录进前缀）、V4（会话日志路径）、V5（构建后启动形态）全部实测并在 `112-RESEARCH.md` 记录结论；任一证伪即触发 PRD §12.1 回退评审
 
 **Plans**: 6 plans
+**Wave 1**
+
 - [ ] 112-01-PLAN.md — Wave 1 tracer: Flutter skeleton + acp_client + initialize handshake + mock fixture (DSH-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 112-02-PLAN.md — Wave 2: Full ACP v1 client method coverage with mock fixtures (DSH-01)
 - [ ] 112-03-PLAN.md — Wave 2: Approval security three-state tests (DSH-04)
 - [ ] 112-04-PLAN.md — Wave 2: DSH subprocess manager — spawn, health probe, zero orphans (DSH-02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 112-05-PLAN.md — Wave 3: Engine release pipeline — dsh-pin.txt + acp.cordis.yml + build_dsh_release.sh (DSH-03)
 - [ ] 112-06-PLAN.md — Wave 3: v4 gates runner + CI — dart analyze + flutter test + meta-test (GATE-01, GATE-02)
+
 **UI hint**: no
 
 ### Phase 113: Legal Presets & Domain Presets
@@ -260,24 +270,31 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 <summary>v3.1 Phase Details (105-111) — SHIPPED</summary>
 
 ### Phase 105: Arena Contract Extension ✅
+
 - **Requirements**: CONTRACT-01..04 — Arena 生命周期事件词汇、数据类、Protocol、Schema 校验与可组合性测试。
 
 ### Phase 106: ACP fs Handler ✅
+
 - **Requirements**: FS-01..04, SAFE-05, GATE-04 — fs/read_text_file 入站路由、五重路径沙箱、参考文件注入消毒、Gateway 向后兼容。
 
 ### Phase 107: Arena Engine — Modes 1+2 ✅
+
 - **Requirements**: ENGINE-01, ENGINE-02, ENGINE-05..09, SAFE-01..04, SAFE-07 — 并行调度、自评迭代、编排器不产内容、护栏不可绕过、产物持久化、故障恢复、用户停止。
 
 ### Phase 108: Arena Engine — Modes 3+4 ✅
+
 - **Requirements**: ENGINE-03, ENGINE-04, SAFE-06 — 交叉评审、对抗竞技、多轮综合、提前停止、跨族评审强制。
 
 ### Phase 109: Arena Service ✅
+
 - **Requirements**: SVC-01..08, GATE-05, GATE-06 — 本地 HTTP+SSE 服务、多流复用、输出边界、权限安全、子进程受控、重连、错峰启动。
 
 ### Phase 110: Arena UI + Integration ✅
+
 - **Requirements**: UI-01..07, GATE-01..03 — 桌面竞技 UI、多流解复用、状态持久化、gate 更新、端到端集成。
 
 ### Phase 111: v3.1 Closure ✅ COMPLETE
+
 - **Requirements**: UI-01..07, GATE-01 (closure) — 桌面 arena 集成、Word 导出端点、FS handler 接线、BackendAdapter 测试回归修复（6 plans，completed 2026-08-09）。
 
 </details>
@@ -294,55 +311,72 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 <summary>v3.0 Phase Details (88-104) — SHIPPED</summary>
 
 ### Phase 88: Unified Event Contract ✅
+
 - **Requirements**: EVT-01..06 — 13-category unified event vocabulary, ACP-isomorphic, JSON Schema + Python + TypeScript bindings, bot degradation rules, V2 contract preserved.
 
 ### Phase 89: ACP Backend Client ✅
+
 - **Requirements**: ACP-01, ACP-02, ACP-03, ACP-06 — Python ACP client driving hermes acp, second backend proof, subprocess lifecycle.
 
 ### Phase 90: ACP Event Bridge & Output Boundary ✅
+
 - **Requirements**: ACP-04, ACP-05, ACP-07, SAFE-02, SAFE-03 — Bidirectional ACP↔unified event mapping, output boundary enforced, permission safety defaults.
 
 ### Phase 91: Unified Gateway ✅
+
 - **Requirements**: GW-01..06 — Single multi-tenant HTTP+SSE Gateway replacing platform_api + lawyer-web-chat.
 
 ### Phase 92: Shared UI Core ✅
+
 - **Requirements**: UI-01, UI-02, UI-03, UI-06 — @inkstatute/ui-core extracted from lawyer-desktop, 23 components, 3 themes, single chat UI implementation.
 
 ### Phase 93: Web Client ✅
+
 - **Requirements**: UI-04 — Responsive web client (desktop + mobile browser), full task flow via Gateway.
 
 ### Phase 94: Desktop Client ✅
+
 - **Requirements**: UI-05 — Tauri desktop shell reusing ui-core, invoke()→Gateway, offline read-only.
 
 ### Phase 95: Bot Channel Degradation ✅
+
 - **Requirements**: BOT-01, BOT-02, BOT-03 — WeCom/QQ as Gateway consumers with non-streaming degradation.
 
 ### Phase 96: Real Skill Index ✅
+
 - **Requirements**: SKILL-01..04, SAFE-05 — 396 real legal SKILL.md indexed, read-only, dual-repo merge.
 
 ### Phase 97: Skill Materialization ✅
+
 - **Requirements**: SKILL-05, SKILL-06, SKILL-09 — Per-backend materialization, three-way separation, manifest cleanup.
 
 ### Phase 98: Real-Index Routing ✅
+
 - **Requirements**: SKILL-07, SKILL-08 — Routing on real skill index, strong-signal rules ported, three-mode detection.
 
 ### Phase 99: Practice Profile ✅
+
 - **Requirements**: PROF-01, PROF-02, PROF-03 — CLAUDE.md practice profile multi-tenantized, cold-start interview.
 
 ### Phase 100: Agent Core Skeleton ✅
+
 - **Requirements**: CORE-01, CORE-04, CORE-09 — Python async streaming turn loop, context budget, model layer.
 
 ### Phase 101: Agent Core Tools ✅
+
 - **Requirements**: CORE-02, CORE-03 — Tool layer + Word-native track-changes docx (41,185 bytes ported).
 
 ### Phase 102: Legal Guardrail Port ✅
+
 - **Requirements**: CORE-05..08, SAFE-01, SAFE-04 — Prompt assembly, tool_leak, citation audit, 4 guardrails ported from Rust.
 - **Human gate**: HG-1 法律质量（carried to v4.0）
 
 ### Phase 103: Dual Entry Points ✅
+
 - **Requirements**: CORE-10 — in-process BackendAdapter + `inkstatute-agent acp` CLI.
 
 ### Phase 104: Legacy Convergence ✅
+
 - **Requirements**: CONV-01..05, SAFE-06 — ~10,483 lines retired, gate system updated (34 gates), composability preserved.
 
 **Archive:** [v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md) | [v3.0-REQUIREMENTS.md](milestones/v3.0-REQUIREMENTS.md) | [v3.0-phases](milestones/v3.0-phases/)
