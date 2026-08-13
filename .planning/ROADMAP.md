@@ -100,7 +100,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 **Plans**: 6 plans
 **Wave 1**
 
-- [ ] 112-01-PLAN.md — Wave 1 tracer: Flutter skeleton + acp_client + initialize handshake + mock fixture (DSH-01)
+- [x] 112-01-PLAN.md — Wave 1 tracer: Flutter skeleton + acp_client + initialize handshake + mock fixture (DSH-01) ✅ 2026-08-13
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

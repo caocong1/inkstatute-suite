@@ -86,7 +86,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DSH-01 | 112 | Not started |
+| DSH-01 | 112 | In progress (tracer complete in 112-01; full coverage in 112-02) |
 | DSH-02 | 112 | Not started |
 | DSH-03 | 112 | Not started |
 | DSH-04 | 112 | Not started |
