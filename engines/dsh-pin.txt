@@ -1,0 +1,5 @@
+# DSH pinned commit for InkStatute V4 engine
+# Upgrade = change this file → rebuild via scripts/build_dsh_release.sh → real-machine regression → app version release
+# NEVER auto-upgrade the engine — DSH is pre-release with no compatibility promise
+dsh_commit=47f943859b
+node_version=^22.19.0 || >=24.0.0
