@@ -63,7 +63,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 B — 法律预设与能力层
 
-- [ ] **Phase 113: Legal Presets & Domain Presets** - 分域预设（core+四域）+ 人设与护栏提示词基座 + token 预算门禁 (SKL-05..07)
+- [x] **Phase 113: Legal Presets & Domain Presets** - 分域预设（core+四域）+ 人设与护栏提示词基座 + token 预算门禁 (SKL-05..07) ✅ 2026-08-14
 - [ ] **Phase 114: Skill Pipeline — dsh Target** - 语料仓 convert-skills.js 新增 dsh 物化 + 内容包 manifest + 内容门禁 (SKL-01..03)
 - [ ] **Phase 115: Skill Content Auto-Update** - app 侧内容包更新器：manifest 比对 + 原子切换 + 回滚 + 离线 (SKL-04)
 
@@ -132,16 +132,16 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 **Plans**: 4 plans
 **Wave 1**
 
-- [ ] 113-01-PLAN.md — Wave 1 tracer: legal-core preset + guardrail persona + ask_user_question removal + token budget gate utility (SKL-05, SKL-06, SKL-07)
+- [x] 113-01-PLAN.md ✅ 2026-08-14 — Wave 1 tracer: legal-core preset + guardrail persona + ask_user_question removal + token budget gate utility (SKL-05, SKL-06, SKL-07)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 113-02-PLAN.md — Wave 2: Four domain presets (legal-commercial, legal-litigation, legal-family, legal-employment) with structural and budget tests (SKL-05, SKL-06, SKL-07)
-- [ ] 113-03-PLAN.md — Wave 2: Materialization script + token budget enforcement tests (345-skill prohibition, configurable budget) (SKL-07)
+- [x] 113-02-PLAN.md ✅ 2026-08-14 — Wave 2: Four domain presets (legal-commercial, legal-litigation, legal-family, legal-employment) with structural and budget tests (SKL-05, SKL-06, SKL-07)
+- [x] 113-03-PLAN.md ✅ 2026-08-14 — Wave 2: Materialization script + token budget enforcement tests (345-skill prohibition, configurable budget) (SKL-07)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 113-04-PLAN.md — Wave 3: Real engine smoke test or structural fallback for legal-core preset (SKL-05, SKL-06)
+- [x] 113-04-PLAN.md ✅ 2026-08-14 — Wave 3: Real engine smoke test or structural fallback for legal-core preset (SKL-05, SKL-06)
 
 **UI hint**: no
 

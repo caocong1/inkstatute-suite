@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Flutter Native + DSH Engine
-status: Phase 112 complete — ready for Phase 113 discuss→plan→execute
-stopped_at: Phase 112 verified and transitioned — V1-V5 risk gate PASSED, code review clean, all V4 gates green
-last_updated: "2026-08-14T01:30:00Z"
-last_activity: "2026-08-14 — Phase 112 complete: 6/6 plans executed, code review (2 critical + 6 warnings remediated in d2f7b64), V4 gates all pass, V1-V5 risk gate CLOSED, validation validated"
+status: Phase 113 complete — ready for Phase 114/115/116 (parallel)
+stopped_at: Phase 113 verified and transitioned — 5 domain presets + guardrail persona + budget gate + materialization + real engine smoke
+last_updated: "2026-08-14T02:30:00Z"
+last_activity: "2026-08-14 — Phase 113 complete: 4/4 plans executed, code review (4 warnings remediated in 8d185e6), V4 gates all pass, real DSH engine smoke verified skills in prefix + no ask_user_question"
 progress:
   total_phases: 9
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
-  percent: 11
+  completed_phases: 2
+  total_plans: 10
+  completed_plans: 10
+  percent: 22
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
 
-**Current focus:** Phase 113 — Legal Presets & Domain Presets
+**Current focus:** Phase 114/115/116 — Skill Pipeline / Content Auto-Update / Chat UI (parallel after 113)
 
 ## Current Position
 
-Phase: 113 of 120 (Legal Presets & Domain Presets)
-Status: Phase 112 complete — ready for Phase 113 discuss→plan→execute
-Last activity: 2026-08-14 — Phase 112 verified and transitioned: 6/6 plans executed, code review clean (CR-01/CR-02/WR-01..06 remediated), V4 gates all pass, V1-V5 risk gate CLOSED
+Phase: 114 of 120 (Skill Pipeline — dsh Target) — next in critical path
+Status: Phase 113 complete — ready for Phase 114/115/116 (parallel per roadmap)
+Last activity: 2026-08-14 — Phase 113 verified and transitioned: 4/4 plans executed, 5 domain presets with guardrail persona, budget gate, materialization script, real DSH engine smoke test verified skills in model prefix + no ask_user_question in tool catalog
 
-Progress: [▓░░░░░░░░░] 11%
+Progress: [▓▓░░░░░░░░] 22%
 
 ## Milestone v4.0 Overview
 
@@ -120,17 +120,19 @@ V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影�
 ## Session Continuity
 
 Last session: 2026-08-14
-Stopped at: Phase 112 complete and verified — transitioning to Phase 113
+Stopped at: Phase 113 complete and verified — ready for Phase 114/115/116 (parallel)
 Product spec: docs/requirements/V4-PRD.md (Flutter Native + DSH Engine)
 Research: .planning/research/SUMMARY.md (v4.0, HIGH confidence) + .planning/research/V4-SELECTION.md (选型证据)
 Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage)
-Execution plan: .planning/ROADMAP.md (Phases 112-120, Phase 112 complete)
+Execution plan: .planning/ROADMAP.md (Phases 112-120, Phases 112-113 complete)
 Carried human gates (do not auto-complete): HG-1 (Phase 120), HG-4 (Phase 118), HG-3 (Phase 120)
 v1.x/v3.0 archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Phase 113: Legal Presets & Domain Presets — discuss → plan → execute
+- Phase 114: Skill Pipeline — dsh Target (parallel with 115/116)
+- Phase 115: Skill Content Auto-Update (parallel with 114/116)
+- Phase 116: Chat UI & Output Boundary (parallel with 114/115)
 - Phase 112 V1-V5 risk gate is CLOSED; no rollback trigger
 - 引擎升级（DSH commit 变更）必须先真机回归再发布，任何阶段不得绕过
 - Carried human gates（HG-1, HG-4, HG-3）保持 HUMAN_NEEDED — do not auto-close
