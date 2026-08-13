@@ -384,14 +384,22 @@ class RequestPermissionParams {
     required this.sessionId,
     required this.toolCallId,
     required this.options,
+    this.toolName,
   });
 
   /// Parses request_permission parameters from a decoded JSON map.
+  ///
+  /// The `toolCall` object may carry an optional `toolName` field that
+  /// indicates the tool kind (e.g. `terminal`, `execute_code`). The ACP
+  /// protocol itself only sends `allow-once`/`reject-once` options — the
+  /// tool kind is implicit in the approval request context (per RESEARCH.md
+  /// §Approval Security Three-State nuance).
   factory RequestPermissionParams.fromJson(Map<String, dynamic> json) {
     final toolCall = json['toolCall'] as Map<String, dynamic>;
     return RequestPermissionParams(
       sessionId: json['sessionId'] as String,
       toolCallId: toolCall['toolCallId'] as String,
+      toolName: toolCall['toolName'] as String?,
       options: (json['options'] as List<dynamic>)
           .map((e) => PermissionOption.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -403,6 +411,14 @@ class RequestPermissionParams {
 
   /// Tool call id that triggered the permission request.
   final String toolCallId;
+
+  /// Optional tool name that indicates the permission kind.
+  ///
+  /// The ACP `session/request_permission` message does not formally carry
+  /// tool-kind information — the kind is inferred from the approval request
+  /// context. The mock server includes this field for testing; production
+  /// code infers the kind from the tool call metadata or session context.
+  final String? toolName;
 
   /// Available permission options.
   final List<PermissionOption> options;
@@ -432,6 +448,80 @@ class PermissionOutcome {
     }
     return map;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Permission kind classification
+// ---------------------------------------------------------------------------
+
+/// Classification of a permission request by the tool kind that triggered it.
+///
+/// The ACP `session/request_permission` options only carry `allow-once`/
+/// `reject-once` — the tool kind is implicit in the approval request context
+/// (per RESEARCH.md §Approval Security Three-State nuance). The app infers
+/// the kind from the tool call metadata or session context and passes it to
+/// [ApprovalPolicy.evaluate].
+enum PermissionKind {
+  /// Terminal (bash/shell) tool — renders a user card.
+  terminal('terminal'),
+
+  /// Code execution tool — renders a user card.
+  executeCode('execute_code'),
+
+  /// Unrecognized tool kind — always denied, never shown to user.
+  unknown('unknown');
+
+  const PermissionKind(this.wire);
+
+  /// Wire representation.
+  final String wire;
+
+  /// Parses a permission kind from a tool kind string.
+  ///
+  /// Returns [PermissionKind.unknown] for `null` or unrecognized values.
+  /// This is the safe default — unknown kinds are always denied.
+  static PermissionKind fromString(String? value) {
+    if (value == null) return PermissionKind.unknown;
+    return PermissionKind.values.firstWhere(
+      (k) => k.wire == value,
+      orElse: () => PermissionKind.unknown,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Approval decision (three-state)
+// ---------------------------------------------------------------------------
+
+/// Sealed class representing the decision made by [ApprovalPolicy.evaluate].
+///
+/// There are exactly two subtypes:
+/// - [AutoDeny]: The permission is denied immediately (reject-once). Used for
+///   unknown kinds and for known kinds when no UI is connected (safe default).
+/// - [RenderCard]: The permission request should be rendered as a user-facing
+///   approval card. The decision is deferred to the user UI.
+///
+/// There is deliberately NO `AutoAllow` subtype — no permission kind is ever
+/// auto-approved. Every known kind requires explicit user interaction.
+sealed class ApprovalDecision {
+  const ApprovalDecision();
+}
+
+/// The permission is denied immediately (reject-once).
+///
+/// Used for:
+/// - Unknown permission kinds (always denied, never shown to user)
+/// - Known kinds when no UI is connected (safe default)
+final class AutoDeny extends ApprovalDecision {
+  const AutoDeny();
+}
+
+/// The permission request should be rendered as a user-facing approval card.
+///
+/// The decision is deferred to the user UI. The user can then allow-once,
+/// reject-once, or dismiss/cancel the card.
+final class RenderCard extends ApprovalDecision {
+  const RenderCard();
 }
 
 // ---------------------------------------------------------------------------

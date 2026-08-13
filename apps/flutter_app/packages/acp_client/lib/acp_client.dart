@@ -20,6 +20,7 @@ import 'acp_types.dart';
 export 'acp_protocol.dart';
 export 'acp_transport.dart';
 export 'acp_types.dart';
+export 'approval_policy.dart';
 
 /// Callback for server → client notifications (no id, has method).
 typedef NotificationHandler = void Function(JsonRpcNotification notification);

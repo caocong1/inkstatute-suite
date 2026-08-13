@@ -6,11 +6,17 @@
 ///
 /// Run as: `dart run test/fixtures/mock_acp_server.dart`
 ///
-/// Supports an optional `--mode` argument:
-/// - `default` (no flag): standard initialize/session/new/session/prompt flow.
-/// - `permission`: sends `session/request_permission` before the prompt
+/// Supports optional arguments:
+/// - `--mode=default` (no flag): standard initialize/session/new/session/prompt flow.
+/// - `--mode=permission`: sends `session/request_permission` before the prompt
 ///   response, waits for the client's response, then sends the appropriate
 ///   `agent_message_chunk` and prompt result.
+/// - `--escalation=approved`: permission request with terminal kind, expects
+///   allow-once → "DONE" → end_turn.
+/// - `--escalation=rejected`: permission request with terminal kind, expects
+///   reject-once → rejection message → end_turn.
+/// - `--escalation=unknown-kind`: permission request with unrecognized kind,
+///   expects auto-deny (reject-once) → rejection message → end_turn.
 library;
 
 import 'dart:async';
@@ -20,13 +26,16 @@ import 'dart:io';
 /// Entry point for the mock ACP server.
 Future<void> main(List<String> args) async {
   var mode = 'default';
+  var escalation = 'none';
   for (final arg in args) {
     if (arg.startsWith('--mode=')) {
       mode = arg.substring('--mode='.length);
+    } else if (arg.startsWith('--escalation=')) {
+      escalation = arg.substring('--escalation='.length);
     }
   }
 
-  final mock = MockAcpServer(stdin, stdout, mode: mode);
+  final mock = MockAcpServer(stdin, stdout, mode: mode, escalation: escalation);
   await mock.run();
 }
 
@@ -36,7 +45,7 @@ Future<void> main(List<String> args) async {
 /// responses to [output]. Exits on input close.
 class MockAcpServer {
   /// Creates a mock ACP server.
-  MockAcpServer(this.input, this.output, {this.mode = 'default'});
+  MockAcpServer(this.input, this.output, {this.mode = 'default', this.escalation = 'none'});
 
   /// Input stream (subprocess stdin).
   final Stream<List<int>> input;
@@ -46,6 +55,15 @@ class MockAcpServer {
 
   /// Server mode: `default` or `permission`.
   final String mode;
+
+  /// Escalation mode: `none`, `approved`, `rejected`, or `unknown-kind`.
+  ///
+  /// When set to a non-`none` value, the server sends a
+  /// `session/request_permission` with a `toolName` field in the `toolCall`
+  /// object that indicates the tool kind:
+  /// - `approved`/`rejected`: `toolName: 'terminal'`
+  /// - `unknown-kind`: `toolName: 'mystery_tool'` (unrecognized kind)
+  final String escalation;
 
   /// Session counter for generating unique session ids.
   int _sessionCounter = 0;
@@ -165,7 +183,9 @@ class MockAcpServer {
         // Track the in-flight prompt for cancel settling.
         _inflightPrompts[sessionId] = requestId;
 
-        if (mode == 'permission') {
+        if (escalation != 'none') {
+          _handleEscalationPrompt(sessionId, requestId);
+        } else if (mode == 'permission') {
           _handlePermissionPrompt(sessionId, requestId);
         } else {
           _handleDefaultPrompt(sessionId, requestId);
@@ -243,6 +263,42 @@ class MockAcpServer {
       'params': {
         'sessionId': sessionId,
         'toolCall': {'toolCallId': 'call_001'},
+        'options': [
+          {
+            'optionId': 'allow-once',
+            'name': 'Allow once',
+            'kind': 'allow_once',
+          },
+          {
+            'optionId': 'reject-once',
+            'name': 'Reject',
+            'kind': 'reject_once',
+          },
+        ],
+      },
+    });
+  }
+
+  /// Handles an escalation-mode prompt: sends session/request_permission with
+  /// a `toolName` field in the `toolCall` object that indicates the tool kind.
+  ///
+  /// - `approved`/`rejected`: `toolName: 'terminal'` (known kind → user card)
+  /// - `unknown-kind`: `toolName: 'mystery_tool'` (unrecognized → auto-deny)
+  ///
+  /// The server then waits for the client's response (allow-once or
+  /// reject-once) and sends the appropriate agent_message_chunk and prompt
+  /// result, same as [_handlePermissionPrompt].
+  void _handleEscalationPrompt(String sessionId, int requestId) {
+    final toolName = escalation == 'unknown-kind' ? 'mystery_tool' : 'terminal';
+
+    // Send session/request_permission as a server request (id: 1).
+    _send({
+      'jsonrpc': '2.0',
+      'id': 1,
+      'method': 'session/request_permission',
+      'params': {
+        'sessionId': sessionId,
+        'toolCall': {'toolCallId': 'call_001', 'toolName': toolName},
         'options': [
           {
             'optionId': 'allow-once',
