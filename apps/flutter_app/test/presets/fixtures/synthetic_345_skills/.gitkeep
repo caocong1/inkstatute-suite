@@ -1,0 +1,3 @@
+# Placeholder for synthetic 345-skill test fixtures.
+# The actual 345 SKILL.md files are generated at test time in a temp directory,
+# not committed to the repo (see budget_enforcement_test.dart).
