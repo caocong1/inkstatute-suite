@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Flutter Native + DSH Engine
-status: Plan 02 executed — ready for next plan in Phase 112
-stopped_at: Phase 112 Plan 02 complete — Full ACP v1 client method coverage (23/23 tests, 0 analyze issues)
-last_updated: "2026-08-13T16:25:00Z"
-last_activity: "2026-08-13 — Plan 112-02 executed: Full AcpClient with session/new validation, session/prompt single in-flight (DP-4), session/cancel, session/update text aggregation, session/request_permission policy hook, 23/23 tests pass"
+status: Phase 112 complete — ready for Phase 113 discuss→plan→execute
+stopped_at: Phase 112 verified and transitioned — V1-V5 risk gate PASSED, code review clean, all V4 gates green
+last_updated: "2026-08-14T01:30:00Z"
+last_activity: "2026-08-14 — Phase 112 complete: 6/6 plans executed, code review (2 critical + 6 warnings remediated in d2f7b64), V4 gates all pass, V1-V5 risk gate CLOSED, validation validated"
 progress:
   total_phases: 9
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 6
-  completed_plans: 3
-  percent: 6
+  completed_plans: 6
+  percent: 11
 ---
 
 # Project State
@@ -22,16 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
 
-**Current focus:** Phase 112 — DSH Engine Integration (ACP over stdio)
+**Current focus:** Phase 113 — Legal Presets & Domain Presets
 
 ## Current Position
 
-Phase: 112 of 120 (DSH Engine Integration)
-Plan: 02 complete (Full ACP v1 client method coverage)
-Status: Plan 02 executed — ready for next plan in Phase 112
-Last activity: 2026-08-13 — Plan 112-02 executed: Full AcpClient with all 7 ACP v1 methods, 23/23 tests pass
+Phase: 113 of 120 (Legal Presets & Domain Presets)
+Status: Phase 112 complete — ready for Phase 113 discuss→plan→execute
+Last activity: 2026-08-14 — Phase 112 verified and transitioned: 6/6 plans executed, code review clean (CR-01/CR-02/WR-01..06 remediated), V4 gates all pass, V1-V5 risk gate CLOSED
 
-Progress: [▓░░░░░░░░░] 6%
+Progress: [▓░░░░░░░░░] 11%
 
 ## Milestone v4.0 Overview
 
@@ -120,18 +119,18 @@ V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影�
 
 ## Session Continuity
 
-Last session: 2026-08-13
-Stopped at: Phase 112 Plan 02 complete — Full ACP v1 client method coverage green (23/23 tests, 0 analyze issues)
+Last session: 2026-08-14
+Stopped at: Phase 112 complete and verified — transitioning to Phase 113
 Product spec: docs/requirements/V4-PRD.md (Flutter Native + DSH Engine)
 Research: .planning/research/SUMMARY.md (v4.0, HIGH confidence) + .planning/research/V4-SELECTION.md (选型证据)
 Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage)
-Execution plan: .planning/ROADMAP.md (Phases 112-120, none started)
+Execution plan: .planning/ROADMAP.md (Phases 112-120, Phase 112 complete)
 Carried human gates (do not auto-complete): HG-1 (Phase 120), HG-4 (Phase 118), HG-3 (Phase 120)
 v1.x/v3.0 archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Run `/gsd-autonomous`（从 Phase 112 开始；Phase 112 RESEARCH 必须先闭环 V4-SELECTION §7 的 V1-V5）
-- 或按阶段推进：`/gsd-discuss-phase 112` → `/gsd-plan-phase 112` → `/gsd-execute-phase 112`
+- Phase 113: Legal Presets & Domain Presets — discuss → plan → execute
+- Phase 112 V1-V5 risk gate is CLOSED; no rollback trigger
 - 引擎升级（DSH commit 变更）必须先真机回归再发布，任何阶段不得绕过
 - Carried human gates（HG-1, HG-4, HG-3）保持 HUMAN_NEEDED — do not auto-close

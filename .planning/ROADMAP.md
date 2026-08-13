@@ -59,7 +59,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 A — DSH 引擎底座
 
-- [ ] **Phase 112: DSH Engine Integration (ACP over stdio)** - Flutter 骨架 + Dart ACP v1 客户端 + DSH 子进程管理器 + 引擎发布产物管线 + v4 门禁 runner + 批准安全 (DSH-01..04, GATE-01, GATE-02)
+- [x] **Phase 112: DSH Engine Integration (ACP over stdio)** - Flutter 骨架 + Dart ACP v1 客户端 + DSH 子进程管理器 + 引擎发布产物管线 + v4 门禁 runner + 批准安全 (DSH-01..04, GATE-01, GATE-02) ✅ 2026-08-14
 
 ### 阶段 B — 法律预设与能力层
 
@@ -104,14 +104,14 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 112-02-PLAN.md — Wave 2: Full ACP v1 client method coverage with mock fixtures (DSH-01)
-- [ ] 112-03-PLAN.md — Wave 2: Approval security three-state tests (DSH-04)
-- [ ] 112-04-PLAN.md — Wave 2: DSH subprocess manager — spawn, health probe, zero orphans (DSH-02)
+- [x] 112-02-PLAN.md — Wave 2: Full ACP v1 client method coverage with mock fixtures (DSH-01) ✅ 2026-08-13
+- [x] 112-03-PLAN.md — Wave 2: Approval security three-state tests (DSH-04) ✅ 2026-08-13
+- [x] 112-04-PLAN.md — Wave 2: DSH subprocess manager — spawn, health probe, zero orphans (DSH-02) ✅ 2026-08-13
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 112-05-PLAN.md — Wave 3: Engine release pipeline — dsh-pin.txt + acp.cordis.yml + build_dsh_release.sh (DSH-03)
-- [ ] 112-06-PLAN.md — Wave 3: v4 gates runner + CI — dart analyze + flutter test + meta-test (GATE-01, GATE-02)
+- [x] 112-05-PLAN.md — Wave 3: Engine release pipeline — dsh-pin.txt + acp.cordis.yml + build_dsh_release.sh (DSH-03) ✅ 2026-08-13
+- [x] 112-06-PLAN.md — Wave 3: v4 gates runner + CI — dart analyze + flutter test + meta-test (GATE-01, GATE-02) ✅ 2026-08-13
 
 **UI hint**: no
 
