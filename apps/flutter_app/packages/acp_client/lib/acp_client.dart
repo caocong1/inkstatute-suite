@@ -1,15 +1,16 @@
-/// ACP v1 client — initialize handshake, session management, ID correlation.
+/// ACP v1 client — full method coverage with ID correlation, in-flight
+/// tracking, text aggregation, and permission policy hook.
 ///
 /// [AcpClient] wraps an [AcpTransport] and provides typed methods for the
 /// ACP protocol. It tracks pending requests by ID and completes them when
-/// matching responses arrive. Notifications and server requests are dispatched
-/// to handler callbacks.
-///
-/// This is the tracer implementation: `initialize` and `newSession` are
-/// fully implemented. Full method coverage expands in Wave 2.
+/// matching responses arrive. Notifications are dispatched to the [onUpdate]
+/// stream (for `agent_message_chunk` text) and the [onNotification] callback
+/// (for all notifications). Server requests for `session/request_permission`
+/// are routed through the pluggable [PermissionPolicy] callback.
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'acp_protocol.dart';
 import 'acp_transport.dart';
@@ -23,12 +24,7 @@ export 'acp_types.dart';
 /// Callback for server → client notifications (no id, has method).
 typedef NotificationHandler = void Function(JsonRpcNotification notification);
 
-/// Callback for server → client requests (has id + method, expects a response).
-typedef ServerRequestHandler = Future<Map<String, dynamic>> Function(
-  JsonRpcRequest request,
-);
-
-/// ACP v1 client with ID correlation and pending request tracking.
+/// ACP v1 client with ID correlation, in-flight tracking, and text aggregation.
 class AcpClient {
   /// Creates an ACP client connected to the given [transport].
   AcpClient(this._transport) {
@@ -44,16 +40,43 @@ class AcpClient {
   int _nextId = 1;
   final Map<int, Completer<Map<String, dynamic>>> _pending = {};
 
-  /// Handler for server → client notifications.
+  /// Session ids that currently have an in-flight `session/prompt` request.
   ///
-  /// Set by the caller to receive `session/update` and other notifications.
+  /// Enforces DP-4 (single in-flight per session): a second prompt for the
+  /// same session is rejected client-side before sending.
+  final Set<String> _inflightSessions = {};
+
+  /// Stream controller for committed assistant text chunks from
+  /// `session/update` `agent_message_chunk` notifications.
+  final StreamController<String> _updateController =
+      StreamController<String>.broadcast();
+
+  /// Pluggable permission policy for `session/request_permission` requests.
+  ///
+  /// When set, the client calls this callback with the parsed
+  /// [RequestPermissionParams] and sends the returned [PermissionOutcome]
+  /// as the JSON-RPC response. When unset, the client defaults to
+  /// `reject-once` (default deny).
+  PermissionPolicy? _permissionPolicy;
+
+  /// Handler for server → client notifications (all notification types).
+  ///
+  /// Set by the caller to receive raw notifications in addition to the
+  /// [onUpdate] stream. `session/update` notifications are always processed
+  /// for text aggregation regardless of this handler.
   NotificationHandler? onNotification;
 
-  /// Handler for server → client requests.
+  /// Exposes the stream of committed assistant text chunks.
   ///
-  /// Set by the caller to handle `session/request_permission`.
-  /// The returned map is sent as the response result.
-  ServerRequestHandler? onServerRequest;
+  /// Each `agent_message_chunk` with `content.type == 'text'` adds its text
+  /// to this stream. Unknown `sessionUpdate` types do not emit to this stream
+  /// (output boundary — only committed assistant text reaches the app).
+  Stream<String> get onUpdate => _updateController.stream;
+
+  /// Sets the permission policy callback for `session/request_permission`.
+  void setPermissionPolicy(PermissionPolicy policy) {
+    _permissionPolicy = policy;
+  }
 
   /// Sends an `initialize` request and returns the typed result.
   ///
@@ -70,31 +93,75 @@ class AcpClient {
 
   /// Sends a `session/new` request with an absolute [cwd].
   ///
-  /// Returns a [SessionNewResult] with the new session id.
-  Future<SessionNewResult> newSession(String cwd) async {
-    final result = await _call(
-      'session/new',
-      SessionNewParams(cwd: cwd).toJson(),
+  /// [cwd] must be an absolute path — non-absolute values are rejected
+  /// client-side with an [ArgumentError] before any message is sent.
+  ///
+  /// [additionalDirectories] and [mcpServers] must be empty (the ACP bridge
+  /// rejects non-empty values with -32602). They are accepted as parameters
+  /// so the client can surface the server error in tests.
+  Future<SessionNewResult> newSession(
+    String cwd, {
+    List<String> additionalDirectories = const [],
+    List<Map<String, dynamic>> mcpServers = const [],
+  }) async {
+    // Client-side validation: cwd must be absolute (ACP contract).
+    if (!File(cwd).isAbsolute) {
+      throw ArgumentError('cwd must be an absolute path');
+    }
+
+    final params = SessionNewParams(
+      cwd: cwd,
+      additionalDirectories: additionalDirectories,
+      mcpServers: mcpServers,
     );
+
+    // Include additionalDirectories in the wire payload so the server can
+    // reject it with -32602. The toJson() method omits additionalDirectories
+    // (it's always empty in production), so we add it here when non-empty.
+    final wireParams = params.toJson();
+    if (additionalDirectories.isNotEmpty) {
+      wireParams['additionalDirectories'] = additionalDirectories;
+    }
+
+    final result = await _call('session/new', wireParams);
     return SessionNewResult.fromJson(result);
   }
 
   /// Sends a `session/prompt` request.
   ///
   /// [sessionId] must be from a prior [newSession] call.
-  /// [text] is the prompt text (concatenated into one user message).
+  /// [text] is the prompt text (sent as a single text block).
+  ///
+  /// Enforces DP-4 (single in-flight per session): if a prompt is already
+  /// in-flight for [sessionId], throws [StateError] before sending.
   Future<SessionPromptResult> prompt(String sessionId, String text) async {
-    final result = await _call(
-      'session/prompt',
-      SessionPromptParams(
-        sessionId: sessionId,
-        prompt: [PromptTextBlock(text)],
-      ).toJson(),
-    );
-    return SessionPromptResult.fromJson(result);
+    // DP-4: single in-flight per session — client-side guard.
+    if (_inflightSessions.contains(sessionId)) {
+      throw StateError('a prompt is already in flight for this session');
+    }
+
+    _inflightSessions.add(sessionId);
+
+    try {
+      final result = await _call(
+        'session/prompt',
+        SessionPromptParams(
+          sessionId: sessionId,
+          prompt: [PromptTextBlock(text)],
+        ).toJson(),
+      );
+      return SessionPromptResult.fromJson(result);
+    } finally {
+      // Remove from in-flight set on both success and error.
+      _inflightSessions.remove(sessionId);
+    }
   }
 
   /// Sends a `session/cancel` notification (no response expected).
+  ///
+  /// Cancels the in-flight prompt for [sessionId]. The pending prompt
+  /// settles with `stopReason: "cancelled"`. Unknown session ids are
+  /// no-ops (no error).
   Future<void> cancel(String sessionId) async {
     await _transport.send({
       'jsonrpc': '2.0',
@@ -113,9 +180,10 @@ class AcpClient {
     await _transport.send({'jsonrpc': '2.0', 'id': id, 'result': result});
   }
 
-  /// Closes the transport (signals EOF to the subprocess).
+  /// Closes the transport and stream controllers (signals EOF to subprocess).
   Future<void> close() async {
     await _subscription?.cancel();
+    await _updateController.close();
     await _transport.close();
   }
 
@@ -151,7 +219,8 @@ class AcpClient {
   /// Distinguishes:
   /// - (a) response: has `id`, no `method` → complete pending future
   /// - (b) notification: has `method`, no `id` → dispatch to [onNotification]
-  /// - (c) server request: has `id` + `method` → dispatch to [onServerRequest]
+  ///   and process for text aggregation
+  /// - (c) server request: has `id` + `method` → dispatch to handler
   void _handleMessage(Map<String, dynamic> message) {
     final hasId = message.containsKey('id');
     final hasMethod = message.containsKey('method');
@@ -160,9 +229,9 @@ class AcpClient {
       // (a) Response — complete the pending future.
       _handleResponse(message);
     } else if (hasMethod && !hasId) {
-      // (b) Notification — dispatch to handler.
+      // (b) Notification — process and dispatch.
       final notification = JsonRpcNotification.fromJson(message);
-      onNotification?.call(notification);
+      _handleNotification(notification);
     } else if (hasId && hasMethod) {
       // (c) Server request — dispatch to handler and send response.
       _handleServerRequest(message);
@@ -190,12 +259,47 @@ class AcpClient {
     }
   }
 
+  /// Processes a notification: extracts text from `agent_message_chunk`
+  /// for the [onUpdate] stream, then dispatches to [onNotification].
+  void _handleNotification(JsonRpcNotification notification) {
+    if (notification.method == 'session/update' && notification.params != null) {
+      _processSessionUpdate(notification.params!);
+    }
+    // Always dispatch raw notification to the handler.
+    onNotification?.call(notification);
+  }
+
+  /// Extracts text from a `session/update` notification's `agent_message_chunk`
+  /// and adds it to the [onUpdate] stream.
+  ///
+  /// Unknown `sessionUpdate` types are ignored (output boundary — only
+  /// committed assistant text reaches the app).
+  void _processSessionUpdate(Map<String, dynamic> params) {
+    try {
+      final updateParams = SessionUpdateParams.fromJson(params);
+      if (updateParams.update.sessionUpdate == 'agent_message_chunk' &&
+          updateParams.update.content.type == 'text') {
+        _updateController.add(updateParams.update.content.text);
+      }
+      // Unknown sessionUpdate types: ignore (output boundary).
+    } on Exception {
+      // Malformed update — ignore gracefully (untrusted input from server).
+    }
+  }
+
   Future<void> _handleServerRequest(Map<String, dynamic> message) async {
     final request = JsonRpcRequest.fromJson(message);
+
+    // Route session/request_permission through the policy hook.
+    if (request.method == 'session/request_permission' &&
+        request.params != null) {
+      await _handlePermissionRequest(request);
+      return;
+    }
+
+    // Other server requests: send empty result response.
     try {
-      final result = await (onServerRequest?.call(request) ??
-          Future.value(<String, dynamic>{}));
-      await sendResponse(request.id, result);
+      await sendResponse(request.id, <String, dynamic>{});
     } catch (e) {
       await _transport.send({
         'jsonrpc': '2.0',
@@ -203,6 +307,17 @@ class AcpClient {
         'error': {'code': -32603, 'message': e.toString()},
       });
     }
+  }
+
+  /// Handles a `session/request_permission` server request via the policy hook.
+  ///
+  /// If no policy is set, defaults to `reject-once` (default deny).
+  Future<void> _handlePermissionRequest(JsonRpcRequest request) async {
+    final params = RequestPermissionParams.fromJson(request.params!);
+    final outcome = _permissionPolicy?.call(params) ??
+        const PermissionOutcome.selected('reject-once');
+
+    await sendResponse(request.id, {'outcome': outcome.toJson()});
   }
 }
 

@@ -8,6 +8,7 @@
 /// - Reading: split on `\n`, trim, parse each non-empty line as JSON
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -16,6 +17,10 @@ import 'dart:io';
 /// [AcpTransport.send] writes a JSON-RPC message as one NDJSON line to the
 /// [IOSink]. [AcpTransport.messages] exposes a stream of parsed JSON-RPC
 /// messages from the input byte stream.
+///
+/// Writes are serialized via a Future chain to prevent "StreamSink is bound"
+/// errors when multiple sends race (e.g. prompt + cancel, or concurrent
+/// prompts on different sessions).
 class AcpTransport {
   /// Creates an ACP transport from a process's stdin/stdout.
   ///
@@ -26,13 +31,26 @@ class AcpTransport {
   final Stream<List<int>> _input;
   final IOSink _output;
 
+  /// Serialize writes to prevent concurrent IOSink access.
+  Future<void> _writeQueue = Future.value();
+
   /// Sends a JSON-RPC message as one NDJSON line.
   ///
   /// Writes `jsonEncode(message) + "\n"` to the output sink and flushes.
   /// Returns a future that completes when the write is flushed to the OS.
+  ///
+  /// Writes are serialized: if a previous write is still flushing, this
+  /// call waits for it to complete before writing.
   Future<void> send(Map<String, dynamic> message) async {
-    _output.writeln(jsonEncode(message));
-    await _output.flush();
+    final completer = Completer<void>();
+    _writeQueue = _writeQueue.then((_) async {
+      _output.writeln(jsonEncode(message));
+      await _output.flush();
+      completer.complete();
+    }).catchError((e) {
+      completer.completeError(e as Object);
+    });
+    return completer.future;
   }
 
   /// Stream of parsed JSON-RPC messages from the input.

@@ -143,7 +143,11 @@ class InitializeResult {
 /// must be empty (non-empty values are rejected by the ACP bridge).
 class SessionNewParams {
   /// Creates session/new parameters.
-  const SessionNewParams({required this.cwd, this.mcpServers = const []});
+  const SessionNewParams({
+    required this.cwd,
+    this.additionalDirectories = const [],
+    this.mcpServers = const [],
+  });
 
   /// Serializes to a JSON map for the `session/new` request.
   Map<String, dynamic> toJson() {
@@ -155,6 +159,10 @@ class SessionNewParams {
 
   /// Absolute working directory path.
   final String cwd;
+
+  /// Additional directory roots (must be empty for V4 — server rejects
+  /// non-empty values with -32602).
+  final List<String> additionalDirectories;
 
   /// MCP server configurations (must be empty for V4).
   final List<Map<String, dynamic>> mcpServers;
@@ -425,3 +433,15 @@ class PermissionOutcome {
     return map;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Permission policy hook
+// ---------------------------------------------------------------------------
+
+/// Policy callback for `session/request_permission` server requests.
+///
+/// The app sets this on [AcpClient] to intercept permission requests from the
+/// engine. The callback receives the parsed [RequestPermissionParams] and
+/// returns a [PermissionOutcome]. If no policy is set, the client defaults to
+/// `reject-once` (default deny).
+typedef PermissionPolicy = PermissionOutcome Function(RequestPermissionParams);
