@@ -18,6 +18,7 @@ enum HealthStatus {
 /// Probes the DSH engine health via ACP initialize handshake.
 class EngineHealthProbe {
   /// Creates an engine health probe.
+  // ignore: prefer_initializing_formals
   EngineHealthProbe({TelemetryCollector? collector}) : _collector = collector;
 
   final TelemetryCollector? _collector;
