@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Flutter Native + DSH Engine
-status: Phase 119 complete — ready for Phase 120 (Convergence & Lawyer Trial)
-stopped_at: Phase 119 verified and transitioned — First-Run Wizard & Windows Packaging (wizard + credential security + installer + update orchestrator)
-last_updated: "2026-08-14T09:00:00Z"
-last_activity: "2026-08-14 — Phase 119 complete: 4/4 plans executed, first-run wizard + credential security (OS credential store + zero plaintext) + Windows packaging (Inno Setup) + three-layer update orchestrator (engine auto-update disabled), 488 tests, V4 gates all pass"
+status: Phase 120 complete — milestone v4.0 technically complete, awaiting human gate signatures
+stopped_at: Phase 120 verified and transitioned — Convergence & Lawyer Trial (telemetry + offline + freeze + human gates)
+last_updated: "2026-08-14T10:00:00Z"
+last_activity: "2026-08-14 — Phase 120 complete: 4/4 plans executed, opt-in telemetry + offline behavior + v3.x freeze annotation + human gate signing (never auto-signed), ~560 tests, V4 gates all pass. Milestone v4.0 technically complete — HG-1, HG-3, HG-4 remain HUMAN_NEEDED."
 progress:
   total_phases: 9
-  completed_phases: 8
-  total_plans: 31
-  completed_plans: 31
-  percent: 89
+  completed_phases: 9
+  total_plans: 32
+  completed_plans: 32
+  percent: 100
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
 
-**Current focus:** Phase 120 — Convergence & Lawyer Trial
+**Current focus:** Milestone v4.0 technically complete — awaiting human gate signatures (HG-1, HG-3, HG-4)
 
 ## Current Position
 
-Phase: 120 of 120 (Convergence & Lawyer Trial) — final phase
-Status: Phase 119 complete — ready for Phase 120 (depends on 119, complete)
-Last activity: 2026-08-14 — Phase 119 verified and transitioned: 4/4 plans executed, first-run wizard + credential security + Windows packaging + three-layer update orchestrator, 488 tests, V4 gates all pass
+Phase: 120 of 120 (Convergence & Lawyer Trial) — complete
+Status: Milestone v4.0 technically complete — all 9 phases (112-120) executed, all 33 requirements addressed, ~560 tests pass, V4 gates all pass. Three human gates (HG-1, HG-3, HG-4) remain HUMAN_NEEDED.
+Last activity: 2026-08-14 — Phase 120 verified and transitioned: 4/4 plans executed, opt-in telemetry + offline behavior + v3.x freeze + human gate signing, ~560 tests, V4 gates all pass
 
-Progress: [▓▓▓▓▓▓▓▓░░] 89%
+Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (technical)
 
 ## Milestone v4.0 Overview
 
@@ -120,17 +120,25 @@ V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影�
 ## Session Continuity
 
 Last session: 2026-08-14
-Stopped at: Phase 119 complete and verified — ready for Phase 120 (Convergence & Lawyer Trial)
+Stopped at: Milestone v4.0 technically complete — all phases 112-120 executed, awaiting human gate signatures
 Product spec: docs/requirements/V4-PRD.md (Flutter Native + DSH Engine)
 Research: .planning/research/SUMMARY.md (v4.0, HIGH confidence) + .planning/research/V4-SELECTION.md (选型证据)
 Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage)
-Execution plan: .planning/ROADMAP.md (Phases 112-120, Phases 112-119 complete)
-Carried human gates (do not auto-complete): HG-1 (Phase 120), HG-4 (Phase 118 — pending), HG-3 (Phase 120)
+Execution plan: .planning/ROADMAP.md (Phases 112-120, ALL complete)
+Carried human gates (do not auto-complete): HG-1 (pending), HG-3 (pending), HG-4 (pending)
 v1.x/v3.0 archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Phase 120: Convergence & Lawyer Trial (final phase — depends on 119, complete)
+- **Milestone v4.0 is technically complete.** All 9 phases (112-120) executed.
+- Three human gates remain HUMAN_NEEDED:
+  - HG-1: Lawyer sampling to confirm V4 legal quality baseline
+  - HG-3: 5 business day lawyer trial with 15 real tasks
+  - HG-4: Lawyer confirmation that track-changes docx is usable for negotiation
+- After all human gates are signed:
+  - Execute retirement plan (LEG-02) to remove v3.x components
+  - Run `gsd-complete-milestone` to archive v4.0
+  - Run `gsd-cleanup` to clean up phase directories
 - Phase 112 V1-V5 risk gate is CLOSED; no rollback trigger
 - 引擎升级（DSH commit 变更）必须先真机回归再发布，任何阶段不得绕过
 - Carried human gates（HG-1, HG-4, HG-3）保持 HUMAN_NEEDED — do not auto-close

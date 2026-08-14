@@ -14,7 +14,8 @@
     "code_review": true,
     "ui_phase": false,
     "ui_review": false,
-    "_auto_chain_active": false
+    "_auto_chain_active": false,
+    "inline_plan_threshold": 0
   },
   "plan_review": {
     "source_grounding": true
