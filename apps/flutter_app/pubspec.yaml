@@ -53,6 +53,13 @@ dependencies:
   # Path manipulation for cross-platform file paths (SKL-04).
   path: ^1.9.0
 
+  # SQLite ORM for local session store (APP-03, Phase 116).
+  drift: ^2.20.0
+  sqlite3_flutter_libs: ^0.5.0
+
+  # Path provider for database file location (APP-03).
+  path_provider: ^2.1.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
