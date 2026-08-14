@@ -9,21 +9,21 @@
 
 ### DSH — 引擎接入
 
-- [ ] **DSH-01**: Dart ACP v1 客户端（`apps/flutter_app/packages/acp_client`）——JSON-RPC stdio 帧收发、`initialize` 握手（仅 baseline 能力）、`session/new`（绝对 cwd；`additionalDirectories`/`mcpServers` 非空即拒）、`session/prompt`（单 in-flight）、`session/cancel`、`session/update` 文本块聚合、`session/request_permission` 策略钩子；以脚本化 mock ACP server（fixtures）完整测试，无需真实模型
-- [ ] **DSH-02**: DSH 子进程管理器——从捆绑引擎目录 spawn ACP 组合；`DSH_HOME` 指向 `%LOCALAPPDATA%\InkStatute\runtime\.dsh`；API 密钥经环境注入（不落盘明文）；initialize 握手健康探针；app 退出优雅关停；零孤儿进程断言
-- [ ] **DSH-03**: 引擎发布产物管线（`scripts/build_dsh_release.sh` + `engines/dsh-pin.txt` + `engines/acp.cordis.yml`）——钉 commit 构建 → `engine-<version>.zip`（便携 Node + 构建产物 + ACP 组合 + 预设物化）→ `engine-manifest.json` {dsh_commit, node_version, sha256, built_at}；**引擎禁自动升级**，升级须真机回归后随 app 版本发布
-- [ ] **DSH-04**: 批准安全——引擎批准栈 terminal/execute_code 默认拒绝并上抛 `session/request_permission`；app 策略：未知 kind 一律拒绝、已知 kind 渲染用户卡片、无批量批准入口；mock 权限事件测试全路径
+- [x] **DSH-01**: Dart ACP v1 客户端（`apps/flutter_app/packages/acp_client`）——JSON-RPC stdio 帧收发、`initialize` 握手（仅 baseline 能力）、`session/new`（绝对 cwd；`additionalDirectories`/`mcpServers` 非空即拒）、`session/prompt`（单 in-flight）、`session/cancel`、`session/update` 文本块聚合、`session/request_permission` 策略钩子；以脚本化 mock ACP server（fixtures）完整测试，无需真实模型
+- [x] **DSH-02**: DSH 子进程管理器——从捆绑引擎目录 spawn ACP 组合；`DSH_HOME` 指向 `%LOCALAPPDATA%\InkStatute\runtime\.dsh`；API 密钥经环境注入（不落盘明文）；initialize 握手健康探针；app 退出优雅关停；零孤儿进程断言
+- [x] **DSH-03**: 引擎发布产物管线（`scripts/build_dsh_release.sh` + `engines/dsh-pin.txt` + `engines/acp.cordis.yml`）——钉 commit 构建 → `engine-<version>.zip`（便携 Node + 构建产物 + ACP 组合 + 预设物化）→ `engine-manifest.json` {dsh_commit, node_version, sha256, built_at}；**引擎禁自动升级**，升级须真机回归后随 app 版本发布
+- [x] **DSH-04**: 批准安全——引擎批准栈 terminal/execute_code 默认拒绝并上抛 `session/request_permission`；app 策略：未知 kind 一律拒绝、已知 kind 渲染用户卡片、无批量批准入口；mock 权限事件测试全路径
 - [x] **DSH-05**: 凭据与模型——密钥存 OS 凭据库、启动时注入；模型/供应商默认（DeepSeek 官方路由）可配；密钥轮换入口（业主模式）；日志与遥测零明文密钥
 
 ### SKL — 技能管线
 
-- [ ] **SKL-01**: 语料仓 `scripts/convert-skills.js` 新增 `--to dsh`——白名单按域扫描（不扫 `.qwen/` 等自动产物目录）；frontmatter 直通；两类语义改写：斜杠命令 → skill 工具按名加载指引、CLAUDE.md 写入目标 → app 数据目录 `practice-profile.md`；输出 `dist/dsh/<domain>/<skill-name>/SKILL.md`
-- [ ] **SKL-02**: 内容包格式与发布——`content-manifest.json` {schema_version, release_version, released_at, min_engine_version, domains:{skills:[{name,sha256}]}}；convert → manifest → zip → release（GitHub Release 默认，可配自有源）纯脚本流水线
-- [ ] **SKL-03**: 语料仓内容门禁——`test:compatibility` 扩展断言 dsh 输出：每个 SKILL.md 可解析、frontmatter 合法、无斜杠命令残留、目录名=技能名唯一
-- [ ] **SKL-04**: app 技能更新器——启动 + 手动检查拉 manifest；版本比对；原子下载解压到 `skills\<release>\`；sha256 校验失败回滚 last-good；current 指针切换；离线用 last-good；更新全程零用户操作、零重启
-- [ ] **SKL-05**: 分域预设——本仓 `presets/<domain>/`（legal-core ≤30 技能核心集 + legal-commercial / legal-litigation / legal-family / legal-employment 首批四域）；以 standard 为底、native 呈现；`customSkillDirs` 指向内容包分域目录；安装时物化到引擎 `.agent-presets/`
-- [ ] **SKL-06**: 预设人设与护栏提示词基座——research-gate / citation audit / ask-user（`[CLARIFY:]` 约定）/ de-AI polish / `[HUMAN_REVIEW:]` 输出约定 / 保密提示全部入预设人设；先加载对应技能再动手
-- [ ] **SKL-07**: token 预算门禁——默认会话只挂所选分域目录；核心集目录渲染（name+description）长度 ≤ 预算（默认 8,000 字符，可配置）；超预算回归测试红灯、拒绝发货
+- [x] **SKL-01**: 语料仓 `scripts/convert-skills.js` 新增 `--to dsh`——白名单按域扫描（不扫 `.qwen/` 等自动产物目录）；frontmatter 直通；两类语义改写：斜杠命令 → skill 工具按名加载指引、CLAUDE.md 写入目标 → app 数据目录 `practice-profile.md`；输出 `dist/dsh/<domain>/<skill-name>/SKILL.md`
+- [x] **SKL-02**: 内容包格式与发布——`content-manifest.json` {schema_version, release_version, released_at, min_engine_version, domains:{skills:[{name,sha256}]}}；convert → manifest → zip → release（GitHub Release 默认，可配自有源）纯脚本流水线
+- [x] **SKL-03**: 语料仓内容门禁——`test:compatibility` 扩展断言 dsh 输出：每个 SKILL.md 可解析、frontmatter 合法、无斜杠命令残留、目录名=技能名唯一
+- [x] **SKL-04**: app 技能更新器——启动 + 手动检查拉 manifest；版本比对；原子下载解压到 `skills\<release>\`；sha256 校验失败回滚 last-good；current 指针切换；离线用 last-good；更新全程零用户操作、零重启
+- [x] **SKL-05**: 分域预设——本仓 `presets/<domain>/`（legal-core ≤30 技能核心集 + legal-commercial / legal-litigation / legal-family / legal-employment 首批四域）；以 standard 为底、native 呈现；`customSkillDirs` 指向内容包分域目录；安装时物化到引擎 `.agent-presets/`
+- [x] **SKL-06**: 预设人设与护栏提示词基座——research-gate / citation audit / ask-user（`[CLARIFY:]` 约定）/ de-AI polish / `[HUMAN_REVIEW:]` 输出约定 / 保密提示全部入预设人设；先加载对应技能再动手
+- [x] **SKL-07**: token 预算门禁——默认会话只挂所选分域目录；核心集目录渲染（name+description）长度 ≤ 预算（默认 8,000 字符，可配置）；超预算回归测试红灯、拒绝发货
 
 ### APP — Flutter 产品
 
@@ -54,8 +54,8 @@
 
 - [x] **LEG-01**: v3.x 平台冻结——gateway / wecom / qq / arena / agent-core / acp-client(TS) / ui-core(SolidJS) / apps/web / apps/desktop 标注 frozen（README + MILESTONES），不进 V4 交付物与 V4 gate 套件，不新开工；移除仅在 Phase 120 验收后
 - [x] **LEG-02**: 收敛——律师试运行验收后移除退役目录；v3.0/v3.1 文档归档到 `milestones/`；主线只含 V4 产品代码路径
-- [ ] **GATE-01**: v4 门禁 runner（`scripts/run_v4_gates.py`）——dart analyze + flutter test + 内容结构测试 + 引擎清单校验，接 CI
-- [ ] **GATE-02**: 覆盖门禁——每个新 Dart `lib/` 目录有测试覆盖；meta-test 在 v4 runner 内
+- [x] **GATE-01**: v4 门禁 runner（`scripts/run_v4_gates.py`）——dart analyze + flutter test + 内容结构测试 + 引擎清单校验，接 CI
+- [x] **GATE-02**: 覆盖门禁——每个新 Dart `lib/` 目录有测试覆盖；meta-test 在 v4 runner 内
 - [x] **GATE-03**: E2E——mock ACP 全流程（prompt → 流 → 批准卡 → 答复 → committed text）+ 真实引擎路径（DeepSeek API，标注 real-API）+ docx 导出金标准
 
 ## Future Requirements (post-v4.0)
@@ -86,39 +86,39 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DSH-01 | 112 | In progress (tracer complete in 112-01; full coverage in 112-02) |
-| DSH-02 | 112 | Not started |
-| DSH-03 | 112 | Not started |
-| DSH-04 | 112 | Not started |
-| GATE-01 | 112 | Not started |
-| GATE-02 | 112 | Not started |
-| SKL-05 | 113 | Not started |
-| SKL-06 | 113 | Not started |
-| SKL-07 | 113 | Not started |
-| SKL-01 | 114 | Not started |
-| SKL-02 | 114 | Not started |
-| SKL-03 | 114 | Not started |
-| SKL-04 | 115 | Not started |
-| APP-01 | 116 | Not started |
-| APP-02 | 116 | Not started |
-| APP-03 | 116 | Not started |
-| APP-05 | 116 | Not started |
-| GRD-01 | 117 | Not started |
-| GRD-02 | 117 | Not started |
-| GRD-03 | 117 | Not started |
-| GRD-04 | 117 | Not started |
-| GRD-05 | 117 | Not started |
-| GRD-06 | 117 | Not started |
-| APP-04 | 118 | Not started |
-| GATE-03 | 118 | Not started |
-| APP-06 | 119 | Not started |
-| DSH-05 | 119 | Not started |
-| PKG-01 | 119 | Not started |
-| PKG-02 | 119 | Not started |
-| PKG-03 | 120 | Not started |
-| PKG-04 | 120 | Not started |
-| LEG-01 | 120 | Not started |
-| LEG-02 | 120 | Not started |
+| DSH-01 | 112 | Complete |
+| DSH-02 | 112 | Complete |
+| DSH-03 | 112 | Complete |
+| DSH-04 | 112 | Complete |
+| GATE-01 | 112 | Complete |
+| GATE-02 | 112 | Complete |
+| SKL-05 | 113 | Complete |
+| SKL-06 | 113 | Complete |
+| SKL-07 | 113 | Complete |
+| SKL-01 | 114 | Complete |
+| SKL-02 | 114 | Complete |
+| SKL-03 | 114 | Complete |
+| SKL-04 | 115 | Complete |
+| APP-01 | 116 | Complete |
+| APP-02 | 116 | Complete |
+| APP-03 | 116 | Complete |
+| APP-05 | 116 | Complete |
+| GRD-01 | 117 | Complete |
+| GRD-02 | 117 | Complete |
+| GRD-03 | 117 | Complete |
+| GRD-04 | 117 | Complete |
+| GRD-05 | 117 | Complete |
+| GRD-06 | 117 | Complete |
+| APP-04 | 118 | Complete |
+| GATE-03 | 118 | Complete |
+| APP-06 | 119 | Complete |
+| DSH-05 | 119 | Complete |
+| PKG-01 | 119 | Complete |
+| PKG-02 | 119 | Complete |
+| PKG-03 | 120 | Complete |
+| PKG-04 | 120 | Complete |
+| LEG-01 | 120 | Complete |
+| LEG-02 | 120 | Complete |
 
 **Coverage:**
 
@@ -150,4 +150,4 @@
 
 ---
 *Requirements defined: 2026-08-13*
-*Last updated: 2026-08-13 after roadmap creation (33/33 mapped, 100% coverage)*
+*Last updated: 2026-08-14 — all 33 requirements complete (33/33 satisfied, 100% coverage)*
