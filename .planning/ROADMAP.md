@@ -76,7 +76,8 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 ### 阶段 D — 交付与收敛
 
 - [x] **Phase 119: First-Run Wizard & Windows Packaging** - 首启向导 + 凭据/模型 + 单 exe 安装包 + 三层更新器 (APP-06, DSH-05, PKG-01, PKG-02) (completed 2026-08-14)
-- [x] **Phase 120: Convergence & Lawyer Trial** - 遥测 + 离线行为 + v3.x 冻结收敛 + 人工闸门 (PKG-03, PKG-04, LEG-01, LEG-02) (completed 2026-08-14)
+- [x] **Phase 120: Convergence & Lawyer Trial** - 遥测 + 离线行为 + v3.x 冻结收敛 + 人工闸门 (PKG-03, PKG-04, LEG-01, LEG-02)
+- [ ] **Phase 121: Integration Wiring & Real-Path Activation** - 闭合 5 个集成缺口 + 激活真实引擎/API/Python/内容更新路径 (INT-01..05)
 
 ---
 
@@ -396,6 +397,25 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 </details>
 
+### Phase 121: Integration Wiring & Real-Path Activation
+
+**Goal**: 闭合 v4.0 审计发现的 5 个集成缺口并激活全部真实路径：main.dart 重写为 AppStartup 驱动的 wizard→engine→chat 启动流；DshProcessManager 对接真实 DSH 引擎（build_dsh_release.sh 构建产物）；GuardrailIntegrator 接入 ChatController；ExportDialog 接入 ChatView；便携 Python 下载自动化。运行时零 mock——真实引擎 + 真实 DeepSeek API + 真实 Python docx 导出 + 真实内容更新。E2E 全流程可用。
+**Depends on**: Phase 120
+**Requirements**: INT-01..05 (audit gaps), real-path activation for DSH-01..05, APP-01..06, GRD-01..06, PKG-01
+**Success Criteria** (what must be TRUE):
+
+  1. `main.dart` 使用 `AppStartup`：首启走 `FirstRunWizard`（执业方向→密钥→模型确认），后续启动直接加载凭据→spawn 引擎→渲染 ChatView；不再直接跳到 ChatView
+  2. `DshProcessManager.spawn()` 在 `AppStartup` 中被调用，对接 `engines/engine-<version>.zip` 解包后的真实 DSH 引擎；`AcpClient` 连接到真实进程 stdio；`healthProbe` 通过
+  3. `GuardrailIntegrator.runAllChecks()` 在 `ChatController` 的 assistant 消息处理路径中被调用；六条护栏在真实聊天流中生效；负向回归测试（护栏绕过尝试失败）在集成路径上通过
+  4. `ExportDialog` 从 `ChatView` 可触发（工具栏按钮或消息上下文菜单）；真实便携 Python 执行 track-changes 脚本产出 docx
+  5. `scripts/build_windows_installer.sh` 自动下载便携 Python（不再 echo NOTE 手动步骤）
+  6. `build_dsh_release.sh` 成功执行，产出 `engines/engine-<version>.zip` + `engine-manifest.json`（sha256 可复验）
+  7. E2E 冒烟（真实引擎 + 真实 API）：prompt → 流式响应 → committed text 渲染；批准卡路径；澄清卡路径；导出路径——四条路径全部用真实组件走通
+  8. V4 门禁全绿（dart analyze + flutter test + mock E2E + meta-test）；新增集成测试覆盖 5 个集成缺口
+
+**Plans**: TBD (est. 5-6)
+**UI hint**: yes
+
 ---
 
 ## Progress
@@ -422,6 +442,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | 118. Word Track-Changes Export | C | 1/3 | Complete    | 2026-08-14 |
 | 119. First-Run Wizard & Windows Packaging | D | 1/4 | Complete    | 2026-08-14 |
 | 120. Convergence & Lawyer Trial | D | 1/4 | Complete    | 2026-08-14 |
+| 121. Integration Wiring & Real-Path Activation | D | 0 | Not started | — |
 
 ### v3.1 Legal AI Arena — COMPLETE (SHIPPED 2026-08-09)
 
