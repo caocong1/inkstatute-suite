@@ -16,6 +16,7 @@
 ///   }
 /// }
 /// ```
+library;
 
 /// A single skill entry in a content manifest domain.
 class SkillEntry {

@@ -50,6 +50,9 @@ dependencies:
   # SHA-256 hashing for content package integrity verification (SKL-04).
   crypto: ^3.0.3
 
+  # Path manipulation for cross-platform file paths (SKL-04).
+  path: ^1.9.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
