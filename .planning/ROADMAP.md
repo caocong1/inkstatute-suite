@@ -64,7 +64,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 ### 阶段 B — 法律预设与能力层
 
 - [x] **Phase 113: Legal Presets & Domain Presets** - 分域预设（core+四域）+ 人设与护栏提示词基座 + token 预算门禁 (SKL-05..07) ✅ 2026-08-14
-- [ ] **Phase 114: Skill Pipeline — dsh Target** - 语料仓 convert-skills.js 新增 dsh 物化 + 内容包 manifest + 内容门禁 (SKL-01..03)
+- [x] **Phase 114: Skill Pipeline — dsh Target** ✅ 2026-08-14 - 语料仓 convert-skills.js 新增 dsh 物化 + 内容包 manifest + 内容门禁 (SKL-01..03)
 - [ ] **Phase 115: Skill Content Auto-Update** - app 侧内容包更新器：manifest 比对 + 原子切换 + 回滚 + 离线 (SKL-04)
 
 ### 阶段 C — 客户端与护栏
