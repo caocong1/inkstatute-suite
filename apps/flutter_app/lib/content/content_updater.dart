@@ -5,6 +5,7 @@ import 'package:flutter_app/content/content_paths.dart';
 import 'package:flutter_app/content/hash_verifier.dart';
 import 'package:flutter_app/content/manifest_schema.dart';
 import 'package:flutter_app/content/update_exception.dart';
+import 'package:flutter_app/content/update_status.dart';
 import 'package:flutter_app/content/zip_extractor.dart';
 import 'package:http/http.dart' as http;
 import 'package:pub_semver/pub_semver.dart';
@@ -383,6 +384,80 @@ class ContentUpdater {
         }
       }
     }
+  }
+
+  /// Checks for updates with offline-safe behavior.
+  ///
+  /// Wraps [checkAndUpdate] with network error handling:
+  /// - On network error: if current release exists, returns
+  ///   [UpdateResultFailure] with `isOffline=true` and `rolledBackTo`
+  ///   set to current version (no actual rollback — just continue
+  ///   using current). If no current release but last-good exists,
+  ///   rolls back to last-good. If neither exists, returns failure
+  ///   with "no content available".
+  ///
+  /// This method never throws — all errors are caught and returned
+  /// as [UpdateResultFailure].
+  Future<UpdateResult> checkAndUpdateOfflineSafe() async {
+    try {
+      return await checkAndUpdate();
+    } on UpdateException catch (e) {
+      if (e.kind == UpdateExceptionKind.networkError) {
+        final currentVersion = ContentPaths.getCurrentReleaseVersion();
+        if (currentVersion != null) {
+          // Continue using current version — no rollback needed
+          return UpdateResultFailure(
+            e,
+            rolledBackTo: currentVersion,
+            isOffline: true,
+          );
+        }
+
+        // No current release — try last-good
+        final lastGoodVersion = ContentPaths.getLastGoodReleaseVersion();
+        if (lastGoodVersion != null) {
+          // Rollback to last-good
+          try {
+            await _updatePointer(
+              ContentPaths.resolveCurrentPointer(),
+              lastGoodVersion,
+            );
+          } catch (_) {
+            // Pointer update failed — continue with failure
+          }
+          return UpdateResultFailure(
+            e,
+            rolledBackTo: lastGoodVersion,
+            isOffline: true,
+          );
+        }
+
+        // No content at all
+        return UpdateResultFailure(
+          e,
+          rolledBackTo: null,
+          isOffline: true,
+        );
+      }
+
+      // Non-network error — return as failure
+      final currentVersion = ContentPaths.getCurrentReleaseVersion();
+      return UpdateResultFailure(e, rolledBackTo: currentVersion);
+    } catch (e) {
+      final currentVersion = ContentPaths.getCurrentReleaseVersion();
+      return UpdateResultFailure(
+        UpdateException(UpdateExceptionKind.extractionFailed, e.toString()),
+        rolledBackTo: currentVersion,
+      );
+    }
+  }
+
+  /// Returns the current update status for UI consumption.
+  ///
+  /// This is a snapshot of the local content state. Does not perform
+  /// network checks.
+  UpdateStatus currentStatus() {
+    return UpdateStatus.current();
   }
 
   /// Closes the HTTP client.
