@@ -106,5 +106,10 @@ class PolishMarker {
   static bool isPresent(String text) => _polishPattern.hasMatch(text);
 
   /// Removes the polish marker from text.
-  static String remove(String text) => text.replaceAll(_polishPattern, '').trim();
+  static String remove(String text) {
+    var cleaned = text.replaceAll(_polishPattern, '');
+    // Clean up extra whitespace left by removed markers
+    cleaned = cleaned.replaceAll(RegExp(r' {2,}'), ' ');
+    return cleaned.trim();
+  }
 }
