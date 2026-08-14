@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_app/chat/output_boundary.dart';
+import 'package:flutter_app/chat/error_mapper.dart';
 import 'package:flutter_app/chat/chat_models.dart';
 import 'package:acp_client/acp_client.dart';
 import 'dart:async';

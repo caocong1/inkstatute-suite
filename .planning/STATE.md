@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Flutter Native + DSH Engine
-status: Phase 115 complete — ready for Phase 116/117/118 (parallel)
-stopped_at: Phase 115 verified and transitioned — Content auto-updater (ContentPaths + ContentUpdater + ZipExtractor + HashVerifier + offline + settings UI)
-last_updated: "2026-08-14T04:30:00Z"
-last_activity: "2026-08-14 — Phase 115 complete: 3/3 plans executed, content auto-updater with atomic switch + sha256 verification + rollback + offline degradation, 59 tests, V4 gates all pass"
+status: Phase 116 complete — ready for Phase 117/118 (parallel)
+stopped_at: Phase 116 verified and transitioned — Chat UI & Output Boundary (models + widgets + session store + controller + app shell)
+last_updated: "2026-08-14T06:00:00Z"
+last_activity: "2026-08-14 — Phase 116 complete: 4/4 plans executed, chat UI with output boundary + approval/clarification/citation cards + drift/SQLite session store + error mapping + app shell, 316 tests, V4 gates all pass"
 progress:
   total_phases: 9
-  completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
-  percent: 44
+  completed_phases: 5
+  total_plans: 21
+  completed_plans: 21
+  percent: 56
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
 
-**Current focus:** Phase 116/117/118 — Chat UI / Legal Guardrails / Word Export (parallel after 115)
+**Current focus:** Phase 117/118 — Legal Guardrails / Word Export (parallel after 116)
 
 ## Current Position
 
-Phase: 116 of 120 (Chat UI & Output Boundary) — next in critical path
-Status: Phase 115 complete — ready for Phase 116/117/118 (parallel per roadmap)
-Last activity: 2026-08-14 — Phase 115 verified and transitioned: 3/3 plans executed, content auto-updater with atomic switch + sha256 verification + rollback + offline degradation + settings UI, 59 tests, V4 gates all pass
+Phase: 117 of 120 (Legal Guardrails) — next in critical path
+Status: Phase 116 complete — ready for Phase 117/118 (parallel per roadmap)
+Last activity: 2026-08-14 — Phase 116 verified and transitioned: 4/4 plans executed, chat UI with output boundary + approval/clarification/citation cards + drift/SQLite session store + error mapping + app shell, 316 tests, V4 gates all pass
 
-Progress: [▓▓▓▓░░░░░░] 44%
+Progress: [▓▓▓▓▓░░░░░] 56%
 
 ## Milestone v4.0 Overview
 
@@ -120,19 +120,18 @@ V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影�
 ## Session Continuity
 
 Last session: 2026-08-14
-Stopped at: Phase 115 complete and verified — ready for Phase 116/117/118 (parallel)
+Stopped at: Phase 116 complete and verified — ready for Phase 117/118 (parallel)
 Product spec: docs/requirements/V4-PRD.md (Flutter Native + DSH Engine)
 Research: .planning/research/SUMMARY.md (v4.0, HIGH confidence) + .planning/research/V4-SELECTION.md (选型证据)
 Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage)
-Execution plan: .planning/ROADMAP.md (Phases 112-120, Phases 112-115 complete)
+Execution plan: .planning/ROADMAP.md (Phases 112-120, Phases 112-116 complete)
 Carried human gates (do not auto-complete): HG-1 (Phase 120), HG-4 (Phase 118), HG-3 (Phase 120)
 v1.x/v3.0 archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Phase 116: Chat UI & Output Boundary (parallel with 117/118)
-- Phase 117: Legal Guardrails (parallel with 116/118)
-- Phase 118: Word Track-Changes Export (parallel with 116/117)
+- Phase 117: Legal Guardrails (parallel with 118)
+- Phase 118: Word Track-Changes Export (parallel with 117)
 - Phase 112 V1-V5 risk gate is CLOSED; no rollback trigger
 - 引擎升级（DSH commit 变更）必须先真机回归再发布，任何阶段不得绕过
 - Carried human gates（HG-1, HG-4, HG-3）保持 HUMAN_NEEDED — do not auto-close
