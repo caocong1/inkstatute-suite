@@ -13,7 +13,7 @@
 - [ ] **DSH-02**: DSH 子进程管理器——从捆绑引擎目录 spawn ACP 组合；`DSH_HOME` 指向 `%LOCALAPPDATA%\InkStatute\runtime\.dsh`；API 密钥经环境注入（不落盘明文）；initialize 握手健康探针；app 退出优雅关停；零孤儿进程断言
 - [ ] **DSH-03**: 引擎发布产物管线（`scripts/build_dsh_release.sh` + `engines/dsh-pin.txt` + `engines/acp.cordis.yml`）——钉 commit 构建 → `engine-<version>.zip`（便携 Node + 构建产物 + ACP 组合 + 预设物化）→ `engine-manifest.json` {dsh_commit, node_version, sha256, built_at}；**引擎禁自动升级**，升级须真机回归后随 app 版本发布
 - [ ] **DSH-04**: 批准安全——引擎批准栈 terminal/execute_code 默认拒绝并上抛 `session/request_permission`；app 策略：未知 kind 一律拒绝、已知 kind 渲染用户卡片、无批量批准入口；mock 权限事件测试全路径
-- [ ] **DSH-05**: 凭据与模型——密钥存 OS 凭据库、启动时注入；模型/供应商默认（DeepSeek 官方路由）可配；密钥轮换入口（业主模式）；日志与遥测零明文密钥
+- [x] **DSH-05**: 凭据与模型——密钥存 OS 凭据库、启动时注入；模型/供应商默认（DeepSeek 官方路由）可配；密钥轮换入口（业主模式）；日志与遥测零明文密钥
 
 ### SKL — 技能管线
 
@@ -27,36 +27,36 @@
 
 ### APP — Flutter 产品
 
-- [ ] **APP-01**: Flutter 工程骨架（`apps/flutter_app/`，Windows 桌面优先）——单一 chat UI 实现；墨律三主题以 lawyer-desktop 23 组件为设计参照（不逐字复制）
-- [ ] **APP-02**: 会话 UI——已提交文本流式渲染、批准卡片、澄清卡片（解析 `[CLARIFY:]`）、引用徽记（verified/retrieved/unverified）、人审徽记（`[HUMAN_REVIEW:]`）、状态文案（工具活动不可见为接受取舍，PRD DP-2）；单 in-flight 时输入禁用
-- [ ] **APP-03**: 本地会话库（SQLite/drift）——会话/消息/引用/审批记录；按执业方向分组；删除与导出
-- [ ] **APP-04**: Word 原生修订导出——模型产结构化变更清单 JSON（schema 本阶段定义）；app 侧便携 Python 执行 `contract_review_trackchanges.py` 确定性变换；输出 docx 到用户路径；金标准 fixtures 取 lawfirm-profile；模型永不直接写 docx 字节
-- [ ] **APP-05**: 输出边界——只渲染已提交 assistant 文本；DSH meta/system 噪声永不出现；错误映射用户可读（引擎未启动/限流/鉴权/超时）；原始堆栈只进本地日志
-- [ ] **APP-06**: 首启向导——执业方向卡片（设默认预设）→ 密钥（预填或一次性粘贴，存 OS 凭据库）→ 模型确认；之后零终端零配置文件
+- [x] **APP-01**: Flutter 工程骨架（`apps/flutter_app/`，Windows 桌面优先）——单一 chat UI 实现；墨律三主题以 lawyer-desktop 23 组件为设计参照（不逐字复制）
+- [x] **APP-02**: 会话 UI——已提交文本流式渲染、批准卡片、澄清卡片（解析 `[CLARIFY:]`）、引用徽记（verified/retrieved/unverified）、人审徽记（`[HUMAN_REVIEW:]`）、状态文案（工具活动不可见为接受取舍，PRD DP-2）；单 in-flight 时输入禁用
+- [x] **APP-03**: 本地会话库（SQLite/drift）——会话/消息/引用/审批记录；按执业方向分组；删除与导出
+- [x] **APP-04**: Word 原生修订导出——模型产结构化变更清单 JSON（schema 本阶段定义）；app 侧便携 Python 执行 `contract_review_trackchanges.py` 确定性变换；输出 docx 到用户路径；金标准 fixtures 取 lawfirm-profile；模型永不直接写 docx 字节
+- [x] **APP-05**: 输出边界——只渲染已提交 assistant 文本；DSH meta/system 噪声永不出现；错误映射用户可读（引擎未启动/限流/鉴权/超时）；原始堆栈只进本地日志
+- [x] **APP-06**: 首启向导——执业方向卡片（设默认预设）→ 密钥（预填或一次性粘贴，存 OS 凭据库）→ 模型确认；之后零终端零配置文件
 
 ### GRD — 法律护栏
 
-- [ ] **GRD-01**: research-gate——未检索现行法规/司法解释不得下结论；app 侧无 verified 引用时结论区"待核实"标记
-- [ ] **GRD-02**: citation audit——引用必标 verified / retrieved / unverified；三类徽记渲染，unverified 视觉警示
-- [ ] **GRD-03**: ask-user 强制——关键事实缺失不得起草；模型输出 `[CLARIFY: …]` 块；app 渲染澄清卡片；未澄清任务锁定
-- [ ] **GRD-04**: de-AI polish——终稿过润色段；独立样式呈现
-- [ ] **GRD-05**: human review——高风险结论恒带 `[HUMAN_REVIEW: …]`；徽记不可自动消除；批准栈无任何放行路径
-- [ ] **GRD-06**: 保密——上传前脱敏提醒；DeepSeek API 传输告知；客户材料任务入口一次性确认；本地默认
+- [x] **GRD-01**: research-gate——未检索现行法规/司法解释不得下结论；app 侧无 verified 引用时结论区"待核实"标记
+- [x] **GRD-02**: citation audit——引用必标 verified / retrieved / unverified；三类徽记渲染，unverified 视觉警示
+- [x] **GRD-03**: ask-user 强制——关键事实缺失不得起草；模型输出 `[CLARIFY: …]` 块；app 渲染澄清卡片；未澄清任务锁定
+- [x] **GRD-04**: de-AI polish——终稿过润色段；独立样式呈现
+- [x] **GRD-05**: human review——高风险结论恒带 `[HUMAN_REVIEW: …]`；徽记不可自动消除；批准栈无任何放行路径
+- [x] **GRD-06**: 保密——上传前脱敏提醒；DeepSeek API 传输告知；客户材料任务入口一次性确认；本地默认
 
 ### PKG — 打包交付
 
-- [ ] **PKG-01**: Windows 单 exe 安装包——Flutter build + 引擎 zip + 便携 Python + 初始内容包 + 预设；装到 `%LOCALAPPDATA%\InkStatute`；开始菜单/桌面快捷方式；零命令行
-- [ ] **PKG-02**: 三层更新器——app（安装器）/ 引擎（zip 原子替换，禁自动）/ 内容包（唯一自动层）；启动 manifest 检查；签名校验；回滚
-- [ ] **PKG-03**: 健康/崩溃遥测——opt-in、脱敏上传；引擎健康探针（initialize 握手）内嵌；业主远程日志路径
-- [ ] **PKG-04**: 离线行为——last-good 引擎+内容可启动、可看历史；新任务需联网并明确提示
+- [x] **PKG-01**: Windows 单 exe 安装包——Flutter build + 引擎 zip + 便携 Python + 初始内容包 + 预设；装到 `%LOCALAPPDATA%\InkStatute`；开始菜单/桌面快捷方式；零命令行
+- [x] **PKG-02**: 三层更新器——app（安装器）/ 引擎（zip 原子替换，禁自动）/ 内容包（唯一自动层）；启动 manifest 检查；签名校验；回滚
+- [x] **PKG-03**: 健康/崩溃遥测——opt-in、脱敏上传；引擎健康探针（initialize 握手）内嵌；业主远程日志路径
+- [x] **PKG-04**: 离线行为——last-good 引擎+内容可启动、可看历史；新任务需联网并明确提示
 
 ### LEG / GATE — 收敛与门禁
 
-- [ ] **LEG-01**: v3.x 平台冻结——gateway / wecom / qq / arena / agent-core / acp-client(TS) / ui-core(SolidJS) / apps/web / apps/desktop 标注 frozen（README + MILESTONES），不进 V4 交付物与 V4 gate 套件，不新开工；移除仅在 Phase 120 验收后
-- [ ] **LEG-02**: 收敛——律师试运行验收后移除退役目录；v3.0/v3.1 文档归档到 `milestones/`；主线只含 V4 产品代码路径
+- [x] **LEG-01**: v3.x 平台冻结——gateway / wecom / qq / arena / agent-core / acp-client(TS) / ui-core(SolidJS) / apps/web / apps/desktop 标注 frozen（README + MILESTONES），不进 V4 交付物与 V4 gate 套件，不新开工；移除仅在 Phase 120 验收后
+- [x] **LEG-02**: 收敛——律师试运行验收后移除退役目录；v3.0/v3.1 文档归档到 `milestones/`；主线只含 V4 产品代码路径
 - [ ] **GATE-01**: v4 门禁 runner（`scripts/run_v4_gates.py`）——dart analyze + flutter test + 内容结构测试 + 引擎清单校验，接 CI
 - [ ] **GATE-02**: 覆盖门禁——每个新 Dart `lib/` 目录有测试覆盖；meta-test 在 v4 runner 内
-- [ ] **GATE-03**: E2E——mock ACP 全流程（prompt → 流 → 批准卡 → 答复 → committed text）+ 真实引擎路径（DeepSeek API，标注 real-API）+ docx 导出金标准
+- [x] **GATE-03**: E2E——mock ACP 全流程（prompt → 流 → 批准卡 → 答复 → committed text）+ 真实引擎路径（DeepSeek API，标注 real-API）+ docx 导出金标准
 
 ## Future Requirements (post-v4.0)
 
@@ -121,6 +121,7 @@
 | LEG-02 | 120 | Not started |
 
 **Coverage:**
+
 - v4.0 requirements: 33 total (5 DSH + 7 SKL + 6 APP + 6 GRD + 4 PKG + 2 LEG + 3 GATE)
 - Mapped to phases: 33 (100%)
 - Unmapped: 0 ✅
@@ -141,6 +142,7 @@
 | **Total** | | **33** |
 
 **Distribution rationale:**
+
 - DSH 需求集中在 112（引擎底座），凭据/向导归 119（与打包同阶段验证交付路径）。
 - SKL 按管线顺序切分：预设（113）→ 物化（114）→ 更新（115）；SKL-07 预算门禁与预设同阶段（113），因为预算由预设形态决定。
 - GRD 全部归 117（护栏阶段统一双层落地），与 116（UI）解耦、与 118（docx）解耦。

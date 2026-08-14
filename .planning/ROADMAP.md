@@ -69,14 +69,14 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 C — 客户端与护栏
 
-- [ ] **Phase 116: Chat UI & Output Boundary** - Flutter 会话 UI（流式/批准卡/澄清卡/引用/人审徽记）+ 本地会话库 + 输出边界 (APP-01..03, APP-05)
-- [ ] **Phase 117: Legal Guardrails** - 六条护栏双层落地（提示词段 + app 呈现/强制） (GRD-01..06)
-- [ ] **Phase 118: Word Track-Changes Export** - 变更清单 schema + 便携 Python 确定性 docx 变换 + E2E 金标准 (APP-04, GATE-03)
+- [x] **Phase 116: Chat UI & Output Boundary** - Flutter 会话 UI（流式/批准卡/澄清卡/引用/人审徽记）+ 本地会话库 + 输出边界 (APP-01..03, APP-05) (completed 2026-08-14)
+- [x] **Phase 117: Legal Guardrails** - 六条护栏双层落地（提示词段 + app 呈现/强制） (GRD-01..06) (completed 2026-08-14)
+- [x] **Phase 118: Word Track-Changes Export** - 变更清单 schema + 便携 Python 确定性 docx 变换 + E2E 金标准 (APP-04, GATE-03) (completed 2026-08-14)
 
 ### 阶段 D — 交付与收敛
 
-- [ ] **Phase 119: First-Run Wizard & Windows Packaging** - 首启向导 + 凭据/模型 + 单 exe 安装包 + 三层更新器 (APP-06, DSH-05, PKG-01, PKG-02)
-- [ ] **Phase 120: Convergence & Lawyer Trial** - 遥测 + 离线行为 + v3.x 冻结收敛 + 人工闸门 (PKG-03, PKG-04, LEG-01, LEG-02)
+- [x] **Phase 119: First-Run Wizard & Windows Packaging** - 首启向导 + 凭据/模型 + 单 exe 安装包 + 三层更新器 (APP-06, DSH-05, PKG-01, PKG-02) (completed 2026-08-14)
+- [x] **Phase 120: Convergence & Lawyer Trial** - 遥测 + 离线行为 + v3.x 冻结收敛 + 人工闸门 (PKG-03, PKG-04, LEG-01, LEG-02) (completed 2026-08-14)
 
 ---
 
@@ -417,11 +417,11 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | 113. Legal Presets & Domain Presets | B | 0/4 | Planned | — |
 | 114. Skill Pipeline — dsh Target | B | 0 | Not started | — |
 | 115. Skill Content Auto-Update | B | 0 | Not started | — |
-| 116. Chat UI & Output Boundary | C | 0 | Not started | — |
-| 117. Legal Guardrails | C | 0 | Not started | — |
-| 118. Word Track-Changes Export | C | 0 | Not started | — |
-| 119. First-Run Wizard & Windows Packaging | D | 0 | Not started | — |
-| 120. Convergence & Lawyer Trial | D | 0 | Not started | — |
+| 116. Chat UI & Output Boundary | C | 1/4 | Complete    | 2026-08-14 |
+| 117. Legal Guardrails | C | 1/3 | Complete    | 2026-08-14 |
+| 118. Word Track-Changes Export | C | 1/3 | Complete    | 2026-08-14 |
+| 119. First-Run Wizard & Windows Packaging | D | 1/4 | Complete    | 2026-08-14 |
+| 120. Convergence & Lawyer Trial | D | 1/4 | Complete    | 2026-08-14 |
 
 ### v3.1 Legal AI Arena — COMPLETE (SHIPPED 2026-08-09)
 
