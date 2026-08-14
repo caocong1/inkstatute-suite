@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Flutter Native + DSH Engine
-status: Phase 118 complete — ready for Phase 119 (First-Run Wizard & Windows Packaging)
-stopped_at: Phase 118 verified and transitioned — Word Track-Changes Export (change list schema + Python script + docx exporter + HG-4 + GATE-03)
-last_updated: "2026-08-14T08:00:00Z"
-last_activity: "2026-08-14 — Phase 118 complete: 3/3 plans executed, Word track-changes export with JSON change list schema + refactored Python script + docx exporter + HG-4 human gate + GATE-03 E2E, 449 tests, V4 gates all pass"
+status: Phase 119 complete — ready for Phase 120 (Convergence & Lawyer Trial)
+stopped_at: Phase 119 verified and transitioned — First-Run Wizard & Windows Packaging (wizard + credential security + installer + update orchestrator)
+last_updated: "2026-08-14T09:00:00Z"
+last_activity: "2026-08-14 — Phase 119 complete: 4/4 plans executed, first-run wizard + credential security (OS credential store + zero plaintext) + Windows packaging (Inno Setup) + three-layer update orchestrator (engine auto-update disabled), 488 tests, V4 gates all pass"
 progress:
   total_phases: 9
-  completed_phases: 7
-  total_plans: 27
-  completed_plans: 27
-  percent: 78
+  completed_phases: 8
+  total_plans: 31
+  completed_plans: 31
+  percent: 89
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
 
-**Current focus:** Phase 119 — First-Run Wizard & Windows Packaging
+**Current focus:** Phase 120 — Convergence & Lawyer Trial
 
 ## Current Position
 
-Phase: 119 of 120 (First-Run Wizard & Windows Packaging) — next in critical path
-Status: Phase 118 complete — ready for Phase 119 (depends on 115+116+117+118, all complete)
-Last activity: 2026-08-14 — Phase 118 verified and transitioned: 3/3 plans executed, Word track-changes export with JSON change list schema + refactored Python script + docx exporter + HG-4 human gate + GATE-03 E2E, 449 tests, V4 gates all pass
+Phase: 120 of 120 (Convergence & Lawyer Trial) — final phase
+Status: Phase 119 complete — ready for Phase 120 (depends on 119, complete)
+Last activity: 2026-08-14 — Phase 119 verified and transitioned: 4/4 plans executed, first-run wizard + credential security + Windows packaging + three-layer update orchestrator, 488 tests, V4 gates all pass
 
-Progress: [▓▓▓▓▓▓▓░░░] 78%
+Progress: [▓▓▓▓▓▓▓▓░░] 89%
 
 ## Milestone v4.0 Overview
 
@@ -120,18 +120,17 @@ V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影�
 ## Session Continuity
 
 Last session: 2026-08-14
-Stopped at: Phase 118 complete and verified — ready for Phase 119 (First-Run Wizard & Windows Packaging)
+Stopped at: Phase 119 complete and verified — ready for Phase 120 (Convergence & Lawyer Trial)
 Product spec: docs/requirements/V4-PRD.md (Flutter Native + DSH Engine)
 Research: .planning/research/SUMMARY.md (v4.0, HIGH confidence) + .planning/research/V4-SELECTION.md (选型证据)
 Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage)
-Execution plan: .planning/ROADMAP.md (Phases 112-120, Phases 112-118 complete)
+Execution plan: .planning/ROADMAP.md (Phases 112-120, Phases 112-119 complete)
 Carried human gates (do not auto-complete): HG-1 (Phase 120), HG-4 (Phase 118 — pending), HG-3 (Phase 120)
 v1.x/v3.0 archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- Phase 119: First-Run Wizard & Windows Packaging (depends on 115+116+117+118, all complete)
-- Phase 120: Convergence & Lawyer Trial (depends on 119)
+- Phase 120: Convergence & Lawyer Trial (final phase — depends on 119, complete)
 - Phase 112 V1-V5 risk gate is CLOSED; no rollback trigger
 - 引擎升级（DSH commit 变更）必须先真机回归再发布，任何阶段不得绕过
 - Carried human gates（HG-1, HG-4, HG-3）保持 HUMAN_NEEDED — do not auto-close
