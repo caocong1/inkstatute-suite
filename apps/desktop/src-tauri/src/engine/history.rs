@@ -336,17 +336,17 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path::PathBuf;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static DB_COUNTER: AtomicU64 = AtomicU64::new(0);
 
     /// Build a temp `session-query.db` with the engine's schema and insert
     /// sample rows. Returns the directory containing the db.
     async fn build_sample_db() -> PathBuf {
+        let id = DB_COUNTER.fetch_add(1, Ordering::SeqCst);
         let dir = std::env::temp_dir().join(format!(
-            "inkstatute-history-test-{}-{}",
+            "inkstatute-history-test-{}-{id}",
             std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
         ));
         fs::create_dir_all(&dir).unwrap();
         let db_path = dir.join("session-query.db");
@@ -402,13 +402,10 @@ mod tests {
 
     #[tokio::test]
     async fn open_missing_db_returns_none() {
+        let id = DB_COUNTER.fetch_add(1, Ordering::SeqCst);
         let temp = std::env::temp_dir().join(format!(
-            "inkstatute-history-missing-{}-{}",
+            "inkstatute-history-missing-{}-{id}",
             std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
         ));
         fs::create_dir_all(&temp).unwrap();
         let store = HistoryStore::open(&temp).await.unwrap();
