@@ -4,8 +4,8 @@ milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
 status: executing
 stopped_at: v5.0 Phase 124 完成，GATE-12 通过，准备进入 Phase 125
-last_updated: "2026-08-15T17:25:14.971Z"
-last_activity: 2026-08-15 -- Phase 126 execution started
+last_updated: "2026-08-15T18:40:51.740Z"
+last_activity: 2026-08-15
 progress:
   total_phases: 9
   completed_phases: 3
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 ## Current Position
 
 Phase: 126 (guardrails-capability-layer) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 126
-Last activity: 2026-08-15 -- Phase 126 execution started
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-08-15
 
-Progress: [█████████████░] 65% (4/6 phases: 122, 123, 124, 125 complete)
+Progress: [██████░░░░] 57%
 
 ## Milestone v5.0 Overview
 
@@ -81,6 +81,7 @@ v5.0 关键决策（依据 `.planning/research/V5-SELECTION.md` 11 项本机实�
 - **引擎钉 npm 精确版本，禁用 dist-tag**（`latest` 指向旧版 `0.0.1-rc.1`）
 - **引擎更新 = lockfile 装配 + 版本目录 + 冒烟闸 + 指针切换**；npm registry 即 CDN，业主只托管约 40KB 的 `engine-lock.json`
 - **放弃 Word 原生修订导出**，连带移除 `docx-rs`、`pdf-extract`、便携 Python、track-changes 脚本
+- [Phase ?]: 126-01 complete: Content manifest semver model, content updater with sha256/atomic/rollback, presets materialization with INKSTATUTE_SKILL_DIRS env injection, token budget gate
 
 ### v4 结论被实测推翻的三条
 
@@ -140,7 +141,7 @@ V4 文档中的 `/home/sorawatcher/...` 在当前开发机不存在。实际路�
 
 ## Session Continuity
 
-Last session: 2026-08-16
+Last session: 2026-08-15T18:40:51.731Z
 Stopped at: v5.0 Phase 124 完成，GATE-12 通过，准备进入 Phase 125
 Product spec: docs/requirements/V5-PRD.md (Tauri Shell + DSH Three-Plane Integration)
 Research: .planning/research/V5-SELECTION.md (11 项本机实测, HIGH confidence)

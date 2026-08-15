@@ -47,9 +47,9 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 
 ### SKL — 技能与内容包（沿用 v4.0 管线）
 
-- [ ] **SKL-11**: 分域预设挂载——`presets/<domain>/` 物化到 `runtime\.dsh\.agent-presets\`；`skills.filesystem.customSkillDirs` 指向内容包分域目录；LLM 自动判断法律领域，用户不选执业方向
-- [ ] **SKL-12**: 内容包自动更新——沿用 V4 `content-manifest.json` + sha256 + 原子切换 + 回滚；**兼容性判据从字符串相等改为 semver 范围比较**（DSH 已启用 semver）
-- [ ] **SKL-13**: token 预算门禁——核心集目录渲染（name+description）长度 ≤ 预算（默认 8,000 字符）；超预算回归测试红灯、拒绝发货
+- [x] **SKL-11**: 分域预设挂载——`presets/<domain>/` 物化到 `runtime\.dsh\.agent-presets\`；`skills.filesystem.customSkillDirs` 指向内容包分域目录；LLM 自动判断法律领域，用户不选执业方向
+- [x] **SKL-12**: 内容包自动更新——沿用 V4 `content-manifest.json` + sha256 + 原子切换 + 回滚；**兼容性判据从字符串相等改为 semver 范围比较**（DSH 已启用 semver）
+- [x] **SKL-13**: token 预算门禁——核心集目录渲染（name+description）长度 ≤ 预算（默认 8,000 字符）；超预算回归测试红灯、拒绝发货
 
 ### PKG — 打包交付
 
@@ -132,9 +132,9 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 | GRD-14 | 126 | Pending |
 | GRD-15 | 126 | Pending |
 | GRD-16 | 126 | Pending |
-| SKL-11 | 126 | Pending |
-| SKL-12 | 126 | Pending |
-| SKL-13 | 126 | Pending |
+| SKL-11 | 126 | Complete |
+| SKL-12 | 126 | Complete |
+| SKL-13 | 126 | Complete |
 | ENG-05 | 127 | Pending |
 | PKG-11 | 127 | Pending |
 | PKG-12 | 127 | Pending |
