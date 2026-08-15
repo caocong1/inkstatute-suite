@@ -88,6 +88,43 @@ Phase 122–126 全部可以在 macOS 上完成（Rust 逻辑、事件映射、�
 **不要试图在 macOS 上"绕过"打包**（比如产出 .app 或 .dmg 冒充交付物）——
 交付目标明确是 Windows 单 exe。走到这一步就停下来找业主。
 
+### 在 Windows 机器上执行 Phase 127 的准备（2026-08-16 补）
+
+Phase 122–126 在 macOS 上完成，Phase 127 转到 Windows。**换机后必须先做这四步**：
+
+```powershell
+# 1. 克隆并装依赖
+git clone https://github.com/caocong1/inkstatute-suite.git
+cd inkstatute-suite
+bun install
+cd packages\ui-core; bun run build; cd ..\..
+
+# 2. 存 API 密钥（Mac 上的凭据不会跟过来）
+cargo build --manifest-path apps\desktop\src-tauri\Cargo.toml --bin store-key
+# 交互式（Windows 终端可直接粘贴）：
+.\apps\desktop\src-tauri\target\debug\store-key.exe deepseek
+
+# 3. 确认基线
+cargo test --manifest-path apps\desktop\src-tauri\Cargo.toml -- --test-threads=1
+node scripts\gates\v5\run-gates.mjs        # 期望 4 passed, 0 failed
+
+# 4. 开工
+# /gsd-execute-phase 127
+```
+
+**本文件第 5 节的仓库路径是 macOS 的**（`/Users/dongli/Workspace/...`），
+在 Windows 上一律替换为你的克隆位置。其中：
+- `lawyer-desktop` / `deepseek-harness` / `ai-for-china-legal` 三个只读参照仓
+  **Phase 127 用不到**，不必克隆。127 只需要本仓。
+- 引擎装配走 npm，不需要 DSH 源码。
+
+**Windows 上不会有钥匙串弹窗**——凭据管理器按用户而非按二进制授权，
+macOS 那套 `#[cfg(debug_assertions)]` 的 dev 文件回退在 Windows 上同样生效
+（落在 `%USERPROFILE%\.inkstatute\dev-credentials.json`），两条路都不弹窗。
+
+**Phase 127 交付前记得吊销旧 key**：`sk-6f15…` 曾在对话中明文出现，换新 key 后用
+上面第 2 步的命令重存即可。
+
 在 Phase 125-01 之前，`packages/ui-core` 的 `tsc --noEmit` 验收标准是
 **「错误数 ≤ 5 且全部位于上述三个 Arena 测试文件」**，不是「零错误」。
 Phase 125-01 之后必须是零错误。
