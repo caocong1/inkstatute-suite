@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# !!! DEPRECATED (V5, 2026-08-15) !!!
+# 本脚本已被 scripts/gen-engine-lock.mjs + Rust 侧 lockfile 装配器取代。
+# 原因：DSH 已公开发布 npm，lockfile 装配 9 秒 / 42MB，取代本脚本的
+#      pnpm-deploy + 约 300 行符号链接手术 + 170MB zip。
+# 另：本脚本的 DSH_REPO 默认值 /home/sorawatcher/deepseek-harness 在当前开发机不存在。
+# 保留仅为历史参考，不得执行。
+exit 1
+
 # build_dsh_release.sh — DSH engine release pipeline.
 #
 # Pipeline: read pin → clone/checkout DSH → pnpm install → pnpm build

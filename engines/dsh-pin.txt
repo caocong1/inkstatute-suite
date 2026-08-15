@@ -1,5 +1,33 @@
-# DSH pinned commit for InkStatute V4 engine
-# Upgrade = change this file → rebuild via scripts/build_dsh_release.sh → real-machine regression → app version release
-# NEVER auto-upgrade the engine — DSH is pre-release with no compatibility promise
-dsh_commit=47f943859b
-node_version=^22.19.0 || >=24.0.0
+# DSH engine pin for InkStatute V5 — npm exact versions.
+#
+# 升级流程：改本文件 → node scripts/gen-engine-lock.mjs → 冒烟 → 提交 engine-lock.json → 发版
+#
+# !!! 禁止使用 dist-tag !!!
+# @deepseek-ai/dsh-* 的 latest 标签指向 0.0.1-rc.1（旧版），next 才是当前版。
+# 任何地方写 @latest 或 @next 都会静默装到错误版本。只写精确版本号。
+
+dsh_version=0.1.0-rc.6
+node_version=24.19.0
+target_platform=win32-x64
+registry=https://registry.npmmirror.com
+registry_fallback=https://registry.npmjs.org
+
+# 组合包清单 —— 与 engines/acp.cordis.yml 里 name: 字段一一对应。
+# 增删插件时必须同时改这里和 acp.cordis.yml。
+packages=
+  @deepseek-ai/dsh-acp-demo
+  @deepseek-ai/dsh-llm-pi-ai
+  @deepseek-ai/dsh-llm-deepseek
+  @deepseek-ai/dsh-sandbox-local
+  @deepseek-ai/dsh-sandbox-policy
+  @deepseek-ai/dsh-subprocess-local
+  @deepseek-ai/dsh-bash-sandbox
+  @deepseek-ai/dsh-user-approval
+  @deepseek-ai/dsh-token-meter
+  @deepseek-ai/dsh-compaction-basic
+  @deepseek-ai/dsh-session-projection
+  @deepseek-ai/dsh-fs-sandbox
+  @deepseek-ai/dsh-fs-observation-policy
+  @deepseek-ai/dsh-tool-fs
+  @deepseek-ai/dsh-tool-todo
+  @deepseek-ai/dsh-repeat-tool-reminder
