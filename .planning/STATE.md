@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
 status: executing
-stopped_at: v5.0 Phase 124 完成，GATE-12 通过，准备进入 Phase 125
-last_updated: "2026-08-15T18:40:51.740Z"
-last_activity: 2026-08-15
+stopped_at: v5.0 Phase 126 完成，GRD-11..16 + SKL-11..13 全部完成，准备进入 Phase 127
+last_updated: "2026-08-16T03:20:00.000Z"
+last_activity: 2026-08-16
 progress:
   total_phases: 9
-  completed_phases: 3
+  completed_phases: 5
   total_plans: 35
-  completed_plans: 20
-  percent: 57
+  completed_plans: 22
+  percent: 63
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 126 — guardrails-capability-layer
+**Current focus:** Phase 127 — packaging-three-layer-updates
 
 ## Current Position
 
-Phase: 126 (guardrails-capability-layer) — EXECUTING
-Plan: 2 of 2
+Phase: 127 (packaging-three-layer-updates) — READY
+Plan: 0 of TBD
 Status: Ready to execute
-Last activity: 2026-08-15
+Last activity: 2026-08-16
 
-Progress: [██████░░░░] 57%
+Progress: [██████░░░░] 63%
 
 ## Milestone v5.0 Overview
 
@@ -141,8 +141,8 @@ V4 文档中的 `/home/sorawatcher/...` 在当前开发机不存在。实际路�
 
 ## Session Continuity
 
-Last session: 2026-08-15T18:40:51.731Z
-Stopped at: v5.0 Phase 124 完成，GATE-12 通过，准备进入 Phase 125
+Last session: 2026-08-16T03:20:00.000Z
+Stopped at: v5.0 Phase 126 完成，GRD-11..16 + SKL-11..13 全部完成，准备进入 Phase 127
 Product spec: docs/requirements/V5-PRD.md (Tauri Shell + DSH Three-Plane Integration)
 Research: .planning/research/V5-SELECTION.md (11 项本机实测, HIGH confidence)
 Requirements: .planning/REQUIREMENTS.md (34/34 mapped to phases 122-127, 100% coverage)
@@ -151,9 +151,9 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 
 ## Operator Next Steps
 
-- **Phase 125 已完成**：V3 平台耦合裁剪、Tauri 事件传输（`inkstatute://run-event`）、设置面板（4 标签）、工作区外壳（可拖拽分屏 + 键盘可达）、引擎启动流（失败显示中文错误 + 重试）全部完成。36 个 desktop 测试通过；85 个 Rust 测试通过；V5 门禁 2/2 绿；`packages/ui-core` 与 `event-reducer.ts` 未改动。
-- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 125 验收门禁已亮灯，可进入 126。
-- **Phase 126 是护栏双层 + 分域预设**：冻结 schema 与提示词段；UI 呈现/强制层；分域预设物化结构；token 预算门禁。
+- **Phase 126 已完成**：护栏双层（GRD-11..16）全部落地——模型侧 6 个 GUARDRAIL 锚点 + SKILL_LOADING；渲染侧 guardrails.rs 扫描器 + mapper 事件派生 + PermissionCard（allow-once/reject-once，无批量）+ Workspace 6 护栏接线 + 保密确认对话框。69 个 desktop 测试通过；123+ 个 Rust 测试通过；V5 门禁 4/4 绿；`packages/ui-core` 与 `event-reducer.ts` 未改动。
+- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 126 验收门禁已亮灯，可进入 127。
+- **Phase 127 是交付收口**：便携 Node + 字体本地化 + 单 exe + 首启向导 + 引擎半自动更新 + 回滚门禁。
 - **Task 5 手动 UI 检查**（6 项真机验证）延后到 Phase 127 集成测试时执行——需要真实引擎装配 + API key。
 - 律师人工闸门（HG-1 / HG-3）保持 DEFERRED — 不得自动关闭。
 - `apps/flutter_app` 冻结：可读作参照，**不得修改、不得删除**。

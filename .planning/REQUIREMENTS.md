@@ -38,12 +38,12 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 
 ### GRD — 法律护栏（沿用 v4.0 GRD-01..06，呈现层重做）
 
-- [ ] **GRD-11**: research-gate 可核验化——工具时间线直接显示检索工具是否被调用；无 verified 引用时结论区渲染「待核实」标记
-- [ ] **GRD-12**: citation audit——引用标注 verified / retrieved / unverified 三类徽记，unverified 视觉警示；复用 `ui-core/src/utils/citationAudit.ts`
-- [ ] **GRD-13**: ask-user 强制——模型输出 `[CLARIFY: …]` 块 → 映射为 `elicitation.requested` → 渲染 `ClarificationCard`；未澄清任务锁定
-- [ ] **GRD-14**: de-AI polish + human review——终稿过润色段；`[HUMAN_REVIEW: …]` 徽记不可自动消除；批准栈无任何放行路径
-- [ ] **GRD-15**: 批准卡片——`session/request_permission` → `permission.requested` → 用户卡片 allow-once / reject-once；**无批量批准入口**；未知 kind 一律拒绝
-- [ ] **GRD-16**: 输出边界与保密——只渲染已提交 assistant 文本，DSH meta/system 噪声永不出现；错误映射用户可读（引擎未启动/限流/鉴权/超时）；原始堆栈只进本地日志；上传前脱敏提醒
+- [x] **GRD-11**: research-gate 可核验化——工具时间线直接显示检索工具是否被调用；无 verified 引用时结论区渲染「待核实」标记
+- [x] **GRD-12**: citation audit——引用标注 verified / retrieved / unverified 三类徽记，unverified 视觉警示；复用 `ui-core/src/utils/citationAudit.ts`
+- [x] **GRD-13**: ask-user 强制——模型输出 `[CLARIFY: …]` 块 → 映射为 `elicitation.requested` → 渲染 `ClarificationCard`；未澄清任务锁定
+- [x] **GRD-14**: de-AI polish + human review——终稿过润色段；`[HUMAN_REVIEW: …]` 徽记不可自动消除；批准栈无任何放行路径
+- [x] **GRD-15**: 批准卡片——`session/request_permission` → `permission.requested` → 用户卡片 allow-once / reject-once；**无批量批准入口**；未知 kind 一律拒绝
+- [x] **GRD-16**: 输出边界与保密——只渲染已提交 assistant 文本，DSH meta/system 噪声永不出现；错误映射用户可读（引擎未启动/限流/鉴权/超时）；原始堆栈只进本地日志；上传前脱敏提醒
 
 ### SKL — 技能与内容包（沿用 v4.0 管线）
 
@@ -126,12 +126,12 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 | UIW-03 | 125 | Pending |
 | UIW-04 | 125 | Pending |
 | UIW-05 | 125 | Pending |
-| GRD-11 | 126 | Pending |
-| GRD-12 | 126 | Pending |
-| GRD-13 | 126 | Pending |
-| GRD-14 | 126 | Pending |
-| GRD-15 | 126 | Pending |
-| GRD-16 | 126 | Pending |
+| GRD-11 | 126 | Complete |
+| GRD-12 | 126 | Complete |
+| GRD-13 | 126 | Complete |
+| GRD-14 | 126 | Complete |
+| GRD-15 | 126 | Complete |
+| GRD-16 | 126 | Complete |
 | SKL-11 | 126 | Complete |
 | SKL-12 | 126 | Complete |
 | SKL-13 | 126 | Complete |
