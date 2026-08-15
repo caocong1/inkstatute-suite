@@ -158,8 +158,10 @@ pub fn has_key(p: Provider) -> bool {
 }
 
 /// Builds the environment variables passed to the engine subprocess.
-/// Inherits the current process environment and adds `DSH_HOME` plus the
-/// active provider's API key variable. The returned value must not be logged.
+/// Inherits the current process environment and adds `DSH_HOME`, the
+/// active provider's API key variable, and `INKSTATUTE_SKILL_DIRS` (the
+/// comma-separated absolute paths to materialized domain skill directories).
+/// The returned value must not be logged.
 pub fn build_engine_env(
     active: Provider,
     dsh_home: &Path,
@@ -168,6 +170,15 @@ pub fn build_engine_env(
     envs.push((
         "DSH_HOME".to_string(),
         dsh_home.to_string_lossy().to_string(),
+    ));
+
+    // INKSTATUTE_SKILL_DIRS: runtime-injected skill directories for acp.cordis.yml.
+    // The yml reads this env var to populate customSkillDirs, so content updates
+    // only need a restart — no yml rewrite. (Phase 126 / SKL-11)
+    let skill_dirs = crate::content::presets::build_skill_dirs_env(dsh_home)?;
+    envs.push((
+        crate::content::presets::SKILL_DIRS_ENV.to_string(),
+        skill_dirs,
     ));
 
     let key = load_key(active)?.ok_or_else(|| EngineError::MissingApiKey(active.id().to_string()))?;
@@ -277,6 +288,62 @@ mod tests {
 
         assert!(envs.iter().any(|(k, v)| k == "DSH_HOME" && v == temp.to_string_lossy().as_ref()));
         assert!(envs.iter().any(|(k, v)| k == "DEEPSEEK_API_KEY" && v == "sk-test-1234567890"));
+        // INKSTATUTE_SKILL_DIRS should be present (empty when no presets materialized).
+        assert!(envs.iter().any(|(k, _)| k == "INKSTATUTE_SKILL_DIRS"));
+
+        env::remove_var(TEST_API_KEY_ENV);
+        std::fs::remove_dir_all(&temp).ok();
+    }
+
+    #[test]
+    fn build_engine_env_skill_dirs_are_absolute_paths() {
+        let temp = env::temp_dir().join(format!(
+            "inkstatute-build-env-skill-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::remove_dir_all(&temp).ok();
+        std::fs::create_dir_all(&temp).unwrap();
+
+        // Materialize some fake presets.
+        let presets_src = temp.join("presets/legal-core/skills/test-skill");
+        std::fs::create_dir_all(&presets_src).unwrap();
+        std::fs::write(
+            presets_src.join("SKILL.md"),
+            "---\nname: test-skill\ndescription: test\n---\n# Test\n",
+        )
+        .unwrap();
+
+        // Materialize to dsh_home.
+        let dsh_home = temp.join("runtime/.dsh");
+        std::fs::create_dir_all(&dsh_home).unwrap();
+        crate::content::presets::materialize_presets(&temp, &dsh_home).unwrap();
+
+        env::set_var(TEST_API_KEY_ENV, "sk-test-1234567890");
+        let envs = build_engine_env(Provider::DeepSeek, &dsh_home).unwrap();
+
+        let skill_dirs_val = envs
+            .iter()
+            .find(|(k, _)| k == "INKSTATUTE_SKILL_DIRS")
+            .map(|(_, v)| v.as_str())
+            .unwrap_or("");
+
+        assert!(
+            !skill_dirs_val.is_empty(),
+            "INKSTATUTE_SKILL_DIRS should not be empty after materialization"
+        );
+
+        // Each path should be absolute.
+        for path in skill_dirs_val.split(',') {
+            assert!(
+                std::path::Path::new(path).is_absolute(),
+                "skill dir path should be absolute: {}",
+                path
+            );
+        }
 
         env::remove_var(TEST_API_KEY_ENV);
         std::fs::remove_dir_all(&temp).ok();

@@ -104,11 +104,13 @@
       You are a legal assistant powered by the {{model}} model. Your working directory is {{cwd}}. Your bash tool runs under a file sandbox — a `[sandbox: file access denied …]` result is policy, not a command bug.
 
       Verify your work by checking references and citations. Keep answers brief and factual.
-    # Skill filesystem: customSkillDirs placeholder — Phase 113 configures domain preset directories.
-    # Rank 300 entries are scanned after project roots and before user roots.
+    # Skill filesystem: customSkillDirs is runtime-injected via INKSTATUTE_SKILL_DIRS
+    # env var (set by build_engine_env in Phase 126). This avoids rewriting the yml
+    # after content updates — just restart the engine.
+    # The env var contains comma-separated absolute paths to skill directories.
     skills:
       filesystem:
-        customSkillDirs: []
+        customSkillDirs: !!js (process.env.INKSTATUTE_SKILL_DIRS || '').split(',').filter(Boolean)
 
 # Replay-aware request pressure; the routed adapter supplies model capacity.
 - id: token-meter
