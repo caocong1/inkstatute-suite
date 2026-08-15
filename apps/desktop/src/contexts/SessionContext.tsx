@@ -30,6 +30,10 @@ export interface SessionContextValue {
   submitClarification: (interruptId: string, answers: ClarificationAnswer[]) => Promise<void>;
   submitFeedback: (messageId: string, rating: "up" | "down", comment?: string) => Promise<void>;
   cancelRun: () => Promise<void>;
+  /** Human review marks from message.completed metadata (GRD-14). */
+  humanReview: () => string[];
+  /** Whether research tools were called in this run (GRD-11). */
+  researchPerformed: () => boolean;
 }
 
 const _SessionContext = createContext<SessionContextValue>();
@@ -83,6 +87,8 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
     submitClarification,
     submitFeedback,
     cancelRun,
+    humanReview: eventStream.humanReview,
+    researchPerformed: eventStream.researchPerformed,
   };
 
   return (

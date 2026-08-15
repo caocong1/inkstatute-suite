@@ -23,12 +23,18 @@ export interface UseEventStreamReturn {
   isStreaming: () => boolean;
   error: () => Error | null;
   reconnect: () => void;
+  /** Human review marks from message.completed metadata (GRD-14). */
+  humanReview: () => string[];
+  /** Whether research tools were called in this run (GRD-11). */
+  researchPerformed: () => boolean;
 }
 
 export function useEventStream(conversationId: Accessor<string | null>): UseEventStreamReturn {
   const [state, setState] = createSignal<RenderState>(initialState());
   const [isStreaming, setIsStreaming] = createSignal(false);
   const [error, setError] = createSignal<Error | null>(null);
+  const [humanReview, setHumanReview] = createSignal<string[]>([]);
+  const [researchPerformed, setResearchPerformed] = createSignal(false);
 
   // Non-reactive ref for cleanup without triggering the effect
   let currentUnlisten: UnlistenFn | null = null;
@@ -44,6 +50,8 @@ export function useEventStream(conversationId: Accessor<string | null>): UseEven
     setState(initialState());
     setError(null);
     setIsStreaming(true);
+    setHumanReview([]);
+    setResearchPerformed(false);
 
     try {
       currentUnlisten = await onRunEvent((envelope: RunEventEnvelope) => {
@@ -51,6 +59,22 @@ export function useEventStream(conversationId: Accessor<string | null>): UseEven
         if (envelope.run_id !== id) return;
 
         setState((prev) => reduce(prev, envelope));
+
+        // Track human_review from message.completed metadata (GRD-14).
+        if (envelope.event_type === "message.completed" && envelope.metadata) {
+          const hr = (envelope.metadata as Record<string, unknown>).human_review;
+          if (Array.isArray(hr) && hr.length > 0) {
+            setHumanReview(hr.map((r) => String(r)));
+          }
+        }
+
+        // Track research_performed from run.state_changed metadata (GRD-11).
+        if (envelope.event_type === "run.state_changed" && envelope.metadata) {
+          const rp = (envelope.metadata as Record<string, unknown>).research_performed;
+          if (typeof rp === "boolean" && rp) {
+            setResearchPerformed(true);
+          }
+        }
 
         // Derive isStreaming from run status
         const next = state();
@@ -75,6 +99,8 @@ export function useEventStream(conversationId: Accessor<string | null>): UseEven
       setState(initialState());
       setIsStreaming(false);
       setError(null);
+      setHumanReview([]);
+      setResearchPerformed(false);
       return;
     }
 
@@ -101,5 +127,7 @@ export function useEventStream(conversationId: Accessor<string | null>): UseEven
     isStreaming,
     error,
     reconnect,
+    humanReview,
+    researchPerformed,
   };
 }
