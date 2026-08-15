@@ -92,6 +92,8 @@ pub fn run() {
             commands::credentials::test_provider,
             commands::desktop::get_app_setting,
             commands::desktop::set_app_setting,
+            commands::content::check_content_update,
+            commands::content::get_content_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

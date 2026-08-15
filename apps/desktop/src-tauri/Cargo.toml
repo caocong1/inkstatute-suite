@@ -46,6 +46,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 serde_yaml = "0.9"
 libc = "0.2"
 semver = "1"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 
 # keyring 3.x 不提供默认后端：不显式启用 feature 就编译成内存 mock，
 # store 看似成功、进程退出即丢，OS 凭据库根本没被写入。

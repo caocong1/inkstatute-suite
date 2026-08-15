@@ -1,3 +1,4 @@
+pub mod content;
 pub mod credentials;
 pub mod desktop;
 pub mod engine;
