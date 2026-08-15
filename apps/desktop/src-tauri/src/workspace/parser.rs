@@ -37,138 +37,30 @@ fn parse_text_like(path: &Path, ext: &str) -> Result<ParsedDocument> {
     })
 }
 
-fn parse_pdf(path: &Path) -> Result<ParsedDocument> {
-    match pdf_extract::extract_text(path) {
-        Ok(text) => Ok(ParsedDocument {
-            markdown: text,
-            source_ext: "pdf".into(),
-        }),
-        Err(e) => {
-            let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
-            Ok(ParsedDocument {
-                markdown: format!(
-                    "[PDF 文件: {} — {} bytes — 提取失败: {}]",
-                    path.display(),
-                    size,
-                    e
-                ),
-                source_ext: "pdf".into(),
-            })
-        }
-    }
-}
-
-fn docx_paragraph_text(p: &docx_rs::Paragraph, out: &mut String) {
-    for child in &p.children {
-        match child {
-            docx_rs::ParagraphChild::Run(run) => docx_run_text(run, out),
-            docx_rs::ParagraphChild::Hyperlink(link) => {
-                for lc in &link.children {
-                    if let docx_rs::ParagraphChild::Run(run) = lc {
-                        docx_run_text(run, out);
-                    }
-                }
-            }
-            docx_rs::ParagraphChild::Insert(ins) => {
-                for ic in &ins.children {
-                    if let docx_rs::InsertChild::Run(run) = ic {
-                        docx_run_text(run, out);
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-    out.push('\n');
-}
-
-fn docx_run_text(run: &docx_rs::Run, out: &mut String) {
-    for rc in &run.children {
-        match rc {
-            docx_rs::RunChild::Text(t) => out.push_str(&t.text),
-            docx_rs::RunChild::Tab(_) => out.push('\t'),
-            docx_rs::RunChild::Break(_) => out.push('\n'),
-            _ => {}
-        }
-    }
-}
-
-fn docx_table_text(table: &docx_rs::Table, out: &mut String) {
-    for row in &table.rows {
-        let docx_rs::TableChild::TableRow(row) = row;
-        let mut cells_text: Vec<String> = Vec::new();
-        for cell in &row.cells {
-            let docx_rs::TableRowChild::TableCell(cell) = cell;
-            let mut cell_text = String::new();
-            for content in &cell.children {
-                match content {
-                    docx_rs::TableCellContent::Paragraph(p) => {
-                        docx_paragraph_text(p, &mut cell_text)
-                    }
-                    docx_rs::TableCellContent::Table(t) => docx_table_text(t, &mut cell_text),
-                    _ => {}
-                }
-            }
-            cells_text.push(cell_text.trim().replace('\n', " "));
-        }
-        out.push_str(&cells_text.join(" | "));
-        out.push('\n');
-    }
-}
-
-fn parse_docx(path: &Path) -> Result<ParsedDocument> {
+fn unsupported_file(path: &Path, ext: &str, reason: &str) -> Result<ParsedDocument> {
     let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
-    let fallback = |reason: String| ParsedDocument {
+    Ok(ParsedDocument {
         markdown: format!(
-            "[DOCX 文件: {} — {} bytes — 文本提取失败: {}]",
+            "[{} 文件: {} — {} bytes — {}]",
+            ext.to_uppercase(),
             path.display(),
             size,
             reason
         ),
-        source_ext: "docx".into(),
-    };
-
-    let bytes = match std::fs::read(path) {
-        Ok(b) => b,
-        Err(e) => return Ok(fallback(e.to_string())),
-    };
-
-    let docx = match docx_rs::read_docx(&bytes) {
-        Ok(d) => d,
-        Err(e) => return Ok(fallback(e.to_string())),
-    };
-
-    let mut text = String::new();
-    for child in &docx.document.children {
-        match child {
-            docx_rs::DocumentChild::Paragraph(p) => docx_paragraph_text(p, &mut text),
-            docx_rs::DocumentChild::Table(t) => docx_table_text(t, &mut text),
-            _ => {}
-        }
-    }
-
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return Ok(fallback("文档无可提取文本".into()));
-    }
-
-    Ok(ParsedDocument {
-        markdown: trimmed.to_string(),
-        source_ext: "docx".into(),
+        source_ext: ext.into(),
     })
 }
 
-/// Extract plain text from a DOCX file (shared by workspace indexer and file tools).
-pub fn extract_docx_text(path: &Path) -> Result<String> {
-    Ok(parse_docx(path)?.markdown)
-}
-
 /// Parse a file into unified Markdown text based on extension.
+///
+/// DOCX and PDF parsing are removed in V5 because native Word export is no longer
+/// a product goal and the `docx-rs` / `pdf-extract` dependencies are dropped.
+/// Plain text and common source files remain supported.
 pub fn parse_file(path: &Path, ext: &str) -> Result<ParsedDocument> {
     let ext = ext.to_lowercase();
     match ext.as_str() {
-        "pdf" => parse_pdf(path),
-        "docx" => parse_docx(path),
+        "pdf" => unsupported_file(path, &ext, "V5 不解析 PDF 文本"),
+        "docx" => unsupported_file(path, &ext, "V5 不解析 DOCX 文本"),
         _ => parse_text_like(path, &ext),
     }
 }
@@ -206,51 +98,22 @@ mod tests {
     }
 
     #[test]
-    fn docx_extracts_text_roundtrip() {
-        let dir = temp_dir();
-        let path = dir.join("file.docx");
-
-        let file = fs::File::create(&path).unwrap();
-        docx_rs::Docx::new()
-            .add_paragraph(
-                docx_rs::Paragraph::new()
-                    .add_run(docx_rs::Run::new().add_text("关于投标保函的诉讼请示")),
-            )
-            .add_paragraph(
-                docx_rs::Paragraph::new()
-                    .add_run(docx_rs::Run::new().add_text("索赔金额为人民币500,000元。")),
-            )
-            .add_table(docx_rs::Table::new(vec![docx_rs::TableRow::new(vec![
-                docx_rs::TableCell::new().add_paragraph(
-                    docx_rs::Paragraph::new().add_run(docx_rs::Run::new().add_text("被告")),
-                ),
-                docx_rs::TableCell::new().add_paragraph(
-                    docx_rs::Paragraph::new()
-                        .add_run(docx_rs::Run::new().add_text("某融资担保有限公司")),
-                ),
-            ])]))
-            .build()
-            .pack(file)
-            .unwrap();
-
-        let doc = parse_file(&path, "docx").unwrap();
-        assert!(
-            doc.markdown.contains("关于投标保函的诉讼请示"),
-            "got: {}",
-            doc.markdown
-        );
-        assert!(doc.markdown.contains("索赔金额为人民币500,000元。"));
-        assert!(doc.markdown.contains("被告 | 某融资担保有限公司"));
-        let _ = fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn docx_invalid_bytes_fall_back_to_marker() {
+    fn docx_is_unsupported_marker() {
         let dir = temp_dir();
         let path = dir.join("file.docx");
         fs::write(&path, "fake docx bytes").unwrap();
         let doc = parse_file(&path, "docx").unwrap();
-        assert!(doc.markdown.contains("文本提取失败"));
+        assert!(doc.markdown.contains("V5 不解析 DOCX 文本"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn pdf_is_unsupported_marker() {
+        let dir = temp_dir();
+        let path = dir.join("file.pdf");
+        fs::write(&path, "fake pdf bytes").unwrap();
+        let doc = parse_file(&path, "pdf").unwrap();
+        assert!(doc.markdown.contains("V5 不解析 PDF 文本"));
         let _ = fs::remove_dir_all(&dir);
     }
 }

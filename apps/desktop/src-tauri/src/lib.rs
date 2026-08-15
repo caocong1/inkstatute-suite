@@ -19,11 +19,11 @@
 )]
 
 mod commands;
+pub mod engine;
 mod menu;
 mod security;
 mod workspace;
 
-use commands::desktop::AppSettings;
 use security::path_sandbox::PathSandbox;
 use std::sync::{Arc, Mutex};
 use tauri::Manager;

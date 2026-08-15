@@ -33,5 +33,9 @@ regex = "1"
 hex = "0.4"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
-pdf-extract = "0.7"
-docx-rs = "0.4"
+reqwest = { version = "0.12", default-features = false, features = ["stream", "json", "rustls-tls"] }
+futures = "0.3"
+flate2 = "1"
+tar = "0.4"
+base64 = "0.22"
+thiserror = "2"
