@@ -2,6 +2,7 @@ pub mod acp;
 pub mod assemble;
 pub mod credentials;
 pub mod events;
+pub mod guardrails;
 pub mod history;
 pub mod lock;
 pub mod mapper;

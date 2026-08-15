@@ -15,6 +15,7 @@ use serde_json::{json, Value};
 
 use super::acp::PermissionRequest;
 use super::events::{AssistantChunk, SessionEvent, SessionEventKind, SessionHeader};
+use super::guardrails;
 
 /// The 15 unified event types recognized by the reducer.
 pub const EVENT_SESSION_STARTED: &str = "session.started";
@@ -60,6 +61,8 @@ pub struct EventMapper {
     current_turn: u64,
     /// Current step number within the turn.
     current_step: u64,
+    /// Whether any research-type tool was called in this run (GRD-11).
+    research_performed: bool,
 }
 
 impl EventMapper {
@@ -71,6 +74,7 @@ impl EventMapper {
             pending_title: None,
             current_turn: 0,
             current_step: 0,
+            research_performed: false,
         }
     }
 
@@ -142,11 +146,12 @@ impl EventMapper {
                     .and_then(|d| d.get("turn"))
                     .and_then(|t| t.as_u64())
                     .unwrap_or(self.current_turn + 1);
+                let metadata = json!({ "research_performed": self.research_performed });
                 vec![self.envelope(
                     EVENT_RUN_STATE_CHANGED,
                     occurred_at,
                     Some(json!({ "status": "running" })),
-                    None,
+                    Some(metadata),
                 )]
             }
 
@@ -172,11 +177,12 @@ impl EventMapper {
                         vec![self.envelope(EVENT_ERROR, occurred_at, Some(payload), None)]
                     }
                     _ => {
+                        let metadata = json!({ "research_performed": self.research_performed });
                         vec![self.envelope(
                             EVENT_RUN_STATE_CHANGED,
                             occurred_at,
                             Some(json!({ "status": "completed" })),
-                            None,
+                            Some(metadata),
                         )]
                     }
                 }
@@ -252,16 +258,85 @@ impl EventMapper {
                     .and_then(|i| i.as_str())
                     .unwrap_or("")
                     .to_string();
+
+                // Scan the committed text for guardrail structures (GRD-12/13/14).
+                let scan = guardrails::scan(&content);
+
+                let mut out = Vec::new();
+
+                // Build metadata for the message.completed envelope.
+                let metadata = if !scan.human_review.is_empty() {
+                    let reasons: Vec<&str> =
+                        scan.human_review.iter().map(|m| m.reason.as_str()).collect();
+                    Some(json!({ "human_review": reasons }))
+                } else {
+                    None
+                };
+
                 let payload = json!({
                     "content": content,
                     "message_id": message_id,
                 });
-                vec![self.envelope(
+                out.push(self.envelope(
                     EVENT_MESSAGE_COMPLETED,
-                    occurred_at,
+                    occurred_at.clone(),
                     Some(payload),
-                    None,
-                )]
+                    metadata,
+                ));
+
+                // Emit citation.recorded for each citation found.
+                for citation in &scan.citations {
+                    let cite_payload = json!({
+                        "citations": [{
+                            "source": citation.text,
+                            "status": citation.level.as_str(),
+                        }]
+                    });
+                    out.push(self.envelope(
+                        EVENT_CITATION_RECORDED,
+                        occurred_at.clone(),
+                        Some(cite_payload),
+                        None,
+                    ));
+                }
+
+                // Emit elicitation.requested if a clarification block was found.
+                if let Some(clar) = &scan.clarification {
+                    let questions: Vec<Value> = clar
+                        .questions
+                        .iter()
+                        .map(|q| {
+                            let options: Vec<Value> = q
+                                .options
+                                .iter()
+                                .map(|opt| {
+                                    json!({
+                                        "label": opt.label,
+                                        "value": opt.value,
+                                    })
+                                })
+                                .collect();
+                            json!({
+                                "id": q.id,
+                                "question": q.question,
+                                "options": options,
+                            })
+                        })
+                        .collect();
+                    let elicitation_payload = json!({
+                        "interrupt_id": format!("clarify-{}", message_id),
+                        "intro": clar.intro,
+                        "questions": questions,
+                    });
+                    out.push(self.envelope(
+                        EVENT_ELICITATION_REQUESTED,
+                        occurred_at.clone(),
+                        Some(elicitation_payload),
+                        None,
+                    ));
+                }
+
+                out
             }
 
             SessionEventKind::ToolCall => {
@@ -279,6 +354,10 @@ impl EventMapper {
                     .and_then(|n| n.as_str())
                     .unwrap_or("")
                     .to_string();
+                // Track research-type tool calls for GRD-11 research_performed.
+                if guardrails::is_research_tool(&tool_name) {
+                    self.research_performed = true;
+                }
                 self.seen_tool_calls
                     .insert(0, tool_call_id.clone()); // track by index 0 fallback
                 let payload = json!({
@@ -389,6 +468,10 @@ impl EventMapper {
                 if !self.seen_tool_calls.contains_key(&index) {
                     self.seen_tool_calls.insert(index, id.clone());
                     let tool_name = name.clone().unwrap_or_default();
+                    // Track research-type tool calls for GRD-11 research_performed.
+                    if guardrails::is_research_tool(&tool_name) {
+                        self.research_performed = true;
+                    }
                     let payload = json!({
                         "tool_call_id": id,
                         "tool_name": tool_name,
@@ -768,5 +851,152 @@ mod tests {
             assert!(e.seq >= prev, "seq must be monotonic: {} < {}", e.seq, prev);
             prev = e.seq;
         }
+    }
+
+    // ── Guardrail-derived event tests (GRD-11/12/13/14) ─────────────────
+
+    /// Helper: build a synthetic AssistantMessage event with given text.
+    fn make_assistant_message(text: &str) -> SessionEvent {
+        let raw = json!({
+            "type": "assistant_message",
+            "time": 1000i64,
+            "data": {
+                "message": {
+                    "id": "msg-test",
+                    "content": [{ "type": "text", "text": text }]
+                }
+            }
+        });
+        SessionEvent {
+            seq: 0,
+            time: 1000,
+            kind: SessionEventKind::AssistantMessage,
+            raw,
+        }
+    }
+
+    /// Helper: build a synthetic ToolCall event.
+    fn make_tool_call(name: &str) -> SessionEvent {
+        let raw = json!({
+            "type": "tool_call",
+            "time": 500i64,
+            "data": { "toolCallId": "tc-1", "name": name }
+        });
+        SessionEvent {
+            seq: 0,
+            time: 500,
+            kind: SessionEventKind::ToolCall,
+            raw,
+        }
+    }
+
+    /// Helper: build a synthetic TurnEnd (completed) event.
+    fn make_turn_end() -> SessionEvent {
+        let raw = json!({
+            "type": "turn_end",
+            "time": 2000i64,
+            "data": { "reason": { "kind": "completed" } }
+        });
+        SessionEvent {
+            seq: 0,
+            time: 2000,
+            kind: SessionEventKind::TurnEnd,
+            raw,
+        }
+    }
+
+    #[test]
+    fn message_completed_with_citation_emits_citation_recorded() {
+        let mut mapper = EventMapper::new("run-grd".to_string());
+        let ev = make_assistant_message("根据《民法典》第一百四十三条[verified]");
+        let envs = mapper.map(&ev);
+        let has_cite = envs.iter().any(|e| e.event_type == EVENT_CITATION_RECORDED);
+        assert!(has_cite, "should emit citation.recorded for [verified]");
+        let cite_env = envs.iter().find(|e| e.event_type == EVENT_CITATION_RECORDED).unwrap();
+        let status = cite_env.payload.as_ref()
+            .and_then(|p| p.get("citations"))
+            .and_then(|c| c.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|c| c.get("status"))
+            .and_then(|s| s.as_str());
+        assert_eq!(status, Some("verified"));
+    }
+
+    #[test]
+    fn message_completed_with_clarify_emits_elicitation_requested() {
+        let text = "[CLARIFY:\nQ1: 合同类型\n- 买卖\n- 租赁\n]";
+        let mut mapper = EventMapper::new("run-grd".to_string());
+        let ev = make_assistant_message(text);
+        let envs = mapper.map(&ev);
+        let has_elicitation = envs.iter().any(|e| e.event_type == EVENT_ELICITATION_REQUESTED);
+        assert!(has_elicitation, "should emit elicitation.requested for [CLARIFY:]");
+    }
+
+    #[test]
+    fn message_completed_with_human_review_adds_metadata() {
+        let text = "结论[HUMAN_REVIEW: 合同效力认定]";
+        let mut mapper = EventMapper::new("run-grd".to_string());
+        let ev = make_assistant_message(text);
+        let envs = mapper.map(&ev);
+        let completed = envs.iter().find(|e| e.event_type == EVENT_MESSAGE_COMPLETED).unwrap();
+        let hr = completed.metadata.as_ref()
+            .and_then(|m| m.get("human_review"))
+            .and_then(|h| h.as_array());
+        assert!(hr.is_some(), "metadata should contain human_review");
+        assert_eq!(hr.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn message_completed_without_human_review_has_no_human_review_metadata() {
+        let text = "普通结论，无人审标记。";
+        let mut mapper = EventMapper::new("run-grd".to_string());
+        let ev = make_assistant_message(text);
+        let envs = mapper.map(&ev);
+        let completed = envs.iter().find(|e| e.event_type == EVENT_MESSAGE_COMPLETED).unwrap();
+        let hr = completed.metadata.as_ref()
+            .and_then(|m| m.get("human_review"));
+        assert!(hr.is_none(), "no human_review metadata when no marks");
+    }
+
+    #[test]
+    fn research_performed_true_when_search_tool_called() {
+        let mut mapper = EventMapper::new("run-grd".to_string());
+        // TurnStart first
+        let ts = SessionEvent {
+            seq: 0,
+            time: 0,
+            kind: SessionEventKind::TurnStart,
+            raw: json!({ "data": { "turn": 1 } }),
+        };
+        mapper.map(&ts);
+        // Tool call with research tool
+        mapper.map(&make_tool_call("web_search"));
+        // TurnEnd
+        let envs = mapper.map(&make_turn_end());
+        let state_env = envs.iter().find(|e| e.event_type == EVENT_RUN_STATE_CHANGED).unwrap();
+        let rp = state_env.metadata.as_ref()
+            .and_then(|m| m.get("research_performed"))
+            .and_then(|r| r.as_bool());
+        assert_eq!(rp, Some(true), "research_performed should be true after web_search");
+    }
+
+    #[test]
+    fn research_performed_false_when_no_search_tool() {
+        let mut mapper = EventMapper::new("run-grd".to_string());
+        let ts = SessionEvent {
+            seq: 0,
+            time: 0,
+            kind: SessionEventKind::TurnStart,
+            raw: json!({ "data": { "turn": 1 } }),
+        };
+        mapper.map(&ts);
+        // Non-research tool
+        mapper.map(&make_tool_call("bash"));
+        let envs = mapper.map(&make_turn_end());
+        let state_env = envs.iter().find(|e| e.event_type == EVENT_RUN_STATE_CHANGED).unwrap();
+        let rp = state_env.metadata.as_ref()
+            .and_then(|m| m.get("research_performed"))
+            .and_then(|r| r.as_bool());
+        assert_eq!(rp, Some(false), "research_performed should be false without search tools");
     }
 }
