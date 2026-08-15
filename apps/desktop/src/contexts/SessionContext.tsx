@@ -1,17 +1,9 @@
 /**
  * SessionContext — per-workspace-page context managing the active run lifecycle.
  *
- * Provides reactive RenderState from EventStreamStore to all workspace components,
- * plus actions: sendMessage, submitClarification, submitFeedback, cancelRun.
- *
- * The SessionProvider owns the EventStreamStore lifecycle (create on run start,
- * stop on unmount). All components receive RenderState via useSession() — no
- * component subscribes to SSE directly.
- *
- * Key difference from web: `conversationId` comes from a signal (via prop),
- * not from a route param (useParams). The Gateway API is identical.
- *
- * Adapted from apps/web/src/contexts/SessionContext.tsx.
+ * **Phase 125-01 stub:** Gateway/Auth/runBuilder removed.
+ * sendMessage/submitClarification/submitFeedback/cancelRun are no-ops.
+ * Phase 125-02 will wire these to Tauri commands via services/engine.ts.
  */
 import {
   createContext,
@@ -23,28 +15,20 @@ import type {
   RenderState,
   ClarificationAnswer,
 } from "@inkstatute/ui-core";
-import { gateway } from "../config/gateway";
-import { useAuth } from "./AuthContext";
 import { useEventStream } from "../hooks/useEventStream";
-import { buildRunBody, type RunBodyAttachment } from "../lib/runBuilder";
 
 export interface SessionContextValue {
-  // Active run state
   runId: () => string | null;
   state: () => RenderState;
   isStreaming: () => boolean;
   streamError: () => Error | null;
-
-  // Actions
-  sendMessage: (prompt: string, attachments?: RunBodyAttachment[]) => Promise<void>;
+  sendMessage: (prompt: string) => Promise<void>;
   submitClarification: (interruptId: string, answers: ClarificationAnswer[]) => Promise<void>;
   submitFeedback: (messageId: string, rating: "up" | "down", comment?: string) => Promise<void>;
   cancelRun: () => Promise<void>;
 }
 
 const _SessionContext = createContext<SessionContextValue>();
-
-// Export for testing — allows injecting mock session values
 export const SessionContext = _SessionContext;
 
 export interface SessionProviderProps {
@@ -52,73 +36,39 @@ export interface SessionProviderProps {
 }
 
 export const SessionProvider: ParentComponent<SessionProviderProps> = (props) => {
-  const auth = useAuth();
   const [runId, setRunId] = createSignal<string | null>(null);
-  const [clarificationError, setClarificationError] = createSignal<Error | null>(null);
-
   const eventStream = useEventStream(runId);
 
-  async function sendMessage(prompt: string, attachments?: RunBodyAttachment[]): Promise<void> {
-    const body = buildRunBody({
-      conversationId: props.conversationId,
-      prompt,
-      userId: auth.userId() ?? "desktop-user",
-      tenantId: auth.tenantId() ?? "default",
-      sessionId: auth.sessionId() ?? undefined,
-      attachments,
-    });
-    const result = await gateway.createRun(body) as { run_id?: string };
-    const id = result?.run_id;
-    if (!id) {
-      throw new Error("Gateway did not return run_id");
-    }
-    setRunId(id);
+  async function sendMessage(prompt: string): Promise<void> {
+    // 125-02 will call engineSend(props.conversationId, prompt)
+    setRunId(props.conversationId);
   }
 
   async function submitClarification(
-    interruptId: string,
-    answers: ClarificationAnswer[],
+    _interruptId: string,
+    _answers: ClarificationAnswer[],
   ): Promise<void> {
-    const id = runId();
-    if (!id) return;
-    try {
-      await gateway.submitElicitation(id, {
-        interrupt_id: interruptId,
-        answers,
-      });
-    } catch (err) {
-      // The elicitation endpoint may be a 501 stub.
-      // Catch gracefully — the clarification card remains visible.
-      setClarificationError(err instanceof Error ? err : new Error(String(err)));
-    }
+    // 125-02 will call engineRespondPermission
   }
 
   async function submitFeedback(
-    messageId: string,
-    rating: "up" | "down",
-    comment?: string,
+    _messageId: string,
+    _rating: "up" | "down",
+    _comment?: string,
   ): Promise<void> {
-    await gateway.submitFeedback({
-      action: rating,
-      conversation_id: props.conversationId,
-      message_id: messageId,
-      ...(comment ? { comment } : {}),
-    });
+    // 125-02 will wire to engine feedback
   }
 
   async function cancelRun(): Promise<void> {
-    const id = runId();
-    if (!id) return;
-    await gateway.cancelRun(id);
-    // The EventStreamStore will detect the terminal run.state_changed event
-    // and stop streaming automatically.
+    // 125-02 will call engineCancel
+    setRunId(null);
   }
 
   const value: SessionContextValue = {
     runId,
     state: eventStream.state,
     isStreaming: eventStream.isStreaming,
-    streamError: () => eventStream.error() ?? clarificationError(),
+    streamError: eventStream.error,
     sendMessage,
     submitClarification,
     submitFeedback,

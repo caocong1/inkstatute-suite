@@ -24,8 +24,6 @@ import {
   useTheme,
   type ConversationStore,
 } from "@inkstatute/ui-core";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { ConnectionProvider, useConnection } from "./contexts/ConnectionContext";
 import { ConversationProvider, useConversations } from "./contexts/ConversationContext";
 import { desktopAdapters } from "./adapters/desktopAdapters";
 import { desktopWindowAdapter } from "./adapters/desktopWindowAdapter";
@@ -38,8 +36,6 @@ import { FTS5SearchPanel } from "./components/FTS5SearchPanel";
 import { setupMenuHandlers } from "./menuHandlers";
 
 const AppContent: Component = () => {
-  const auth = useAuth();
-  const conn = useConnection();
   const convs = useConversations();
   const { setTheme } = useTheme();
   const [screen, setScreen] = createSignal<"home" | "workspace">("home");
@@ -60,12 +56,11 @@ const AppContent: Component = () => {
 
   // Handle new conversation from menu
   async function handleNewConversation(): Promise<void> {
-    if (conn.isOffline()) return; // disabled when offline
     try {
       await convs.createConversation();
       setScreen("workspace");
     } catch {
-      // Offline or Gateway error — silently ignore (menu action)
+      // Engine not ready — silently ignore (menu action)
     }
   }
 
@@ -102,23 +97,17 @@ const AppContent: Component = () => {
   });
 
   return (
-    <Show
-      when={!auth.loading()}
-      fallback={<div class="app-loading">加载中…</div>}
-    >
-      <div class="app">
-        <TitleBar
-          screen={screen()}
-          onGoHome={() => setScreen("home")}
-          onOpenConversations={() => {
-            /* drawer always open on desktop */
-          }}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
-        <AppUpdateBanner />
-        <Show when={conn.isOffline()}>
-          <OfflineBanner />
-        </Show>
+    <div class="app">
+      <TitleBar
+        screen={screen()}
+        onGoHome={() => setScreen("home")}
+        onOpenConversations={() => {
+          /* drawer always open on desktop */
+        }}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+      <AppUpdateBanner />
+      <OfflineBanner />
         <div class="stage">
           <div class="sidebar">
             <ConversationDrawer
@@ -154,22 +143,17 @@ const AppContent: Component = () => {
             initialTab={settingsTab()}
           />
         </Show>
-      </div>
-    </Show>
+    </div>
   );
 };
 
 const App: Component = () => {
   return (
-    <AuthProvider>
-      <ConnectionProvider>
-        <AdapterContext.Provider value={desktopAdapters}>
-          <ConversationProvider>
-            <AppContent />
-          </ConversationProvider>
-        </AdapterContext.Provider>
-      </ConnectionProvider>
-    </AuthProvider>
+    <AdapterContext.Provider value={desktopAdapters}>
+      <ConversationProvider>
+        <AppContent />
+      </ConversationProvider>
+    </AdapterContext.Provider>
   );
 };
 

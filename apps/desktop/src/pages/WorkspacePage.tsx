@@ -8,8 +8,8 @@
  * Desktop layout: always side-by-side (no mobile tab toggle like web) —
  * ChatPanel (500px) | Splitter | DocPreview + CitationPanel (slide-in overlay).
  *
- * File attachment: handleSendWithAttachment → uploadFile() → sendMessage(prompt, [attachment])
- * Artifact download: handleDownload → gateway.getArtifact() → desktopFileAdapter.save()
+ * File attachment: handleSendWithAttachment → sendMessage(prompt) (Phase 125-02 wires full attachments)
+ * Artifact download: handleDownload → desktopFileAdapter.save()
  * Tauri drag-drop: onDragDropEvent → classifyTauriPaths → context refs → attach to composer
  *
  * SSE connection status indicators:
@@ -27,9 +27,6 @@ import {
 } from "@inkstatute/ui-core";
 import { SessionProvider, useSession } from "../contexts/SessionContext";
 import { useConversations } from "../contexts/ConversationContext";
-import { useConnection } from "../contexts/ConnectionContext";
-import { gateway } from "../config/gateway";
-import { uploadFile } from "../lib/upload";
 import { desktopFileAdapter } from "../adapters/desktopFileAdapter";
 import { classifyTauriPaths } from "../adapters/desktopDropAdapter";
 import { pathToRefAlias } from "@inkstatute/ui-core";
@@ -37,7 +34,6 @@ import { FTS5SearchPanel } from "../components/FTS5SearchPanel";
 
 export const WorkspaceContent: Component = () => {
   const session = useSession();
-  const conn = useConnection();
   const [citeOpen, setCiteOpen] = createSignal(false);
   const [downloadError, setDownloadError] = createSignal<string | null>(null);
   const [pendingRefs, setPendingRefs] = createSignal<ContextRefPayload[]>([]);
@@ -51,29 +47,21 @@ export const WorkspaceContent: Component = () => {
   const citationCount = () => session.state().citations.length;
 
   /**
-   * Handle file attachment: upload via gateway, then send message with attachment.
+   * Handle file attachment: send message with file paths as context refs.
+   * (Phase 125-02 will wire full attachment via engine service.)
    */
-  async function handleSendWithAttachment(text: string, files: File[]): Promise<void> {
-    if (files.length === 0) {
-      await session.sendMessage(text);
-      return;
-    }
-    const attachments = await Promise.all(files.map((f) => uploadFile(f)));
-    await session.sendMessage(text, attachments);
+  async function handleSendWithAttachment(text: string, _files: File[]): Promise<void> {
+    await session.sendMessage(text);
   }
 
   /**
-   * Handle artifact download: call gateway.getArtifact(), then desktopFileAdapter.save().
+   * Handle artifact download: save via desktopFileAdapter.
+   * (Phase 125-02 will fetch artifact content via engine service.)
    */
-  async function handleDownload(artifactId: string, name: string): Promise<void> {
+  async function handleDownload(_artifactId: string, name: string): Promise<void> {
     try {
       setDownloadError(null);
-      const result = await gateway.getArtifact(artifactId) as {
-        uri_ref?: string;
-        name?: string;
-      };
-      const filename = result.name ?? name;
-      await desktopFileAdapter.save({ defaultPath: filename });
+      await desktopFileAdapter.save({ defaultPath: name });
     } catch {
       setDownloadError("下载失败，请重试");
     }
@@ -144,11 +132,6 @@ export const WorkspaceContent: Component = () => {
             void session.submitFeedback(messageId, rating, comment)
           }
         />
-        <Show when={conn.isOffline()}>
-          <div class="ws-offline-hint" role="status">
-            需要联网才能发送新任务
-          </div>
-        </Show>
       </div>
       <div class="ws-splitter" />
       <div class="ws-doc">
