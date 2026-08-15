@@ -2,19 +2,16 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
-current_phase: 126
-current_phase_name: guardrails-and-presets
-status: ready
-stopped_at: Phase 125 完成（V3 裁剪 + Tauri 事件传输 + 设置面板 + 工作区外壳 + 引擎启动）；Phase 126 可开始
-last_updated: "2026-08-16T00:00:00.000Z"
-last_activity: 2026-08-16
-last_activity_desc: Phase 125 verification complete, all automated gates green
+status: executing
+stopped_at: v5.0 Phase 124 完成，GATE-12 通过，准备进入 Phase 125
+last_updated: "2026-08-15T17:25:14.971Z"
+last_activity: 2026-08-15 -- Phase 126 execution started
 progress:
-  total_phases: 7
-  completed_phases: 4
-  total_plans: 20
-  completed_plans: 9
-  percent: 65
+  total_phases: 9
+  completed_phases: 3
+  total_plans: 35
+  completed_plans: 20
+  percent: 57
 ---
 
 # Project State
@@ -25,13 +22,14 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 126 — guardrails-and-presets
+**Current focus:** Phase 126 — guardrails-capability-layer
 
 ## Current Position
 
-Phase: 126 (guardrails-and-presets) — READY
-Status: Phase 125 complete, ready for Phase 126
-Last activity: 2026-08-16 — Phase 125 verification complete
+Phase: 126 (guardrails-capability-layer) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 126
+Last activity: 2026-08-15 -- Phase 126 execution started
 
 Progress: [█████████████░] 65% (4/6 phases: 122, 123, 124, 125 complete)
 
