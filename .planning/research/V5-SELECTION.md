@@ -152,8 +152,25 @@ session/cancel 作为通知（无 id） → in-flight prompt 立即结算 {"stop
 
 ### E11 — lockfile 可驱动 Rust 侧装配
 
-`package-lock.json` v3：**104 条**，**零嵌套 `node_modules`**（树全平），
+`package-lock.json` v3：**104 条**，零嵌套 `node_modules`，
 100% 带 `resolved` URL 与 sha512 `integrity`。
+
+> **2026-08-15 更正（Phase 122 执行时发现）**：上述 104 条 / 零嵌套是**只装 15 个组合包**时的结果。
+> 实际产品配置加入 `@deepseek-ai/dsh-llm-pi-ai` 后，pi-ai 为支持 Bedrock 带入了
+> AWS SDK（`@aws-sdk/*` 22 包 + `@smithy/*` 9 包 = 31 包，占 15%），
+> 其中 3 个包因版本冲突被 npm 放在嵌套位置：
+>
+> ```
+> node_modules/@aws-sdk/credential-provider-http/node_modules/@smithy/node-http-handler
+> node_modules/@aws-sdk/credential-provider-sso/node_modules/@aws-sdk/token-providers
+> node_modules/@aws-sdk/nested-clients/node_modules/@smithy/node-http-handler
+> ```
+>
+> **最终 lockfile：196 条，3 条嵌套。**「树全平」不再成立。
+>
+> 这不影响装配器：它用 **lockfile 的 key 本身作为目标相对路径**
+> （`assemble.rs`：`partial_dir.join(lock_key)`），嵌套 key 天然落到正确的嵌套位置。
+> 因此**不要**在生成器或 Rust 侧对嵌套做硬失败断言——那会拒绝合法的 npm 布局。
 
 体积分布：85MB 中 58MB 是 `node-pty/prebuilds`（darwin-arm64 · darwin-x64 · win32-arm64 · win32-x64
 四平台预编译）。只留 `win32-x64` 后引擎树约 42MB。

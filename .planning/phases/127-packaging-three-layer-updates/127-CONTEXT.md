@@ -38,6 +38,21 @@
 
 **Phase 122 已经把第 3/4/5 步的能力做好了**，本阶段只是编排 + UI + 指针管理。
 
+## Phase 122 遗留给打包阶段的两项瘦身（执行 127-03 时处理）
+
+1. **构建主机的 node-pty prebuild 要剔除。**
+   `engine-lock.json` 的 `prune` 目前只删 `darwin-x64` 与 `win32-arm64`，
+   **保留了 `darwin-arm64`**——那是为了让 macOS 开发机能跑冒烟测试。
+   Windows 安装包**不应**带 darwin 预编译，打包脚本必须额外剔除构建主机的那份，
+   只留 `win32-x64`。做完断言 `node_modules/node-pty/prebuilds/` 下只有一个目录。
+
+2. **评估剔除 AWS SDK。**
+   `@aws-sdk/*`(22) + `@smithy/*`(9) = 31 包，占依赖树 15%，
+   由 `dsh-llm-pi-ai` 的 Bedrock 支持带入，**本产品永不使用 Bedrock**。
+   剔除前必须验证：pi-ai 在缺 AWS SDK 时是否只在**实际选用 bedrock 路由**时才报错，
+   而非加载期就崩。验证方法：装配一份剔除后的引擎，跑冒烟 + 一次真实 deepseek 路由问答。
+   **若加载期即报错则放弃剔除**，把这 15% 当作既定成本。
+
 ## 已知待修缺陷
 
 | # | 缺陷 | 位置 | 本阶段修法 |

@@ -227,8 +227,11 @@ persistenceRoot: !!js process.env.DSH_HOME + '/sessions'
 
 - 分发源：npm 官方源，国内走 `registry.npmmirror.com`（实测均可达）。业主只需托管 `engine-lock.json`。
 - **必须钉精确版本号，禁用 dist-tag**：`latest` 指向 `0.0.1-rc.1`（旧），`next` 才是当前版。
-- lockfile v3 实测 104 条、**零嵌套 `node_modules`**、100% 带 `resolved` + sha512 `integrity` → Rust 侧照着铺平即可，运行时不需要 npm。
-- 体积：装出 85MB，裁掉 `node-pty` 的非 Windows 预编译后约 42MB。
+- lockfile v3 实测 **196 条**（含 3 条嵌套 `node_modules`）、100% 带 `resolved` + sha512 `integrity`
+  → Rust 侧**以 lockfile 的 key 作为目标相对路径**铺开即可，嵌套天然落位，运行时不需要 npm。
+- 体积：`node-pty` 只保留目标平台预编译后约 42MB。
+  其中 `@aws-sdk/*` + `@smithy/*` 共 31 包（15%）由 pi-ai 的 Bedrock 支持带入，**本产品永不使用**——
+  Phase 127 打包时评估能否剔除（需确认 pi-ai 在缺 AWS SDK 时不会在加载期报错）。
 - `engines/dsh-pin.txt` 从钉 git commit 改为钉 npm 版本号。
 - 退役 `scripts/build_dsh_release.sh` 的 pnpm-deploy 符号链接手术。
 

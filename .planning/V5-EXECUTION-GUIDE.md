@@ -136,7 +136,7 @@ Phase 125-01 之后才是零错误。
 |---|---|
 | DSH npm 版本 | `0.1.0-rc.6`（16 个包，见 `engines/dsh-pin.txt`） |
 | 引擎装配 | 87 包 / 9 秒 / 85MB；裁 node-pty 非目标平台后约 42MB |
-| lockfile 结构 | v3，104 条，**零嵌套 node_modules**，100% 带 resolved + sha512 |
+| lockfile 结构 | v3，**196 条，含 3 条嵌套 node_modules**，100% 带 resolved + sha512 |
 | ACP 握手 | `initialize` → `{"protocolVersion":1,"agentInfo":{"name":"deepseek-harness-acp"}}` |
 | **`session/cancel`** | **必须作为通知发送（无 `id`）**。带 id 会返回 `Method not found` 而静默失败 |
 | `session/new` 的 cwd | **必须绝对路径**；`mcpServers` 必须为 `[]` |
