@@ -154,3 +154,18 @@ None.
 - Raw envelope metadata (human_review, research_performed) is tracked in the app-layer `useEventStream` hook, not in the immutable reducer.
 - Human gates (HG-1 legal quality, HG-3 lawyer trial) remain DEFERRED — not auto-closed.
 - The `event-reducer.ts` immutable reducer does not store `message.completed` metadata; this is by design and solved at the app layer.
+
+## Self-Check: PASSED
+
+- [x] All 6 tasks (1, 2, 3, 4, 4.5, 5) executed and committed individually
+- [x] `cargo test guardrails` → 15 passed, 0 failed
+- [x] `cargo test mapper` → 18 passed, 0 failed
+- [x] `cargo check` → 0 errors
+- [x] `bunx tsc --noEmit` → 0 errors
+- [x] `bunx vitest run` → 69 tests passed (10 test files; apps/desktop test count > 60)
+- [x] `node scripts/gates/v5/guardrails.mjs` → all 14 dual-layer checks PASS
+- [x] `node scripts/gates/v5/run-gates.mjs` → 4 passed, 0 failed
+- [x] No-batch-approval grep → PASS (no batch approval path in apps/desktop/src or packages/ui-core/src)
+- [x] `packages/ui-core/src/event-reducer.ts` NOT modified (binding constraint honored)
+- [x] SUMMARY.md + STATE.md + ROADMAP.md + REQUIREMENTS.md committed atomically (`341b9381`)
+- [x] GRD-11..16 marked Complete in REQUIREMENTS.md
