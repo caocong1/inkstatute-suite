@@ -259,9 +259,9 @@ mod tests {
 
     #[test]
     fn redact_masks_keys() {
-        let raw = "error: sk-abcdefghijklmnop in token";
+        let raw = "error: sk-abcdefghijklmnop in token"; // gate-allow-secret: fabricated literal proving redact() masks it
         let out = redact(raw);
-        assert!(!out.contains("sk-abcdefghijklmnop"));
+        assert!(!out.contains("sk-abcdefghijklmnop")); // gate-allow-secret: same fabricated literal
         assert!(out.contains("****"));
     }
 

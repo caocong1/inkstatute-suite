@@ -94,12 +94,25 @@ check('GATE-11.7: no plaintext API keys', () => {
     const full = path.join(REPO_ROOT, f);
     try {
       const text = readFileSync(full, 'utf8');
-      if (/\bsk-[A-Za-z0-9]{16,}\b/.test(text)) bad.push(f);
+      // Scan line by line so an inline test fixture can be exempted explicitly
+      // without blinding a whole file or a whole `#[cfg(test)]` region — a real
+      // key placed next to an exempted line still trips the gate.
+      // To exempt, put `gate-allow-secret:` plus a reason on the same line.
+      const hits = text.split('\n').filter(
+        (line) => /\bsk-[A-Za-z0-9]{16,}\b/.test(line) && !line.includes('gate-allow-secret:'),
+      );
+      if (hits.length) bad.push(`${f} (${hits.length} line(s))`);
     } catch {
       // binary or unreadable, skip
     }
   }
-  if (bad.length) throw new Error(`suspected keys in: ${bad.slice(0, 5).join(', ')}`);
+  if (bad.length) {
+    throw new Error(
+      `suspected keys in: ${bad.slice(0, 5).join(', ')}\n` +
+        `  If a hit is a deliberate test fixture, append a same-line comment:\n` +
+        `    gate-allow-secret: <why this is not a real credential>`,
+    );
+  }
 });
 
 if (!ok) {
