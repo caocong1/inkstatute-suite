@@ -1,6 +1,7 @@
 pub mod acp;
 pub mod assemble;
 pub mod credentials;
+pub mod events;
 pub mod lock;
 pub mod paths;
 pub mod replay;
