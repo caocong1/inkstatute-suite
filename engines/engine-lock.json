@@ -4,8 +4,8 @@
   "node_version": "24.19.0",
   "target_platform": "win32-x64",
   "compatible_app_range": ">=0.1.0 <1.0.0",
-  "cordis_config_sha256": "de3fedb3ab9a9277ed6fb86288255d23a1b4f87793ae607cb12b15cb9ec1821a",
-  "generated_at": "2026-08-15T06:38:38.584Z",
+  "cordis_config_sha256": "6441a49e268853b56f3e91abf7af9123ac68d273e13752d8c90a3932e136ace4",
+  "generated_at": "2026-08-15T18:18:34.812Z",
   "prune": {
     "node-pty/prebuilds": [
       "darwin-x64",
@@ -75,9 +75,9 @@
     },
     "node_modules/@aws-sdk/credential-provider-http/node_modules/@smithy/node-http-handler": {
       "name": "@aws-sdk/credential-provider-http/node_modules/@smithy/node-http-handler",
-      "version": "4.11.0",
-      "integrity": "sha512-ssHIZsadPUA3lGdnoByxfnjtb9xPYQLvdfJRLKIwxOoa6tO1suG4sLFSsgd7D/CsvYd8QbBIuKTImuJha5l6aQ==",
-      "tarball_path": "/@smithy/node-http-handler/-/node-http-handler-4.11.0.tgz"
+      "version": "4.11.2",
+      "integrity": "sha512-avwAh9HM3h2lcfjvP3zYIZGf+XVgLQ91wOJ2qoFbNpW1UZeZb33aGlhTZvtkANHfcGhJroRY64525OjfgOg30g==",
+      "tarball_path": "/@smithy/node-http-handler/-/node-http-handler-4.11.2.tgz"
     },
     "node_modules/@aws-sdk/credential-provider-ini": {
       "name": "@aws-sdk/credential-provider-ini",
@@ -147,9 +147,9 @@
     },
     "node_modules/@aws-sdk/nested-clients/node_modules/@smithy/node-http-handler": {
       "name": "@aws-sdk/nested-clients/node_modules/@smithy/node-http-handler",
-      "version": "4.11.0",
-      "integrity": "sha512-ssHIZsadPUA3lGdnoByxfnjtb9xPYQLvdfJRLKIwxOoa6tO1suG4sLFSsgd7D/CsvYd8QbBIuKTImuJha5l6aQ==",
-      "tarball_path": "/@smithy/node-http-handler/-/node-http-handler-4.11.0.tgz"
+      "version": "4.11.2",
+      "integrity": "sha512-avwAh9HM3h2lcfjvP3zYIZGf+XVgLQ91wOJ2qoFbNpW1UZeZb33aGlhTZvtkANHfcGhJroRY64525OjfgOg30g==",
+      "tarball_path": "/@smithy/node-http-handler/-/node-http-handler-4.11.2.tgz"
     },
     "node_modules/@aws-sdk/signature-v4-multi-region": {
       "name": "@aws-sdk/signature-v4-multi-region",
@@ -825,21 +825,21 @@
     },
     "node_modules/@smithy/core": {
       "name": "@smithy/core",
-      "version": "3.33.0",
-      "integrity": "sha512-uKbkxgqLyepQDZoq8aRSdUqD1ID//rOqG96ixBhp++O7vBtmwYM6fwldGhr9HJP0iYrdc7GP/AlgzPWEZIrNRg==",
-      "tarball_path": "/@smithy/core/-/core-3.33.0.tgz"
+      "version": "3.33.2",
+      "integrity": "sha512-CUGXpnPkVdjUCbix+83sWLW9VFgQOm44MDOx/ihITJMAnOZKvL8YYIc7DR9pP/tZ8CIRvMiON/TucvygqbHO3w==",
+      "tarball_path": "/@smithy/core/-/core-3.33.2.tgz"
     },
     "node_modules/@smithy/credential-provider-imds": {
       "name": "@smithy/credential-provider-imds",
-      "version": "4.5.0",
-      "integrity": "sha512-2jsPi+7Zv2hSzD9IXR9D7DTqSn7mv4XalzRm+bESh53jiaUS3NKEUbpQFTJP0HhQy9qzZvluxQ3yS24zdRrqsA==",
-      "tarball_path": "/@smithy/credential-provider-imds/-/credential-provider-imds-4.5.0.tgz"
+      "version": "4.5.2",
+      "integrity": "sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==",
+      "tarball_path": "/@smithy/credential-provider-imds/-/credential-provider-imds-4.5.2.tgz"
     },
     "node_modules/@smithy/fetch-http-handler": {
       "name": "@smithy/fetch-http-handler",
-      "version": "5.7.0",
-      "integrity": "sha512-W/exA8T0LEzCQtJ02w4IzaEQPIspgarqZprb7W8FwnYiDowgCrjl2fTQ6FvuSSUnJORuepBF81abmBJwqh+0XQ==",
-      "tarball_path": "/@smithy/fetch-http-handler/-/fetch-http-handler-5.7.0.tgz"
+      "version": "5.7.2",
+      "integrity": "sha512-nZyWTmSpJEXl6VtWVMBJve/7x12DZu6sIX1z1a+ZMaHlQQRs9Zpu6NbTe/gmxYXVRpkjxyDYpZ5gx2IM6f/Wkw==",
+      "tarball_path": "/@smithy/fetch-http-handler/-/fetch-http-handler-5.7.2.tgz"
     },
     "node_modules/@smithy/is-array-buffer": {
       "name": "@smithy/is-array-buffer",
@@ -855,15 +855,15 @@
     },
     "node_modules/@smithy/signature-v4": {
       "name": "@smithy/signature-v4",
-      "version": "5.7.0",
-      "integrity": "sha512-hCynhm22wMJ8wTF9crcwu8mxggtUrSLLJgDcGUvYFBqpofxycYJCGKOMYg4xtPPFtgNiDJSYmhsWLTrcU/g59Q==",
-      "tarball_path": "/@smithy/signature-v4/-/signature-v4-5.7.0.tgz"
+      "version": "5.7.2",
+      "integrity": "sha512-P7Ki6px6OOrxVtx8K7nLmyx4SlXUW/uTKDdMG44UHefmPGSRMBKe2v+TM59WdLcpUIrBrnuCsIqiM2MbsZjmhw==",
+      "tarball_path": "/@smithy/signature-v4/-/signature-v4-5.7.2.tgz"
     },
     "node_modules/@smithy/types": {
       "name": "@smithy/types",
-      "version": "4.17.0",
-      "integrity": "sha512-Aw4joiM0ZdErpo39lCj8phT2lxoiKZV+KZzBxnnQhWVtU2Is/WffQSL04uUWRcXUse9Ln8vXZK6V/FwqRVnQpg==",
-      "tarball_path": "/@smithy/types/-/types-4.17.0.tgz"
+      "version": "4.17.2",
+      "integrity": "sha512-FOKpVZob9MPTn2znRzGrnsMHv7BOsKVw3XiP/cOyYLDVZ9qKp4nifIiSCuUU/fIj5Vu0UOAxCFr+qRAtG0NUkA==",
+      "tarball_path": "/@smithy/types/-/types-4.17.2.tgz"
     },
     "node_modules/@smithy/util-buffer-from": {
       "name": "@smithy/util-buffer-from",
