@@ -22,7 +22,6 @@ mod commands;
 pub mod engine;
 mod menu;
 mod security;
-mod workspace;
 
 use security::path_sandbox::PathSandbox;
 use std::sync::{Arc, Mutex};
@@ -36,14 +35,6 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
-        .plugin(
-            tauri_plugin_sql::Builder::default()
-                .add_migrations(
-                    "sqlite:offline-cache.db",
-                    commands::offline_cache::offline_cache_migrations(),
-                )
-                .build(),
-        )
         .setup(move |app| {
             let data_dir = app
                 .path()
@@ -59,10 +50,6 @@ pub fn run() {
                     .unwrap_or_else(|_| PathSandbox::new(Vec::new())),
             ));
             app.manage(sandbox);
-
-            // Set workspace index app data dir for FTS5 per-root databases
-            workspace::set_app_data_dir(data_dir)
-                .map_err(|e| format!("failed to set workspace data dir: {}", e))?;
 
             // Initialize app settings (JSON file-based, for desktop-specific settings)
             let settings = commands::desktop::AppSettings::default();
@@ -88,9 +75,6 @@ pub fn run() {
             commands::history::list_conversations,
             commands::history::search_conversations,
             commands::history::get_conversation_docs,
-            commands::workspace::bind_workspace,
-            commands::workspace::get_workspace_index_status,
-            commands::workspace::search_workspace,
             commands::desktop::get_app_setting,
             commands::desktop::set_app_setting,
         ])

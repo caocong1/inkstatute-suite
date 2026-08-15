@@ -1,22 +1,19 @@
 /**
- * FTS5SearchPanel — local workspace full-text search panel.
+ * FTS5SearchPanel — conversation history full-text search panel.
  *
- * Desktop-specific enhancement: lawyers can search their local workspace
- * files (contracts, case documents, legal references) via FTS5 and attach
- * search results as references in their conversation.
+ * **Phase 125-01 rewrite:** Data source changed from the deleted self-built
+ * workspace FTS5 index to the engine's history plane (`search_conversations`
+ * Tauri command from Phase 124-02). Component name kept to minimize churn.
  *
- * Visual contract from 94-UI-SPEC:
+ * Visual contract preserved:
  * - .fts-panel — slide-in from right or modal overlay
  * - .fts-input — search input, 42px height, debounced 300ms
- * - .fts-result — result rows with filename, score, snippet, attach button
- * - .fts-index-status — file count + chunk count
- * - .fts-reindex — reindex button
+ * - .fts-result — result rows with session title, snippet, attach button
  *
  * Interaction:
- * 1. User types keywords → debounced 300ms → invoke("search_workspace", { path, query, k: 10 })
+ * 1. User types keywords → debounced 300ms → invoke("search_conversations", { query, limit })
  * 2. Results rendered with highlighted snippets
- * 3. "作为附件引用" button → adds file path to pendingContextRefs
- * 4. "重新索引" button → invoke("bind_workspace", { path })
+ * 3. "打开对话" button → opens the conversation
  */
 import {
   createSignal,
@@ -25,67 +22,40 @@ import {
   Show,
   type Component,
 } from "solid-js";
-import type { ContextRefPayload } from "@inkstatute/ui-core";
-import { pathToRefAlias } from "@inkstatute/ui-core";
-import { workspacePath, setWorkspacePath } from "../adapters/desktopWorkspaceAdapter";
 
-export interface FTS5SearchHit {
-  chunk_id: string;
-  relative_path: string;
-  text: string;
-  score: number;
-}
-
-export interface WorkspaceIndexStatus {
-  root_id: string;
-  root_path: string;
-  status: string;
-  file_count: number;
-  chunk_count: number;
+export interface SearchHit {
+  session_id: string;
+  seq: number;
+  role: string;
+  content: string;
+  snippet: string | null;
+  title: string | null;
+  occurred_at: string | null;
 }
 
 export interface FTS5SearchPanelProps {
-  onAttachRef?: (ref: ContextRefPayload) => void;
+  onAttachRef?: (ref: { path: string; alias: string; kind: "file" | "directory" }) => void;
   onClose?: () => void;
+  onOpenConversation?: (sessionId: string) => void;
 }
 
 export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
   const [query, setQuery] = createSignal("");
-  const [results, setResults] = createSignal<FTS5SearchHit[]>([]);
-  const [indexStatus, setIndexStatus] = createSignal<WorkspaceIndexStatus | null>(null);
-  const [indexing, setIndexing] = createSignal(false);
+  const [results, setResults] = createSignal<SearchHit[]>([]);
   const [error, setError] = createSignal<string | null>(null);
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  async function loadIndexStatus(): Promise<void> {
-    const wsPath = workspacePath();
-    if (!wsPath) return;
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const status = await invoke<WorkspaceIndexStatus | null>(
-        "get_workspace_index_status",
-        { path: wsPath },
-      );
-      setIndexStatus(status);
-    } catch {
-      // Not indexed yet
-      setIndexStatus(null);
-    }
-  }
-
   async function doSearch(q: string): Promise<void> {
-    const wsPath = workspacePath();
-    if (!wsPath || !q.trim()) {
+    if (!q.trim()) {
       setResults([]);
       return;
     }
     try {
       setError(null);
       const { invoke } = await import("@tauri-apps/api/core");
-      const hits = await invoke<FTS5SearchHit[]>("search_workspace", {
-        path: wsPath,
+      const hits = await invoke<SearchHit[]>("search_conversations", {
         query: q,
-        k: 10,
+        limit: 20,
       });
       setResults(hits);
     } catch (err) {
@@ -100,31 +70,9 @@ export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
     debounceTimer = setTimeout(() => void doSearch(value), 300);
   }
 
-  async function handleReindex(): Promise<void> {
-    const wsPath = workspacePath();
-    if (!wsPath) return;
-    try {
-      setIndexing(true);
-      setError(null);
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("bind_workspace", { path: wsPath });
-      await loadIndexStatus();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIndexing(false);
-    }
-  }
-
-  function handleAttach(hit: FTS5SearchHit): void {
-    const wsPath = workspacePath();
-    const fullPath = wsPath ? `${wsPath}/${hit.relative_path}` : hit.relative_path;
-    const ref: ContextRefPayload = {
-      path: fullPath,
-      alias: pathToRefAlias(hit.relative_path),
-      kind: "file",
-    };
-    props.onAttachRef?.(ref);
+  function handleOpen(hit: SearchHit): void {
+    props.onOpenConversation?.(hit.session_id);
+    props.onClose?.();
   }
 
   onCleanup(() => {
@@ -134,7 +82,7 @@ export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
   return (
     <div class="fts-panel">
       <div class="fts-header">
-        <span class="fts-title">🔍 搜索工作区文件</span>
+        <span class="fts-title">🔍 搜索对话历史</span>
         <Show when={props.onClose}>
           <button class="fts-close" type="button" onClick={() => props.onClose?.()}>
             ✕
@@ -144,7 +92,7 @@ export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
       <input
         class="fts-input"
         type="text"
-        placeholder="输入关键词…"
+        placeholder="输入关键词搜索历史对话…"
         value={query()}
         onInput={(e) => onInput(e.currentTarget.value)}
       />
@@ -154,11 +102,11 @@ export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
       </Show>
 
       <Show when={query().trim() && results().length === 0 && !error()}>
-        <div class="fts-no-results">未找到匹配的文件</div>
+        <div class="fts-no-results">未找到匹配的对话</div>
       </Show>
 
       <Show when={!query().trim()}>
-        <div class="fts-empty">输入关键词开始搜索工作区文件</div>
+        <div class="fts-empty">输入关键词搜索历史对话</div>
       </Show>
 
       <Show when={results().length > 0}>
@@ -168,39 +116,29 @@ export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
             {(hit) => (
               <div class="fts-result">
                 <div class="fts-result-header">
-                  <span class="fts-result-icon">📄</span>
-                  <span class="fts-result-filename" title={hit.relative_path}>
-                    {hit.relative_path}
+                  <span class="fts-result-icon">💬</span>
+                  <span class="fts-result-filename" title={hit.title ?? hit.session_id}>
+                    {hit.title ?? hit.session_id.slice(0, 12)}
                   </span>
-                  <span class="fts-result-score">{hit.score.toFixed(2)}</span>
                 </div>
-                <div class="fts-result-snippet">{hit.text.slice(0, 200)}…</div>
+                <Show when={hit.snippet}>
+                  <div class="fts-result-snippet">{hit.snippet}</div>
+                </Show>
+                <Show when={!hit.snippet}>
+                  <div class="fts-result-snippet">{hit.content.slice(0, 200)}…</div>
+                </Show>
                 <button
                   class="fts-attach"
                   type="button"
-                  onClick={() => handleAttach(hit)}
+                  onClick={() => handleOpen(hit)}
                 >
-                  📎 作为附件引用
+                  📂 打开对话
                 </button>
               </div>
             )}
           </For>
         </div>
       </Show>
-
-      <Show when={indexStatus()}>
-        <div class="fts-index-status">
-          已索引 {indexStatus()!.file_count} 个文件 / {indexStatus()!.chunk_count} 个条文块
-        </div>
-      </Show>
-
-      <Show when={indexing()}>
-        <div class="fts-indexing">正在索引…</div>
-      </Show>
-
-      <button class="fts-reindex" type="button" onClick={() => void handleReindex()}>
-        重新索引
-      </button>
     </div>
   );
 };
