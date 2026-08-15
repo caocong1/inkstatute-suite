@@ -24,9 +24,22 @@
         apiKeyEnv: GROQ_API_KEY
       xai:
         apiKeyEnv: XAI_API_KEY
+      # 智谱：pi-ai 未预装，按 OpenAI-compatible 网关显式声明。
       zhipu:
+        displayName: 智谱
         apiKeyEnv: ZHIPU_API_KEY
-      qwen:
+        api: openai-completions
+        baseURL: https://open.bigmodel.cn/api/paas/v4/
+        models:
+          - id: glm-4-plus
+            name: GLM-4 Plus
+            contextWindow: 128000
+            maxTokens: 4096
+          - id: glm-4-flash
+            name: GLM-4 Flash
+            contextWindow: 128000
+            maxTokens: 4096
+      qwen-token-plan-cn:
         apiKeyEnv: QWEN_API_KEY
 
 # DeepSeek 官方路由保留 —— acp-agent 的 provider: deepseek-official 走它。

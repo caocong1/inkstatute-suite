@@ -6,7 +6,7 @@
 
 import { createHash } from 'node:crypto';
 import { mkdtempSync, writeFileSync, readFileSync, rmSync, readdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { tmpdir, platform, arch } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -56,6 +56,13 @@ function sha256File(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
 
+function prebuildPlatformsToPrune(targetPlatform, installedPlatforms) {
+  // Keep the production Windows prebuild plus the build-host prebuild so that
+  // assembly and smoke tests work on the developer's machine too.
+  const host = `${platform()}-${arch()}`;
+  return installedPlatforms.filter(p => p !== targetPlatform && p !== host);
+}
+
 function tarballPathFromResolved(resolved) {
   const url = new URL(resolved);
   const path = url.pathname;
@@ -91,6 +98,11 @@ function main() {
       cwd: tempDir,
       stdio: 'inherit',
     });
+
+    const prebuildsDir = join(tempDir, 'node_modules', 'node-pty', 'prebuilds');
+    const prebuildPlatforms = readdirSync(prebuildsDir, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name);
 
     const lockPath = join(tempDir, 'package-lock.json');
     const lock = JSON.parse(readFileSync(lockPath, 'utf8'));
@@ -147,9 +159,7 @@ function main() {
       cordis_config_sha256: sha256File(CORDIS_FILE),
       generated_at: new Date().toISOString(),
       prune: {
-        'node-pty/prebuilds': pin.target_platform === 'win32-x64'
-          ? ['darwin-arm64', 'darwin-x64', 'win32-arm64']
-          : [],
+        'node-pty/prebuilds': prebuildPlatformsToPrune(pin.target_platform, prebuildPlatforms),
       },
       packages: outPackages,
     };
