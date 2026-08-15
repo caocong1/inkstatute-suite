@@ -1,0 +1,192 @@
+[
+  {
+    "event_id": "run-gate-12-0",
+    "run_id": "run-gate-12",
+    "event_type": "session.started",
+    "occurred_at": "2026-08-15T04:23:20.000Z",
+    "seq": 0,
+    "payload": {
+      "backend_id": "sess-success-001",
+      "metadata": {
+        "agent_preset": null,
+        "cwd": "/private/tmp/scratchpad/ws-ok"
+      },
+      "session_id": "sess-success-001"
+    }
+  },
+  {
+    "event_id": "run-gate-12-1",
+    "run_id": "run-gate-12",
+    "event_type": "run.state_changed",
+    "occurred_at": "2026-08-15T04:23:20.001Z",
+    "seq": 1,
+    "payload": {
+      "status": "running"
+    }
+  },
+  {
+    "event_id": "run-gate-12-2",
+    "run_id": "run-gate-12",
+    "event_type": "plan.updated",
+    "occurred_at": "2026-08-15T04:23:20.003Z",
+    "seq": 2,
+    "payload": {
+      "plan": [
+        {
+          "status": "run",
+          "title": "步骤 1.1"
+        }
+      ]
+    }
+  },
+  {
+    "event_id": "run-gate-12-3",
+    "run_id": "run-gate-12",
+    "event_type": "message.delta",
+    "occurred_at": "2026-08-15T04:23:20.009Z",
+    "seq": 3,
+    "payload": {
+      "delta": "根据《中华人民共和国民法典》第五百八十五条"
+    },
+    "metadata": {
+      "session_title": "合同法违约金检索"
+    }
+  },
+  {
+    "event_id": "run-gate-12-4",
+    "run_id": "run-gate-12",
+    "event_type": "message.delta",
+    "occurred_at": "2026-08-15T04:23:20.010Z",
+    "seq": 4,
+    "payload": {
+      "delta": "，当事人可以约定一方违约时应当根据违约情况向对方支付一定数额的违约金"
+    }
+  },
+  {
+    "event_id": "run-gate-12-5",
+    "run_id": "run-gate-12",
+    "event_type": "message.delta",
+    "occurred_at": "2026-08-15T04:23:20.011Z",
+    "seq": 5,
+    "payload": {
+      "delta": "；也可以约定因违约产生的损失赔偿额的计算方法。"
+    }
+  },
+  {
+    "event_id": "run-gate-12-6",
+    "run_id": "run-gate-12",
+    "event_type": "thought.delta",
+    "occurred_at": "2026-08-15T04:23:20.014Z",
+    "seq": 6,
+    "payload": {
+      "delta": "需要检索具体法条原文"
+    }
+  },
+  {
+    "event_id": "run-gate-12-7",
+    "run_id": "run-gate-12",
+    "event_type": "thought.delta",
+    "occurred_at": "2026-08-15T04:23:20.015Z",
+    "seq": 7,
+    "payload": {
+      "delta": "，调用法律检索工具"
+    }
+  },
+  {
+    "event_id": "run-gate-12-8",
+    "run_id": "run-gate-12",
+    "event_type": "tool_call.started",
+    "occurred_at": "2026-08-15T04:23:20.016Z",
+    "seq": 8,
+    "payload": {
+      "tool_call_id": "tc-1",
+      "tool_name": "legal_search"
+    }
+  },
+  {
+    "event_id": "run-gate-12-9",
+    "run_id": "run-gate-12",
+    "event_type": "tool_call.delta",
+    "occurred_at": "2026-08-15T04:23:20.016Z",
+    "seq": 9,
+    "payload": {
+      "content": "{\"query\":\"民法典 违约金\"}",
+      "tool_call_id": "tc-1"
+    }
+  },
+  {
+    "event_id": "run-gate-12-10",
+    "run_id": "run-gate-12",
+    "event_type": "tool_call.started",
+    "occurred_at": "2026-08-15T04:23:20.018Z",
+    "seq": 10,
+    "payload": {
+      "tool_call_id": "tc-1",
+      "tool_name": "legal_search"
+    }
+  },
+  {
+    "event_id": "run-gate-12-11",
+    "run_id": "run-gate-12",
+    "event_type": "tool_call.completed",
+    "occurred_at": "2026-08-15T04:23:20.019Z",
+    "seq": 11,
+    "payload": {
+      "status": "done",
+      "tool_call_id": "tc-1"
+    }
+  },
+  {
+    "event_id": "run-gate-12-12",
+    "run_id": "run-gate-12",
+    "event_type": "run.state_changed",
+    "occurred_at": "2026-08-15T04:23:20.020Z",
+    "seq": 12,
+    "payload": {
+      "status": "running"
+    },
+    "metadata": {
+      "usage": {
+        "completion_tokens": 96,
+        "prompt_tokens": 1280,
+        "total_tokens": 1376
+      }
+    }
+  },
+  {
+    "event_id": "run-gate-12-13",
+    "run_id": "run-gate-12",
+    "event_type": "message.completed",
+    "occurred_at": "2026-08-15T04:23:20.021Z",
+    "seq": 13,
+    "payload": {
+      "content": "根据《中华人民共和国民法典》第五百八十五条，当事人可以约定一方违约时应当根据违约情况向对方支付一定数额的违约金；也可以约定因违约产生的损失赔偿额的计算方法。",
+      "message_id": "asst-1"
+    }
+  },
+  {
+    "event_id": "run-gate-12-14",
+    "run_id": "run-gate-12",
+    "event_type": "plan.updated",
+    "occurred_at": "2026-08-15T04:23:20.022Z",
+    "seq": 14,
+    "payload": {
+      "plan": [
+        {
+          "status": "done",
+          "title": "步骤 1.1"
+        }
+      ]
+    }
+  },
+  {
+    "event_id": "run-gate-12-15",
+    "run_id": "run-gate-12",
+    "event_type": "run.state_changed",
+    "occurred_at": "2026-08-15T04:23:20.023Z",
+    "seq": 15,
+    "payload": {
+      "status": "completed"
+    }
+  }
+]

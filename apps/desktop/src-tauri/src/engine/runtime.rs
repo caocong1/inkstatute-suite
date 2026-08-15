@@ -12,9 +12,7 @@ use std::time::Duration;
 
 use serde_json::Value;
 use tauri::{AppHandle, Emitter};
-use tokio::sync::mpsc;
 
-use super::events::{ParsedLine, SessionEvent};
 use super::mapper::{EventMapper, RunEventEnvelope};
 use super::tailer::{tail_session, TailedEvent};
 
