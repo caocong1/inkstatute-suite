@@ -9,6 +9,7 @@ const GATES = [
   { name: 'engine-assembly', script: 'scripts/gates/v5/engine-assembly.mjs' },
   { name: 'event-mapping', script: 'scripts/gates/v5/event-mapping.mjs' },
   { name: 'token-budget', script: 'scripts/gates/v5/token-budget.mjs' },
+  { name: 'guardrails', script: 'scripts/gates/v5/guardrails.mjs' },
 ];
 
 function run(cmd) {

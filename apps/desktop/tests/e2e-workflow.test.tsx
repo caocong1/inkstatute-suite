@@ -228,7 +228,7 @@ describe("e2e-workflow — V5 flow coverage (9 flows)", () => {
     expect(options.length).toBe(2);
 
     // Click an option.
-    options[0].click();
+    (options[0] as HTMLElement).click();
 
     // Submit button should be enabled.
     const submitBtn = container.querySelector(".clarify-submit") as HTMLButtonElement;
