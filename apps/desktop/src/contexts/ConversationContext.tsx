@@ -1,17 +1,19 @@
 /**
  * ConversationContext — SolidJS context for conversation list management.
  *
- * **Phase 125-01 stub:** Gateway/Auth/Connection/offlineCache removed.
- * Conversations are now local-only (uuid-based, no remote calls).
- * Phase 125-02 will wire this to the history plane (listConversations).
+ * Data source: engine history plane (`listConversations` from services/engine).
+ * New conversations are created locally (uuid); the ACP session is created
+ * lazily by the engine on the first message.
  */
 import {
   createContext,
   createSignal,
+  onMount,
   useContext,
   type ParentComponent,
 } from "solid-js";
 import type { Conversation } from "@inkstatute/ui-core";
+import { listConversations, type SessionSummary } from "../services/engine";
 
 export interface ConversationContextValue {
   conversations: () => Conversation[];
@@ -22,6 +24,15 @@ export interface ConversationContextValue {
 }
 
 const ConversationContext = createContext<ConversationContextValue>();
+
+function summaryToConversation(s: SessionSummary): Conversation {
+  return {
+    id: s.session_id,
+    title: s.title ?? s.session_id,
+    created_at: s.started_at ?? new Date().toISOString(),
+    updated_at: s.last_active_at ?? s.started_at ?? new Date().toISOString(),
+  };
+}
 
 export const ConversationProvider: ParentComponent = (props) => {
   const [conversations, setConversations] = createSignal<Conversation[]>([]);
@@ -46,12 +57,21 @@ export const ConversationProvider: ParentComponent = (props) => {
   }
 
   /**
-   * Refresh conversations. Phase 125-02 will wire this to listConversations()
-   * from the history plane.
+   * Refresh conversations from the engine history plane.
    */
   async function refreshConversations(): Promise<void> {
-    // No-op in stub mode — 125-02 will call listConversations()
+    try {
+      const summaries = await listConversations(50, 0);
+      setConversations(summaries.map(summaryToConversation));
+    } catch {
+      // Engine not ready or history DB missing — keep existing list
+    }
   }
+
+  // Load conversations on mount
+  onMount(() => {
+    void refreshConversations();
+  });
 
   const value: ConversationContextValue = {
     conversations,

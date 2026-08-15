@@ -55,6 +55,9 @@ pub fn run() {
             let settings = commands::desktop::AppSettings::default();
             app.manage(Mutex::new(settings));
 
+            // Initialize engine state (supervisor + session map)
+            app.manage(commands::engine::EngineState::new());
+
             // Build and register the native menu bar
             let menu = menu::build_menu(app.handle())?;
             app.set_menu(menu)?;
@@ -75,6 +78,11 @@ pub fn run() {
             commands::history::list_conversations,
             commands::history::search_conversations,
             commands::history::get_conversation_docs,
+            commands::engine::engine_start,
+            commands::engine::engine_status,
+            commands::engine::engine_send,
+            commands::engine::engine_cancel,
+            commands::engine::engine_respond_permission,
             commands::desktop::get_app_setting,
             commands::desktop::set_app_setting,
         ])

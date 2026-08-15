@@ -22,6 +22,7 @@ import {
   Show,
   type Component,
 } from "solid-js";
+import { searchConversations, type SearchHit as EngineSearchHit } from "../services/engine";
 
 export interface SearchHit {
   session_id: string;
@@ -52,12 +53,8 @@ export const FTS5SearchPanel: Component<FTS5SearchPanelProps> = (props) => {
     }
     try {
       setError(null);
-      const { invoke } = await import("@tauri-apps/api/core");
-      const hits = await invoke<SearchHit[]>("search_conversations", {
-        query: q,
-        limit: 20,
-      });
-      setResults(hits);
+      const hits = await searchConversations(q, 20);
+      setResults(hits as SearchHit[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setResults([]);

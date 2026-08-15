@@ -13,8 +13,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render } from "solid-js/web";
 import { FTS5SearchPanel } from "../src/components/FTS5SearchPanel";
 
-// Mock Tauri APIs
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+// Mock services/engine
+const { mockSearchConversations } = vi.hoisted(() => ({
+  mockSearchConversations: vi.fn(),
+}));
+vi.mock("../src/services/engine", () => ({
+  searchConversations: mockSearchConversations,
+  listConversations: vi.fn(),
+  getConversationDocs: vi.fn(),
+  engineStart: vi.fn(),
+  engineStatus: vi.fn(),
+  engineSend: vi.fn(),
+  engineCancel: vi.fn(),
+  engineRespondPermission: vi.fn(),
+  onRunEvent: vi.fn(),
+  RUN_EVENT: "inkstatute://run-event",
+}));
 
 describe("FTS5SearchPanel", () => {
   beforeEach(() => {
@@ -45,9 +59,8 @@ describe("FTS5SearchPanel", () => {
     container.remove();
   });
 
-  it("search input triggers debounced search_conversations invoke", async () => {
-    const { invoke } = await import("@tauri-apps/api/core");
-    vi.mocked(invoke).mockResolvedValue([
+  it("search input triggers debounced searchConversations call", async () => {
+    mockSearchConversations.mockResolvedValue([
       {
         session_id: "s1",
         seq: 1,
@@ -57,7 +70,7 @@ describe("FTS5SearchPanel", () => {
         title: "保函咨询",
         occurred_at: "2026-08-16T10:00:00Z",
       },
-    ] as never);
+    ]);
 
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -73,18 +86,14 @@ describe("FTS5SearchPanel", () => {
     // Wait for debounce (300ms)
     await new Promise((resolve) => setTimeout(resolve, 400));
 
-    expect(invoke).toHaveBeenCalledWith("search_conversations", {
-      query: "保函",
-      limit: 20,
-    });
+    expect(mockSearchConversations).toHaveBeenCalledWith("保函", 20);
 
     disposer();
     container.remove();
   });
 
   it("open conversation button calls onOpenConversation callback", async () => {
-    const { invoke } = await import("@tauri-apps/api/core");
-    vi.mocked(invoke).mockResolvedValue([
+    mockSearchConversations.mockResolvedValue([
       {
         session_id: "s1",
         seq: 1,
@@ -94,7 +103,7 @@ describe("FTS5SearchPanel", () => {
         title: "保函咨询",
         occurred_at: null,
       },
-    ] as never);
+    ]);
 
     let openedSession: string | null = null;
     const onOpenConversation = (id: string) => { openedSession = id; };

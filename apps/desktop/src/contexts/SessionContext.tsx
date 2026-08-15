@@ -1,9 +1,8 @@
 /**
  * SessionContext — per-workspace-page context managing the active run lifecycle.
  *
- * **Phase 125-01 stub:** Gateway/Auth/runBuilder removed.
- * sendMessage/submitClarification/submitFeedback/cancelRun are no-ops.
- * Phase 125-02 will wire these to Tauri commands via services/engine.ts.
+ * Wires sendMessage/cancel/permission to Tauri commands via services/engine.
+ * The reactive RenderState comes from useEventStream (Tauri event subscription).
  */
 import {
   createContext,
@@ -16,6 +15,11 @@ import type {
   ClarificationAnswer,
 } from "@inkstatute/ui-core";
 import { useEventStream } from "../hooks/useEventStream";
+import {
+  engineSend,
+  engineCancel,
+  engineRespondPermission,
+} from "../services/engine";
 
 export interface SessionContextValue {
   runId: () => string | null;
@@ -40,15 +44,21 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
   const eventStream = useEventStream(runId);
 
   async function sendMessage(prompt: string): Promise<void> {
-    // 125-02 will call engineSend(props.conversationId, prompt)
+    // Set runId to conversationId so useEventStream subscribes to events
     setRunId(props.conversationId);
+    // Send the prompt to the engine
+    await engineSend(props.conversationId, prompt);
   }
 
   async function submitClarification(
-    _interruptId: string,
+    interruptId: string,
     _answers: ClarificationAnswer[],
   ): Promise<void> {
-    // 125-02 will call engineRespondPermission
+    // Permission/clarification responses go through engineRespondPermission
+    const requestId = parseInt(interruptId, 10);
+    if (!isNaN(requestId)) {
+      await engineRespondPermission(requestId, true);
+    }
   }
 
   async function submitFeedback(
@@ -56,11 +66,11 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
     _rating: "up" | "down",
     _comment?: string,
   ): Promise<void> {
-    // 125-02 will wire to engine feedback
+    // Feedback is not yet wired to the engine; placeholder for future
   }
 
   async function cancelRun(): Promise<void> {
-    // 125-02 will call engineCancel
+    await engineCancel(props.conversationId);
     setRunId(null);
   }
 
