@@ -10,6 +10,10 @@ default-run = "inkstatute-desktop"
 name = "inkstatute_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[[bin]]
+name = "store-key"
+path = "src/bin/store_key.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -39,3 +43,19 @@ flate2 = "1"
 tar = "0.4"
 base64 = "0.22"
 thiserror = "2"
+rpassword = "7"
+tokio-util = { version = "0.7", features = ["codec"] }
+serde_yaml = "0.9"
+libc = "0.2"
+
+# keyring 3.x 不提供默认后端：不显式启用 feature 就编译成内存 mock，
+# store 看似成功、进程退出即丢，OS 凭据库根本没被写入。
+# 必须按平台显式指定后端。
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["sync-secret-service"] }

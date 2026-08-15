@@ -108,8 +108,13 @@ mod tests {
     use super::*;
     use std::fs;
 
+    // These tests mutate the process-wide INKSTATUTE_APP_ROOT env var and must
+    // not run in parallel with each other.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn paths_roundtrip_with_override() {
+        let _guard = ENV_LOCK.lock().unwrap();
         let temp = std::env::temp_dir().join(format!(
             "inkstatute-paths-test-{}",
             std::process::id()
@@ -128,6 +133,7 @@ mod tests {
 
     #[test]
     fn read_current_missing_is_none() {
+        let _guard = ENV_LOCK.lock().unwrap();
         let temp = std::env::temp_dir().join(format!(
             "inkstatute-current-missing-{}",
             std::process::id()

@@ -74,7 +74,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 B — 真实链路打通
 
-- [ ] **Phase 123: Engine Supervisor & Real Path** - 子进程生命周期 + ACP 控制面 + 凭据注入 + **真 key 实测对话续接** (RTM-01, RTM-02, RTM-06, RTM-07)
+- [x] **Phase 123: Engine Supervisor & Real Path** - 子进程生命周期 + ACP 控制面 + 凭据注入 + **真 key 实测对话续接** (RTM-01, RTM-02, RTM-06, RTM-07) ✅ 2026-08-16（回灌闸门真实 API 通过）
 - [ ] **Phase 124: Observation & History Planes** - 日志尾随器 + 只读历史查询 + 事件映射器 + fixture 门禁 (RTM-03..05, GATE-12)
 
 ### 阶段 C — 产品外壳

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
 status: in_progress
-stopped_at: v5.0 Phase 122 已完成，等待 Phase 123 输入（真实 API key）
-last_updated: "2026-08-15T07:30:00.000Z"
-last_activity: 2026-08-15
+stopped_at: Phase 123 完成（回灌闸门以真实 API 通过）；Phase 124 可开始
+last_updated: "2026-08-16T09:30:00.000Z"
+last_activity: 2026-08-16
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 17
-  completed_plans: 3
-  percent: 17
+  completed_plans: 6
+  percent: 35
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 123 引擎主管 + 真实链路打通——子进程生命周期、凭据注入、真实 API key 实测对话续接。
+**Current focus:** Phase 124 观测面·历史面·事件映射——日志尾随器、只读历史查询、事件映射器、GATE-12。
 
 ## Current Position
 
-Phase: 123 of 127 (Engine Supervisor & Real Path)
-Status: 等待真实 API key 输入
-Last activity: 2026-08-15
+Phase: 124 of 127 (Observation & History Planes)
+Status: 待执行。Phase 123 回灌闸门已以真实 API 通过（见 123-DECISION.md）
+Last activity: 2026-08-16
 
-Progress: [██░░░░░░░░] 17% (1/6 phases)
+Progress: [████████░░] 50% (1/6 phases)
 
 ## Milestone v5.0 Overview
 

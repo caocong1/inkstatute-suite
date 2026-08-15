@@ -79,7 +79,8 @@ check('GATE-11.5: cargo test (unit)', () => {
 
 // 5. Real engine assembly + smoke (ignored integration tests, run explicitly).
 check('GATE-11.6: real engine assembly + smoke', () => {
-  run('cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml -- --ignored --test-threads=1');
+  // Phase 123 real-API replay gate is a separate, human-gated manual test.
+  run('cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test engine_assemble_test --test engine_smoke_test -- --ignored --test-threads=1');
 });
 
 // 6. No plaintext API keys in tracked files (excluding planning archives and tests).

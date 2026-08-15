@@ -1,7 +1,12 @@
+pub mod acp;
 pub mod assemble;
+pub mod credentials;
 pub mod lock;
 pub mod paths;
+pub mod replay;
+pub mod session_map;
 pub mod smoke;
+pub mod supervisor;
 
 use thiserror::Error;
 
@@ -25,10 +30,22 @@ pub enum EngineError {
     DownloadFailed(String),
     #[error("app data directory not resolvable")]
     NoAppRoot,
+    #[error("API key not available for provider {0}")]
+    MissingApiKey(String),
+    #[error("prompt is already in flight for session {0}")]
+    PromptInFlight(String),
+    #[error("current working directory must be an absolute path")]
+    CwdNotAbsolute,
+    #[error("engine disconnected")]
+    Disconnected,
+    #[error("engine protocol error: {0}")]
+    Protocol(String),
     #[error(transparent)]
     Io(#[from] std::io::Error),
     #[error(transparent)]
     Http(#[from] reqwest::Error),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+    #[error("credential store error: {0}")]
+    Credential(String),
 }
