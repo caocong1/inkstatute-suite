@@ -27,7 +27,7 @@ class WizardState {
     this.step = WizardStep.providerAndKey,
     this.selectedProvider = LlmProvider.deepseek,
     this.apiKey = '',
-    this.modelConfig = 'deepseek-chat',
+    this.modelConfig = 'deepseek-v4-flash',
     this.baseUrl,
   });
 
@@ -40,7 +40,7 @@ class WizardState {
   /// API key (transient — saved to OS credential store on completion).
   final String apiKey;
 
-  /// Model configuration (e.g., 'deepseek-chat', 'gpt-4o').
+  /// Model configuration (e.g., 'deepseek-v4-flash', 'gpt-4o').
   final String modelConfig;
 
   /// Optional base URL override.

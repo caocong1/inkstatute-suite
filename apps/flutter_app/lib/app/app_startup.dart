@@ -110,7 +110,7 @@ class EngineStartupConfig {
   /// Selected LLM provider.
   final LlmProvider provider;
 
-  /// Model configuration (e.g., 'deepseek-chat', 'gpt-4o').
+  /// Model configuration (e.g., 'deepseek-v4-flash', 'gpt-4o').
   final String modelConfig;
 
   /// API key (loaded from credential store).

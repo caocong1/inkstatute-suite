@@ -53,7 +53,7 @@ class SessionDatabase implements QueryExecutorUser {
       }
       try {
         await executor.runCustom(
-          "ALTER TABLE sessions ADD COLUMN model_config TEXT NOT NULL DEFAULT 'deepseek-chat'",
+          "ALTER TABLE sessions ADD COLUMN model_config TEXT NOT NULL DEFAULT 'deepseek-v4-flash'",
           const [],
         );
       } on Object {
@@ -69,7 +69,7 @@ class SessionDatabase implements QueryExecutorUser {
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         provider_name TEXT NOT NULL DEFAULT 'DeepSeek',
-        model_config TEXT NOT NULL DEFAULT 'deepseek-chat',
+        model_config TEXT NOT NULL DEFAULT 'deepseek-v4-flash',
         title TEXT NOT NULL,
         created_at INTEGER NOT NULL
       )

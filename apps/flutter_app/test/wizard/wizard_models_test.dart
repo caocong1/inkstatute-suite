@@ -14,8 +14,8 @@ void main() {
   });
 
   group('LlmProvider', () {
-    test('all has 4 options', () {
-      expect(LlmProvider.all.length, 4);
+    test('all has 9 options (8 providers + custom)', () {
+      expect(LlmProvider.all.length, 9);
     });
 
     test('all providers have non-empty ids and display names', () {
@@ -43,7 +43,7 @@ void main() {
       expect(state.step, WizardStep.providerAndKey);
       expect(state.selectedProvider, LlmProvider.deepseek);
       expect(state.apiKey, isEmpty);
-      expect(state.modelConfig, 'deepseek-chat');
+      expect(state.modelConfig, 'deepseek-v4-flash');
     });
 
     test('canProceed is false when API key empty', () {
@@ -60,7 +60,7 @@ void main() {
       const state = WizardState(
         step: WizardStep.modelConfirmation,
         apiKey: 'sk-test',
-        modelConfig: 'deepseek-chat',
+        modelConfig: 'deepseek-v4-flash',
       );
       expect(state.canProceed, isTrue);
     });
@@ -78,7 +78,7 @@ void main() {
       );
       expect(updated.step, WizardStep.modelConfirmation);
       expect(updated.apiKey, 'sk-test');
-      expect(updated.modelConfig, 'deepseek-chat');
+      expect(updated.modelConfig, 'deepseek-v4-flash');
     });
   });
 }

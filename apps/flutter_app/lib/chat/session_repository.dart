@@ -46,7 +46,7 @@ class SessionRepository {
     return ChatSession(
       id: s['id'] as String,
       providerName: s['provider_name'] as String? ?? 'DeepSeek',
-      modelConfig: s['model_config'] as String? ?? 'deepseek-chat',
+      modelConfig: s['model_config'] as String? ?? 'deepseek-v4-flash',
       title: s['title'] as String,
       createdAt: DateTime.fromMillisecondsSinceEpoch(s['created_at'] as int),
       messages: await _loadMessages(id),
@@ -72,7 +72,7 @@ class SessionRepository {
       sessions.add(ChatSession(
         id: row['id'] as String,
         providerName: row['provider_name'] as String? ?? 'DeepSeek',
-        modelConfig: row['model_config'] as String? ?? 'deepseek-chat',
+        modelConfig: row['model_config'] as String? ?? 'deepseek-v4-flash',
         title: row['title'] as String,
         createdAt: DateTime.fromMillisecondsSinceEpoch(row['created_at'] as int),
         messages: await _loadMessages(row['id'] as String),

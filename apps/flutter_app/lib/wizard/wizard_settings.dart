@@ -24,7 +24,7 @@ class WizardSettings {
   /// Selected LLM provider id (see [LlmProvider.id]).
   final String providerId;
 
-  /// Model configuration (e.g., 'deepseek-chat', 'gpt-4o').
+  /// Model configuration (e.g., 'deepseek-v4-flash', 'gpt-4o').
   final String modelConfig;
 
   /// Optional base URL override for the LLM API.
@@ -34,7 +34,7 @@ class WizardSettings {
   static const WizardSettings defaultSettings = WizardSettings(
     hasCompletedWizard: false,
     providerId: 'deepseek',
-    modelConfig: 'deepseek-chat',
+    modelConfig: 'deepseek-v4-flash',
   );
 
   /// Returns a copy with updated fields.
@@ -65,7 +65,7 @@ class WizardSettings {
     return WizardSettings(
       hasCompletedWizard: json['hasCompletedWizard'] as bool? ?? false,
       providerId: json['providerId'] as String? ?? 'deepseek',
-      modelConfig: json['modelConfig'] as String? ?? 'deepseek-chat',
+      modelConfig: json['modelConfig'] as String? ?? 'deepseek-v4-flash',
       baseUrl: json['baseUrl'] as String?,
     );
   }
@@ -90,7 +90,7 @@ class WizardSettings {
       if (!json.containsKey('providerId') &&
           json.containsKey('selectedPracticeArea')) {
         json['providerId'] = 'deepseek';
-        json['modelConfig'] = json['modelConfig'] ?? 'deepseek-chat';
+        json['modelConfig'] = json['modelConfig'] ?? 'deepseek-v4-flash';
       }
       return WizardSettings.fromJson(json);
     } on Exception {

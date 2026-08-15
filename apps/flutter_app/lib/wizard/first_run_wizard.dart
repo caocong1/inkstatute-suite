@@ -7,6 +7,7 @@ library;
 import 'package:flutter/material.dart';
 
 import 'package:flutter_app/wizard/llm_provider.dart';
+import 'package:flutter_app/wizard/llm_model_catalog.dart';
 import 'package:flutter_app/wizard/wizard_models.dart';
 
 /// The first-run wizard widget.
@@ -34,8 +35,12 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
   @override
   void initState() {
     super.initState();
+    // Sync state modelConfig with the provider's default model so that
+    // the wizard completes with the correct default if the user does not
+    // explicitly change the model text field.
+    _state = _state.copyWith(modelConfig: _state.selectedProvider.defaultModel);
     _modelController.text = _state.selectedProvider.defaultModel;
-    _baseUrlController.text = _state.selectedProvider.defaultBaseUrl ?? '';
+    _baseUrlController.text = _state.selectedProvider.defaultBaseUrl;
   }
 
   @override
@@ -75,7 +80,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
         modelConfig: provider.defaultModel,
       );
       _modelController.text = provider.defaultModel;
-      _baseUrlController.text = provider.defaultBaseUrl ?? '';
+      _baseUrlController.text = provider.defaultBaseUrl;
     });
   }
 
@@ -148,6 +153,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
         // Provider dropdown
         DropdownButtonFormField<LlmProvider>(
           initialValue: _state.selectedProvider,
+          isExpanded: true,
           decoration: const InputDecoration(
             labelText: '供应商',
             border: OutlineInputBorder(),
@@ -221,7 +227,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
               '环境变量: ${provider.apiKeyEnvVar}',
               style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
-            if (provider.defaultBaseUrl != null)
+            if (provider.defaultBaseUrl.isNotEmpty)
               Text(
                 '默认 Base URL: ${provider.defaultBaseUrl}',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -245,6 +251,16 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
         return '访问 platform.openai.com 创建 API 密钥';
       case 'anthropic':
         return '访问 console.anthropic.com 创建 API 密钥';
+      case 'google':
+        return '访问 aistudio.google.com 创建 API 密钥';
+      case 'groq':
+        return '访问 console.groq.com 创建 API 密钥';
+      case 'xai':
+        return '访问 x.ai 创建 API 密钥';
+      case 'zai':
+        return '访问 z.ai 创建 API 密钥';
+      case 'qwen':
+        return '访问 aliyun.com 百炼平台创建 API 密钥';
       case 'custom':
         return '输入自定义供应商的 API 密钥和 Base URL';
       default:
@@ -253,6 +269,10 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
   }
 
   Widget _buildModelConfirmationStep() {
+    final provider = _state.selectedProvider;
+    final catalog = provider.models;
+    final selectedModel = _state.modelConfig;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -269,18 +289,61 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
                     const Text('供应商',
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     const Spacer(),
-                    Text(_state.selectedProvider.displayName),
+                    Text(provider.displayName),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Text('API 协议',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    Text(provider.apiProtocol.wire,
+                        style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 const Text('模型',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
+                // Model dropdown from catalog (if available)
+                if (catalog.isNotEmpty) ...[
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedModel,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: '选择模型',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.model_training),
+                    ),
+                    items: catalog.map((m) {
+                      final ctx = m.contextWindow != null
+                          ? ' (${(m.contextWindow! / 1000).round()}K ctx)'
+                          : '';
+                      final reason = m.reasoning ? ' [推理]' : '';
+                      return DropdownMenuItem(
+                        value: m.id,
+                        child: Text('${m.name}$ctx$reason',
+                            overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        _state = _state.copyWith(modelConfig: value);
+                        _modelController.text = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                // Manual model entry (always available — catalog is advisory)
                 TextField(
                   controller: _modelController,
-                  decoration: const InputDecoration(
-                    labelText: '模型名称',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: catalog.isNotEmpty ? '或手动输入模型 ID' : '模型 ID',
+                    hintText: '例如: ${provider.defaultModel}',
+                    border: const OutlineInputBorder(),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -289,6 +352,11 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
                   },
                 ),
                 const SizedBox(height: 12),
+                // Show model metadata if available
+                if (provider.findModel(selectedModel) != null) ...[
+                  _buildModelMetadata(provider.findModel(selectedModel)!),
+                  const SizedBox(height: 12),
+                ],
                 if (_state.baseUrl != null && _state.baseUrl!.isNotEmpty) ...[
                   Row(
                     children: [
@@ -307,7 +375,7 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
                   const SizedBox(height: 12),
                 ],
                 const Text(
-                  '如需更改模型名称，请直接编辑上方输入框。',
+                  '目录中的模型为预置选项，也可手动输入任意模型 ID。',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
@@ -315,6 +383,33 @@ class _FirstRunWizardState extends State<FirstRunWizard> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildModelMetadata(CatalogModel model) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(model.name,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          if (model.contextWindow != null)
+            Text('上下文窗口: ${(model.contextWindow! / 1000).round()}K tokens',
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          if (model.maxTokens != null)
+            Text('最大输出: ${(model.maxTokens! / 1000).round()}K tokens',
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          if (model.reasoning)
+            const Text('支持推理/思考模式',
+                style: TextStyle(fontSize: 12, color: Colors.blue)),
+        ],
+      ),
     );
   }
 

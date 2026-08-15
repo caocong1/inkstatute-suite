@@ -20,7 +20,7 @@ void main() {
       const settings = WizardSettings.defaultSettings;
       expect(settings.hasCompletedWizard, isFalse);
       expect(settings.providerId, 'deepseek');
-      expect(settings.modelConfig, 'deepseek-chat');
+      expect(settings.modelConfig, 'deepseek-v4-flash');
     });
 
     test('toJson and fromJson round-trip', () {
@@ -42,7 +42,7 @@ void main() {
       final parsed = WizardSettings.fromJson({});
       expect(parsed.hasCompletedWizard, isFalse);
       expect(parsed.providerId, 'deepseek');
-      expect(parsed.modelConfig, 'deepseek-chat');
+      expect(parsed.modelConfig, 'deepseek-v4-flash');
     });
 
     test('copyWith updates fields', () {

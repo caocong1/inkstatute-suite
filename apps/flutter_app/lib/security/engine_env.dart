@@ -25,7 +25,11 @@ class EngineEnv {
     Map<String, String>? base,
   }) {
     final env = <String, String>{...?base};
-    env[provider.apiKeyEnvVar] = apiKey;
+    // Inject the API key into all env vars the provider accepts.
+    // DSH/pi-ai tries them in order; setting all ensures resolution.
+    for (final envVar in provider.apiKeyEnvVars) {
+      env[envVar] = apiKey;
+    }
     if (provider.baseUrlEnvVar != null && baseUrl != null) {
       env[provider.baseUrlEnvVar!] = baseUrl;
     }

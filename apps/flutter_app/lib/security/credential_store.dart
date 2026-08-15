@@ -31,6 +31,16 @@ class CredentialStore {
         return 'OpenAIApiKey';
       case 'anthropic':
         return 'AnthropicApiKey';
+      case 'google':
+        return 'GoogleApiKey';
+      case 'groq':
+        return 'GroqApiKey';
+      case 'xai':
+        return 'XaiApiKey';
+      case 'zai':
+        return 'ZaiApiKey';
+      case 'qwen':
+        return 'QwenApiKey';
       case 'custom':
         return 'CustomApiKey';
       default:

@@ -23,7 +23,7 @@ class StatusBarWidget extends StatelessWidget {
   /// LLM provider display name (e.g. "DeepSeek").
   final String? providerName;
 
-  /// Model configuration (e.g. "deepseek-chat").
+  /// Model configuration (e.g. "deepseek-v4-flash").
   final String? modelConfig;
 
   /// Callback when the cancel button is pressed.

@@ -122,10 +122,10 @@ void main() {
     expect(completedState!.step, WizardStep.complete);
     expect(completedState!.selectedProvider, LlmProvider.deepseek);
     expect(completedState!.apiKey, 'sk-test-key');
-    expect(completedState!.modelConfig, 'deepseek-chat');
+    expect(completedState!.modelConfig, 'deepseek-v4-flash');
   });
 
-  testWidgets('shows all 4 provider options in dropdown', (WidgetTester tester) async {
+  testWidgets('shows all 9 provider options in dropdown', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: FirstRunWizard(onComplete: (_) {}),
@@ -136,10 +136,15 @@ void main() {
     await tester.tap(find.byType(DropdownButtonFormField<LlmProvider>));
     await tester.pumpAndSettle();
 
-    // All 4 providers should be visible
+    // All 9 providers should be visible
     expect(find.text('DeepSeek'), findsWidgets);
     expect(find.text('OpenAI'), findsOneWidget);
     expect(find.text('Anthropic'), findsOneWidget);
+    expect(find.text('Google Gemini'), findsOneWidget);
+    expect(find.text('Groq'), findsOneWidget);
+    expect(find.text('xAI (Grok)'), findsOneWidget);
+    expect(find.text('Z.AI (GLM)'), findsOneWidget);
+    expect(find.text('Qwen (通义千问)'), findsOneWidget);
     expect(find.text('自定义供应商'), findsOneWidget);
   });
 
