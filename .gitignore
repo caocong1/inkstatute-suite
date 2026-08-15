@@ -73,3 +73,11 @@ Thumbs.db
 *.swp
 apps/web/test-results/
 apps/web/playwright-report/
+
+# Engine release archives (172MB+ binaries — use scripts/build_dsh_release.sh to produce)
+engines/releases/*.zip
+# Root-level engine-manifest.json is a copy for gate validation; canonical is engines/releases/engine-manifest.json
+engines/engine-manifest.json
+# Temporary fix scripts (not part of the codebase)
+tmp_fix_*.cjs
+tmp_fix_*.js

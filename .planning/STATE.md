@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Flutter Native + DSH Engine
-status: completed
-stopped_at: Milestone v4.0 technically complete — all phases 112-120 executed, awaiting human gate signatures
-last_updated: "2026-08-14T15:55:50.169Z"
-last_activity: 2026-08-14
+status: in_progress
+stopped_at: Phase 121 integration wiring complete — 开发侧技术闭环，进入打磨阶段；律师人工闸门延后至产品成熟交付时
+last_updated: "2026-08-15T01:30:00.000Z"
+last_activity: 2026-08-15
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 35
-  completed_plans: 35
+  total_phases: 10
+  completed_phases: 10
+  total_plans: 41
+  completed_plans: 41
   percent: 100
 ---
 
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-13)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
 
-**Current focus:** Milestone v4.0 technically complete — awaiting human gate signatures (HG-1, HG-3, HG-4)
+**Current focus:** Phase 121 集成接线完成，开发侧技术闭环。当前团队仅开发人员，律师人工闸门（HG-1/HG-3/HG-4）延后至产品打磨成熟、交付律师时再做，不列入当前阶段阻塞项。
 
 ## Current Position
 
-Phase: 120 of 120 (convergence lawyer trial)
-Status: Milestone v4.0 technically complete — all 9 phases (112-120) executed, all 33 requirements addressed, ~560 tests pass, V4 gates all pass. Three human gates (HG-1, HG-3, HG-4) remain HUMAN_NEEDED.
-Last activity: 2026-08-14
+Phase: 121 of 121 (integration wiring & real-path activation)
+Status: Phase 121 complete — 开发侧技术闭环：5 个集成缺口全部闭合，626 测试通过，V4 门禁全绿，引擎打包验证可启动。律师人工闸门延后至交付阶段。
+Last activity: 2026-08-15
 
-Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (technical)
+Progress: [▓▓▓▓▓▓▓▓▓▓] 100% (开发侧技术)
 
 ## Milestone v4.0 Overview
 
@@ -99,13 +99,13 @@ V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影�
 
 ## Deferred Items
 
-### Carried Human Gates（v4.0 不得自动关闭）
+### Carried Human Gates（v4.0 不得自动关闭 — 延后至交付律师阶段）
 
 | Category | Item | Status |
 |----------|------|--------|
-| Human gate | HG-1 法律质量：V4 基线（DSH+分域预设）经律师抽样确认不低于 lawyer-desktop/Hermes 基线 | HUMAN_NEEDED (Phase 120) |
-| Human gate | HG-4 修订稿质量：Word 原生修订 docx 经律师确认可用于对外谈判 | HUMAN_NEEDED (Phase 118) |
-| Human gate | HG-3 律师试运行：五工作日 / 15 真实任务 | HUMAN_NEEDED (Phase 120) |
+| Human gate | HG-1 法律质量：V4 基线（DSH+分域预设）经律师抽样确认不低于 lawyer-desktop/Hermes 基线 | DEFERRED — 延后至产品成熟交付律师时 |
+| Human gate | HG-4 修订稿质量：Word 原生修订 docx 经律师确认可用于对外谈判 | DEFERRED — 延后至产品成熟交付律师时 |
+| Human gate | HG-3 律师试运行：五工作日 / 15 真实任务 | DEFERRED — 延后至产品成熟交付律师时 |
 | Human gate | HG-2 真机通道（WeCom live UAT）| DEFERRED — 通道随 v3.x 平台冻结 |
 | Human gate | Operator `--live` QQ OpenAPI acceptance | DEFERRED — 通道随 v3.x 平台冻结 |
 
@@ -119,26 +119,38 @@ V4 的 10 条新决策记于 PROJECT.md Key Decisions（2026-08-13）。最影�
 
 ## Session Continuity
 
-Last session: 2026-08-14
-Stopped at: Milestone v4.0 technically complete — all phases 112-120 executed, awaiting human gate signatures
+Last session: 2026-08-15
+Stopped at: Phase 121 集成接线完成，开发侧技术闭环，进入打磨阶段
 Product spec: docs/requirements/V4-PRD.md (Flutter Native + DSH Engine)
 Research: .planning/research/SUMMARY.md (v4.0, HIGH confidence) + .planning/research/V4-SELECTION.md (选型证据)
-Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage)
-Execution plan: .planning/ROADMAP.md (Phases 112-120, ALL complete)
-Carried human gates (do not auto-complete): HG-1 (pending), HG-3 (pending), HG-4 (pending)
+Requirements: .planning/REQUIREMENTS.md (33/33 mapped to phases 112-120, 100% coverage; Phase 121 closes integration gaps)
+Execution plan: .planning/ROADMAP.md (Phases 112-120 complete + Phase 121 integration wiring complete)
+Carried human gates (延后至交付律师阶段): HG-1, HG-3, HG-4
 v1.x/v3.0 archives: .planning/milestones/
 
 ## Operator Next Steps
 
-- **Milestone v4.0 is technically complete.** All 9 phases (112-120) executed.
-- Three human gates remain HUMAN_NEEDED:
-  - HG-1: Lawyer sampling to confirm V4 legal quality baseline
-  - HG-3: 5 business day lawyer trial with 15 real tasks
-  - HG-4: Lawyer confirmation that track-changes docx is usable for negotiation
-- After all human gates are signed:
-  - Execute retirement plan (LEG-02) to remove v3.x components
-  - Run `gsd-complete-milestone` to archive v4.0
-  - Run `gsd-cleanup` to clean up phase directories
-- Phase 112 V1-V5 risk gate is CLOSED; no rollback trigger
+- **Phase 121 集成接线完成，开发侧技术闭环。** 5 个 INT 全部闭合。
+- 集成验证：
+  - INT-01: GuardrailIntegrator 接入 ChatController（6 个护栏测试通过）
+  - INT-02: AppStartup 替换占位启动（10 个启动集成测试通过）
+  - INT-03: DshProcessManager.spawn() + healthProbe() 接线（引擎启动验证）
+  - INT-04: ExportDialog 从 ChatView 应用栏可达
+  - INT-05: 便携 Python 下载在安装脚本中自动化
+- V4 门禁：全绿（dart-analyze、flutter-test 626 通过、engine-manifest、mock-e2e、meta-test）
+- **律师人工闸门（HG-1 / HG-3 / HG-4）延后至产品成熟交付律师时再做。** 当前团队仅开发人员，不列入阻塞项。
+- 开发侧后续打磨方向（非阻塞，按需推进）：
+  - 真实 DeepSeek API + 构建引擎 + 便携 Python 的端到端冒烟测试
+  - Nyquist 覆盖验证（`/gsd-validate-phase` for 113-121）
+  - UI 打磨、长会话稳定性、导出格式兼容性
+- 产品成熟、交付律师时再启动人工闸门流程：
+  - HG-1: 律师抽样确认 V4 法律质量基线
+  - HG-3: 5 工作日 / 15 真实任务律师试运行
+  - HG-4: 律师确认 track-changes docx 可用于对外谈判
+- 三个律师闸门全部签字后：
+  - 执行退役计划（LEG-02）移除 v3.x 组件
+  - 运行 `gsd-complete-milestone` 归档 v4.0
+  - 运行 `gsd-cleanup` 清理 phase 目录
+- Phase 112 V1-V5 风险闸口已 CLOSED；无回退触发
 - 引擎升级（DSH commit 变更）必须先真机回归再发布，任何阶段不得绕过
-- Carried human gates（HG-1, HG-4, HG-3）保持 HUMAN_NEEDED — do not auto-close
+- 律师人工闸门（HG-1, HG-4, HG-3）保持 DEFERRED — 不得自动关闭，交付律师时再启动

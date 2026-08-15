@@ -81,7 +81,7 @@ class SessionDatabase implements QueryExecutorUser {
   /// Executes a raw SQL statement with bound parameters.
   ///
   /// [args] must be a list of raw values (String, int, double, bool, null,
-  /// or List<int> for BLOB). Do not pass drift [Variable] objects.
+  /// or `List<int>` for BLOB). Do not pass drift `Variable` objects.
   Future<void> exec(String sql, [List<Object?> args = const []]) async {
     await executor.runCustom(sql, args);
   }
@@ -89,7 +89,7 @@ class SessionDatabase implements QueryExecutorUser {
   /// Executes a raw SQL SELECT and returns rows as maps.
   ///
   /// [args] must be a list of raw values (String, int, double, bool, null,
-  /// or List<int> for BLOB). Do not pass drift [Variable] objects.
+  /// or `List<int>` for BLOB). Do not pass drift `Variable` objects.
   Future<List<Map<String, dynamic>>> select(String sql,
       [List<Object?> args = const []]) async {
     final rows = await executor.runSelect(sql, args);

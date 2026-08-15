@@ -1,0 +1,24 @@
+{
+  "sourceDocument": "sample_input.docx",
+  "createdAt": "2026-08-14T10:00:00.000Z",
+  "items": [
+    {
+      "id": 1,
+      "clauseLocation": "第一条",
+      "originalText": "根据《中华人民共和国合同法》的规定",
+      "revisedText": "根据《中华人民共和国民法典》的规定",
+      "reason": "法律引用已废止",
+      "riskLevel": "P0",
+      "comment": "《合同法》已于2021年1月1日废止，统一适用《民法典》"
+    },
+    {
+      "id": 2,
+      "clauseLocation": "第二条",
+      "originalText": "这是第二段。",
+      "revisedText": null,
+      "reason": "建议补充说明",
+      "riskLevel": "P2",
+      "comment": "建议在此段补充更多细节"
+    }
+  ]
+}

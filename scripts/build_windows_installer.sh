@@ -74,14 +74,91 @@ else
 fi
 echo ""
 
-# Step 5: Copy portable Python and scripts
-echo "[5/6] Copying Python and scripts..."
+# Step 5: Download and set up portable Python and scripts
+echo "[5/6] Setting up portable Python..."
 if [ -f "$ASSETS_SCRIPTS_DIR/contract_review_trackchanges_v4.py" ]; then
   cp "$ASSETS_SCRIPTS_DIR/contract_review_trackchanges_v4.py" "$STAGING_DIR/scripts/"
   echo "Track-changes script copied."
 fi
-echo "NOTE: Portable Python must be downloaded and placed in staging/python/"
-echo "      See .planning/phases/118-word-track-changes-export/118-RESEARCH.md"
+
+# Allow skipping Python download (e.g., when already present or offline build)
+SKIP_PYTHON="${SKIP_PYTHON:-false}"
+PYTHON_ZIP_CACHE="${PYTHON_ZIP_CACHE:-}"
+PYTHON_VERSION="3.12.7"
+PYTHON_ARCH="amd64"
+PYTHON_EMBED_ZIP="python-${PYTHON_VERSION}-embed-${PYTHON_ARCH}.zip"
+PYTHON_URL="https://www.python.org/ftp/python/${PYTHON_VERSION}/${PYTHON_EMBED_ZIP}"
+PYTHON_STAGING_DIR="$STAGING_DIR/python"
+
+if [ "$SKIP_PYTHON" = "true" ] && [ -f "$PYTHON_STAGING_DIR/python.exe" ]; then
+  echo "SKIP_PYTHON=true and python.exe exists — skipping download."
+elif [ -f "$PYTHON_STAGING_DIR/python.exe" ]; then
+  echo "Portable Python already present at staging/python/ — skipping download."
+else
+  echo "Downloading portable Python ${PYTHON_VERSION}..."
+
+  PYTHON_TMP_ZIP="$DIST_DIR/${PYTHON_EMBED_ZIP}"
+
+  if [ -n "$PYTHON_ZIP_CACHE" ] && [ -f "$PYTHON_ZIP_CACHE" ]; then
+    echo "Using cached portable Python: $PYTHON_ZIP_CACHE"
+    cp "$PYTHON_ZIP_CACHE" "$PYTHON_TMP_ZIP"
+  elif command -v curl >/dev/null 2>&1; then
+    curl -fSL -o "$PYTHON_TMP_ZIP" "$PYTHON_URL"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q -O "$PYTHON_TMP_ZIP" "$PYTHON_URL"
+  else
+    echo "ERROR: neither curl nor wget found — cannot download portable Python" >&2
+    exit 1
+  fi
+
+  echo "Extracting portable Python..."
+  if command -v unzip >/dev/null 2>&1; then
+    unzip -q -o "$PYTHON_TMP_ZIP" -d "$PYTHON_STAGING_DIR"
+  elif command -v 7z >/dev/null 2>&1; then
+    7z x -y -o"$PYTHON_STAGING_DIR" "$PYTHON_TMP_ZIP"
+  else
+    echo "ERROR: neither unzip nor 7z found — cannot extract portable Python" >&2
+    exit 1
+  fi
+
+  # Install pip into the embeddable Python (needed for python-docx + lxml)
+  echo "Installing pip into portable Python..."
+  # The embeddable distribution has python312._pth; uncomment the import site line
+  # so pip can work, then download get-pip.py and run it.
+  PTH_FILE=$(find "$PYTHON_STAGING_DIR" -name "python*._pth" -type f | head -1)
+  if [ -n "$PTH_FILE" ]; then
+    sed -i 's/^#import site/import site/' "$PTH_FILE"
+  fi
+
+  GET_PIP_URL="https://bootstrap.pypa.io/get-pip.py"
+  GET_PIP_TMP="$DIST_DIR/get-pip.py"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL -o "$GET_PIP_TMP" "$GET_PIP_URL"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q -O "$GET_PIP_TMP" "$GET_PIP_URL"
+  fi
+
+  if [ -f "$GET_PIP_TMP" ]; then
+    (cd "$PYTHON_STAGING_DIR" && ./python.exe "$GET_PIP_TMP" --quiet 2>&1 || true)
+    # Install python-docx and lxml (the track-changes script dependencies)
+    "$PYTHON_STAGING_DIR/python.exe" -m pip install --quiet --no-warn-script-location python-docx lxml 2>&1 || {
+      echo "WARN: pip install of python-docx/lxml failed — Word export may not work" >&2
+    }
+  else
+    echo "WARN: could not download get-pip.py — Word export may not work" >&2
+  fi
+
+  # Verify the portable Python works
+  echo "Verifying portable Python..."
+  if ! "$PYTHON_STAGING_DIR/python.exe" -c "import docx; import lxml; print('ok')" 2>/dev/null; then
+    echo "WARN: portable Python verification failed — python-docx/lxml may not be installed" >&2
+  else
+    echo "Portable Python verified: python-docx and lxml available."
+  fi
+
+  # Clean up temp files
+  rm -f "$PYTHON_TMP_ZIP" "$GET_PIP_TMP"
+fi
 echo ""
 
 # Step 6: Copy presets and content pack

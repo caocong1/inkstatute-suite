@@ -1,22 +1,26 @@
-// Widget test — verifies the app shell renders with the chat UI.
+// Widget test — verifies the app shell renders with the startup gate.
+//
+// The app now starts with StartupGate which shows a loading indicator
+// while checking wizard state. These tests verify the initial loading
+// state renders correctly.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_app/main.dart';
 
 void main() {
-  testWidgets('App displays InkStatute title', (WidgetTester tester) async {
+  testWidgets('App displays loading indicator on startup', (WidgetTester tester) async {
     await tester.pumpWidget(const InkStatuteApp());
 
-    expect(find.text('墨律 InkStatute'), findsWidgets);
+    // The StartupGate shows a loading indicator initially
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
-  testWidgets('Chat view is present in home screen', (WidgetTester tester) async {
+  testWidgets('App displays InkStatute title in MaterialApp', (WidgetTester tester) async {
     await tester.pumpWidget(const InkStatuteApp());
-    await tester.pumpAndSettle();
 
-    // The home screen should contain a status bar and input field
-    expect(find.text('商事法'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
+    // The MaterialApp should be present with the correct title
+    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(materialApp.title, '墨律 InkStatute');
   });
 }

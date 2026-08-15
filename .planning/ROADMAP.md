@@ -53,7 +53,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 **并行机会：** 114/115（技能管线）在 113 之后即可与 116/117 并行；118（docx）依赖 113 与引擎即可，与 116/117 并行；119 依赖 115+116+117+118。
 
-**人工闸门（不得自动关闭）：** HG-1 法律质量（Phase 120）、HG-4 修订稿质量（Phase 118）、HG-3 五工作日/15 真实任务律师试运行（Phase 120）。HG-2（WeCom）与 QQ `--live` 随通道冻结转入 DEFER。
+**人工闸门（延后至产品成熟交付律师时，当前不阻塞）：** HG-1 法律质量（Phase 120）、HG-4 修订稿质量（Phase 118）、HG-3 五工作日/15 真实任务律师试运行（Phase 120）。当前团队仅开发人员，三个律师闸门延后至交付阶段。HG-2（WeCom）与 QQ `--live` 随通道冻结转入 DEFER。
 
 ## Phases
 
@@ -77,7 +77,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 - [x] **Phase 119: First-Run Wizard & Windows Packaging** - 首启向导 + 凭据/模型 + 单 exe 安装包 + 三层更新器 (APP-06, DSH-05, PKG-01, PKG-02) (completed 2026-08-14)
 - [x] **Phase 120: Convergence & Lawyer Trial** - 遥测 + 离线行为 + v3.x 冻结收敛 + 人工闸门 (PKG-03, PKG-04, LEG-01, LEG-02)
-- [ ] **Phase 121: Integration Wiring & Real-Path Activation** - 闭合 5 个集成缺口 + 激活真实引擎/API/Python/内容更新路径 (INT-01..05)
+- [x] **Phase 121: Integration Wiring & Real-Path Activation** - 闭合 5 个集成缺口 + 激活真实引擎/API/Python/内容更新路径 (INT-01..05) (completed 2026-08-15)
 
 ---
 
@@ -442,7 +442,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 | 118. Word Track-Changes Export | C | 1/3 | Complete    | 2026-08-14 |
 | 119. First-Run Wizard & Windows Packaging | D | 1/4 | Complete    | 2026-08-14 |
 | 120. Convergence & Lawyer Trial | D | 1/4 | Complete    | 2026-08-14 |
-| 121. Integration Wiring & Real-Path Activation | D | 0 | Not started | — |
+| 121. Integration Wiring & Real-Path Activation | D | 6/6 | Complete    | 2026-08-15 |
 
 ### v3.1 Legal AI Arena — COMPLETE (SHIPPED 2026-08-09)
 
