@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
-status: in_progress
-stopped_at: Phase 123 完成（回灌闸门以真实 API 通过）；Phase 124 可开始
-last_updated: "2026-08-16T09:30:00.000Z"
+current_phase: 125
+current_phase_name: ui-wiring
+status: ready
+stopped_at: Phase 124 完成（观测面 + 历史面 + 事件映射 + GATE-12 通过）；Phase 125 可开始
+last_updated: "2026-08-16T00:00:00.000Z"
 last_activity: 2026-08-16
+last_activity_desc: Phase 124 verification complete, all gates green
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 17
   completed_plans: 6
-  percent: 35
+  percent: 50
 ---
 
 # Project State
@@ -22,15 +25,15 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 124 观测面·历史面·事件映射——日志尾随器、只读历史查询、事件映射器、GATE-12。
+**Current focus:** Phase 125 — ui-wiring
 
 ## Current Position
 
-Phase: 124 of 127 (Observation & History Planes)
-Status: 待执行。Phase 123 回灌闸门已以真实 API 通过（见 123-DECISION.md）
-Last activity: 2026-08-16
+Phase: 125 (ui-wiring) — READY
+Status: Phase 124 complete, ready for Phase 125
+Last activity: 2026-08-16 — Phase 124 verification complete
 
-Progress: [████████░░] 50% (1/6 phases)
+Progress: [██████████░░░░] 50% (3/6 phases: 122, 123, 124 complete)
 
 ## Milestone v5.0 Overview
 
@@ -138,8 +141,8 @@ V4 文档中的 `/home/sorawatcher/...` 在当前开发机不存在。实际路�
 
 ## Session Continuity
 
-Last session: 2026-08-15
-Stopped at: v5.0 Phase 122 完成，GATE-11 通过，准备进入 Phase 123
+Last session: 2026-08-16
+Stopped at: v5.0 Phase 124 完成，GATE-12 通过，准备进入 Phase 125
 Product spec: docs/requirements/V5-PRD.md (Tauri Shell + DSH Three-Plane Integration)
 Research: .planning/research/V5-SELECTION.md (11 项本机实测, HIGH confidence)
 Requirements: .planning/REQUIREMENTS.md (34/34 mapped to phases 122-127, 100% coverage)
@@ -148,8 +151,9 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 
 ## Operator Next Steps
 
-- **Phase 122 已完成**：npm lockfile 装配管线、Rust 装配器、GATE-11 全部通过；真实 engine 在临时目录完成 `initialize` → `session/new`。
-- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 122 验收门禁已亮灯，可进入 123。
-- **Phase 123 需要真实 API key**：执行前须由业主提供并存入 OS 凭据库。密钥永不提交仓库、永不进入 JSON / 日志 / 遥测 / 进程参数。
+- **Phase 124 已完成**：观测面（tailer + events）、历史面（read-only history）、事件映射（mapper + runtime + GATE-12）全部通过。105 个 Rust 测试通过；GATE-12 通过；`packages/ui-core` 未改动。
+- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 124 验收门禁已亮灯，可进入 125。
+- **Phase 125 是 UI 接线**：将 `inkstatute://run-event` 信封接入 `packages/ui-core` 的 `event-reducer.ts`，装配会话 UI、批准卡、澄清卡、引用/人审徽记。
 - 律师人工闸门（HG-1 / HG-3）保持 DEFERRED — 不得自动关闭。
 - `apps/flutter_app` 冻结：可读作参照，**不得修改、不得删除**。
+- `#[ignore]` 真实引擎测试（`query_real_engine_history` 等）需在网络 + 真实 API key 环境中手动运行。
