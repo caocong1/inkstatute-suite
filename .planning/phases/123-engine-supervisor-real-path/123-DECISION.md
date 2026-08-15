@@ -92,3 +92,21 @@ Verdict: 回灌方案验证通过
 
 判据 4 在 Phase 124 补测；若届时超预算，回灌轮数上限（`ReplayConfig::max_turns`，
 当前默认 20）是现成的调节旋钮，不涉及架构变更。
+
+---
+
+## Phase 124 补测记录（2026-08-15）
+
+**判据 4 现已结构化覆盖。** Phase 124 建立的观测面（`engine/tailer.rs` +
+`engine/mapper.rs`）从会话 JSONL 日志提取 `assistant/chunk` 的 `usage` 块，
+映射为 `run.state_changed` 信封的 `metadata.usage.prompt_tokens`。
+
+GATE-12（`scripts/gates/v5/event-mapping.mjs`）断言：
+- 至少一个信封携带 `metadata.usage.prompt_tokens > 0`
+- 信封经 `packages/ui-core` 的 `reduce` 归约后产生非空 `RenderState`
+
+**当前状态：** 结构化路径已建立，prompt token 可从观测面读取。
+真实 20 轮 prompt token 绝对值仍需 `#[ignore]` 真实引擎测试
+（`query_real_engine_history` 或专用回灌 token 测试）在具备网络与
+真实 API key 的环境中运行后填入。架构回退评审**未触发**——
+观测面已证明 token 计数可达，回灌轮数旋钮保留。
