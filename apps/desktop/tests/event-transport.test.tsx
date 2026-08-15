@@ -54,9 +54,9 @@ describe("Event transport — envelopes to DOM", () => {
     const disposer = render(
       () => (
         <AdapterContext.Provider value={{
-          file: { save: async () => {}, open: async () => null },
-          drop: { classifyPaths: async () => [] },
-          appInfo: { version: "test", name: "test" },
+          file: { save: async () => null, open: async () => null },
+          drop: { classifyDroppedPaths: async () => [] },
+          appInfo: { getVersion: async () => "test" },
           workspace: { listFiles: async () => [] },
           documentParser: { parseLegalDocument: async () => ({ title: "", sections: [] }) },
           window: undefined,

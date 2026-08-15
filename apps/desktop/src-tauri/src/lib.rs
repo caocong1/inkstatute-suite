@@ -83,6 +83,12 @@ pub fn run() {
             commands::engine::engine_send,
             commands::engine::engine_cancel,
             commands::engine::engine_respond_permission,
+            commands::credentials::list_providers,
+            commands::credentials::get_active_provider,
+            commands::credentials::set_active_provider,
+            commands::credentials::set_provider_key,
+            commands::credentials::clear_provider_key,
+            commands::credentials::test_provider,
             commands::desktop::get_app_setting,
             commands::desktop::set_app_setting,
         ])

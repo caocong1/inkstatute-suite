@@ -1,20 +1,12 @@
 /**
  * App — root component with context providers and signal-based screen switching.
  *
- * Wraps everything in:
- * AuthProvider → ConnectionProvider → AdapterContext.Provider → ConversationProvider → screen switcher
- *
- * NO router — uses signal-based screen switching ("home" | "workspace"),
- * matching the original lawyer-desktop architecture.
- *
- * The TitleBar from ui-core receives windowAdapter via AdapterContext
- * (since desktopAdapters.window is defined). This is the key difference
- * from web — the TitleBar shows native window controls.
- *
- * Native menu bar events are handled via setupMenuHandlers() in onMount.
- * Menu actions wire to app actions: settings, new conversation, theme, search, etc.
- *
- * OfflineBanner shows below TitleBar when connectionState() === "offline".
+ * V5 architecture:
+ * - Three views: HomePage / Workspace / SettingsPanel (modal overlay)
+ * - TitleBar (frameless window) from ui-core
+ * - ConversationDrawer (sidebar, data from history plane)
+ * - Engine startup on mount: engineStart() → success: HomePage; failure: Chinese error + retry
+ * - Three-theme support via ui-core theme store
  */
 import { createSignal, Show, onMount, onCleanup, type Component } from "solid-js";
 import {
@@ -31,8 +23,8 @@ import { HomePage } from "./pages/HomePage";
 import { WorkspacePage } from "./pages/WorkspacePage";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { AppUpdateBanner } from "./components/AppUpdateBanner";
 import { FTS5SearchPanel } from "./components/FTS5SearchPanel";
+import { engineStart, type EngineStatus } from "./services/engine";
 import { setupMenuHandlers } from "./menuHandlers";
 
 const AppContent: Component = () => {
@@ -40,8 +32,36 @@ const AppContent: Component = () => {
   const { setTheme } = useTheme();
   const [screen, setScreen] = createSignal<"home" | "workspace">("home");
   const [settingsOpen, setSettingsOpen] = createSignal(false);
-  const [settingsTab, setSettingsTab] = createSignal<"workspace" | "autoupdate" | "files" | "about">("workspace");
   const [ftsSearchOpen, setFtsSearchOpen] = createSignal(false);
+
+  // Engine startup state
+  const [engineStarting, setEngineStarting] = createSignal(false);
+  const [engineError, setEngineError] = createSignal<string | null>(null);
+  const [engineReady, setEngineReady] = createSignal(false);
+
+  async function startEngine(): Promise<void> {
+    setEngineStarting(true);
+    setEngineError(null);
+    try {
+      const status: EngineStatus = await engineStart();
+      if (status.running) {
+        setEngineReady(true);
+      } else {
+        setEngineError(status.failure || "引擎启动失败，请重试");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Check if it's a missing API key error
+      if (msg.includes("API 密钥") || msg.includes("MissingApiKey")) {
+        setEngineError("未配置 API 密钥，请在设置中配置后重试。");
+        setSettingsOpen(true);
+      } else {
+        setEngineError(`引擎启动失败：${msg}`);
+      }
+    } finally {
+      setEngineStarting(false);
+    }
+  }
 
   // Build a ConversationStore for the ConversationDrawer
   const store: ConversationStore = {
@@ -54,17 +74,15 @@ const AppContent: Component = () => {
     renameConversation: async (_id: string, _title: string) => {},
   };
 
-  // Handle new conversation from menu
   async function handleNewConversation(): Promise<void> {
     try {
       await convs.createConversation();
       setScreen("workspace");
     } catch {
-      // Engine not ready — silently ignore (menu action)
+      // Engine not ready — silently ignore
     }
   }
 
-  // Handle quit from menu
   async function handleQuit(): Promise<void> {
     try {
       await desktopWindowAdapter.close();
@@ -78,7 +96,6 @@ const AppContent: Component = () => {
   onMount(() => {
     cleanupMenu = setupMenuHandlers({
       onAbout: () => {
-        setSettingsTab("about");
         setSettingsOpen(true);
       },
       onSettings: () => setSettingsOpen(true),
@@ -90,6 +107,9 @@ const AppContent: Component = () => {
       onMaximize: () => void desktopWindowAdapter.toggleMaximize(),
       onCloseWindow: () => void desktopWindowAdapter.close(),
     });
+
+    // Start engine on app launch
+    void startEngine();
   });
 
   onCleanup(() => {
@@ -106,43 +126,88 @@ const AppContent: Component = () => {
         }}
         onOpenSettings={() => setSettingsOpen(true)}
       />
-      <AppUpdateBanner />
       <OfflineBanner />
-        <div class="stage">
-          <div class="sidebar">
-            <ConversationDrawer
-              open={true}
-              onClose={() => {}}
-              onOpenConversation={(id) => {
-                convs.setCurrentConversation(id);
-                setScreen("workspace");
-              }}
-              store={store}
-            />
-          </div>
-          <div class="main-content">
+      <div class="stage">
+        <div class="sidebar">
+          <ConversationDrawer
+            open={true}
+            onClose={() => {}}
+            onOpenConversation={(id) => {
+              convs.setCurrentConversation(id);
+              setScreen("workspace");
+            }}
+            store={store}
+          />
+        </div>
+        <div class="main-content">
+          {/* Engine startup states */}
+          <Show when={engineStarting() && !engineReady()}>
+            <div class="engine-starting">
+              <div class="engine-spinner" />
+              <p>正在启动引擎…</p>
+            </div>
+          </Show>
+
+          <Show when={engineError() && !engineReady()}>
+            <div class="engine-error" role="alert">
+              <p class="engine-error-msg">{engineError()}</p>
+              <div class="engine-error-actions">
+                <button
+                  type="button"
+                  class="btn-primary"
+                  onClick={() => void startEngine()}
+                  disabled={engineStarting()}
+                >
+                  {engineStarting() ? "启动中…" : "重试"}
+                </button>
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  onClick={() => setSettingsOpen(true)}
+                >
+                  打开设置
+                </button>
+              </div>
+            </div>
+          </Show>
+
+          <Show when={!engineStarting() && !engineError() && engineReady()}>
             <Show when={screen() === "home"}>
-              <HomePage
-                onNavigateToWorkspace={() => setScreen("workspace")}
-              />
+              <HomePage onNavigateToWorkspace={() => setScreen("workspace")} />
             </Show>
             <Show when={screen() === "workspace"}>
               <WorkspacePage />
               <Show when={ftsSearchOpen()}>
                 <div class="fts-search-overlay">
-                  <FTS5SearchPanel onClose={() => setFtsSearchOpen(false)} />
+                  <FTS5SearchPanel
+                    onClose={() => setFtsSearchOpen(false)}
+                    onOpenConversation={(id) => {
+                      convs.setCurrentConversation(id);
+                      setScreen("workspace");
+                      setFtsSearchOpen(false);
+                    }}
+                  />
                 </div>
               </Show>
             </Show>
-          </div>
+          </Show>
+
+          {/* If engine startup was skipped (e.g. in tests), still show home */}
+          <Show when={!engineStarting() && !engineError() && !engineReady()}>
+            <HomePage onNavigateToWorkspace={() => setScreen("workspace")} />
+          </Show>
         </div>
-        <Show when={settingsOpen()} fallback={null}>
-          <SettingsPanel
-            open={settingsOpen()}
-            onClose={() => setSettingsOpen(false)}
-            initialTab={settingsTab()}
-          />
-        </Show>
+      </div>
+
+      <Show when={settingsOpen()}>
+        <SettingsPanel
+          onClose={() => setSettingsOpen(false)}
+          onSaved={() => {
+            // After saving settings (e.g. API key), retry engine start
+            if (!engineReady()) void startEngine();
+          }}
+        />
+      </Show>
     </div>
   );
 };
