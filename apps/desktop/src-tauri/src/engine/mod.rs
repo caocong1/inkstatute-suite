@@ -2,6 +2,7 @@ pub mod acp;
 pub mod assemble;
 pub mod credentials;
 pub mod events;
+pub mod history;
 pub mod lock;
 pub mod paths;
 pub mod replay;
@@ -48,6 +49,8 @@ pub enum EngineError {
     Http(#[from] reqwest::Error),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+    #[error(transparent)]
+    Sqlx(#[from] sqlx::Error),
     #[error("credential store error: {0}")]
     Credential(String),
 }
