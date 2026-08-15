@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
-current_phase: 125
-current_phase_name: ui-wiring
+current_phase: 126
+current_phase_name: guardrails-and-presets
 status: ready
-stopped_at: Phase 124 完成（观测面 + 历史面 + 事件映射 + GATE-12 通过）；Phase 125 可开始
+stopped_at: Phase 125 完成（V3 裁剪 + Tauri 事件传输 + 设置面板 + 工作区外壳 + 引擎启动）；Phase 126 可开始
 last_updated: "2026-08-16T00:00:00.000Z"
 last_activity: 2026-08-16
-last_activity_desc: Phase 124 verification complete, all gates green
+last_activity_desc: Phase 125 verification complete, all automated gates green
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 20
-  completed_plans: 6
-  percent: 50
+  completed_plans: 9
+  percent: 65
 ---
 
 # Project State
@@ -25,15 +25,15 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 125 — ui-wiring
+**Current focus:** Phase 126 — guardrails-and-presets
 
 ## Current Position
 
-Phase: 125 (ui-wiring) — READY
-Status: Phase 124 complete, ready for Phase 125
-Last activity: 2026-08-16 — Phase 124 verification complete
+Phase: 126 (guardrails-and-presets) — READY
+Status: Phase 125 complete, ready for Phase 126
+Last activity: 2026-08-16 — Phase 125 verification complete
 
-Progress: [██████████░░░░] 50% (3/6 phases: 122, 123, 124 complete)
+Progress: [█████████████░] 65% (4/6 phases: 122, 123, 124, 125 complete)
 
 ## Milestone v5.0 Overview
 
@@ -152,9 +152,10 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 
 ## Operator Next Steps
 
-- **Phase 124 已完成**：观测面（tailer + events）、历史面（read-only history）、事件映射（mapper + runtime + GATE-12）全部通过。105 个 Rust 测试通过；GATE-12 通过；`packages/ui-core` 未改动。
-- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 124 验收门禁已亮灯，可进入 125。
-- **Phase 125 是 UI 接线**：将 `inkstatute://run-event` 信封接入 `packages/ui-core` 的 `event-reducer.ts`，装配会话 UI、批准卡、澄清卡、引用/人审徽记。
+- **Phase 125 已完成**：V3 平台耦合裁剪、Tauri 事件传输（`inkstatute://run-event`）、设置面板（4 标签）、工作区外壳（可拖拽分屏 + 键盘可达）、引擎启动流（失败显示中文错误 + 重试）全部完成。36 个 desktop 测试通过；85 个 Rust 测试通过；V5 门禁 2/2 绿；`packages/ui-core` 与 `event-reducer.ts` 未改动。
+- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 125 验收门禁已亮灯，可进入 126。
+- **Phase 126 是护栏双层 + 分域预设**：冻结 schema 与提示词段；UI 呈现/强制层；分域预设物化结构；token 预算门禁。
+- **Task 5 手动 UI 检查**（6 项真机验证）延后到 Phase 127 集成测试时执行——需要真实引擎装配 + API key。
 - 律师人工闸门（HG-1 / HG-3）保持 DEFERRED — 不得自动关闭。
 - `apps/flutter_app` 冻结：可读作参照，**不得修改、不得删除**。
 - `#[ignore]` 真实引擎测试（`query_real_engine_history` 等）需在网络 + 真实 API key 环境中手动运行。

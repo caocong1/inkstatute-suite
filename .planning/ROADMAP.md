@@ -82,7 +82,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 C — 产品外壳
 
-- [ ] **Phase 125: Frontend Wiring & Pruning** - Tauri 事件传输 + V3 耦合裁剪 + Arena 裁剪 + 设置面板 + 工作区外壳 (UIW-01..05)
+- [x] **Phase 125: Frontend Wiring & Pruning** - Tauri 事件传输 + V3 耦合裁剪 + Arena 裁剪 + 设置面板 + 工作区外壳 (UIW-01..05) ✅ 2026-08-16
 - [ ] **Phase 126: Guardrails & Capability Layer** - 护栏双层落地 + 分域预设挂载 + 内容包更新 + token 预算门禁 (GRD-11..16, SKL-11..13)
 
 ### 阶段 D — 交付
