@@ -20,8 +20,8 @@
 | 1 | 本文件 | 规则与顺序 |
 | 2 | `docs/requirements/V5-PRD.md` | 需求真源。**有疑问以它为准** |
 | 3 | `.planning/research/V5-SELECTION.md` | 11 项本机实测证据。**已验证的事实不要重新调研** |
-| 4 | `.planning/REQUIREMENTS.md` | 34 条需求与 phase 映射 |
-| 5 | `.planning/ROADMAP.md` | 6 个 phase 的目标 |
+| 4 | `.planning/REQUIREMENTS.md` | 41 条需求与 phase 映射 |
+| 5 | `.planning/ROADMAP.md` | 7 个 phase 的目标（122–127 核心 + 128 增强） |
 | 6 | `.planning/phases/<phase>/<phase>-CONTEXT.md` | 执行某 phase 前必读 |
 | 7 | `.planning/phases/<phase>/<phase>-NN-PLAN.md` | 逐个 task 执行 |
 
@@ -58,9 +58,12 @@ cd packages/ui-core && bun run build && cd ../..
 | `apps/desktop` `tsc --noEmit` | ✅ 干净 |
 | `apps/desktop` `vitest run` | ✅ 16 文件 / 108 tests passed（**前提：ui-core 已构建**） |
 
-**那 5 个类型错误的处置**：它们在 `test_arena_workflow_creator.tsx`、
-`test_parallel_stream_panel.tsx`、`test_synthesis_viewer.tsx` 中，
-**Phase 125-01 Task 1 删除 Arena 时会一并消失**。
+**那 5 个类型错误的处置**（2026-08-16 因保留 Arena 而变更）：
+它们分布在 `test_arena_workflow_creator.tsx`(1)、`test_parallel_stream_panel.tsx`(1)、
+`test_synthesis_viewer.tsx`(3)。这些测试**不再被删除**（Phase 128 要用 Arena 呈现层），
+因此 **Phase 125-01 Task 1 必须就地把这 5 个错误修干净**：
+前两个是 mock 缺字段（补 `title`/`sections`、补 `ToolCallCompletedPayload` 必填项），
+后三个是元组索引越界（加长度断言或 `?.`）。
 
 ### ⚠️ Phase 127 需要 Windows 环境（当前不具备）
 
@@ -87,8 +90,7 @@ Phase 122–126 全部可以在 macOS 上完成（Rust 逻辑、事件映射、�
 
 在 Phase 125-01 之前，`packages/ui-core` 的 `tsc --noEmit` 验收标准是
 **「错误数 ≤ 5 且全部位于上述三个 Arena 测试文件」**，不是「零错误」。
-Phase 125-01 之后才是零错误。
-**不要为了让 tsc 变绿而去改这三个文件——它们即将被删。**
+Phase 125-01 之后必须是零错误。
 
 ---
 
@@ -107,6 +109,9 @@ Phase 125-01 之后才是零错误。
  ↓  验收门：4 道门禁绿 + 无批量批准路径
 127 打包与三层更新
  ↓  验收门：6 道门禁绿 + 七场景真机演练  ★ 人工闸门
+━━ v5.0 核心交付完成 ━━
+128 多模型互评（增强附加功能，不在关键路径）
+ ↓  验收门：7 道门禁绿 + 双厂商密钥端到端 + 6 项人工验收
 完成 → /gsd-complete-milestone
 ```
 
@@ -119,8 +124,12 @@ Phase 125-01 之后才是零错误。
 1. **不得修改 `apps/flutter_app/`。** 它是冻结资产，只作为 Rust 侧移植的行为参照读取。
 2. **不得修改 `/Users/dongli/Workspace/lawyer-desktop/`。** 另一个仓库，只读移植源。
 3. **不得修改 `packages/ui-core/src/event-reducer.ts`。** 多个 plan 的验证块里有 `git diff --quiet` 断言。
-4. **不得修改 ui-core 组件源码。** 唯一允许的 ui-core 改动是 Phase 125-01 的**删除** Arena 文件
-   与 Phase 127-01 的字体族四行。
+4. **不得修改 ui-core 组件源码。** 唯一允许的 ui-core 改动是：
+   Phase 125-01 删除 Arena **传输层**（`arenaStream.ts` / `sseUtils.ts` / `eventStream.ts`）
+   并就地修 3 个保留测试的类型错误；Phase 127-01 的字体族四行；
+   Phase 128-03 对 `ArenaWorkflowCreator` 的改造。
+   **Arena 的 6 个呈现组件 + `arenaEventReducer.ts` + `types/arena.ts` 一律保留**——
+   Phase 128 的多模型互评要用（业主 2026-08-16 决定）。
 5. **不得把 API 密钥写进任何文件、日志、遥测、命令行参数。** 只经环境变量注入子进程，只存 OS 凭据库。
 6. **不得使用 npm dist-tag。** `@deepseek-ai/dsh-*` 的 `latest` 指向旧版 `0.0.1-rc.1`。永远写精确版本号。
 7. **不得在引擎冒烟通过前写 `engine/current` 指针。** GATE-13 会用坏包验证这一点。
@@ -206,7 +215,7 @@ cd apps/desktop && bunx tauri dev
 |---|---|
 | 同一问题失败 3 次 | **停止**，把已试过的方案与错误写进 `<phase>-BLOCKERS.md`，继续做本 phase 中不依赖它的 task |
 | 实测事实与文档矛盾 | **以实测为准**，把新事实追加进 `.planning/research/V5-SELECTION.md` 并注明日期 |
-| 需要真实 API 密钥 | 只有 Phase 123-03 需要。**停下来找业主**，不要用假 key 假装通过 |
+| 需要真实 API 密钥 | Phase 123-03（回灌闸门，已通过）与 Phase 128 端到端（需 ≥2 家厂商）。**停下来找业主**，不要用假 key 假装通过 |
 | 某 plan 的设计明显有问题 | 在 `<phase>-BLOCKERS.md` 写清问题与建议，**先做完不受影响的部分**，再找业主 |
 | DSH 上游行为与文档不符 | DSH 是 pre-release。记录实际行为，按实际行为实现，写进 BLOCKERS |
 
@@ -218,8 +227,8 @@ cd apps/desktop && bunx tauri dev
 
 v5.0 完成 = 以下全部成立：
 
-- [ ] 6 个 phase 的所有 plan 的 `<verification>` 块全绿
-- [ ] `node scripts/gates/v5/run-gates.mjs` 输出 `6 passed, 0 failed`
+- [ ] 122–127 六个 phase 的所有 plan 的 `<verification>` 块全绿（128 为交付后增强，单独验收）
+- [ ] `node scripts/gates/v5/run-gates.mjs` 输出 `6 passed, 0 failed`（Phase 128 后为 7）
 - [ ] `123-DECISION.md` 结论为「回灌方案验证通过」
 - [ ] 干净 Windows 机器上 PRD §2 的七个验收场景全部演示通过
 - [ ] 仓库无明文密钥、无占位公钥、无 CDN 依赖

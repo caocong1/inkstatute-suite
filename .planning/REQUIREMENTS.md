@@ -59,10 +59,40 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 - [ ] **PKG-14**: 首启向导——供应商卡片 → 密钥（存 OS 凭据库）→ 模型确认；之后零终端零配置文件
 - [ ] **PKG-15**: App 层更新器——`tauri-plugin-updater`，替换 lawyer-desktop 遗留的占位公钥 `dW5zZXQtcmVwbGFjZS13aXRoLXNpZ25lci1wdWJrZXk=` 为真实签名公钥
 
+### MMR — 多模型互评（增强附加功能，Phase 128，v5.0 交付后）
+
+> 业主 2026-08-16 决定：保留 v3.1 Arena 的核心价值（多模型互相审查），
+> 范围收敛为**交叉互评 + 对抗质询**（原 Mode 3+4），不做并行与自评迭代；
+> 排期在 v5.0 交付之后，不进核心交付路径。
+
+- [ ] **MMR-01**: 复核子代理配置——`acp.cordis.yml` 注册 3 个 `dsh-tool-subagent` 实例
+  （复核 A / 复核 B / 对抗质询），各绑不同厂商模型（`agentOptions.{provider,model}`）、
+  独立人设、只读工具白名单、`maxDepth: 1`；LLM 厂商经 `dsh-llm-pi-ai` 提供
+- [ ] **MMR-02**: 新鲜上下文保证——传输方式必须为 `subagent-spawn-in-process`（全新会话），
+  **禁止 `fork-in-process`**（会让复核者继承起草者推理而被锚定）；
+  `fork-in-process` 不入 pin、不入 lock、不入配置；案情与初稿经工具参数显式传入；
+  静态门禁固化该不变式（v3.1 `test_fresh_context.py` AST 门禁的 v5 等价物）
+- [ ] **MMR-03**: 交叉互评——复核意见按【同意】/【分歧】/【遗漏】/【风险】固定结构输出；
+  复核者自身引用同样受引用审查约束；分歧逐条呈现，格式
+  `[分歧] 争点 ｜ 本意见 ｜ 复核意见 ｜ 是否消解`
+- [ ] **MMR-04**: 对抗质询——对方律师视角输出【致命问题】/【可被攻击】/【建议补强】；
+  多轮上限默认 2；**早停**：某轮无新的致命/可攻击项即停，首轮返回"无实质可攻击点"则不发起第二轮
+- [ ] **MMR-05**: 综合与人审升级——分歧不得抹平；消解标准是"一方拿出对方无法反驳的现行法依据"，
+  不确定按未消解处理；**未消解分歧与未回应的致命问题强制 `[HUMAN_REVIEW:]`**，
+  徽记不可自动消除；模型漏标时 app 侧兜底补标并记诊断日志
+- [ ] **MMR-06**: 呈现与触发——复用 Phase 125 保留的 `ReviewSummary` / `SynthesisViewer` /
+  `ParallelStreamPanel` / `ScoreCard` / `SlotStreamView` / `arenaEventReducer` / `types/arena`；
+  `subagent/start|end|descriptor` → 既有 Arena 统一事件 → 现有 reducer（**reducer 零改动**）；
+  触发为「高风险自动 + 一个深度复核按钮」，**不做模式选择器**（与零配置冲突）；
+  按已配置厂商数自适应降级（0 家禁用 / 1 家提示效力有限 / ≥2 家完整互评）
+
 ### GATE — 门禁
 
 - [ ] **GATE-11**: 引擎装配门禁——从空目录出发，Rust 装配器铺出的引擎完成 `initialize` → `session/new`；会话日志落在 `DSH_HOME` 下且为明文 NDJSON；密钥零明文残留（grep 断言）
 - [ ] **GATE-12**: 事件映射门禁——用真实录制的 `session.jsonl` 作 fixture 喂进 `event-reducer.ts`，断言 `RenderState` 正确；流式正文 / 工具时间线 / 进度步骤三者同时正常
+- [ ] **GATE-14**: 多模型互评门禁——配置侧（3 实例 / depth 1 / 只读白名单 / 无 fork / ≥2 厂商）、
+  人设侧（两段锚点存在且工具名与配置一致）、映射侧（`arena.*` 事件名与 reducer case 清单一致）、
+  呈现侧（无模式选择控件、未消解分歧提示条无关闭按钮）、纪律侧（`event-reducer.ts` 零改动）
 - [ ] **GATE-13**: 更新回滚门禁——故意投一个坏包（sha512 不符 / 冒烟失败），断言 `current` 指针未移动、旧引擎仍可用、用户无感
 
 ## Non-Goals（v5.0 明确不做）
@@ -112,11 +142,18 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 | PKG-14 | 127 | Pending |
 | PKG-15 | 127 | Pending |
 | GATE-13 | 127 | Pending |
+| MMR-01 | 128 | Pending |
+| MMR-02 | 128 | Pending |
+| MMR-03 | 128 | Pending |
+| MMR-04 | 128 | Pending |
+| MMR-05 | 128 | Pending |
+| MMR-06 | 128 | Pending |
+| GATE-14 | 128 | Pending |
 
 **Coverage:**
 
-- v5.0 requirements: 34 total (5 ENG + 7 RTM + 5 UIW + 6 GRD + 3 SKL + 5 PKG + 3 GATE)
-- Mapped to phases: 34 (100%)
+- v5.0 requirements: 41 total (5 ENG + 7 RTM + 5 UIW + 6 GRD + 3 SKL + 5 PKG + 6 MMR + 4 GATE)
+- Mapped to phases: 41 (100%)
 - Unmapped: 0 ✅
 
 **Phase distribution:**
@@ -129,7 +166,8 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 | 125 前端接线与裁剪 | UIW-01..05 | 5 |
 | 126 护栏与技能能力层 | GRD-11..16, SKL-11..13 | 9 |
 | 127 打包与三层更新 | ENG-05, PKG-11..15, GATE-13 | 7 |
-| **Total** | | **34** |
+| 128 多模型互评（增强，交付后） | MMR-01..06, GATE-14 | 7 |
+| **Total** | | **41** |
 
 **Distribution rationale:**
 

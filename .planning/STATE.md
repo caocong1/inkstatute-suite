@@ -10,9 +10,9 @@ last_updated: "2026-08-16T00:00:00.000Z"
 last_activity: 2026-08-16
 last_activity_desc: Phase 124 verification complete, all gates green
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 3
-  total_plans: 17
+  total_plans: 20
   completed_plans: 6
   percent: 50
 ---
@@ -43,8 +43,9 @@ Progress: [██████████░░░░] 50% (3/6 phases: 122, 123
 | B 真实链路打通 | 123-124 | 引擎主管 + 三面接入 + 事件映射；真 key 跑通问答；fixture 门禁亮灯 |
 | C 产品外壳 | 125-126 | ui-core 接线 + 裁剪 + 设置面板 + 护栏双层 + 技能能力层 |
 | D 交付 | 127 | 单 exe 安装包 + 三层更新 + 回滚门禁 |
+| E 增强（交付后） | 128 | 多模型交叉互评 + 对抗质询，分歧强制人审 |
 
-**关键路径：** 122 → 123 → 124 → 125 → 126 → 127（严格串行）
+**关键路径：** 122 → 123 → 124 → 125 → 126 → 127（严格串行）。**Phase 128 为交付后增强，不在关键路径上。**
 
 **并行机会：** 无——刻意串行。每阶段验收门禁是下一阶段输入前提；执行方为自主 agent，串行显著降低返工。
 
