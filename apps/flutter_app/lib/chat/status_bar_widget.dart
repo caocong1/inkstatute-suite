@@ -1,6 +1,6 @@
 /// Status bar widget (APP-02).
 ///
-/// Displays the current session processing status and practice area.
+/// Displays the current session processing status and LLM provider/model.
 library;
 
 import 'package:flutter/material.dart';
@@ -12,15 +12,19 @@ class StatusBarWidget extends StatelessWidget {
   const StatusBarWidget({
     super.key,
     required this.status,
-    this.practiceArea,
+    this.providerName,
+    this.modelConfig,
     this.onCancel,
   });
 
   /// Current message processing status.
   final MessageStatus status;
 
-  /// Practice area label (e.g. "商事法").
-  final String? practiceArea;
+  /// LLM provider display name (e.g. "DeepSeek").
+  final String? providerName;
+
+  /// Model configuration (e.g. "deepseek-chat").
+  final String? modelConfig;
 
   /// Callback when the cancel button is pressed.
   final VoidCallback? onCancel;
@@ -40,13 +44,24 @@ class StatusBarWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (practiceArea != null) ...[
+          if (providerName != null) ...[
+            Icon(Icons.cloud, size: 14, color: Colors.grey[600]),
+            const SizedBox(width: 4),
             Text(
-              practiceArea!,
+              providerName!,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
+            if (modelConfig != null && modelConfig!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Text(
+                modelConfig!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+              ),
+            ],
             const SizedBox(width: 16),
           ],
           Expanded(child: _buildStatusText(context)),

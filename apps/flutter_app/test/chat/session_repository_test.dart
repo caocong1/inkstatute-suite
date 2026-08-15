@@ -21,7 +21,8 @@ void main() {
   test('createSession and getSession round-trip', () async {
     final session = ChatSession(
       id: 's1',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: '合同审查',
       createdAt: DateTime(2026, 8, 14),
       messages: [
@@ -45,7 +46,8 @@ void main() {
 
     expect(loaded, isNotNull);
     expect(loaded!.id, 's1');
-    expect(loaded.practiceArea, '商事法');
+    expect(loaded.providerName, 'DeepSeek');
+    expect(loaded.modelConfig, 'deepseek-chat');
     expect(loaded.title, '合同审查');
     expect(loaded.messages.length, 2);
     expect(loaded.messages[0], isA<UserMessage>());
@@ -63,13 +65,15 @@ void main() {
   test('listSessions returns all sessions', () async {
     await repo.createSession(ChatSession(
       id: 's1',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'Session 1',
       createdAt: DateTime(2026, 8, 14),
     ));
     await repo.createSession(ChatSession(
       id: 's2',
-      practiceArea: '诉讼法',
+      providerName: 'OpenAI',
+      modelConfig: 'gpt-4o',
       title: 'Session 2',
       createdAt: DateTime(2026, 8, 15),
     ));
@@ -78,21 +82,23 @@ void main() {
     expect(sessions.length, 2);
   });
 
-  test('listSessions filters by practice area', () async {
+  test('listSessions filters by provider', () async {
     await repo.createSession(ChatSession(
       id: 's1',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'Session 1',
       createdAt: DateTime(2026, 8, 14),
     ));
     await repo.createSession(ChatSession(
       id: 's2',
-      practiceArea: '诉讼法',
+      providerName: 'OpenAI',
+      modelConfig: 'gpt-4o',
       title: 'Session 2',
       createdAt: DateTime(2026, 8, 15),
     ));
 
-    final sessions = await repo.listSessions(practiceArea: '商事法');
+    final sessions = await repo.listSessions(providerName: 'DeepSeek');
     expect(sessions.length, 1);
     expect(sessions.first.id, 's1');
   });
@@ -100,7 +106,8 @@ void main() {
   test('addMessage appends to existing session', () async {
     await repo.createSession(ChatSession(
       id: 's1',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'Session 1',
       createdAt: DateTime(2026, 8, 14),
     ));
@@ -115,7 +122,8 @@ void main() {
   test('deleteSession removes session and all related records', () async {
     await repo.createSession(ChatSession(
       id: 's1',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'Session 1',
       createdAt: DateTime(2026, 8, 14),
       messages: [
@@ -143,7 +151,8 @@ void main() {
   test('exportSession returns JSON string', () async {
     await repo.createSession(ChatSession(
       id: 's1',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: '合同审查',
       createdAt: DateTime(2026, 8, 14),
       messages: [
@@ -155,7 +164,8 @@ void main() {
     final parsed = jsonDecode(json) as Map<String, dynamic>;
 
     expect(parsed['id'], 's1');
-    expect(parsed['practiceArea'], '商事法');
+    expect(parsed['providerName'], 'DeepSeek');
+    expect(parsed['modelConfig'], 'deepseek-chat');
     expect(parsed['title'], '合同审查');
     expect(parsed['messages'], isA<List>());
     expect((parsed['messages'] as List).length, 1);
@@ -166,28 +176,31 @@ void main() {
     expect(json, '{}');
   });
 
-  test('listPracticeAreas returns distinct areas', () async {
+  test('listProviders returns distinct providers', () async {
     await repo.createSession(ChatSession(
       id: 's1',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'S1',
       createdAt: DateTime.now(),
     ));
     await repo.createSession(ChatSession(
       id: 's2',
-      practiceArea: '诉讼法',
+      providerName: 'OpenAI',
+      modelConfig: 'gpt-4o',
       title: 'S2',
       createdAt: DateTime.now(),
     ));
     await repo.createSession(ChatSession(
       id: 's3',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'S3',
       createdAt: DateTime.now(),
     ));
 
-    final areas = await repo.listPracticeAreas();
-    expect(areas.length, 2);
-    expect(areas, containsAll(['商事法', '诉讼法']));
+    final providers = await repo.listProviders();
+    expect(providers.length, 2);
+    expect(providers, containsAll(['DeepSeek', 'OpenAI']));
   });
 }

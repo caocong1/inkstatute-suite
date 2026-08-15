@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'dart:io';
 import 'package:flutter_app/app/app_startup.dart';
 import 'package:flutter_app/security/credential_store.dart';
+import 'package:flutter_app/wizard/llm_provider.dart';
 
 /// Integration tests for the AppStartup → engine config flow.
 ///
@@ -41,7 +42,7 @@ void main() {
     );
 
     await startup.completeWizard(
-      selectedPracticeArea: 'legal-commercial',
+      providerId: 'deepseek',
       apiKey: 'test-key',
       modelConfig: 'deepseek-chat',
     );
@@ -64,8 +65,9 @@ void main() {
     );
 
     await startup.completeWizard(
-      selectedPracticeArea: 'legal-commercial',
+      providerId: 'deepseek',
       apiKey: 'test-key',
+      modelConfig: 'deepseek-chat',
     );
 
     expect(await startup.isReady(), isTrue);
@@ -86,14 +88,14 @@ void main() {
     );
 
     await startup.completeWizard(
-      selectedPracticeArea: 'legal-commercial',
+      providerId: 'deepseek',
       apiKey: 'test-key-123',
       modelConfig: 'deepseek-chat',
     );
 
     final config = await startup.loadEngineConfig();
     expect(config, isNotNull);
-    expect(config!.practiceArea, 'legal-commercial');
+    expect(config!.provider, LlmProvider.deepseek);
     expect(config.modelConfig, 'deepseek-chat');
     expect(config.apiKey, 'test-key-123');
     expect(config.enginePath, contains('engine'));
@@ -116,8 +118,9 @@ void main() {
     );
 
     await startup.completeWizard(
-      selectedPracticeArea: 'legal-commercial',
+      providerId: 'deepseek',
       apiKey: 'test-key-env',
+      modelConfig: 'deepseek-chat',
     );
 
     final env = await startup.buildEngineEnv();
@@ -129,7 +132,7 @@ void main() {
   test('EngineStartupConfig.validatePaths returns false for non-existent paths',
       () async {
     final config = EngineStartupConfig(
-      practiceArea: 'legal-commercial',
+      provider: LlmProvider.deepseek,
       modelConfig: 'deepseek-chat',
       apiKey: 'test-key',
       enginePath: '/nonexistent/engine',
@@ -147,8 +150,9 @@ void main() {
     );
 
     await startup1.completeWizard(
-      selectedPracticeArea: 'legal-litigation',
+      providerId: 'deepseek',
       apiKey: 'persisted-key',
+      modelConfig: 'deepseek-chat',
     );
 
     // Create a new AppStartup instance pointing to the same directory
@@ -162,6 +166,6 @@ void main() {
 
     final config = await startup2.loadEngineConfig();
     expect(config, isNotNull);
-    expect(config!.practiceArea, 'legal-litigation');
+    expect(config!.provider, LlmProvider.deepseek);
   });
 }

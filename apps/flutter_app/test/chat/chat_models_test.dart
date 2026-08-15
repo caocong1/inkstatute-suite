@@ -106,7 +106,8 @@ void main() {
     test('holds session metadata and messages', () {
       final session = ChatSession(
         id: 'sess-1',
-        practiceArea: '商事法',
+        providerName: 'DeepSeek',
+        modelConfig: 'deepseek-chat',
         title: '合同审查',
         createdAt: DateTime(2026, 8, 14),
         messages: [
@@ -114,7 +115,8 @@ void main() {
         ],
       );
       expect(session.id, 'sess-1');
-      expect(session.practiceArea, '商事法');
+      expect(session.providerName, 'DeepSeek');
+      expect(session.modelConfig, 'deepseek-chat');
       expect(session.title, '合同审查');
       expect(session.messages.length, 1);
     });

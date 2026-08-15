@@ -1,142 +1,75 @@
 /// First-run wizard models (APP-06).
 ///
-/// Defines the wizard steps, state, and practice area options
-/// for the three-step first-run wizard.
+/// Defines the wizard steps, state, and LLM provider options
+/// for the two-step first-run wizard:
+/// 1. Select LLM provider + enter API key
+/// 2. Confirm model configuration
 library;
 
-import 'package:flutter/material.dart';
+import 'package:flutter_app/wizard/llm_provider.dart';
 
 /// Wizard steps in order.
 enum WizardStep {
-  /// Step 1: Select practice area.
-  practiceArea,
+  /// Step 1: Select LLM provider and enter API key.
+  providerAndKey,
 
-  /// Step 2: Enter API key.
-  apiKey,
-
-  /// Step 3: Confirm model configuration.
+  /// Step 2: Confirm model configuration.
   modelConfirmation,
 
   /// Wizard complete.
   complete,
 }
 
-/// A selectable practice area option.
-class PracticeAreaOption {
-  /// Creates a practice area option.
-  const PracticeAreaOption({
-    required this.name,
-    required this.description,
-    required this.icon,
-    required this.presetName,
-  });
-
-  /// Display name (Chinese).
-  final String name;
-
-  /// Short description.
-  final String description;
-
-  /// Icon data for display.
-  final IconData icon;
-
-  /// Preset directory name.
-  final String presetName;
-}
-
-/// Available practice area options.
-class PracticeAreas {
-  const PracticeAreas._();
-
-  /// All available practice areas.
-  static const List<PracticeAreaOption> all = [
-    PracticeAreaOption(
-      name: '商事法',
-      description: '合同审查、公司治理、商事纠纷',
-      icon: Icons.business,
-      presetName: 'legal-commercial',
-    ),
-    PracticeAreaOption(
-      name: '劳动法',
-      description: '劳动合同、劳动争议、工伤',
-      icon: Icons.work,
-      presetName: 'legal-employment',
-    ),
-    PracticeAreaOption(
-      name: '家事法',
-      description: '婚姻、继承、家事纠纷',
-      icon: Icons.family_restroom,
-      presetName: 'legal-family',
-    ),
-    PracticeAreaOption(
-      name: '诉讼法',
-      description: '诉讼策略、证据分析、程序问题',
-      icon: Icons.gavel,
-      presetName: 'legal-litigation',
-    ),
-    PracticeAreaOption(
-      name: '通用法律',
-      description: '通用法律检索与引用核查',
-      icon: Icons.balance,
-      presetName: 'legal-core',
-    ),
-  ];
-
-  /// Finds a practice area by preset name.
-  static PracticeAreaOption? byPresetName(String presetName) {
-    for (final option in all) {
-      if (option.presetName == presetName) return option;
-    }
-    return null;
-  }
-}
-
 /// State of the first-run wizard.
 class WizardState {
   /// Creates wizard state.
   const WizardState({
-    this.step = WizardStep.practiceArea,
-    this.selectedPracticeArea,
+    this.step = WizardStep.providerAndKey,
+    this.selectedProvider = LlmProvider.deepseek,
     this.apiKey = '',
     this.modelConfig = 'deepseek-chat',
+    this.baseUrl,
   });
 
   /// Current wizard step.
   final WizardStep step;
 
-  /// Selected practice area (null until selected).
-  final PracticeAreaOption? selectedPracticeArea;
+  /// Selected LLM provider.
+  final LlmProvider selectedProvider;
 
   /// API key (transient — saved to OS credential store on completion).
   final String apiKey;
 
-  /// Model configuration (default: deepseek-chat).
+  /// Model configuration (e.g., 'deepseek-chat', 'gpt-4o').
   final String modelConfig;
+
+  /// Optional base URL override.
+  final String? baseUrl;
 
   /// Returns a copy with updated fields.
   WizardState copyWith({
     WizardStep? step,
-    PracticeAreaOption? selectedPracticeArea,
+    LlmProvider? selectedProvider,
     String? apiKey,
     String? modelConfig,
+    String? baseUrl,
   }) {
     return WizardState(
       step: step ?? this.step,
-      selectedPracticeArea: selectedPracticeArea ?? this.selectedPracticeArea,
+      selectedProvider: selectedProvider ?? this.selectedProvider,
       apiKey: apiKey ?? this.apiKey,
       modelConfig: modelConfig ?? this.modelConfig,
+      baseUrl: baseUrl ?? this.baseUrl,
     );
   }
 
   /// Returns true if the current step can proceed to the next.
   bool get canProceed {
     switch (step) {
-      case WizardStep.practiceArea:
-        return selectedPracticeArea != null;
-      case WizardStep.apiKey:
+      case WizardStep.providerAndKey:
         return apiKey.isNotEmpty;
       case WizardStep.modelConfirmation:
-        return true;
+        return modelConfig.isNotEmpty;
       case WizardStep.complete:
         return false;
     }

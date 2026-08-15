@@ -161,19 +161,20 @@ void main() {
     expect(find.text('请补充信息'), findsOneWidget);
   });
 
-  testWidgets('practice area displayed in status bar', (tester) async {
+  testWidgets('provider name displayed in status bar', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: ChatView(
             messages: [],
             status: MessageStatus.idle,
-            practiceArea: '商事法',
+            providerName: 'DeepSeek',
+            modelConfig: 'deepseek-chat',
           ),
         ),
       ),
     );
 
-    expect(find.text('商事法'), findsOneWidget);
+    expect(find.text('DeepSeek'), findsOneWidget);
   });
 }

@@ -9,6 +9,7 @@ import 'dart:io';
 
 import 'package:flutter_app/security/credential_store.dart';
 import 'package:flutter_app/security/engine_env.dart';
+import 'package:flutter_app/wizard/llm_provider.dart';
 import 'package:flutter_app/wizard/wizard_settings.dart';
 
 /// Coordinates the app startup flow.
@@ -35,27 +36,33 @@ class AppStartup {
 
   /// Saves wizard completion settings.
   Future<void> completeWizard({
-    required String selectedPracticeArea,
+    required String providerId,
     required String apiKey,
-    String modelConfig = 'deepseek-chat',
+    required String modelConfig,
+    String? baseUrl,
   }) async {
     final settings = WizardSettings(
       hasCompletedWizard: true,
-      selectedPracticeArea: selectedPracticeArea,
+      providerId: providerId,
       modelConfig: modelConfig,
+      baseUrl: baseUrl,
     );
     await settings.save(appDataDir);
-    await _credentialStore.saveApiKey(apiKey);
+    await _credentialStore.saveApiKey(apiKey, providerId: providerId);
   }
 
   /// Builds the environment for the DSH engine process.
   ///
   /// Loads the API key from the credential store and injects it
-  /// into the engine environment.
+  /// into the engine environment using the provider's env var.
   Future<Map<String, String>?> buildEngineEnv() async {
-    final apiKey = await _credentialStore.loadApiKey();
-    if (apiKey == null) return null;
-    return _engineEnv.buildEnv(apiKey: apiKey);
+    final config = await loadEngineConfig();
+    if (config == null) return null;
+    return _engineEnv.buildEnv(
+      apiKey: config.apiKey,
+      provider: config.provider,
+      baseUrl: config.baseUrl,
+    );
   }
 
   /// Returns the engine startup configuration.
@@ -63,13 +70,16 @@ class AppStartup {
     final settings = await WizardSettings.load(appDataDir);
     if (settings == null || !settings.hasCompletedWizard) return null;
 
-    final apiKey = await _credentialStore.loadApiKey();
+    final apiKey = await _credentialStore.loadApiKey(
+      providerId: settings.providerId,
+    );
     if (apiKey == null) return null;
 
     return EngineStartupConfig(
-      practiceArea: settings.selectedPracticeArea,
+      provider: LlmProvider.byId(settings.providerId),
       modelConfig: settings.modelConfig,
       apiKey: apiKey,
+      baseUrl: settings.baseUrl,
       enginePath: '$appDataDir/engine',
       pythonPath: '$appDataDir/python/python.exe',
       scriptPath: '$appDataDir/scripts/contract_review_trackchanges_v4.py',
@@ -80,7 +90,7 @@ class AppStartup {
   Future<bool> isReady() async {
     final settings = await WizardSettings.load(appDataDir);
     if (settings == null || !settings.hasCompletedWizard) return false;
-    return _credentialStore.hasApiKey();
+    return _credentialStore.hasApiKey(providerId: settings.providerId);
   }
 }
 
@@ -88,22 +98,26 @@ class AppStartup {
 class EngineStartupConfig {
   /// Creates an engine startup config.
   const EngineStartupConfig({
-    required this.practiceArea,
+    required this.provider,
     required this.modelConfig,
     required this.apiKey,
     required this.enginePath,
     required this.pythonPath,
     required this.scriptPath,
+    this.baseUrl,
   });
 
-  /// Selected practice area preset name.
-  final String practiceArea;
+  /// Selected LLM provider.
+  final LlmProvider provider;
 
-  /// Model configuration.
+  /// Model configuration (e.g., 'deepseek-chat', 'gpt-4o').
   final String modelConfig;
 
   /// API key (loaded from credential store).
   final String apiKey;
+
+  /// Optional base URL override.
+  final String? baseUrl;
 
   /// Path to the engine directory.
   final String enginePath;
@@ -111,7 +125,7 @@ class EngineStartupConfig {
   /// Path to the portable Python executable.
   final String pythonPath;
 
-  /// Path to the track-changes script.
+  /// Path to the docx export Python script.
   final String scriptPath;
 
   /// Returns true if all paths exist.

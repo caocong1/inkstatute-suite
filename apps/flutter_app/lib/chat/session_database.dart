@@ -31,10 +31,36 @@ class SessionDatabase implements QueryExecutorUser {
   late final QueryExecutor executor = _connection.executor;
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
-  Future<void> beforeOpen(QueryExecutor executor, OpeningDetails details) async {}
+  Future<void> beforeOpen(QueryExecutor executor, OpeningDetails details) async {
+    // Schema v2 migration: add provider_name and model_config columns
+    // if upgrading from v1 (which had practice_area instead) or creating fresh.
+    final isV1Upgrade = details.versionBefore == 1;
+    final isFresh = details.wasCreated;
+    if (isV1Upgrade || isFresh) {
+      // Add new columns if they don't exist (ALTER TABLE ADD COLUMN
+      // is idempotent-safe via try/catch since SQLite doesn't support
+      // IF NOT EXISTS for ADD COLUMN).
+      try {
+        await executor.runCustom(
+          "ALTER TABLE sessions ADD COLUMN provider_name TEXT NOT NULL DEFAULT 'DeepSeek'",
+          const [],
+        );
+      } on Object {
+        // Column already exists — expected on fresh v2 databases.
+      }
+      try {
+        await executor.runCustom(
+          "ALTER TABLE sessions ADD COLUMN model_config TEXT NOT NULL DEFAULT 'deepseek-chat'",
+          const [],
+        );
+      } on Object {
+        // Column already exists — expected on fresh v2 databases.
+      }
+    }
+  }
 
   /// Initializes the database schema.
   Future<void> init() async {
@@ -42,7 +68,8 @@ class SessionDatabase implements QueryExecutorUser {
     await _exec('''
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
-        practice_area TEXT NOT NULL,
+        provider_name TEXT NOT NULL DEFAULT 'DeepSeek',
+        model_config TEXT NOT NULL DEFAULT 'deepseek-chat',
         title TEXT NOT NULL,
         created_at INTEGER NOT NULL
       )

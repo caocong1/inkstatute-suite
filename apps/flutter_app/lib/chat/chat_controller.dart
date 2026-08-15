@@ -23,7 +23,8 @@ class ChatController extends ChangeNotifier {
     required this._client,
     required SessionRepository repository,
     required this._sessionId,
-    required this._practiceArea,
+    required this._providerName,
+    required this._modelConfig,
   })  : _repo = repository {
     _updateSubscription = _client.onUpdate.listen(_handleUpdate);
   }
@@ -31,7 +32,8 @@ class ChatController extends ChangeNotifier {
   final AcpClient _client;
   final SessionRepository _repo;
   final String _sessionId;
-  final String _practiceArea;
+  final String _providerName;
+  final String _modelConfig;
 
   StreamSubscription<String>? _updateSubscription;
   final StringBuffer _pendingText = StringBuffer();
@@ -67,8 +69,11 @@ class ChatController extends ChangeNotifier {
   /// Current processing status.
   MessageStatus get status => _status;
 
-  /// Practice area for this session.
-  String get practiceArea => _practiceArea;
+  /// LLM provider display name for this session.
+  String get providerName => _providerName;
+
+  /// Model configuration for this session.
+  String get modelConfig => _modelConfig;
 
   /// Session ID.
   String get sessionId => _sessionId;

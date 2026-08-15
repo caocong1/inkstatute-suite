@@ -19,27 +19,29 @@ void main() {
     test('default settings have correct values', () {
       const settings = WizardSettings.defaultSettings;
       expect(settings.hasCompletedWizard, isFalse);
-      expect(settings.selectedPracticeArea, 'legal-core');
+      expect(settings.providerId, 'deepseek');
       expect(settings.modelConfig, 'deepseek-chat');
     });
 
     test('toJson and fromJson round-trip', () {
       const settings = WizardSettings(
         hasCompletedWizard: true,
-        selectedPracticeArea: 'legal-commercial',
-        modelConfig: 'deepseek-reasoner',
+        providerId: 'openai',
+        modelConfig: 'gpt-4o',
+        baseUrl: 'https://api.openai.com/v1',
       );
       final json = settings.toJson();
       final parsed = WizardSettings.fromJson(json);
       expect(parsed.hasCompletedWizard, isTrue);
-      expect(parsed.selectedPracticeArea, 'legal-commercial');
-      expect(parsed.modelConfig, 'deepseek-reasoner');
+      expect(parsed.providerId, 'openai');
+      expect(parsed.modelConfig, 'gpt-4o');
+      expect(parsed.baseUrl, 'https://api.openai.com/v1');
     });
 
     test('fromJson uses defaults for missing fields', () {
       final parsed = WizardSettings.fromJson({});
       expect(parsed.hasCompletedWizard, isFalse);
-      expect(parsed.selectedPracticeArea, 'legal-core');
+      expect(parsed.providerId, 'deepseek');
       expect(parsed.modelConfig, 'deepseek-chat');
     });
 
@@ -47,25 +49,26 @@ void main() {
       const settings = WizardSettings.defaultSettings;
       final updated = settings.copyWith(
         hasCompletedWizard: true,
-        selectedPracticeArea: 'legal-family',
+        providerId: 'anthropic',
+        modelConfig: 'claude-sonnet-4-20250514',
       );
       expect(updated.hasCompletedWizard, isTrue);
-      expect(updated.selectedPracticeArea, 'legal-family');
-      expect(updated.modelConfig, 'deepseek-chat');
+      expect(updated.providerId, 'anthropic');
+      expect(updated.modelConfig, 'claude-sonnet-4-20250514');
     });
 
     test('save and load round-trip', () async {
       const settings = WizardSettings(
         hasCompletedWizard: true,
-        selectedPracticeArea: 'legal-litigation',
-        modelConfig: 'deepseek-chat',
+        providerId: 'openai',
+        modelConfig: 'gpt-4o',
       );
       await settings.save(tempDir.path);
       final loaded = await WizardSettings.load(tempDir.path);
       expect(loaded, isNotNull);
       expect(loaded!.hasCompletedWizard, isTrue);
-      expect(loaded.selectedPracticeArea, 'legal-litigation');
-      expect(loaded.modelConfig, 'deepseek-chat');
+      expect(loaded.providerId, 'openai');
+      expect(loaded.modelConfig, 'gpt-4o');
     });
 
     test('load returns null when file does not exist', () async {
@@ -78,6 +81,17 @@ void main() {
       await file.writeAsString('not valid json');
       final loaded = await WizardSettings.load(tempDir.path);
       expect(loaded, isNull);
+    });
+
+    test('load migrates old selectedPracticeArea to providerId', () async {
+      final file = File('${tempDir.path}/wizard_settings.json');
+      await file.writeAsString(
+        '{"hasCompletedWizard":true,"selectedPracticeArea":"legal-commercial","modelConfig":"deepseek-chat"}',
+      );
+      final loaded = await WizardSettings.load(tempDir.path);
+      expect(loaded, isNotNull);
+      expect(loaded!.providerId, 'deepseek');
+      expect(loaded.modelConfig, 'deepseek-chat');
     });
   });
 }

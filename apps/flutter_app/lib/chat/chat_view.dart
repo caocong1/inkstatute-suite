@@ -18,7 +18,8 @@ class ChatView extends StatefulWidget {
     super.key,
     required this.messages,
     required this.status,
-    this.practiceArea,
+    this.providerName,
+    this.modelConfig,
     this.onSendPrompt,
     this.onCancel,
     this.onAllowApproval,
@@ -32,8 +33,11 @@ class ChatView extends StatefulWidget {
   /// Current processing status.
   final MessageStatus status;
 
-  /// Practice area label.
-  final String? practiceArea;
+  /// LLM provider display name.
+  final String? providerName;
+
+  /// Model configuration.
+  final String? modelConfig;
 
   /// Callback when the user sends a prompt.
   final void Function(String text)? onSendPrompt;
@@ -81,7 +85,8 @@ class _ChatViewState extends State<ChatView> {
       children: [
         StatusBarWidget(
           status: widget.status,
-          practiceArea: widget.practiceArea,
+          providerName: widget.providerName,
+          modelConfig: widget.modelConfig,
           onCancel: widget.onCancel,
         ),
         Expanded(

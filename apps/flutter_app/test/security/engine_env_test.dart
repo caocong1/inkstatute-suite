@@ -1,36 +1,45 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_app/security/engine_env.dart';
+import 'package:flutter_app/wizard/llm_provider.dart';
 
 void main() {
   const engineEnv = EngineEnv();
 
   group('EngineEnv.buildEnv', () {
     test('injects API key as DEEPSEEK_API_KEY', () {
-      final env = engineEnv.buildEnv(apiKey: 'sk-test-key');
-      expect(env[EngineEnv.apiKeyEnvVar], 'sk-test-key');
+      final env = engineEnv.buildEnv(
+        apiKey: 'sk-test-key',
+        provider: LlmProvider.deepseek,
+      );
+      expect(env[LlmProvider.deepseek.apiKeyEnvVar], 'sk-test-key');
     });
 
     test('injects base URL when provided', () {
       final env = engineEnv.buildEnv(
         apiKey: 'sk-test',
+        provider: LlmProvider.deepseek,
         baseUrl: 'https://api.deepseek.com',
       );
-      expect(env[EngineEnv.baseUrlEnvVar], 'https://api.deepseek.com');
+      expect(env[LlmProvider.deepseek.baseUrlEnvVar], 'https://api.deepseek.com');
     });
 
     test('does not inject base URL when not provided', () {
-      final env = engineEnv.buildEnv(apiKey: 'sk-test');
-      expect(env.containsKey(EngineEnv.baseUrlEnvVar), isFalse);
+      final env = engineEnv.buildEnv(
+        apiKey: 'sk-test',
+        provider: LlmProvider.deepseek,
+      );
+      expect(env.containsKey(LlmProvider.deepseek.baseUrlEnvVar), isFalse);
     });
 
     test('preserves base environment variables', () {
       final env = engineEnv.buildEnv(
         apiKey: 'sk-test',
+        provider: LlmProvider.deepseek,
         base: {'PATH': '/usr/bin', 'HOME': '/home/user'},
       );
       expect(env['PATH'], '/usr/bin');
       expect(env['HOME'], '/home/user');
-      expect(env[EngineEnv.apiKeyEnvVar], 'sk-test');
+      expect(env[LlmProvider.deepseek.apiKeyEnvVar], 'sk-test');
     });
   });
 

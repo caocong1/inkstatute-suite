@@ -20,10 +20,11 @@ class SessionRepository {
   /// Creates a new session with its initial messages.
   Future<void> createSession(ChatSession session) async {
     await _db.exec(
-      'INSERT INTO sessions (id, practice_area, title, created_at) VALUES (?, ?, ?, ?)',
+      'INSERT INTO sessions (id, provider_name, model_config, title, created_at) VALUES (?, ?, ?, ?, ?)',
       [
         session.id,
-        session.practiceArea,
+        session.providerName,
+        session.modelConfig,
         session.title,
         session.createdAt.millisecondsSinceEpoch,
       ],
@@ -44,20 +45,21 @@ class SessionRepository {
     final s = rows.first;
     return ChatSession(
       id: s['id'] as String,
-      practiceArea: s['practice_area'] as String,
+      providerName: s['provider_name'] as String? ?? 'DeepSeek',
+      modelConfig: s['model_config'] as String? ?? 'deepseek-chat',
       title: s['title'] as String,
       createdAt: DateTime.fromMillisecondsSinceEpoch(s['created_at'] as int),
       messages: await _loadMessages(id),
     );
   }
 
-  /// Lists all sessions, optionally filtered by practice area.
-  Future<List<ChatSession>> listSessions({String? practiceArea}) async {
+  /// Lists all sessions, optionally filtered by provider.
+  Future<List<ChatSession>> listSessions({String? providerName}) async {
     List<Map<String, dynamic>> rows;
-    if (practiceArea != null) {
+    if (providerName != null) {
       rows = await _db.select(
-        'SELECT * FROM sessions WHERE practice_area = ? ORDER BY created_at DESC',
-        [practiceArea],
+        'SELECT * FROM sessions WHERE provider_name = ? ORDER BY created_at DESC',
+        [providerName],
       );
     } else {
       rows = await _db.select(
@@ -69,7 +71,8 @@ class SessionRepository {
     for (final row in rows) {
       sessions.add(ChatSession(
         id: row['id'] as String,
-        practiceArea: row['practice_area'] as String,
+        providerName: row['provider_name'] as String? ?? 'DeepSeek',
+        modelConfig: row['model_config'] as String? ?? 'deepseek-chat',
         title: row['title'] as String,
         createdAt: DateTime.fromMillisecondsSinceEpoch(row['created_at'] as int),
         messages: await _loadMessages(row['id'] as String),
@@ -162,19 +165,20 @@ class SessionRepository {
 
     return jsonEncode({
       'id': session.id,
-      'practiceArea': session.practiceArea,
+      'providerName': session.providerName,
+      'modelConfig': session.modelConfig,
       'title': session.title,
       'createdAt': session.createdAt.toIso8601String(),
       'messages': messagesJson,
     });
   }
 
-  /// Lists distinct practice areas that have sessions.
-  Future<List<String>> listPracticeAreas() async {
+  /// Lists distinct providers that have sessions.
+  Future<List<String>> listProviders() async {
     final rows = await _db.select(
-      'SELECT DISTINCT practice_area FROM sessions',
+      'SELECT DISTINCT provider_name FROM sessions',
     );
-    return rows.map((r) => r['practice_area'] as String).toList();
+    return rows.map((r) => r['provider_name'] as String? ?? 'DeepSeek').toList();
   }
 
   // -- Helpers --

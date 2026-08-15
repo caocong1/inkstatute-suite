@@ -72,7 +72,8 @@ void main() {
 
     await repo.createSession(ChatSession(
       id: 'test-session',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'Test Session',
       createdAt: DateTime.now(),
     ));
@@ -81,7 +82,8 @@ void main() {
       client: client,
       repository: repo,
       sessionId: 'test-session',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
     );
   });
 
@@ -138,8 +140,12 @@ void main() {
     expect(controller.status, MessageStatus.idle);
   });
 
-  test('practiceArea is accessible', () {
-    expect(controller.practiceArea, '商事法');
+  test('providerName is accessible', () {
+    expect(controller.providerName, 'DeepSeek');
+  });
+
+  test('modelConfig is accessible', () {
+    expect(controller.modelConfig, 'deepseek-chat');
   });
 
   test('sessionId is accessible', () {

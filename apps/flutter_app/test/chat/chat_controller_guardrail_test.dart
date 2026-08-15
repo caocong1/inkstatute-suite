@@ -69,7 +69,8 @@ void main() {
 
     await repo.createSession(ChatSession(
       id: 'guardrail-test-session',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
       title: 'Guardrail Test Session',
       createdAt: DateTime.now(),
     ));
@@ -78,7 +79,8 @@ void main() {
       client: client,
       repository: repo,
       sessionId: 'guardrail-test-session',
-      practiceArea: '商事法',
+      providerName: 'DeepSeek',
+      modelConfig: 'deepseek-chat',
     );
   });
 

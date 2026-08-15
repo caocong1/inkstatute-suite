@@ -227,7 +227,8 @@ class ChatSession {
   /// Creates a chat session.
   const ChatSession({
     required this.id,
-    required this.practiceArea,
+    required this.providerName,
+    required this.modelConfig,
     required this.title,
     required this.createdAt,
     this.messages = const [],
@@ -236,8 +237,11 @@ class ChatSession {
   /// Unique session identifier.
   final String id;
 
-  /// Practice area (e.g. "商事法", "诉讼法").
-  final String practiceArea;
+  /// LLM provider display name (e.g. "DeepSeek").
+  final String providerName;
+
+  /// Model configuration (e.g. "deepseek-chat").
+  final String modelConfig;
 
   /// Session title.
   final String title;

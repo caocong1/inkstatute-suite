@@ -45,7 +45,7 @@ void main() {
     });
 
     test('account name is DeepSeekApiKey', () {
-      expect(CredentialStore.apiKeyAccount, 'DeepSeekApiKey');
+      expect(CredentialStore.defaultApiKeyAccount, 'DeepSeekApiKey');
     });
   });
 }

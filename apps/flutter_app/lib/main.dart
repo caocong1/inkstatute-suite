@@ -124,8 +124,6 @@ class _StartupGateState extends State<StartupGate> {
   void _onWizardComplete(WizardState state) {
     final startup = _startup;
     if (startup == null) return;
-    final practiceArea = state.selectedPracticeArea;
-    if (practiceArea == null) return;
 
     setState(() {
       _loading = true;
@@ -134,9 +132,10 @@ class _StartupGateState extends State<StartupGate> {
 
     startup
         .completeWizard(
-      selectedPracticeArea: practiceArea.presetName,
+      providerId: state.selectedProvider.id,
       apiKey: state.apiKey,
       modelConfig: state.modelConfig,
+      baseUrl: state.baseUrl,
     )
         .then((_) {
       if (!mounted) return;
@@ -319,7 +318,8 @@ class _HomeScreenState extends State<HomeScreen> {
         client: client,
         repository: repository,
         sessionId: sessionId,
-        practiceArea: config.practiceArea,
+        providerName: config.provider.displayName,
+        modelConfig: config.modelConfig,
       );
 
       // Initialize export infrastructure.
@@ -507,7 +507,8 @@ class _HomeScreenState extends State<HomeScreen> {
           body: ChatView(
             messages: controller.messages,
             status: controller.status,
-            practiceArea: controller.practiceArea,
+            providerName: controller.providerName,
+            modelConfig: controller.modelConfig,
             onSendPrompt: controller.sendPrompt,
             onCancel: controller.cancelInFlight,
             onAllowApproval: (toolCallId) =>

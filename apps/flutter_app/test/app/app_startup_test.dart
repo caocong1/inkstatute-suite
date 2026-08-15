@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:io';
 import 'package:flutter_app/app/app_startup.dart';
-import 'package:flutter_app/security/engine_env.dart';
 import 'package:flutter_app/wizard/wizard_settings.dart';
+import 'package:flutter_app/wizard/llm_provider.dart';
 
 void main() {
   late Directory tempDir;
@@ -27,7 +27,7 @@ void main() {
     test('shouldShowWizard returns true when wizard not completed', () async {
       const settings = WizardSettings(
         hasCompletedWizard: false,
-        selectedPracticeArea: 'legal-core',
+        providerId: 'deepseek',
         modelConfig: 'deepseek-chat',
       );
       await settings.save(tempDir.path);
@@ -37,21 +37,22 @@ void main() {
     test('shouldShowWizard returns false when wizard completed', () async {
       const settings = WizardSettings(
         hasCompletedWizard: true,
-        selectedPracticeArea: 'legal-commercial',
+        providerId: 'deepseek',
         modelConfig: 'deepseek-chat',
       );
       await settings.save(tempDir.path);
       // Also need to save API key
       await startup.completeWizard(
-        selectedPracticeArea: 'legal-commercial',
+        providerId: 'deepseek',
         apiKey: 'test-key',
+        modelConfig: 'deepseek-chat',
       );
       expect(await startup.shouldShowWizard(), isFalse);
     });
 
     test('completeWizard saves settings and API key', () async {
       await startup.completeWizard(
-        selectedPracticeArea: 'legal-family',
+        providerId: 'deepseek',
         apiKey: 'test-key-123',
         modelConfig: 'deepseek-reasoner',
       );
@@ -59,7 +60,7 @@ void main() {
       final settings = await WizardSettings.load(tempDir.path);
       expect(settings, isNotNull);
       expect(settings!.hasCompletedWizard, isTrue);
-      expect(settings.selectedPracticeArea, 'legal-family');
+      expect(settings.providerId, 'deepseek');
       expect(settings.modelConfig, 'deepseek-reasoner');
     });
 
@@ -69,8 +70,9 @@ void main() {
 
     test('isReady returns true after wizard completion', () async {
       await startup.completeWizard(
-        selectedPracticeArea: 'legal-core',
+        providerId: 'deepseek',
         apiKey: 'test-key',
+        modelConfig: 'deepseek-chat',
       );
       expect(await startup.isReady(), isTrue);
     });
@@ -82,12 +84,13 @@ void main() {
 
     test('buildEngineEnv returns env with API key after wizard', () async {
       await startup.completeWizard(
-        selectedPracticeArea: 'legal-core',
+        providerId: 'deepseek',
         apiKey: 'test-key-123',
+        modelConfig: 'deepseek-chat',
       );
       final env = await startup.buildEngineEnv();
       expect(env, isNotNull);
-      expect(env![EngineEnv.apiKeyEnvVar], 'test-key-123');
+      expect(env![LlmProvider.deepseek.apiKeyEnvVar], 'test-key-123');
     });
 
     test('loadEngineConfig returns null when wizard not completed', () async {
@@ -97,12 +100,13 @@ void main() {
 
     test('loadEngineConfig returns config after wizard', () async {
       await startup.completeWizard(
-        selectedPracticeArea: 'legal-litigation',
+        providerId: 'deepseek',
         apiKey: 'test-key',
+        modelConfig: 'deepseek-chat',
       );
       final config = await startup.loadEngineConfig();
       expect(config, isNotNull);
-      expect(config!.practiceArea, 'legal-litigation');
+      expect(config!.provider, LlmProvider.deepseek);
       expect(config.apiKey, 'test-key');
       expect(config.enginePath, contains('engine'));
       expect(config.pythonPath, contains('python.exe'));
@@ -113,7 +117,7 @@ void main() {
   group('EngineStartupConfig', () {
     test('validatePaths returns false for non-existent paths', () async {
       const config = EngineStartupConfig(
-        practiceArea: 'legal-core',
+        provider: LlmProvider.deepseek,
         modelConfig: 'deepseek-chat',
         apiKey: 'test',
         enginePath: '/nonexistent/engine',
@@ -133,7 +137,7 @@ void main() {
       await scriptFile.writeAsString('# script');
 
       final config = EngineStartupConfig(
-        practiceArea: 'legal-core',
+        provider: LlmProvider.deepseek,
         modelConfig: 'deepseek-chat',
         apiKey: 'test',
         enginePath: engineDir.path,

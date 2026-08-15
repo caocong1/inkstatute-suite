@@ -5,31 +5,29 @@
 /// written to files, logs, or telemetry.
 library;
 
+import 'package:flutter_app/wizard/llm_provider.dart';
+
 /// Builds environment variables for the DSH engine process.
 class EngineEnv {
   /// Creates an engine environment builder.
   const EngineEnv();
 
-  /// The environment variable name for the DeepSeek API key.
-  static const String apiKeyEnvVar = 'DEEPSEEK_API_KEY';
-
-  /// The environment variable name for the DeepSeek base URL.
-  static const String baseUrlEnvVar = 'DEEPSEEK_BASE_URL';
-
   /// Builds the environment map for the engine process.
   ///
-  /// [apiKey] is injected as `DEEPSEEK_API_KEY`.
-  /// [baseUrl] is optionally injected as `DEEPSEEK_BASE_URL`.
+  /// [apiKey] is injected using the provider's [LlmProvider.apiKeyEnvVar].
+  /// [baseUrl] is optionally injected using the provider's
+  /// [LlmProvider.baseUrlEnvVar] (if the provider supports one).
   /// Returns a map suitable for `Process.start(environment: ...)`.
   Map<String, String> buildEnv({
     required String apiKey,
+    required LlmProvider provider,
     String? baseUrl,
     Map<String, String>? base,
   }) {
     final env = <String, String>{...?base};
-    env[apiKeyEnvVar] = apiKey;
-    if (baseUrl != null) {
-      env[baseUrlEnvVar] = baseUrl;
+    env[provider.apiKeyEnvVar] = apiKey;
+    if (provider.baseUrlEnvVar != null && baseUrl != null) {
+      env[provider.baseUrlEnvVar!] = baseUrl;
     }
     return env;
   }

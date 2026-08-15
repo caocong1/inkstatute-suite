@@ -29,14 +29,15 @@ void main() {
 
   test('can insert and query a session', () async {
     await db.exec(
-      'INSERT INTO sessions (id, practice_area, title, created_at) VALUES (?, ?, ?, ?)',
-      ['s1', '商事法', '合同审查', DateTime(2026, 8, 14).millisecondsSinceEpoch],
+      'INSERT INTO sessions (id, provider_name, model_config, title, created_at) VALUES (?, ?, ?, ?, ?)',
+      ['s1', 'DeepSeek', 'deepseek-chat', '合同审查', DateTime(2026, 8, 14).millisecondsSinceEpoch],
     );
 
     final rows = await db.select('SELECT * FROM sessions');
     expect(rows.length, 1);
     expect(rows.first['id'], 's1');
-    expect(rows.first['practice_area'], '商事法');
+    expect(rows.first['provider_name'], 'DeepSeek');
+    expect(rows.first['model_config'], 'deepseek-chat');
   });
 
   test('can insert and query messages', () async {
