@@ -35,7 +35,7 @@ const mockAdapters: AdapterContextValue = {
     listFiles: async () => [],
   },
   documentParser: {
-    parseLegalDocument: async () => ({}),
+    parseLegalDocument: async () => ({ title: "", sections: [] }),
   },
 };
 
