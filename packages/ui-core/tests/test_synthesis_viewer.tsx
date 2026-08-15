@@ -118,7 +118,9 @@ describe("SynthesisViewerTests", () => {
     // Wait for async file.save
     await new Promise((r) => setTimeout(r, 50));
     expect(mockFileSave).toHaveBeenCalledTimes(1);
-    const callArg = mockFileSave.mock.calls[0]![0];
+    const calls = mockFileSave.mock.calls as unknown as Array<Array<{ defaultPath: string; filters: Array<{ name: string; extensions: string[] }> }>>;
+    expect(calls.length).toBeGreaterThan(0);
+    const callArg = calls[0]![0];
     expect(callArg.defaultPath).toBe("综合最终版.docx");
     expect(callArg.filters).toEqual([{ name: "Word 文档", extensions: ["docx"] }]);
     dispose();

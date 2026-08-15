@@ -1,24 +1,16 @@
 /**
- * useEventStream — SolidJS hook wrapping createEventStream with lifecycle management.
+ * useEventStream — SolidJS hook for reactive RenderState from the engine
+ * observation plane.
  *
- * When `runId()` changes (new run started), the effect cleans up the old
- * stream and creates a new one. The hook provides reactive `state()`,
- * `isStreaming()`, and `error()` signals, plus a manual `reconnect()` method.
+ * **Phase 125-01 stub:** The Gateway SSE transport layer has been removed.
+ * This stub returns a static initialState and will be replaced in Phase
+ * 125-02 with a Tauri `listen("inkstatute://run-event")` implementation.
  *
- * On component unmount, `onCleanup()` stops the stream to prevent memory
- * leaks and orphaned SSE connections.
- *
- * Adapted from apps/web/src/hooks/useEventStream.ts — same logic, desktop
- * gateway config (cross-origin, configurable baseUrl).
+ * The external interface is preserved so consumers (SessionContext) do not
+ * break during the pruning wave.
  */
-import { createEffect, createSignal, onCleanup, on, type Accessor } from "solid-js";
-import {
-  createEventStream,
-  initialState,
-  type EventStreamStore,
-  type RenderState,
-} from "@inkstatute/ui-core";
-import { gateway } from "../config/gateway";
+import { createSignal, onCleanup, type Accessor } from "solid-js";
+import { initialState, type RenderState } from "@inkstatute/ui-core";
 
 export interface UseEventStreamReturn {
   state: () => RenderState;
@@ -27,68 +19,20 @@ export interface UseEventStreamReturn {
   reconnect: () => void;
 }
 
-export function useEventStream(runId: Accessor<string | null>): UseEventStreamReturn {
-  const [isStreaming, setIsStreaming] = createSignal(false);
-  const [error, setError] = createSignal<Error | null>(null);
-  const [store, setStore] = createSignal<EventStreamStore | null>(null);
-
-  // Non-reactive ref to track the current store for cleanup without
-  // triggering the effect to re-run when setStore is called.
-  let currentStore: EventStreamStore | null = null;
-
-  createEffect(on(runId, (id, _prevId) => {
-    // Only re-run when runId changes — on() prevents spurious re-runs
-    // from other signal writes inside the effect (setStore, setIsStreaming).
-
-    // Cleanup previous stream (using non-reactive ref, not the signal)
-    if (currentStore) {
-      currentStore.stop();
-      currentStore = null;
-      setStore(null);
-      setIsStreaming(false);
-      setError(null);
-    }
-
-    if (!id) return;
-
-    const newStore = createEventStream({
-      client: gateway,
-      runId: id,
-      onError: (err) => setError(err),
-    });
-    currentStore = newStore;
-    setStore(newStore);
-    setIsStreaming(true);
-    newStore.streamEvents().then(() => {
-      setIsStreaming(false);
-    }).catch((err) => {
-      setError(err instanceof Error ? err : new Error(String(err)));
-      setIsStreaming(false);
-    });
-  }));
+export function useEventStream(_runId: Accessor<string | null>): UseEventStreamReturn {
+  const [isStreaming] = createSignal(false);
+  const [error] = createSignal<Error | null>(null);
 
   onCleanup(() => {
-    currentStore?.stop();
-    currentStore = null;
-    setStore(null);
+    // No subscription to clean up in stub mode.
   });
 
   function reconnect(): void {
-    const s = store();
-    if (s) {
-      setError(null);
-      setIsStreaming(true);
-      s.streamEvents().then(() => {
-        setIsStreaming(false);
-      }).catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)));
-        setIsStreaming(false);
-      });
-    }
+    // No-op in stub mode — 125-02 will implement re-subscription.
   }
 
   return {
-    state: () => store()?.state() ?? initialState(),
+    state: () => initialState(),
     isStreaming,
     error,
     reconnect,

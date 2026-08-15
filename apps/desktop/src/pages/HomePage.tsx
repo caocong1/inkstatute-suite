@@ -15,7 +15,6 @@ import { classifyTauriPaths } from "../adapters/desktopDropAdapter";
 
 export interface HomePageProps {
   onNavigateToWorkspace: () => void;
-  onNavigateToArena: () => void;
 }
 
 export const HomePage: Component<HomePageProps> = (props) => {
@@ -68,11 +67,6 @@ export const HomePage: Component<HomePageProps> = (props) => {
         addInlineMention={addInlineMention}
         removeInlineMention={removeInlineMention}
       />
-      <div class="home-arena-entry">
-        <button type="button" class="home-arena-btn" onClick={() => props.onNavigateToArena()}>
-          进入 AI 竞技场
-        </button>
-      </div>
       <Show when={recent().length > 0}>
         <div class="recent-conversations">
           <h3>最近对话</h3>

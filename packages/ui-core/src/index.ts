@@ -31,12 +31,6 @@ export type {
   WorkflowStepState,
 } from "./types/workflow";
 
-export { createEventStream } from "./stores/eventStream";
-export type {
-  EventStreamStore,
-  EventStreamOptions,
-} from "./stores/eventStream";
-
 export { AdapterContext, useAdapters } from "./adapters";
 export type {
   FileAdapter,
@@ -211,7 +205,5 @@ export type { ReviewSummaryProps } from "./components/ReviewSummary";
 export { SynthesisViewer } from "./components/SynthesisViewer";
 export type { SynthesisViewerProps } from "./components/SynthesisViewer";
 
-// Arena stream store + reducers (UI-06) — SSE consumption + demultiplexing
-export { createArenaStream } from "./stores/arenaStream";
-export type { ArenaStreamStore, ArenaStreamOptions } from "./stores/arenaStream";
+// Arena reducers (UI-06) — pure event reduction (transport layer removed in Phase 125)
 export { arenaEventReducer, arenaMetaReducer, getSlotState, getAllSlotStates } from "./reducers/arenaEventReducer";

@@ -41,7 +41,7 @@ function makeAdapters(openReturn: string | string[] | null = "/mock/dir"): Adapt
       listFiles: async () => [],
     },
     documentParser: {
-      parseLegalDocument: async () => ({}),
+      parseLegalDocument: async () => ({ title: "测试文档", sections: [] }),
     },
   };
 }

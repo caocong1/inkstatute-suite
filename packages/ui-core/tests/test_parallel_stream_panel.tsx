@@ -82,7 +82,7 @@ function env(
     seq,
     payload,
     metadata,
-  } as RunEventEnvelope;
+  } as unknown as RunEventEnvelope;
 }
 
 describe("ParallelStreamPanelTests", () => {
