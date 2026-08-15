@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
 status: in_progress
-stopped_at: v5.0 里程碑已开，Phase 122 已规划待执行
-last_updated: "2026-08-15T05:00:00.000Z"
+stopped_at: v5.0 Phase 122 已完成，等待 Phase 123 输入（真实 API key）
+last_updated: "2026-08-15T07:30:00.000Z"
 last_activity: 2026-08-15
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 17
-  completed_plans: 0
-  percent: 0
+  completed_plans: 3
+  percent: 17
 ---
 
 # Project State
@@ -22,15 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 122 引擎装配管线换血——用 npm lockfile 装配替代 170MB zip 管线，并修复 V4 遗留的持久化根路径缺陷。
+**Current focus:** Phase 123 引擎主管 + 真实链路打通——子进程生命周期、凭据注入、真实 API key 实测对话续接。
 
 ## Current Position
 
-Phase: 122 of 127 (Engine Assembly Pipeline Overhaul)
-Status: 已规划，待执行
+Phase: 123 of 127 (Engine Supervisor & Real Path)
+Status: 等待真实 API key 输入
 Last activity: 2026-08-15
 
-Progress: [░░░░░░░░░░] 0% (0/6 phases)
+Progress: [██░░░░░░░░] 17% (1/6 phases)
 
 ## Milestone v5.0 Overview
 
@@ -90,10 +90,10 @@ v5.0 关键决策（依据 `.planning/research/V5-SELECTION.md` 11 项本机实�
 
 | # | 缺陷 | 位置 | 修法 | 归属 |
 |---|---|---|---|---|
-| D1 | `${DSH_HOME}` 不被 Cordis 展开，会话历史落在引擎目录（更新时被抹） | `engines/acp.cordis.yml` | `!!js process.env.DSH_HOME + '/sessions'`（已验证） | ENG-04 / Phase 122 |
+| D1 | `${DSH_HOME}` 不被 Cordis 展开，会话历史落在引擎目录（更新时被抹） | `engines/acp.cordis.yml` | `!!js process.env.DSH_HOME + '/sessions'`（已修复，冒烟通过） | ENG-04 / Phase 122 ✅ |
 | D2 | Google Fonts CDN 中国大陆不可达，字体静默回退 | `packages/ui-core/src/themes/molv-tokens.css:7` | 移除 `@import`，字体本地化 | PKG-12 / Phase 127 |
 | D3 | 依赖系统 Node，与零配置冲突 | Flutter 版 `DshConfig` 写死 `executable: 'node'` | 随包带 `node.exe`，绝对路径 spawn | PKG-11 / Phase 127 |
-| D4 | `DSH_REPO` 默认值指向不存在的 `/home/sorawatcher/...` | `scripts/build_dsh_release.sh` | 脚本在 Phase 122 退役 | ENG-01 / Phase 122 |
+| D4 | `DSH_REPO` 默认值指向不存在的 `/home/sorawatcher/...` | `scripts/build_dsh_release.sh` | 脚本在 Phase 122 退役 | ENG-01 / Phase 122 ✅ |
 
 ### 仓库路径更正
 
@@ -139,7 +139,7 @@ V4 文档中的 `/home/sorawatcher/...` 在当前开发机不存在。实际路�
 ## Session Continuity
 
 Last session: 2026-08-15
-Stopped at: v5.0 里程碑已开，Phase 122 已规划待执行
+Stopped at: v5.0 Phase 122 完成，GATE-11 通过，准备进入 Phase 123
 Product spec: docs/requirements/V5-PRD.md (Tauri Shell + DSH Three-Plane Integration)
 Research: .planning/research/V5-SELECTION.md (11 项本机实测, HIGH confidence)
 Requirements: .planning/REQUIREMENTS.md (34/34 mapped to phases 122-127, 100% coverage)
@@ -148,8 +148,8 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 
 ## Operator Next Steps
 
-- **执行 Phase 122**（引擎装配管线换血）。它是所有后续阶段的物理前提，且不依赖 UI、不依赖真实 API key，最容易独立验证。
-- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。每阶段验收门禁未亮灯不得进入下一阶段。
+- **Phase 122 已完成**：npm lockfile 装配管线、Rust 装配器、GATE-11 全部通过；真实 engine 在临时目录完成 `initialize` → `session/new`。
+- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 122 验收门禁已亮灯，可进入 123。
 - **Phase 123 需要真实 API key**：执行前须由业主提供并存入 OS 凭据库。密钥永不提交仓库、永不进入 JSON / 日志 / 遥测 / 进程参数。
 - 律师人工闸门（HG-1 / HG-3）保持 DEFERRED — 不得自动关闭。
 - `apps/flutter_app` 冻结：可读作参照，**不得修改、不得删除**。

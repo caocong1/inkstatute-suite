@@ -70,7 +70,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 A — 引擎底座换血
 
-- [ ] **Phase 122: Engine Assembly Pipeline Overhaul** - npm 精确版本 pin + `engine-lock.json` 生成 + Rust lockfile 装配器 + ACP 配置缺陷修复 (ENG-01..04, GATE-11)
+- [x] **Phase 122: Engine Assembly Pipeline Overhaul** - npm 精确版本 pin + `engine-lock.json` 生成 + Rust lockfile 装配器 + ACP 配置缺陷修复 (ENG-01..04, GATE-11) ✅ 2026-08-15
 
 ### 阶段 B — 真实链路打通
 
