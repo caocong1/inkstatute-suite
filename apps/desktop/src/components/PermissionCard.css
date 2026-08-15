@@ -1,0 +1,117 @@
+/* PermissionCard — GRD-15 批准卡片样式
+   Uses molv-tokens.css variables, matches ChatPanel card style. */
+
+.perm-card {
+  margin: 12px 0;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--amber);
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.perm-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.perm-icon {
+  font-size: 16px;
+  color: var(--amber);
+}
+
+.perm-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.perm-body {
+  margin-bottom: 10px;
+}
+
+.perm-tool {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.perm-desc {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.perm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.perm-btn {
+  flex: 1;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.perm-btn:hover {
+  background: var(--surface-2);
+}
+
+.perm-allow {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.perm-allow:hover {
+  background: var(--accent-dim);
+}
+
+.perm-reject {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink-soft);
+}
+
+.perm-reject:hover {
+  background: var(--surface-2);
+  border-color: var(--muted);
+}
+
+.perm-locked {
+  padding: 7px 14px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  user-select: none;
+}
+
+.perm-allowed {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.perm-rejected {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.perm-timeout {
+  background: var(--surface-2);
+  color: var(--amber);
+  font-style: italic;
+}
