@@ -1,153 +1,144 @@
-# Requirements: 墨律 InkStatute — v4.0 Flutter Native + DSH Engine
+# Requirements: 墨律 InkStatute — v5.0 Tauri Shell + DSH Three-Plane Integration
 
-**Defined:** 2026-08-13
-**Core Value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，Word 原生修订稿一键导出。
+**Defined:** 2026-08-15
+**Core Value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri + SolidJS app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，工具调用与思考过程可见，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-## v4.0 Requirements
+**Predecessor:** v4.0 Flutter Native + DSH Engine（开发侧技术闭环 2026-08-15；产品层被 V5 推翻，`apps/flutter_app` 冻结不删）
 
-每条需求恰好映射一个 roadmap phase（112–120）。规格真源：`docs/requirements/V4-PRD.md`；选型证据：`.planning/research/V4-SELECTION.md`。Traceability 见文末。
+## v5.0 Requirements
 
-### DSH — 引擎接入
+规格真源：`docs/requirements/V5-PRD.md`；选型证据：`.planning/research/V5-SELECTION.md`（11 项本机实测）。
+Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–127）。**
 
-- [x] **DSH-01**: Dart ACP v1 客户端（`apps/flutter_app/packages/acp_client`）——JSON-RPC stdio 帧收发、`initialize` 握手（仅 baseline 能力）、`session/new`（绝对 cwd；`additionalDirectories`/`mcpServers` 非空即拒）、`session/prompt`（单 in-flight）、`session/cancel`、`session/update` 文本块聚合、`session/request_permission` 策略钩子；以脚本化 mock ACP server（fixtures）完整测试，无需真实模型
-- [x] **DSH-02**: DSH 子进程管理器——从捆绑引擎目录 spawn ACP 组合；`DSH_HOME` 指向 `%LOCALAPPDATA%\InkStatute\runtime\.dsh`；API 密钥经环境注入（不落盘明文）；initialize 握手健康探针；app 退出优雅关停；零孤儿进程断言
-- [x] **DSH-03**: 引擎发布产物管线（`scripts/build_dsh_release.sh` + `engines/dsh-pin.txt` + `engines/acp.cordis.yml`）——钉 commit 构建 → `engine-<version>.zip`（便携 Node + 构建产物 + ACP 组合 + 预设物化）→ `engine-manifest.json` {dsh_commit, node_version, sha256, built_at}；**引擎禁自动升级**，升级须真机回归后随 app 版本发布
-- [x] **DSH-04**: 批准安全——引擎批准栈 terminal/execute_code 默认拒绝并上抛 `session/request_permission`；app 策略：未知 kind 一律拒绝、已知 kind 渲染用户卡片、无批量批准入口；mock 权限事件测试全路径
-- [x] **DSH-05**: 凭据与模型——密钥存 OS 凭据库、启动时注入；模型/供应商默认（DeepSeek 官方路由）可配；密钥轮换入口（业主模式）；日志与遥测零明文密钥
+### ENG — 引擎装配与更新
 
-### SKL — 技能管线
+- [ ] **ENG-01**: 引擎 pin 从 git commit 改为 npm 精确版本——`engines/dsh-pin.txt` 记录 `dsh_version=0.1.0-rc.6` + 15 个组合包清单 + `node_version`；**禁止使用 dist-tag**（`latest` 指向旧版 `0.0.1-rc.1`）；退役 `scripts/build_dsh_release.sh` 的 pnpm-deploy 符号链接手术
+- [ ] **ENG-02**: `engine-lock.json` 生成脚本——从 pin 文件执行 `npm install` 产出 lockfile v3，裁剪 `node-pty/prebuilds` 非目标平台目录，附加 `engine_version` / `compatible_app_range` / `cordis_config_sha256` 字段；产物约 40KB，是引擎更新的唯一分发单元
+- [ ] **ENG-03**: Rust 侧 lockfile 装配器——按 lockfile `packages` 路径逐包下载 tarball、校验 sha512 `integrity`、解包铺平到目标目录（实测树全平、零嵌套 `node_modules`）；registry 基址可配（默认 `registry.npmmirror.com`，回退 `registry.npmjs.org`）；**运行时不依赖 npm**
+- [ ] **ENG-04**: ACP 组合配置修正——`persistenceRoot` 改为 `!!js process.env.DSH_HOME + '/sessions'`（`${DSH_HOME}` 不被 Cordis 展开，V4 缺陷 D1）；新增 `packChunks: false` + `persistenceCompression: none`（观测面前提）；供应商块改用 `@deepseek-ai/dsh-llm-pi-ai`，`apiKeyEnv` 为凭据引用
+- [ ] **ENG-05**: 引擎半自动更新器——七步流程（取版本 → 兼容闸 → 下载校验 → 铺树 → **冒烟** → 指针切换 → 回滚）；版本目录 `engine\<version>\` + 单行指针 `engine\current`；**冒烟通过前指针一次都不动**；旧版本保留一代
 
-- [x] **SKL-01**: 语料仓 `scripts/convert-skills.js` 新增 `--to dsh`——白名单按域扫描（不扫 `.qwen/` 等自动产物目录）；frontmatter 直通；两类语义改写：斜杠命令 → skill 工具按名加载指引、CLAUDE.md 写入目标 → app 数据目录 `practice-profile.md`；输出 `dist/dsh/<domain>/<skill-name>/SKILL.md`
-- [x] **SKL-02**: 内容包格式与发布——`content-manifest.json` {schema_version, release_version, released_at, min_engine_version, domains:{skills:[{name,sha256}]}}；convert → manifest → zip → release（GitHub Release 默认，可配自有源）纯脚本流水线
-- [x] **SKL-03**: 语料仓内容门禁——`test:compatibility` 扩展断言 dsh 输出：每个 SKILL.md 可解析、frontmatter 合法、无斜杠命令残留、目录名=技能名唯一
-- [x] **SKL-04**: app 技能更新器——启动 + 手动检查拉 manifest；版本比对；原子下载解压到 `skills\<release>\`；sha256 校验失败回滚 last-good；current 指针切换；离线用 last-good；更新全程零用户操作、零重启
-- [x] **SKL-05**: 分域预设——本仓 `presets/<domain>/`（legal-core ≤30 技能核心集 + legal-commercial / legal-litigation / legal-family / legal-employment 首批四域）；以 standard 为底、native 呈现；`customSkillDirs` 指向内容包分域目录；安装时物化到引擎 `.agent-presets/`
-- [x] **SKL-06**: 预设人设与护栏提示词基座——research-gate / citation audit / ask-user（`[CLARIFY:]` 约定）/ de-AI polish / `[HUMAN_REVIEW:]` 输出约定 / 保密提示全部入预设人设；先加载对应技能再动手
-- [x] **SKL-07**: token 预算门禁——默认会话只挂所选分域目录；核心集目录渲染（name+description）长度 ≤ 预算（默认 8,000 字符，可配置）；超预算回归测试红灯、拒绝发货
+### RTM — Rust 引擎主管（三面接入）
 
-### APP — Flutter 产品
+- [ ] **RTM-01**: DSH 子进程生命周期——从 `engine\current` 指向的目录 spawn `node.exe`；`DSH_HOME` 指向 `%LOCALAPPDATA%\InkStatute\runtime\.dsh`；`initialize` 握手健康探针；stdin 关闭 → 等待退出 → 超时 SIGTERM → 再超时 SIGKILL；**零孤儿进程断言**（Windows 用 `tasklist /FI "PID eq <pid>" /FO CSV /NH`）
+- [ ] **RTM-02**: 控制面 ACP 客户端——NDJSON JSON-RPC 帧收发；`initialize` / `session/new`（绝对 cwd，`mcpServers: []`）/ `session/prompt`（每会话单 in-flight）/ **`session/cancel` 必须作为通知发送（无 `id`，按请求发返回 Method not found）** / `session/request_permission` 应答；**一个 app 运行期一个引擎进程、一个对话一个 ACP 会话**
+- [ ] **RTM-03**: 观测面日志尾随器——尾随 `<persistenceRoot>/--<规范化 cwd>--/<sessionId>/session.jsonl`（明文 NDJSON，`seq` 连续）；解析 14 种事件类型与 7 种 chunk 类型；断行/半行安全（只处理完整行）；文件轮转与首次创建延迟容错
+- [ ] **RTM-04**: 历史面只读查询——`<persistenceRoot>/session-query.db` 以只读模式打开；`persisted_sessions` 供会话列表，`persisted_docs`（FTS5 unicode61）供全文搜索；**app 侧永不写入该库**
+- [ ] **RTM-05**: 事件映射器——DSH 会话事件 → `RunEventEnvelope`（15 种统一 `event_type`，见 V5-PRD §5）；`seq` 单调递增；经 Tauri event channel 推送前端；已提交文本经 ACP 与日志双通道到达时以日志为准、ACP 为校验
+- [ ] **RTM-06**: 凭据与供应商——密钥存 OS 凭据库（Windows Credential Manager）；spawn 时按当前供应商注入对应环境变量（`DEEPSEEK_API_KEY` / `OPENAI_API_KEY` / …）；**密钥零明文进入 JSON / 日志 / 遥测 / 进程参数**
+- [ ] **RTM-07**: 对话续接（回灌）——重开旧对话时创建新 ACP 会话，把此前成稿往来作为首轮提示的上下文前缀回灌；轮数上限可配（默认 20），超出从最近往前截断并注明省略；依据实测 `contextWindow: 1000000`
 
-- [x] **APP-01**: Flutter 工程骨架（`apps/flutter_app/`，Windows 桌面优先）——单一 chat UI 实现；墨律三主题以 lawyer-desktop 23 组件为设计参照（不逐字复制）
-- [x] **APP-02**: 会话 UI——已提交文本流式渲染、批准卡片、澄清卡片（解析 `[CLARIFY:]`）、引用徽记（verified/retrieved/unverified）、人审徽记（`[HUMAN_REVIEW:]`）、状态文案（工具活动不可见为接受取舍，PRD DP-2）；单 in-flight 时输入禁用
-- [x] **APP-03**: 本地会话库（SQLite/drift）——会话/消息/引用/审批记录；按执业方向分组；删除与导出
-- [x] **APP-04**: Word 原生修订导出——模型产结构化变更清单 JSON（schema 本阶段定义）；app 侧便携 Python 执行 `contract_review_trackchanges.py` 确定性变换；输出 docx 到用户路径；金标准 fixtures 取 lawfirm-profile；模型永不直接写 docx 字节
-- [x] **APP-05**: 输出边界——只渲染已提交 assistant 文本；DSH meta/system 噪声永不出现；错误映射用户可读（引擎未启动/限流/鉴权/超时）；原始堆栈只进本地日志
-- [x] **APP-06**: 首启向导——执业方向卡片（设默认预设）→ 密钥（预填或一次性粘贴，存 OS 凭据库）→ 模型确认；之后零终端零配置文件
+### UIW — 前端接线
 
-### GRD — 法律护栏
+- [ ] **UIW-01**: Tauri 事件传输层——`apps/desktop/src/hooks/useEventStream.ts` 从 Gateway SSE 改为 Tauri `listen()` 订阅；**`packages/ui-core/src/event-reducer.ts` 与全部 ui-core 组件零改动**
+- [ ] **UIW-02**: V3 平台耦合裁剪——移除 `config/gateway.ts` · `config/arena.ts` · `contexts/AuthContext.tsx` · `contexts/ConnectionContext.tsx` · `pages/ArenaPage.tsx` · `lib/upload.ts` · `lib/runBuilder.ts` · `commands/offline_cache.rs`；`packages/platform-sdk-ts` 只保留 `src/events.ts`
+- [ ] **UIW-03**: ui-core Arena 组件裁剪——移除 `ArenaWorkflowCreator` · `ParallelStreamPanel` · `ScoreCard` · `SynthesisViewer` · `ReviewSummary` · `reducers/arenaEventReducer.ts` · `stores/arenaStream.ts` · `types/arena.ts` 及其测试；`src/index.ts` 同步收敛导出
+- [ ] **UIW-04**: 设置面板移植——从 `lawyer-desktop/src/components/settings/SettingsPanel.tsx`（963 行）移植，砍掉 sync / skillopt 页签，保留 LLM 供应商 / 技能 / 文件 / 关于；接 `RTM-06` 凭据命令
+- [ ] **UIW-05**: 工作区外壳——移植 `lawyer-desktop` 的 `Workspace.tsx`（左右分栏可调宽度）+ `App.tsx` 路由 + `index.css`；`ConversationDrawer` 数据源改为 `RTM-04` 历史面
 
-- [x] **GRD-01**: research-gate——未检索现行法规/司法解释不得下结论；app 侧无 verified 引用时结论区"待核实"标记
-- [x] **GRD-02**: citation audit——引用必标 verified / retrieved / unverified；三类徽记渲染，unverified 视觉警示
-- [x] **GRD-03**: ask-user 强制——关键事实缺失不得起草；模型输出 `[CLARIFY: …]` 块；app 渲染澄清卡片；未澄清任务锁定
-- [x] **GRD-04**: de-AI polish——终稿过润色段；独立样式呈现
-- [x] **GRD-05**: human review——高风险结论恒带 `[HUMAN_REVIEW: …]`；徽记不可自动消除；批准栈无任何放行路径
-- [x] **GRD-06**: 保密——上传前脱敏提醒；DeepSeek API 传输告知；客户材料任务入口一次性确认；本地默认
+### GRD — 法律护栏（沿用 v4.0 GRD-01..06，呈现层重做）
+
+- [ ] **GRD-11**: research-gate 可核验化——工具时间线直接显示检索工具是否被调用；无 verified 引用时结论区渲染「待核实」标记
+- [ ] **GRD-12**: citation audit——引用标注 verified / retrieved / unverified 三类徽记，unverified 视觉警示；复用 `ui-core/src/utils/citationAudit.ts`
+- [ ] **GRD-13**: ask-user 强制——模型输出 `[CLARIFY: …]` 块 → 映射为 `elicitation.requested` → 渲染 `ClarificationCard`；未澄清任务锁定
+- [ ] **GRD-14**: de-AI polish + human review——终稿过润色段；`[HUMAN_REVIEW: …]` 徽记不可自动消除；批准栈无任何放行路径
+- [ ] **GRD-15**: 批准卡片——`session/request_permission` → `permission.requested` → 用户卡片 allow-once / reject-once；**无批量批准入口**；未知 kind 一律拒绝
+- [ ] **GRD-16**: 输出边界与保密——只渲染已提交 assistant 文本，DSH meta/system 噪声永不出现；错误映射用户可读（引擎未启动/限流/鉴权/超时）；原始堆栈只进本地日志；上传前脱敏提醒
+
+### SKL — 技能与内容包（沿用 v4.0 管线）
+
+- [ ] **SKL-11**: 分域预设挂载——`presets/<domain>/` 物化到 `runtime\.dsh\.agent-presets\`；`skills.filesystem.customSkillDirs` 指向内容包分域目录；LLM 自动判断法律领域，用户不选执业方向
+- [ ] **SKL-12**: 内容包自动更新——沿用 V4 `content-manifest.json` + sha256 + 原子切换 + 回滚；**兼容性判据从字符串相等改为 semver 范围比较**（DSH 已启用 semver）
+- [ ] **SKL-13**: token 预算门禁——核心集目录渲染（name+description）长度 ≤ 预算（默认 8,000 字符）；超预算回归测试红灯、拒绝发货
 
 ### PKG — 打包交付
 
-- [x] **PKG-01**: Windows 单 exe 安装包——Flutter build + 引擎 zip + 便携 Python + 初始内容包 + 预设；装到 `%LOCALAPPDATA%\InkStatute`；开始菜单/桌面快捷方式；零命令行
-- [x] **PKG-02**: 三层更新器——app（安装器）/ 引擎（zip 原子替换，禁自动）/ 内容包（唯一自动层）；启动 manifest 检查；签名校验；回滚
-- [x] **PKG-03**: 健康/崩溃遥测——opt-in、脱敏上传；引擎健康探针（initialize 握手）内嵌；业主远程日志路径
-- [x] **PKG-04**: 离线行为——last-good 引擎+内容可启动、可看历史；新任务需联网并明确提示
+- [ ] **PKG-11**: 便携 Node 运行时——随包带 `node.exe`（官方 win-x64，v24 LTS）；引擎 spawn 用绝对路径，**禁止依赖系统 Node**（V4 缺陷 D3）
+- [ ] **PKG-12**: 字体本地化——移除 `ui-core/src/themes/molv-tokens.css` 的 Google Fonts `@import`（中国大陆不可达，V4 缺陷 D2）；字体子集随包分发或降级到系统 CJK 字体栈
+- [ ] **PKG-13**: Windows 单 exe 安装包——Tauri build + `node.exe` + 引擎基线树 + 内容包基线 + 预设；装到 `%LOCALAPPDATA%\InkStatute`；快捷方式；零命令行
+- [ ] **PKG-14**: 首启向导——供应商卡片 → 密钥（存 OS 凭据库）→ 模型确认；之后零终端零配置文件
+- [ ] **PKG-15**: App 层更新器——`tauri-plugin-updater`，替换 lawyer-desktop 遗留的占位公钥 `dW5zZXQtcmVwbGFjZS13aXRoLXNpZ25lci1wdWJrZXk=` 为真实签名公钥
 
-### LEG / GATE — 收敛与门禁
+### GATE — 门禁
 
-- [x] **LEG-01**: v3.x 平台冻结——gateway / wecom / qq / arena / agent-core / acp-client(TS) / ui-core(SolidJS) / apps/web / apps/desktop 标注 frozen（README + MILESTONES），不进 V4 交付物与 V4 gate 套件，不新开工；移除仅在 Phase 120 验收后
-- [x] **LEG-02**: 收敛——律师试运行验收后移除退役目录；v3.0/v3.1 文档归档到 `milestones/`；主线只含 V4 产品代码路径
-- [x] **GATE-01**: v4 门禁 runner（`scripts/run_v4_gates.py`）——dart analyze + flutter test + 内容结构测试 + 引擎清单校验，接 CI
-- [x] **GATE-02**: 覆盖门禁——每个新 Dart `lib/` 目录有测试覆盖；meta-test 在 v4 runner 内
-- [x] **GATE-03**: E2E——mock ACP 全流程（prompt → 流 → 批准卡 → 答复 → committed text）+ 真实引擎路径（DeepSeek API，标注 real-API）+ docx 导出金标准
+- [ ] **GATE-11**: 引擎装配门禁——从空目录出发，Rust 装配器铺出的引擎完成 `initialize` → `session/new`；会话日志落在 `DSH_HOME` 下且为明文 NDJSON；密钥零明文残留（grep 断言）
+- [ ] **GATE-12**: 事件映射门禁——用真实录制的 `session.jsonl` 作 fixture 喂进 `event-reducer.ts`，断言 `RenderState` 正确；流式正文 / 工具时间线 / 进度步骤三者同时正常
+- [ ] **GATE-13**: 更新回滚门禁——故意投一个坏包（sha512 不符 / 冒烟失败），断言 `current` 指针未移动、旧引擎仍可用、用户无感
 
-## Future Requirements (post-v4.0)
+## Non-Goals（v5.0 明确不做）
 
-- **FUTURE-01**: legal-skills 语料并入（DEFER-01，许可评估后）
-- **FUTURE-02**: 流式工具事件接入（DSH 侧能力出现后）
-- **FUTURE-03**: DSH ACP 暴露 elicitation 后的原生澄清卡
-- **FUTURE-04**: 多用户/远程引擎（DSH 部署形态演进后重估）
-- **FUTURE-05**: v3.x 平台资产复活评估（多律所场景）
-- **FUTURE-06**: Code Mode（PTC 呈现）作为可选预设给进阶用户
-
-## Out of Scope
-
-| Feature | Reason |
-|---------|--------|
-| WebView / `dsh web` 嵌入 | 用户明确否决；Flutter 选型意义即原生 UI |
-| Gateway / WeCom / QQ / Arena / 管理台 | 单用户交付错配；LEG-01 冻结 |
-| 自研 agent loop 后续投入 | 引擎 = DSH，军备竞赛结论（PRD §0.1） |
-| 全量挂载 396 技能 | token 预算（SKL-07） |
-| 移动端 | 沿用 V3 决定推后 |
-| ACP v2 特性 | draft 且破坏性变更，锁 v1（继承 V3） |
-| 引擎自动升级 | pre-release 兼容风险（DSH-03） |
-| 模型直写 docx 字节 | 确定性变换在 app 侧（APP-04） |
-| 批量批准 / 服务端默认放行 | 红线继承 V3（DSH-04） |
-| 复制技能语料进本仓 | 只读物化，语料仓唯一事实源（继承 V3） |
+- Word 原生修订导出（V4 APP-04）、便携 Python、track-changes 脚本、`docx-rs`、`pdf-extract`
+- 内嵌文档编辑（DocPreview 只读）
+- Gateway / WeCom / QQ / Arena / 管理台 / 多租户 / 远程引擎
+- 自研 agent loop 的任何投入
+- 移动端
+- 复活 `apps/flutter_app`（冻结保留作 Rust 侧移植参照，不删除、不投入）
 
 ## Traceability
 
 | Requirement | Phase | Status |
-|-------------|-------|--------|
-| DSH-01 | 112 | Complete |
-| DSH-02 | 112 | Complete |
-| DSH-03 | 112 | Complete |
-| DSH-04 | 112 | Complete |
-| GATE-01 | 112 | Complete |
-| GATE-02 | 112 | Complete |
-| SKL-05 | 113 | Complete |
-| SKL-06 | 113 | Complete |
-| SKL-07 | 113 | Complete |
-| SKL-01 | 114 | Complete |
-| SKL-02 | 114 | Complete |
-| SKL-03 | 114 | Complete |
-| SKL-04 | 115 | Complete |
-| APP-01 | 116 | Complete |
-| APP-02 | 116 | Complete |
-| APP-03 | 116 | Complete |
-| APP-05 | 116 | Complete |
-| GRD-01 | 117 | Complete |
-| GRD-02 | 117 | Complete |
-| GRD-03 | 117 | Complete |
-| GRD-04 | 117 | Complete |
-| GRD-05 | 117 | Complete |
-| GRD-06 | 117 | Complete |
-| APP-04 | 118 | Complete |
-| GATE-03 | 118 | Complete |
-| APP-06 | 119 | Complete |
-| DSH-05 | 119 | Complete |
-| PKG-01 | 119 | Complete |
-| PKG-02 | 119 | Complete |
-| PKG-03 | 120 | Complete |
-| PKG-04 | 120 | Complete |
-| LEG-01 | 120 | Complete |
-| LEG-02 | 120 | Complete |
+|---|---|---|
+| ENG-01 | 122 | Pending |
+| ENG-02 | 122 | Pending |
+| ENG-03 | 122 | Pending |
+| ENG-04 | 122 | Pending |
+| GATE-11 | 122 | Pending |
+| RTM-01 | 123 | Pending |
+| RTM-02 | 123 | Pending |
+| RTM-06 | 123 | Pending |
+| RTM-07 | 123 | Pending |
+| RTM-03 | 124 | Pending |
+| RTM-04 | 124 | Pending |
+| RTM-05 | 124 | Pending |
+| GATE-12 | 124 | Pending |
+| UIW-01 | 125 | Pending |
+| UIW-02 | 125 | Pending |
+| UIW-03 | 125 | Pending |
+| UIW-04 | 125 | Pending |
+| UIW-05 | 125 | Pending |
+| GRD-11 | 126 | Pending |
+| GRD-12 | 126 | Pending |
+| GRD-13 | 126 | Pending |
+| GRD-14 | 126 | Pending |
+| GRD-15 | 126 | Pending |
+| GRD-16 | 126 | Pending |
+| SKL-11 | 126 | Pending |
+| SKL-12 | 126 | Pending |
+| SKL-13 | 126 | Pending |
+| ENG-05 | 127 | Pending |
+| PKG-11 | 127 | Pending |
+| PKG-12 | 127 | Pending |
+| PKG-13 | 127 | Pending |
+| PKG-14 | 127 | Pending |
+| PKG-15 | 127 | Pending |
+| GATE-13 | 127 | Pending |
 
 **Coverage:**
 
-- v4.0 requirements: 33 total (5 DSH + 7 SKL + 6 APP + 6 GRD + 4 PKG + 2 LEG + 3 GATE)
-- Mapped to phases: 33 (100%)
+- v5.0 requirements: 34 total (5 ENG + 7 RTM + 5 UIW + 6 GRD + 3 SKL + 5 PKG + 3 GATE)
+- Mapped to phases: 34 (100%)
 - Unmapped: 0 ✅
 
 **Phase distribution:**
 
 | Phase | Requirements | Count |
 |-------|-------------|-------|
-| 112 DSH Engine Integration | DSH-01..04, GATE-01, GATE-02 | 6 |
-| 113 Legal Presets & Domain Presets | SKL-05..07 | 3 |
-| 114 Skill Pipeline — dsh Target | SKL-01..03 | 3 |
-| 115 Skill Content Auto-Update | SKL-04 | 1 |
-| 116 Chat UI & Output Boundary | APP-01..03, APP-05 | 4 |
-| 117 Legal Guardrails | GRD-01..06 | 6 |
-| 118 Word Track-Changes Export | APP-04, GATE-03 | 2 |
-| 119 First-Run Wizard & Windows Packaging | APP-06, DSH-05, PKG-01, PKG-02 | 4 |
-| 120 Convergence & Lawyer Trial | PKG-03, PKG-04, LEG-01, LEG-02 | 4 |
-| **Total** | | **33** |
+| 122 引擎装配管线换血 | ENG-01..04, GATE-11 | 5 |
+| 123 引擎主管与真实链路 | RTM-01, RTM-02, RTM-06, RTM-07 | 4 |
+| 124 观测面·历史面·事件映射 | RTM-03..05, GATE-12 | 4 |
+| 125 前端接线与裁剪 | UIW-01..05 | 5 |
+| 126 护栏与技能能力层 | GRD-11..16, SKL-11..13 | 9 |
+| 127 打包与三层更新 | ENG-05, PKG-11..15, GATE-13 | 7 |
+| **Total** | | **34** |
 
 **Distribution rationale:**
 
-- DSH 需求集中在 112（引擎底座），凭据/向导归 119（与打包同阶段验证交付路径）。
-- SKL 按管线顺序切分：预设（113）→ 物化（114）→ 更新（115）；SKL-07 预算门禁与预设同阶段（113），因为预算由预设形态决定。
-- GRD 全部归 117（护栏阶段统一双层落地），与 116（UI）解耦、与 118（docx）解耦。
-- GATE-01/02 随 112 建立 v4 门禁体系；GATE-03（E2E 与金标准）归 118，覆盖全链路。
+- **122 先行**：引擎装配是所有后续阶段的物理前提，且是最容易验证的一环（不需要 UI、不需要真 key）。
+- **123 在动 UI 之前**：RTM-07（对话续接回灌）是唯一可能推翻方案的环节——若回灌体验不可接受，备选方案是更大的架构决定，越早知道越好。故要求本阶段用**真实 API key** 实测。
+- **124 与 125 拆开**：124 交付「事件正确到达前端」（可用 fixture 验证，不依赖 UI），125 交付「UI 正确渲染」。拆开后 GATE-12 可在无 UI 状态下亮灯。
+- **126 合并 GRD 与 SKL**：护栏的呈现依赖技能预设里的提示词段，两者同阶段落地才能双层同时验证。
+- **127 收口**：引擎更新器（ENG-05）与打包同阶段，因为二者共享版本目录与指针机制。
 
 ---
-*Requirements defined: 2026-08-13*
-*Last updated: 2026-08-14 — all 33 requirements complete (33/33 satisfied, 100% coverage)*
+*Requirements defined: 2026-08-15*
+*Last updated: 2026-08-15 — v5.0 milestone opened, 0/34 complete*

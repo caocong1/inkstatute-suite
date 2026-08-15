@@ -2,7 +2,8 @@
 
 ## Milestones
 
-- 🔄 **v4.0 Flutter Native + DSH Engine** — Phases 112-120 (started 2026-08-13)
+- 🔄 **v5.0 Tauri Shell + DSH Three-Plane Integration** — Phases 122-127 (started 2026-08-15)
+- ⏹️ **v4.0 Flutter Native + DSH Engine** — Phases 112-121 (开发侧技术闭环 2026-08-15；产品层被 v5.0 推翻，`apps/flutter_app` 冻结)
 - ✅ **v3.1 Legal AI Arena** — Phases 105-111 (shipped 2026-08-09)
 - ✅ **v3.0 Unified Legal Core** — Phases 88-104 (shipped 2026-08-08)
 - ✅ **V2 PRD Foundation** — Phases 1-8 (2026-06-30; Phase 5/8 human gates carried)
@@ -34,7 +35,64 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ---
 
-## 🔄 v4.0 Flutter Native + DSH Engine (STARTED 2026-08-13)
+## 🔄 v5.0 Tauri Shell + DSH Three-Plane Integration (STARTED 2026-08-15)
+
+**Milestone Goal:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎；**工具调用与思考过程可见**；分域法律技能随内容包自动更新；四条法律护栏与人审标记不可绕过；**引擎半自动更新且失败自动回滚**。
+
+**Source:** `docs/requirements/V5-PRD.md` · **Requirements:** `.planning/REQUIREMENTS.md` · **Evidence:** `.planning/research/V5-SELECTION.md`（11 项本机实测）
+
+**为什么有 v5.0：** v4.0 的三层分工（DSH 引擎 / 法律能力包 / 产品外壳）是对的，引擎层与能力层继续沿用。被推翻的只有产品层——Flutter 原生 UI 打磨成本过高、呈现简陋，不具备交付品相。调研发现 `packages/ui-core` 已是 lawyer-desktop 像素级打磨 UI 的完整移植（主题文件逐字节相同），且组件已解耦在 `event-reducer.ts` 之后，而这套事件词汇与 DSH 原生会话事件近乎 1:1。换引擎 = 换事件来源，reducer 与组件零改动。
+
+**三个 v4 结论被实测推翻：**
+
+1. 「工具活动不可见为接受取舍」（V4 DP-2）→ **撤销**。会话 JSONL 日志含完整事件流，可配为明文 NDJSON。
+2. 「引擎 170MB zip、禁自动升级」→ **改写**。DSH 已公开发布 npm，lockfile 装配 9 秒 / 42MB，引擎可半自动升级。
+3. 「不用 WebView」→ **失效**。该约束的前提是 Flutter 选型；换到 Tauri 后前端本就是 WebView。
+
+**Stages:**
+
+| 阶段 | Phases | 完成后的状态 |
+|---|---|---|
+| A 引擎底座换血 | 122 | npm lockfile 装配替代 zip 管线；ACP 配置缺陷修复；空目录能装出可启动引擎 |
+| B 真实链路打通 | 123-124 | 引擎主管 + 三面接入 + 事件映射；真 key 跑通问答；fixture 门禁亮灯 |
+| C 产品外壳 | 125-126 | ui-core 接线 + 裁剪 + 设置面板 + 护栏双层 + 技能能力层 |
+| D 交付 | 127 | 单 exe 安装包 + 三层更新 + 回滚门禁 |
+
+**关键路径：** 122 → 123 → 124 → 125 → 126 → 127（严格串行，每阶段是下一阶段的物理前提）
+
+**排序理由：** Phase 123 的 RTM-07（对话续接回灌）是唯一可能推翻方案的环节，故安排在动 UI 之前，且要求**用真实 API key** 实测。若回灌体验不可接受，备选是引擎常驻方案——那是更大的架构决定，越早知道越好。
+
+**并行机会：** 无。本里程碑刻意串行——每阶段的验收门禁是下一阶段的输入前提，且执行方为自主 agent，串行可显著降低返工。
+
+**人工闸门（延后至产品成熟交付律师时，当前不阻塞）：** 律师法律质量抽样、五工作日试运行。当前团队仅开发人员。
+
+## Phases
+
+### 阶段 A — 引擎底座换血
+
+- [ ] **Phase 122: Engine Assembly Pipeline Overhaul** - npm 精确版本 pin + `engine-lock.json` 生成 + Rust lockfile 装配器 + ACP 配置缺陷修复 (ENG-01..04, GATE-11)
+
+### 阶段 B — 真实链路打通
+
+- [ ] **Phase 123: Engine Supervisor & Real Path** - 子进程生命周期 + ACP 控制面 + 凭据注入 + **真 key 实测对话续接** (RTM-01, RTM-02, RTM-06, RTM-07)
+- [ ] **Phase 124: Observation & History Planes** - 日志尾随器 + 只读历史查询 + 事件映射器 + fixture 门禁 (RTM-03..05, GATE-12)
+
+### 阶段 C — 产品外壳
+
+- [ ] **Phase 125: Frontend Wiring & Pruning** - Tauri 事件传输 + V3 耦合裁剪 + Arena 裁剪 + 设置面板 + 工作区外壳 (UIW-01..05)
+- [ ] **Phase 126: Guardrails & Capability Layer** - 护栏双层落地 + 分域预设挂载 + 内容包更新 + token 预算门禁 (GRD-11..16, SKL-11..13)
+
+### 阶段 D — 交付
+
+- [ ] **Phase 127: Packaging & Three-Layer Updates** - 便携 Node + 字体本地化 + 单 exe + 首启向导 + 引擎半自动更新 + 回滚门禁 (ENG-05, PKG-11..15, GATE-13)
+
+---
+
+## ⏹️ v4.0 Flutter Native + DSH Engine (开发侧闭环 2026-08-15，产品层被 v5.0 推翻)
+
+> **状态说明：** v4.0 的引擎层（DSH 接入契约）与能力层（分域预设、技能物化管线、内容包更新）成果**继续有效并被 v5.0 沿用**。
+> 被推翻的是产品层：`apps/flutter_app` 冻结保留（不删除），其 `lib/engine/`、`lib/content/`、`lib/guardrails/`、`lib/wizard/` 作为 Rust 侧移植的行为参照。
+> v4.0 的 APP-04（Word 原生修订导出）业主明确放弃，连带移除便携 Python、track-changes 脚本、`docx-rs`、`pdf-extract`。
 
 **Milestone Goal:** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app（无 WebView）经 ACP over stdio 驱动本地嵌入的 DeepSeek Harness（DSH）引擎；分域法律预设 + 技能内容包自动更新；四条法律护栏与人审标记不可绕过；Word 原生修订稿一键导出；v3.x 平台整体冻结收敛。
 

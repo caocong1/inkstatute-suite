@@ -6,47 +6,61 @@
 
 - **引擎层**：DSH（钉版本、随安装包分发、经 automation-only ACP server over stdio 驱动）。agent loop / 工具注册表 / 批准栈 / 技能系统 / 会话持久化 / 子代理 / 工作流全部继承 DSH，墨律不再自研执行核心。
 - **能力层**：`ai-for-china-legal`（345 个 SKILL.md，唯一事实源，只读物化）经 `dsh` 物化管线进入分域预设；内容包独立版本化、启动时自动更新、失败回滚。`legal-skills` 并入推迟（DEFER-01）。
-- **产品层**：Flutter 原生桌面 app（**无 WebView**）——会话 UI、批准卡片、澄清卡片、引用/人审徽记、Word 原生修订导出、三层更新器、零操作安装。
+- **产品层**：Tauri 2 + SolidJS 桌面 app（`apps/desktop` + `packages/ui-core`）——会话 UI、**工具调用时间线与思考过程**、批准卡片、澄清卡片、引用/人审徽记、三层更新器、零操作安装。
 
-v3.x 平台（Gateway / WeCom / QQ / Arena / 自研 Python core / Tauri 桌面 / SolidJS ui-core）整体冻结，验收后退役（LEG-01/02）。
+v3.x 平台（Gateway / WeCom / QQ / Arena / 自研 Python core）整体冻结。
+**例外：`packages/ui-core` 与 `packages/platform-sdk-ts/src/events.ts` 在 v5.0 中复活为核心资产。**
+`apps/flutter_app`（v4.0 产品层）冻结保留，作为 Rust 侧移植的行为参照，不删除、不再投入。
 
 ## Core Value
 
-一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，分域法律技能随内容包自动更新，四条法律护栏（research-gate / citation audit / ask-user / de-AI polish）与人审标记不可绕过，Word 原生修订稿一键导出。高风险法律结论始终人审。
+一名零技术操作的律师在 Windows 桌面上双击即用：Tauri + SolidJS app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎，工具调用与思考过程可见，分域法律技能随内容包自动更新，四条法律护栏（research-gate / citation audit / ask-user / de-AI polish）与人审标记不可绕过，引擎半自动更新且失败自动回滚。高风险法律结论始终人审。
 
-## Current Milestone: v4.0 Flutter Native + DSH Engine
+## Current Milestone: v5.0 Tauri Shell + DSH Three-Plane Integration
 
-**Started:** 2026-08-13
-**Status:** Roadmap defined — Phases 112-120, 33 requirements mapped, ready to plan Phase 112
-**Predecessor:** v3.1 Legal AI Arena (shipped 2026-08-09) → v3.0 Unified Legal Core (shipped 2026-08-08)
+**Started:** 2026-08-15
+**Status:** Roadmap defined — Phases 122-127, 34 requirements mapped, Phase 122 planned
+**Predecessor:** v4.0 Flutter Native + DSH Engine（开发侧闭环 2026-08-15；产品层被推翻）
 
-**目标：** 一名零技术操作的律师在 Windows 桌面上双击即用：Flutter 原生 app（无 WebView）经 ACP over stdio 驱动本地嵌入的 DSH 引擎；分域法律预设 + 技能内容包自动更新；四条法律护栏与人审标记不可绕过；Word 原生修订稿一键导出；v3.x 平台整体冻结收敛。
+**目标：** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app 经 ACP over stdio 驱动本地嵌入的 DSH 引擎；工具调用与思考过程可见；分域法律预设 + 技能内容包自动更新；四条法律护栏与人审标记不可绕过；引擎半自动更新且失败自动回滚。
 
-**为什么做这个：** 执行核心自研是军备竞赛——DSH 专职团队的 agent loop / 工具 / 批准栈 / 技能 / 持久化 / 子代理 / 工作流无法以自研追赶；同时 V3 的平台形态（Gateway/多通道/Arena）与真实交付对象（一名"连基础软件都装不了"的律师朋友）错配。Flutter 全量重构已是进行时，V4 把"内嵌 DSH"合并进这一版（原称 v5 不再单独立版）。
+**为什么做这个：** v4.0 的三层分工是对的，引擎层与能力层继续沿用；被推翻的只有产品层——Flutter 原生 UI 打磨成本过高、呈现简陋，不具备交付品相。调研发现 `packages/ui-core` 已是 lawyer-desktop 像素级打磨 UI 的完整移植（主题文件逐字节相同），且组件已解耦在 `event-reducer.ts` 之后，而这套事件词汇与 DSH 原生会话事件近乎 1:1。换引擎 = 换事件来源，reducer 与组件零改动。
 
 **架构：**
 
 ```
-apps/flutter_app (Flutter 原生, Windows)
-    ├── packages/acp_client (Dart, ACP v1 JSON-RPC stdio)
-    ├── 首启向导 │ 会话 UI │ 批准卡 │ 澄清卡 │ 引用/人审徽记
-    ├── 本地会话库(SQLite) │ Word 导出(便携 Python) │ 三层更新器
-    ↕ ACP over stdio（单 DSH 子进程）
-DSH 引擎（钉版本, engine\<version>\）
-    ├── engines/acp.cordis.yml（spine + persistence + 批准栈 + fs + 技能 + dsh-acp）
-    ├── DSH_HOME=%LOCALAPPDATA%\InkStatute\runtime\.dsh
-    └── .agent-presets/<domain>/ ← presets/ 物化；skills/<release>/ ← 内容包
+apps/desktop (Tauri 2 + SolidJS, Windows)
+    ├── packages/ui-core（墨律三主题 + 已解耦组件 + event-reducer 421 行，零改动）
+    ├── 首启向导 │ 会话 UI │ 工具时间线 │ 批准卡 │ 澄清卡 │ 引用/人审徽记
+    ↕ Tauri event channel（RunEventEnvelope）
+Rust 引擎主管（apps/desktop/src-tauri）
+    ├── 控制面 ACP stdio：prompt / cancel(通知) / request_permission
+    ├── 观测面 session.jsonl 尾随：tool / reasoning / streaming
+    ├── 历史面 session-query.db 只读：会话列表 + FTS5 全文搜索
+    └── 进程生命周期 │ 凭据注入 │ 事件映射 │ lockfile 装配与更新
+    ↕ 一个 app 运行期一个引擎子进程
+DSH 引擎（钉 npm 精确版本，node.exe + lockfile 装配树，约 42MB）
+    ├── engines/acp.cordis.yml（spine + JSONL 持久化 + 查询索引 + 批准栈
+    │     + 沙箱 + fs/todo 工具 + 压缩 + 分域技能 + pi-ai 多供应商）
+    └── DSH_HOME=%LOCALAPPDATA%\InkStatute\runtime\.dsh
 ```
 
-**关键设计决策：**
-- 引擎 = DSH；集成缝 = automation-only ACP server（唯一面向外部产品进程的稳定缝）；用户明确否决 WebView
-- ACP 三个刻意限制由产品吸收：澄清走 `[CLARIFY:]` 约定文本 + 前置采集（DP-1）、工具活动以状态文案呈现（DP-2）、批准卡为唯一交互通道（DP-3）
-- DSH pre-release → 钉 commit、禁自动升级引擎、升级前真机回归（`scripts/build_dsh_release.sh` + `engines/dsh-pin.txt`）
-- 技能语料唯一事实源 = ai-for-china-legal；`convert-skills.js` 加 `dsh` target；内容包唯一自动更新层
-- 分域预设（core ≤30 + 四域）+ token 预算门禁（目录渲染 ≤8,000 字符默认）——禁全量挂载 345 技能
-- 护栏双层：预设提示词段（模型侧）+ app 呈现/强制（渲染侧），任一层缺失即绕过
-- docx 确定性变换在 app 侧（便携 Python 执行 41,185 字节 track-changes 脚本），模型不写 docx 字节
-- v3.x 平台冻结（LEG-01），律师试运行验收后退役（LEG-02）
+**关键设计决策（依据 `.planning/research/V5-SELECTION.md` 11 项本机实测）：**
+
+- 基座 = `apps/desktop` + `packages/ui-core`，不是 lawyer-desktop（另一仓库），也不是新建项目
+- 三面接入：ACP 控制面 + 会话 JSONL 观测面 + SQLite 历史面。**撤销 v4 的「工具活动不可见」取舍（DP-2）**
+- 会话模型：一个 app 运行期一个引擎进程、一个对话一个 ACP 会话；跨重启用回灌续接（实测 `contextWindow: 1000000`）
+- `session/cancel` 必须作为**通知**发送（无 `id`）——按请求发返回 `Method not found` 而静默失败
+- 否决 SDK JSON-RPC 缝（无权限通道 / 无取消 / 无版本协商）、否决引擎常驻（破坏零孤儿保证）、否决自写 DSH 转发插件
+- 引擎钉 npm 精确版本，**禁用 dist-tag**（`latest` 指向旧版）；更新 = lockfile 装配 + 版本目录 + 冒烟闸 + 指针切换
+- 放弃 Word 原生修订导出，连带移除 `docx-rs` / `pdf-extract` / 便携 Python / track-changes 脚本
+- 修复 v4 遗留缺陷：`${DSH_HOME}` 不展开（会话历史落在引擎目录）、Google Fonts CDN 中国大陆不可达、依赖系统 Node
+
+## Previous: v4.0 Flutter Native + DSH Engine — 产品层被 v5.0 推翻
+
+**开发侧闭环:** 2026-08-15
+**Status:** Phases 112-121 完成。**引擎层与能力层成果继续有效并被 v5.0 沿用**（DSH 接入契约、分域预设、技能 dsh 物化管线、内容包更新机制）。产品层 `apps/flutter_app` 冻结保留作 Rust 侧移植参照，不删除、不投入。APP-04（Word 原生修订导出）业主明确放弃。
+**Archived:** `.planning/milestones/v4.0-REQUIREMENTS.md`
 
 ## Previous: v3.1 Legal AI Arena — SHIPPED
 
