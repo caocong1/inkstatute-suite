@@ -99,14 +99,100 @@ impl Provider {
     }
 }
 
-/// Stores an API key in the OS credential store.
-/// The key is never written to files, logs, or command-line arguments.
+// ─── Debug-only developer credential file ──────────────────────────────────
+//
+// macOS Keychain grants access per *binary*. Every `cargo build` produces a new
+// unsigned executable, so the OS treats each run as an unknown program asking
+// for the entry and pops a password prompt. `list_providers` probes all nine
+// providers, which turns opening the settings panel into nine prompts. That is
+// unworkable on a dev machine and impossible when nobody is at the keyboard.
+//
+// Debug builds therefore keep credentials in a plain JSON file under the user's
+// home directory. It is a development convenience with no protection against a
+// local attacker — which is acceptable for development and is why the whole
+// module is `#[cfg(debug_assertions)]`. Release builds never compile it and read
+// only the OS credential store, so the Windows delivery keeps the V5 constraint
+// "密钥只存 OS 凭据库" intact.
+//
+// The file lives outside the repository so it cannot be committed by accident.
+
+#[cfg(debug_assertions)]
+mod dev_store {
+    use super::{EngineError, Provider};
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+
+    /// `$INKSTATUTE_DEV_CREDENTIALS`, else `~/.inkstatute/dev-credentials.json`.
+    pub fn path() -> Option<PathBuf> {
+        if let Ok(p) = std::env::var("INKSTATUTE_DEV_CREDENTIALS") {
+            if !p.is_empty() {
+                return Some(PathBuf::from(p));
+            }
+        }
+        let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+        Some(PathBuf::from(home).join(".inkstatute").join("dev-credentials.json"))
+    }
+
+    fn read_all() -> HashMap<String, String> {
+        path()
+            .and_then(|p| std::fs::read_to_string(p).ok())
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default()
+    }
+
+    fn write_all(map: &HashMap<String, String>) -> Result<(), EngineError> {
+        let p = path().ok_or_else(|| EngineError::Credential("no home directory".into()))?;
+        if let Some(parent) = p.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let body = serde_json::to_string_pretty(map)
+            .map_err(|e| EngineError::Credential(e.to_string()))?;
+        std::fs::write(&p, body)?;
+        // Owner-only. Best effort: a failure here must not lose the key.
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o600));
+        }
+        Ok(())
+    }
+
+    pub fn load(p: Provider) -> Option<String> {
+        read_all().get(p.id()).filter(|s| !s.is_empty()).cloned()
+    }
+
+    pub fn store(p: Provider, key: &str) -> Result<(), EngineError> {
+        let mut map = read_all();
+        map.insert(p.id().to_string(), key.to_string());
+        write_all(&map)
+    }
+
+    pub fn delete(p: Provider) -> Result<(), EngineError> {
+        let mut map = read_all();
+        map.remove(p.id());
+        write_all(&map)
+    }
+}
+
+/// Stores an API key.
+///
+/// Release builds write to the OS credential store. Debug builds write to the
+/// developer credential file instead, so a rebuilt binary never triggers a
+/// keychain authorization prompt. The key is never written to the repository,
+/// to logs, to telemetry, or to command-line arguments in either mode.
 pub fn store_key(p: Provider, key: &str) -> Result<(), EngineError> {
-    let entry =
-        keyring::Entry::new(KEYRING_SERVICE, p.id()).map_err(|e| EngineError::Credential(e.to_string()))?;
-    entry
-        .set_password(key)
-        .map_err(|e| EngineError::Credential(e.to_string()))
+    #[cfg(debug_assertions)]
+    {
+        return dev_store::store(p, key);
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        let entry = keyring::Entry::new(KEYRING_SERVICE, p.id())
+            .map_err(|e| EngineError::Credential(e.to_string()))?;
+        entry
+            .set_password(key)
+            .map_err(|e| EngineError::Credential(e.to_string()))
+    }
 }
 
 /// Loads an API key from the OS credential store.
@@ -122,12 +208,25 @@ pub fn store_key(p: Provider, key: &str) -> Result<(), EngineError> {
 ///
 /// Returns `Ok(None)` when no source has a value.
 pub fn load_key(p: Provider) -> Result<Option<String>, EngineError> {
+    // Debug order: test env override → developer credential file → OS store.
+    // Reaching the OS store on macOS costs a password prompt per rebuilt binary,
+    // so the file layer is what keeps day-to-day development quiet.
     #[cfg(debug_assertions)]
-    if let Ok(test_key) = std::env::var(TEST_API_KEY_ENV) {
-        if !test_key.is_empty() {
-            return Ok(Some(test_key));
+    {
+        if let Ok(test_key) = std::env::var(TEST_API_KEY_ENV) {
+            if !test_key.is_empty() {
+                return Ok(Some(test_key));
+            }
         }
+        if let Some(key) = dev_store::load(p) {
+            return Ok(Some(key));
+        }
+        // No developer credential: report absence rather than touching the
+        // keychain, which would prompt with nobody there to answer.
+        return Ok(None);
     }
+    #[allow(unreachable_code)]
+    {
     let entry =
         keyring::Entry::new(KEYRING_SERVICE, p.id()).map_err(|e| EngineError::Credential(e.to_string()))?;
     match entry.get_password() {
@@ -135,10 +234,17 @@ pub fn load_key(p: Provider) -> Result<Option<String>, EngineError> {
         Err(keyring::Error::NoEntry) => Ok(None),
         Err(e) => Err(EngineError::Credential(e.to_string())),
     }
+    }
 }
 
-/// Deletes an API key from the OS credential store.
+/// Deletes an API key.
 pub fn delete_key(p: Provider) -> Result<(), EngineError> {
+    #[cfg(debug_assertions)]
+    {
+        return dev_store::delete(p);
+    }
+    #[cfg(not(debug_assertions))]
+    {
     let entry =
         keyring::Entry::new(KEYRING_SERVICE, p.id()).map_err(|e| EngineError::Credential(e.to_string()))?;
     match entry.delete_credential() {
@@ -146,15 +252,16 @@ pub fn delete_key(p: Provider) -> Result<(), EngineError> {
         Err(keyring::Error::NoEntry) => Ok(()),
         Err(e) => Err(EngineError::Credential(e.to_string())),
     }
+    }
 }
 
 /// Returns whether a key exists in the OS credential store for this provider.
 /// This never returns the key content, so it is safe to call from UI code.
 pub fn has_key(p: Provider) -> bool {
-    match keyring::Entry::new(KEYRING_SERVICE, p.id()) {
-        Ok(entry) => matches!(entry.get_password(), Ok(s) if !s.is_empty()),
-        Err(_) => false,
-    }
+    // Must follow the same resolution order as load_key. Probing the keychain
+    // directly here is what turned opening the settings panel into nine
+    // password prompts (list_providers calls this for every provider).
+    matches!(load_key(p), Ok(Some(s)) if !s.is_empty())
 }
 
 /// Builds the environment variables passed to the engine subprocess.

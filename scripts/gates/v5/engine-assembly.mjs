@@ -115,6 +115,30 @@ check('GATE-11.7: no plaintext API keys', () => {
   }
 });
 
+// 7. Developer credential file must never reach a release build.
+check('GATE-11.8: dev credential store is debug-only', () => {
+  const src = readFileSync(
+    path.join(REPO_ROOT, 'apps/desktop/src-tauri/src/engine/credentials.rs'),
+    'utf8',
+  );
+  // The whole module is compiled out of release builds.
+  if (!/#\[cfg\(debug_assertions\)\]\s*\nmod dev_store/.test(src)) {
+    throw new Error('dev_store module is not gated behind #[cfg(debug_assertions)]');
+  }
+  // Release still goes to the OS credential store.
+  if (!src.includes('#[cfg(not(debug_assertions))]')) {
+    throw new Error('no release-only keyring path found');
+  }
+  // The dev file lives outside the repo, so it can never be committed.
+  if (src.includes('dev-credentials.json') && !src.includes('.inkstatute')) {
+    throw new Error('dev credential path must live under the user home directory');
+  }
+  const tracked = run('git ls-files -z').split('\0').filter(Boolean);
+  if (tracked.some((f) => f.includes('dev-credentials'))) {
+    throw new Error('a dev credential file is tracked by git');
+  }
+});
+
 if (!ok) {
   process.exit(1);
 }
