@@ -182,6 +182,15 @@ The v1.6 milestone extended the platform beyond Hermes-only by proving agent-bac
 - ✓ CONV-04: 冻结 packages/multi-agent-adapter (experimental) — Phase 104
 - ✓ CONV-05: gate 体系更新（34 gates, gate-coverage meta-test 全覆盖） — Phase 104
 - ✓ SAFE-06: 可组合性保持 + WeCom/QQ 回归测试全绿 — Phase 104
+- ✓ SKL-11: 分域预设挂载（materialize_presets + INKSTATUTE_SKILL_DIRS 运行时注入） — Phase 126
+- ✓ SKL-12: 内容包自动更新（semver 预发布兼容 + sha256 + 原子切换 + 回滚） — Phase 126
+- ✓ SKL-13: token 预算门禁（目录渲染 ≤ 8,000 字符，超预算拒绝发货） — Phase 126
+- ✓ GRD-11: research-gate 可核验化（工具时间线 research_performed + 无 verified 引用时「待核实」标记） — Phase 126
+- ✓ GRD-12: citation audit（verified/retrieved/unverified 三级徽记 + citation.recorded 事件） — Phase 126
+- ✓ GRD-13: ask-user（[CLARIFY:] 块状解析 + ClarificationCard + 未澄清任务锁定） — Phase 126
+- ✓ GRD-14: de-AI polish + human review（[HUMAN_REVIEW:] 恒人审 + 徽记不可消除） — Phase 126
+- ✓ GRD-15: 批准卡片（allow-once/reject-once，无批量批准路径，60s 超时自动拒绝） — Phase 126
+- ✓ GRD-16: 输出边界 + 保密（只渲染已提交文本 + 首次上传一次性保密确认） — Phase 126
 
 ### Active
 
@@ -378,11 +387,12 @@ Four-contract North Star platform architecture (ChannelAdapter, BackendAdapter, 
 
 ## Current State
 
-- **Active milestone:** v4.0 Flutter Native + DSH Engine — Phases 112-120, roadmap defined, none started.
-- **Last shipped:** v3.1 Legal AI Arena (2026-08-09) / v3.0 Unified Legal Core (2026-08-08).
-- **v4.0 deliverable:** Flutter 原生桌面 app（无 WebView）+ 嵌入 DSH 引擎（ACP over stdio）+ 分域法律预设 + 技能内容包自动更新 + 六条护栏双层 + Word 修订导出 + 单 exe 安装包。
-- **Frozen (LEG-01):** gateway / wecom / qq / arena / agent-core / acp-client(TS) / ui-core(SolidJS) / apps/web / apps/desktop。
-- **Carried human gates:** HG-1 法律质量（Phase 120）、HG-4 修订稿质量（Phase 118）、HG-3 律师试运行（Phase 120）；HG-2 / QQ `--live` 随通道冻结 DEFERRED。
+- **Active milestone:** v5.0 Tauri Shell + DSH Three-Plane Integration — Phases 122-127. Phase 126 complete; Phase 127 (packaging + three-layer updates) is next.
+- **Last shipped:** v3.1 Legal AI Arena (2026-08-09) / v3.0 Unified Legal Core (2026-08-08). v4.0 superseded by v5.0.
+- **v5.0 deliverable:** Tauri 2 + SolidJS 桌面 app（装配 ui-core 墨律三主题）经 ACP over stdio 驱动本地嵌入 DeepSeek Harness（DSH）引擎，Windows 桌面双击即用。分域预设 + 内容包自动更新 + 六条护栏双层 + token 预算门禁 + 单 exe 安装包 + 三层更新。
+- **Phase 126 complete:** 护栏双层落地（GRD-11..16）+ 分域预设挂载 + 内容包更新 + token 预算门禁（SKL-11..13）。四门全绿、无批量批准路径、event-reducer.ts 未改。
+- **Frozen (LEG-01):** gateway / wecom / qq / arena / agent-core / acp-client(TS) / apps/web / apps/flutter_app。`packages/ui-core`(SolidJS) 与 `apps/desktop` 在 v5.0 复活为核心资产。
+- **Carried human gates:** HG-1 法律质量（Phase 127）、HG-3 律师试运行（Phase 127）；HG-4 随 APP-04 放弃关闭；HG-2 / QQ `--live` 随通道冻结 DEFERRED。
 
 
 ## Evolution
@@ -405,4 +415,4 @@ This document evolves at each phase transition and milestone completion.
 6. Key Decisions table updated with milestone outcomes.
 
 ---
-*Last updated: 2026-08-13 — Milestone v4.0 Flutter Native + DSH Engine started (v3.0/v3.1 shipped; v3.x platform frozen)*
+*Last updated: 2026-08-16 — Phase 126 (Guardrails & Capability Layer) complete: 9/9 requirements verified, 4 V5 gates green, 6 guardrails dual-layer, no batch approval path. Next: Phase 127 (Packaging + Three-Layer Updates).*
