@@ -19,6 +19,7 @@
 )]
 
 mod commands;
+pub mod content;
 pub mod engine;
 mod menu;
 mod security;
