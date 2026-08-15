@@ -8,6 +8,7 @@ pub mod replay;
 pub mod session_map;
 pub mod smoke;
 pub mod supervisor;
+pub mod tailer;
 
 use thiserror::Error;
 
