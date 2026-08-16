@@ -252,26 +252,9 @@ export function HomePage(props: HomePageProps) {
           </div>
         </div>
 
-        <div class="section-h">
-          <h2>起草示例</h2>
-          <span class="more">点击填入</span>
-        </div>
-        <div class="types">
-          <For each={DOC_TYPES}>
-            {(t) => (
-              <button type="button" class="type-card" onClick={() => insertExamplePrompt(t.prompt)}>
-                <div class="type-ic">
-                  <Icon name={t.icon} />
-                </div>
-                <h3>{t.name}</h3>
-                <p>{t.desc}</p>
-                <span class="go">
-                  <Icon name="arrow" />
-                </span>
-              </button>
-            )}
-          </For>
-        </div>
+        {/* 业主决定（2026-08-16）：移除「起草示例」卡片。固定文书类型会误导
+            律师以为只能做这几类，且与「LLM 自动判断法律领域」的定位冲突。
+            DOC_TYPES 仍保留在 utils 中未删。 */}
       </div>
     </div>
   );
