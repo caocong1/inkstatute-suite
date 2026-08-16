@@ -123,8 +123,15 @@ async fn observation_loop(
                 emit(&app, &env);
                 return;
             }
-            Ok(Some(TailedEvent::Closed)) | Ok(None) | Err(_) => {
+            Ok(Some(TailedEvent::Closed)) | Ok(None) => {
                 return;
+            }
+            // Timeout tick: no event within 200ms. This is the normal quiet
+            // state — loop back and re-check stop_flag. Returning here (the
+            // original bug) killed observation in the first quiet 200ms, so
+            // the UI never received a single engine event and hung on 回复中.
+            Err(_) => {
+                continue;
             }
         }
     }

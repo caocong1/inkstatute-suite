@@ -28,7 +28,6 @@ import {
 } from "solid-js";
 import {
   ChatPanel,
-  DocPreview,
   ClarificationCard,
   CitationPanel,
   type CitationGroups,
@@ -111,11 +110,6 @@ export const Workspace: Component<WorkspaceProps> = (props) => {
   const [showConfidentiality, setShowConfidentiality] = createSignal(false);
   let wsRef: HTMLDivElement | undefined;
   let splitterRef: HTMLDivElement | undefined;
-
-  const showPreview = createMemo(() => {
-    const s = session.state();
-    return s.artifacts.length > 0 || s.citations.length > 0;
-  });
 
   /** GRD-11: "待核实" bar — no verified citation AND research_performed==false. */
   const showUnverifiedBar = createMemo(() => {
@@ -205,7 +199,7 @@ export const Workspace: Component<WorkspaceProps> = (props) => {
   return (
     <div
       class="ws"
-      classList={{ solo: !showPreview() }}
+      classList={{ solo: true }}
       ref={(el) => (wsRef = el)}
       style={{ "--chat-w": `${chatWidth()}px` }}
     >
@@ -301,28 +295,8 @@ export const Workspace: Component<WorkspaceProps> = (props) => {
         </Show>
       </div>
 
-      <Show when={showPreview()}>
-        <div
-          class="ws-splitter"
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="调整聊天与文书预览宽度"
-          tabindex="0"
-          ref={(el) => (splitterRef = el)}
-          onPointerDown={beginResize}
-          onDblClick={resetWidth}
-          onKeyDown={onSplitterKeyDown}
-        />
-        <DocPreview
-          artifact={state().artifacts[0] ?? null}
-          document={null}
-          isStreaming={session.isStreaming()}
-          onCitationToggle={() => setCitePanelOpen((v) => !v)}
-          onCite={() => {}}
-          onRisk={() => {}}
-          onFix={() => void session.sendMessage("请根据风险提示补充或修改相关条款。")}
-        />
-      </Show>
+      {/* 业主决定（2026-08-16）：移除文档编辑/预览区，会话占满全宽。
+          DocPreview 组件保留在 ui-core 中未删，仅不再挂载。 */}
 
       {/* GRD-12: CitationPanel slide-in — reuse ui-core */}
       <Show when={state().citations.length > 0}>

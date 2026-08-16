@@ -47,9 +47,36 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
   const [runId, setRunId] = createSignal<string | null>(null);
   const eventStream = useEventStream(runId);
 
+  // Local echo: the reducer only ever creates assistant messages, and the
+  // mapper drops user/message by design (the user just typed it here). Record
+  // each sent prompt with the assistant-count at send time, then interleave
+  // in mergedState below. ui-core stays untouched.
+  const [localUser, setLocalUser] = createSignal<{ text: string; at: number }[]>([]);
+
+  function mergedState(): RenderState {
+    const s = eventStream.state();
+    const users = localUser();
+    if (users.length === 0) return s;
+    const merged: RenderState["messages"] = [];
+    let ui = 0;
+    s.messages.forEach((msg, i) => {
+      while (ui < users.length && users[ui].at <= i) {
+        merged.push({ id: `local-user-${ui}`, role: "user", content: users[ui].text, completed: true });
+        ui++;
+      }
+      merged.push(msg);
+    });
+    while (ui < users.length) {
+      merged.push({ id: `local-user-${ui}`, role: "user", content: users[ui].text, completed: true });
+      ui++;
+    }
+    return { ...s, messages: merged };
+  }
+
   async function sendMessage(prompt: string): Promise<void> {
     // Set runId to conversationId so useEventStream subscribes to events
     setRunId(props.conversationId);
+    setLocalUser((p) => [...p, { text: prompt, at: eventStream.state().messages.length }]);
     // Send the prompt to the engine
     await engineSend(props.conversationId, prompt);
   }
@@ -80,7 +107,7 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
 
   const value: SessionContextValue = {
     runId,
-    state: eventStream.state,
+    state: mergedState,
     isStreaming: eventStream.isStreaming,
     streamError: eventStream.error,
     sendMessage,

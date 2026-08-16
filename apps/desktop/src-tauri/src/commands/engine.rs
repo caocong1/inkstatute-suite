@@ -132,8 +132,15 @@ pub async fn engine_send(
     let sup = guard.as_ref().ok_or("引擎未启动")?;
     let acp = sup.acp_client();
 
-    let cwd = std::env::current_dir()
-        .map_err(|e| format!("无法获取当前目录：{}", e))?;
+    // Per-conversation workspace: the DSH file sandbox (workspace-write) is
+    // scoped to the session cwd. Using the process cwd here handed the agent
+    // the entire source tree in dev, and let AGENTS.md leak into its context
+    // via workspaceContext.
+    let cwd = paths::app_root()
+        .map_err(|e| format!("无法获取应用目录：{}", e))?
+        .join("workspaces")
+        .join(&conversation_id);
+    std::fs::create_dir_all(&cwd).map_err(|e| format!("无法创建工作区：{}", e))?;
     let session_id = state
         .sessions
         .ensure(&conversation_id, &cwd, &acp)
