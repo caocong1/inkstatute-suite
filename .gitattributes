@@ -1,0 +1,10 @@
+# CRLF written by a Windows checkout once poisoned engine-lock.json's
+# cordis_config_sha256 and broke engine updates on every LF machine.
+# Text files are LF everywhere; only Windows-native scripts keep CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.ico binary
+*.icns binary
+*.woff2 binary

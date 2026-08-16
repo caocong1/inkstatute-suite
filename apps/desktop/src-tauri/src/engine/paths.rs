@@ -245,9 +245,13 @@ mod tests {
     fn node_binary_prefers_resource_dir() {
         let tmp = std::env::temp_dir().join(format!("ink-node-res-{}", std::process::id()));
         fs::remove_dir_all(&tmp).ok();
-        let bin = make_fake_node(&tmp, if cfg!(target_os = "windows") { "node.exe" } else { "node" });
+        // The lookup name must match the fake we created: hardcoding "node.exe"
+        // here passed on the Windows machine that wrote this test and failed on
+        // every other platform, where the fake is named "node".
+        let name = if cfg!(target_os = "windows") { "node.exe" } else { "node" };
+        let bin = make_fake_node(&tmp, name);
 
-        let got = resolve_node_binary(Some(&tmp), None, |_| None, "node.exe").unwrap();
+        let got = resolve_node_binary(Some(&tmp), None, |_| None, name).unwrap();
         assert_eq!(got, bin);
         fs::remove_dir_all(&tmp).ok();
     }

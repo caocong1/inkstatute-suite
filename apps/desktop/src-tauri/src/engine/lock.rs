@@ -64,8 +64,17 @@ impl EngineLock {
         std::path::PathBuf::from(self.entrypoint_key()).join("lib/bin.js")
     }
 
+    /// Hashes the cordis config with line endings normalized to LF.
+    ///
+    /// The generator may run on a Windows checkout where git's autocrlf hands
+    /// it CRLF bytes, while the assembler on a user machine writes the LF file
+    /// bundled with the app. Hashing raw bytes made those two disagree and
+    /// every engine update failed with CordisConfigMismatch (observed after
+    /// Phase 127 was executed on Windows). Both sides must hash the normalized
+    /// form; `gen-engine-lock.mjs` applies the same `\r\n` → `\n` rewrite.
     pub fn sha256_cordis_config(cordis_yml: &str) -> String {
-        format!("{:x}", sha2::Sha256::digest(cordis_yml.as_bytes()))
+        let normalized = cordis_yml.replace("\r\n", "\n");
+        format!("{:x}", sha2::Sha256::digest(normalized.as_bytes()))
     }
 }
 

@@ -101,10 +101,22 @@ where
         .try_for_each(|_| futures::future::ok(()))
         .await?;
 
-    // Prune non-target platform prebuilds.
+    // Prune non-target platform prebuilds — but never the host's own.
+    //
+    // The lock is generated for the delivery target (win32-x64), so its prune
+    // list removes every other platform. Honoring it verbatim on a dev machine
+    // deletes the prebuild the local engine needs to boot (node-pty fails with
+    // "Cannot find module './prebuilds/darwin-arm64/pty.node'"), which killed
+    // smoke tests and the update gates on macOS after the lock was regenerated
+    // on Windows. Keeping the host's entry costs nothing in production: there
+    // the host IS the target, so it is never in the prune list to begin with.
+    let host = host_prebuild_platform();
     for (rel_dir, names) in &lock.prune {
         let base = partial_dir.join("node_modules").join(rel_dir);
         for name in names {
+            if name == host {
+                continue;
+            }
             let target = base.join(name);
             if target.exists() {
                 fs::remove_dir_all(&target)?;
@@ -346,4 +358,18 @@ mod tests {
 /// `generate_handler!` macro can accept them.
 fn clone_pkg_entry((k, v): (&String, &LockedPackage)) -> (String, LockedPackage) {
     (k.clone(), v.clone())
+}
+
+/// The npm prebuild directory name for the machine this code is running on,
+/// in node-pty's `<os>-<arch>` convention.
+pub(crate) fn host_prebuild_platform() -> &'static str {
+    match (std::env::consts::OS, std::env::consts::ARCH) {
+        ("macos", "aarch64") => "darwin-arm64",
+        ("macos", "x86_64") => "darwin-x64",
+        ("windows", "x86_64") => "win32-x64",
+        ("windows", "aarch64") => "win32-arm64",
+        ("linux", "x86_64") => "linux-x64",
+        ("linux", "aarch64") => "linux-arm64",
+        _ => "unknown",
+    }
 }

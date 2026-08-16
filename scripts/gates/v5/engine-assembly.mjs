@@ -63,7 +63,8 @@ check('GATE-11.3: engine-lock.json structure', () => {
     if (!pkg.tarball_path.startsWith('/') || pkg.tarball_path.includes('://')) throw new Error(`bad tarball_path for ${k}: ${pkg.tarball_path}`);
   }
   // cordis sha256 must match actual file.
-  const cordis = readFileSync(path.join(REPO_ROOT, 'engines', 'acp.cordis.yml'), 'utf8');
+  // CRLF→LF normalization must match gen-engine-lock.mjs and lock.rs.
+  const cordis = readFileSync(path.join(REPO_ROOT, 'engines', 'acp.cordis.yml'), 'utf8').replaceAll('\r\n', '\n');
   const actual = createHash('sha256').update(cordis).digest('hex');
   if (actual !== lock.cordis_config_sha256) throw new Error('cordis_config_sha256 mismatch');
 });

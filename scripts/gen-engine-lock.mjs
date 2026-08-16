@@ -53,7 +53,13 @@ function parsePin() {
 }
 
 function sha256File(path) {
-  return createHash('sha256').update(readFileSync(path)).digest('hex');
+  // Normalize CRLF → LF before hashing. On a Windows checkout git autocrlf
+  // hands this script CRLF bytes while user machines verify the bundled LF
+  // file; hashing raw bytes once made every engine update fail with
+  // CordisConfigMismatch. Must stay in step with
+  // `EngineLock::sha256_cordis_config` in src/engine/lock.rs.
+  const text = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
+  return createHash('sha256').update(text).digest('hex');
 }
 
 function prebuildPlatformsToPrune(targetPlatform, installedPlatforms) {
