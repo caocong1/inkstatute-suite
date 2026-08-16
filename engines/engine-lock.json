@@ -5,10 +5,9 @@
   "target_platform": "win32-x64",
   "compatible_app_range": ">=0.1.0 <1.0.0",
   "cordis_config_sha256": "af5e62de01817e4df723b9005ab4f24ae24543bb400faf6ddd4612c4cb53aac6",
-  "generated_at": "2026-08-15T23:59:49.472Z",
+  "generated_at": "2026-08-16T15:41:51.636Z",
   "prune": {
     "node-pty/prebuilds": [
-      "darwin-arm64",
       "darwin-x64",
       "win32-arm64"
     ]
@@ -542,6 +541,24 @@
       "integrity": "sha512-NCgz8lCAdvd0oSGIF0EKg1OXfIC7x9r0an7mgC19F0DGzYZJe5ve6AwEYpSvKITE3V8W4NbUzLKyyZG3VH5QtQ==",
       "tarball_path": "/@deepseek-ai/dsh-skill-filesystem/-/dsh-skill-filesystem-0.1.0-rc.6.tgz"
     },
+    "node_modules/@deepseek-ai/dsh-subagent": {
+      "name": "@deepseek-ai/dsh-subagent",
+      "version": "0.1.0-rc.6",
+      "integrity": "sha512-vROmBDAlaFAzzSlTBOlvg/7fO55zxhUztnLtB3lKmN5RevrNQBjTsbeIMDQ8ow5ZplxEOnLU+sikFoA5JaoH8A==",
+      "tarball_path": "/@deepseek-ai/dsh-subagent/-/dsh-subagent-0.1.0-rc.6.tgz"
+    },
+    "node_modules/@deepseek-ai/dsh-subagent-in-process-driver": {
+      "name": "@deepseek-ai/dsh-subagent-in-process-driver",
+      "version": "0.1.0-rc.6",
+      "integrity": "sha512-KK8Ep4PeSyrM3YQdcZhetXsiBd+bliKu6NWWKyTh60LobKtVNREfPBlqRfzc0mU0ZIKD4VEC7RfuJaqvz4UlPw==",
+      "tarball_path": "/@deepseek-ai/dsh-subagent-in-process-driver/-/dsh-subagent-in-process-driver-0.1.0-rc.6.tgz"
+    },
+    "node_modules/@deepseek-ai/dsh-subagent-spawn-in-process": {
+      "name": "@deepseek-ai/dsh-subagent-spawn-in-process",
+      "version": "0.1.0-rc.6",
+      "integrity": "sha512-62mtUEr5megxVy6CwQCdZVq5MCSt+kMw74ns5m7PK0PlZTWcxQVBQHNdfkE9sX4Cageu7YTvciUJuH8amm6bsQ==",
+      "tarball_path": "/@deepseek-ai/dsh-subagent-spawn-in-process/-/dsh-subagent-spawn-in-process-0.1.0-rc.6.tgz"
+    },
     "node_modules/@deepseek-ai/dsh-subprocess": {
       "name": "@deepseek-ai/dsh-subprocess",
       "version": "0.1.0-rc.6",
@@ -601,6 +618,18 @@
       "version": "0.1.0-rc.6",
       "integrity": "sha512-AebSfHSt6j0PXuN3yK9+X4aC6tHSnFdm2hZglII7aEHr/lL9UbynPb3NTumh6thXZ9Earvwhf9JdOxHMsjHqfw==",
       "tarball_path": "/@deepseek-ai/dsh-tool-skill/-/dsh-tool-skill-0.1.0-rc.6.tgz"
+    },
+    "node_modules/@deepseek-ai/dsh-tool-subagent": {
+      "name": "@deepseek-ai/dsh-tool-subagent",
+      "version": "0.1.0-rc.6",
+      "integrity": "sha512-yK+ETLxDZhtwc19uqv5yAVzq3x/i2hjV9p67Or1a+s9Eqs+eu+ZJJk5hQ/2JeRiJet2otOC4zzOkYb/UVSBFyA==",
+      "tarball_path": "/@deepseek-ai/dsh-tool-subagent/-/dsh-tool-subagent-0.1.0-rc.6.tgz"
+    },
+    "node_modules/@deepseek-ai/dsh-tool-subagent-report": {
+      "name": "@deepseek-ai/dsh-tool-subagent-report",
+      "version": "0.1.0-rc.6",
+      "integrity": "sha512-DqnJ6yJ0wO35jdcpCSuogbx/PC4xE8wrcVxXPvSw9I59p/8nROsfwB9UXuJoilp/wenREUoTi0X8+5ZOVSRLqw==",
+      "tarball_path": "/@deepseek-ai/dsh-tool-subagent-report/-/dsh-tool-subagent-report-0.1.0-rc.6.tgz"
     },
     "node_modules/@deepseek-ai/dsh-tool-todo": {
       "name": "@deepseek-ai/dsh-tool-todo",
