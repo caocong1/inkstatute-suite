@@ -87,7 +87,7 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 
 ### 阶段 D — 交付
 
-- [ ] **Phase 127: Packaging & Three-Layer Updates** - 便携 Node + 字体本地化 + 单 exe + 首启向导 + 引擎半自动更新 + 回滚门禁 (ENG-05, PKG-11..15, GATE-13)
+- [x] **Phase 127: Packaging & Three-Layer Updates** - 便携 Node + 字体本地化 + 单 exe + 首启向导 + 引擎半自动更新 + 回滚门禁 (ENG-05, PKG-11..15, GATE-13) ✅ 2026-08-17
 
 ### 阶段 E — 增强附加功能（v5.0 交付后，不阻塞核心交付）
 
