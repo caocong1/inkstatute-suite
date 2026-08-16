@@ -264,11 +264,59 @@ pub fn has_key(p: Provider) -> bool {
     matches!(load_key(p), Ok(Some(s)) if !s.is_empty())
 }
 
+/// Returns providers that have a configured API key, in `Provider::all()`
+/// order. Used by `build_engine_env` to decide which env vars to inject, and
+/// by the UI to report how much cross-review capability is available
+/// (Phase 128 / MMR-01..02).
+pub fn configured_providers() -> Vec<Provider> {
+    Provider::all().iter().copied().filter(|p| has_key(*p)).collect()
+}
+
+/// Cross-vendor review capability, judged by how many *distinct vendors* have
+/// a configured key — not how many models. Reviewer/challenger subagents need
+/// a vendor different from the drafting model to avoid same-vendor blind
+/// spots (see `engines/acp.cordis.yml` reviewer-a/reviewer-b/challenger).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ReviewCapability {
+    /// Only one vendor configured. Same-vendor different-model review is
+    /// still possible, but with limited effect.
+    SingleVendor { provider: Provider },
+    /// Two or more vendors configured — full cross-vendor review.
+    CrossVendor { providers: Vec<Provider> },
+    /// No vendor configured at all.
+    None,
+}
+
+/// Determines the current review capability from configured providers.
+pub fn review_capability() -> ReviewCapability {
+    classify_review_capability(configured_providers())
+}
+
+/// Pure classification, split out from `review_capability` so the 0/1/many
+/// branch selection is unit-testable without going through the credential
+/// store (see `provider_env_pairs` below for why that I/O boundary matters
+/// for test determinism in this crate).
+fn classify_review_capability(providers: Vec<Provider>) -> ReviewCapability {
+    match providers.len() {
+        0 => ReviewCapability::None,
+        1 => ReviewCapability::SingleVendor {
+            provider: providers[0],
+        },
+        _ => ReviewCapability::CrossVendor { providers },
+    }
+}
+
 /// Builds the environment variables passed to the engine subprocess.
-/// Inherits the current process environment and adds `DSH_HOME`, the
-/// active provider's API key variable, and `INKSTATUTE_SKILL_DIRS` (the
-/// comma-separated absolute paths to materialized domain skill directories).
-/// The returned value must not be logged.
+/// Inherits the current process environment and adds `DSH_HOME`,
+/// `INKSTATUTE_SKILL_DIRS` (the comma-separated absolute paths to
+/// materialized domain skill directories), and the API key variable for
+/// every *configured* provider — not just `active`. The extra keys let
+/// review/challenge subagents (Phase 128 / MMR-01..02) call a vendor
+/// different from the drafting model; a provider with no key configured is
+/// simply absent, which is the SingleVendor degradation path (see
+/// `review_capability`). `active` alone is a hard requirement: its key must
+/// exist, or this returns `MissingApiKey`. The returned value must not be
+/// logged.
 pub fn build_engine_env(
     active: Provider,
     dsh_home: &Path,
@@ -288,9 +336,36 @@ pub fn build_engine_env(
         skill_dirs,
     ));
 
-    let key = load_key(active)?.ok_or_else(|| EngineError::MissingApiKey(active.id().to_string()))?;
-    envs.push((active.env_var().to_string(), key));
+    let active_key =
+        load_key(active)?.ok_or_else(|| EngineError::MissingApiKey(active.id().to_string()))?;
+    let mut provider_keys = vec![(active, active_key)];
+    for p in configured_providers() {
+        if p.env_var() == active.env_var() {
+            continue; // already queued above
+        }
+        if let Some(key) = load_key(p)? {
+            provider_keys.push((p, key));
+        }
+    }
+
+    envs.extend(provider_env_pairs(&provider_keys));
     Ok(envs)
+}
+
+/// Pure: turns `(provider, key)` pairs into the `(env var name, value)`
+/// pairs `build_engine_env` appends. Kept separate from the credential-store
+/// I/O so the "only configured providers are injected" invariant is
+/// unit-testable with synthetic input, instead of depending on
+/// has_key()/load_key() across all nine providers reflecting a clean
+/// process-global credential state inside a test binary shared with other
+/// test modules (`engine::supervisor`'s spawn tests set
+/// `INKSTATUTE_TEST_API_KEY` and never clear it, so a test that expects an
+/// *absent* provider would be order-dependent on which tests ran first).
+fn provider_env_pairs(provider_keys: &[(Provider, String)]) -> Vec<(String, String)> {
+    provider_keys
+        .iter()
+        .map(|(p, key)| (p.env_var().to_string(), key.clone()))
+        .collect()
 }
 
 /// Redacts strings that look like API keys. Safe to use in error messages.
@@ -348,6 +423,21 @@ impl fmt::Display for Provider {
 mod tests {
     use super::*;
     use std::env;
+    use std::sync::Mutex;
+
+    /// Serializes tests in this module that mutate the process-global
+    /// `TEST_API_KEY_ENV` var. `cargo test` runs `#[test]` fns on a thread
+    /// pool by default; without this, one test's `env::set_var` /
+    /// `env::remove_var` interleaves with another's and both become
+    /// order-dependent (observed: `configured_providers()` returning 1
+    /// instead of 9 because a sibling test's cleanup cleared the var
+    /// mid-assertion). Recovers from a poisoned lock instead of propagating
+    /// the panic, so one failing test does not cascade-fail every later
+    /// test that needs this lock.
+    static ENV_TEST_LOCK: Mutex<()> = Mutex::new(());
+    fn lock_env_tests() -> std::sync::MutexGuard<'static, ()> {
+        ENV_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
 
     #[test]
     fn provider_roundtrip() {
@@ -385,6 +475,7 @@ mod tests {
 
     #[test]
     fn build_engine_env_contains_dsh_home_and_provider_key() {
+        let _guard = lock_env_tests();
         let temp = env::temp_dir().join(format!("inkstatute-build-env-test-{}", std::process::id()));
         std::fs::remove_dir_all(&temp).ok();
         std::fs::create_dir_all(&temp).unwrap();
@@ -404,6 +495,7 @@ mod tests {
 
     #[test]
     fn build_engine_env_skill_dirs_are_absolute_paths() {
+        let _guard = lock_env_tests();
         let temp = env::temp_dir().join(format!(
             "inkstatute-build-env-skill-{}-{}",
             std::process::id(),
@@ -458,6 +550,7 @@ mod tests {
 
     #[test]
     fn load_key_prefers_test_env() {
+        let _guard = lock_env_tests();
         env::set_var(TEST_API_KEY_ENV, "sk-prefer-test");
         let key = load_key(Provider::DeepSeek).unwrap();
         assert_eq!(key.as_deref(), Some("sk-prefer-test"));
@@ -469,5 +562,95 @@ mod tests {
         let p = Provider::DeepSeek;
         let text = format!("{:?}", p);
         assert!(!text.starts_with("sk-"));
+    }
+
+    // --- Phase 128 / MMR-01..02: review capability ---
+
+    #[test]
+    fn classify_review_capability_variants_by_configured_count() {
+        assert_eq!(classify_review_capability(vec![]), ReviewCapability::None);
+
+        assert_eq!(
+            classify_review_capability(vec![Provider::DeepSeek]),
+            ReviewCapability::SingleVendor {
+                provider: Provider::DeepSeek
+            }
+        );
+
+        let three = vec![Provider::DeepSeek, Provider::OpenAI, Provider::Anthropic];
+        assert_eq!(
+            classify_review_capability(three.clone()),
+            ReviewCapability::CrossVendor { providers: three }
+        );
+    }
+
+    #[test]
+    fn review_capability_debug_never_leaks_key_material() {
+        let cap = classify_review_capability(vec![Provider::OpenAI, Provider::Anthropic]);
+        let text = format!("{:?}", cap);
+        // The Debug impl only ever formats Provider variant names (an enum
+        // with no string payload) — it structurally cannot contain a key,
+        // but assert the shape explicitly so this test fails loudly if a
+        // future refactor adds a key-bearing field.
+        assert!(!text.contains("sk-"));
+        assert!(text.contains("OpenAI") && text.contains("Anthropic"));
+    }
+
+    #[test]
+    fn provider_env_pairs_only_includes_given_providers() {
+        let pairs = provider_env_pairs(&[
+            (Provider::DeepSeek, "sk-a".to_string()),
+            (Provider::OpenAI, "sk-b".to_string()),
+        ]);
+        assert_eq!(pairs.len(), 2);
+        assert!(pairs
+            .iter()
+            .any(|(k, v)| k == "DEEPSEEK_API_KEY" && v == "sk-a"));
+        assert!(pairs
+            .iter()
+            .any(|(k, v)| k == "OPENAI_API_KEY" && v == "sk-b"));
+        // Anthropic was never in the input — proves build_engine_env only
+        // ever emits vars for providers it was actually given, i.e. the
+        // configured ones, and silently drops everything else.
+        assert!(!pairs.iter().any(|(k, _)| k == "ANTHROPIC_API_KEY"));
+    }
+
+    #[test]
+    fn configured_providers_and_build_engine_env_cover_every_provider_when_all_configured() {
+        // TEST_API_KEY_ENV is provider-agnostic (see load_key's doc comment:
+        // one value answers has_key() for every provider), so setting it
+        // puts every provider into the "configured" state. That is exactly
+        // what this test needs: prove configured_providers()/
+        // build_engine_env() actually walk all nine providers, not just
+        // `active`, end to end through the real credential-lookup path.
+        let _guard = lock_env_tests();
+        env::set_var(TEST_API_KEY_ENV, "sk-test-all-vendors");
+
+        let configured = configured_providers();
+        assert_eq!(configured.len(), 9, "every provider should report configured");
+
+        let temp = env::temp_dir().join(format!(
+            "inkstatute-build-env-multi-vendor-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::remove_dir_all(&temp).ok();
+        std::fs::create_dir_all(&temp).unwrap();
+
+        let envs = build_engine_env(Provider::DeepSeek, &temp).unwrap();
+        for p in Provider::all() {
+            assert!(
+                envs.iter().any(|(k, v)| k == p.env_var() && !v.is_empty()),
+                "expected {} to be injected for provider {}",
+                p.env_var(),
+                p.id()
+            );
+        }
+
+        env::remove_var(TEST_API_KEY_ENV);
+        std::fs::remove_dir_all(&temp).ok();
     }
 }
