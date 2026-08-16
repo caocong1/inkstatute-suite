@@ -259,6 +259,12 @@ impl EventMapper {
                     .unwrap_or("")
                     .to_string();
 
+                // A tool-only commit carries no text; emitting completed for it
+                // renders a bare avatar row with an empty bubble in the thread.
+                if content.trim().is_empty() {
+                    return Vec::new();
+                }
+
                 // Scan the committed text for guardrail structures (GRD-12/13/14).
                 let scan = guardrails::scan(&content);
 

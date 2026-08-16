@@ -1033,3 +1033,39 @@ html, body {
   color: var(--molv-text-h, #08060d);
   margin-left: 8px;
 }
+
+/* v5: single-column chat fills the window (业主 2026-08-16 移除右侧文档区).
+   The JSX renders .ws-chat-area; the ported sheet only styled the old .ws-chat
+   name, so the column had no width rule at all. */
+.ws-chat-area {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* D) 中间思考过程（参考 DSH：进行中展开、可折叠） */
+.ws-thinking {
+  margin: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2, rgba(0,0,0,0.02));
+  font-size: 12.5px;
+}
+.ws-thinking summary {
+  cursor: pointer;
+  padding: 6px 10px;
+  color: var(--muted);
+  user-select: none;
+}
+.ws-thinking pre {
+  margin: 0;
+  padding: 0 12px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+  color: var(--ink-soft);
+  font-family: inherit;
+}

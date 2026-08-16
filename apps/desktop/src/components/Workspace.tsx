@@ -257,6 +257,15 @@ export const Workspace: Component<WorkspaceProps> = (props) => {
           </div>
         </Show>
 
+        {/* 中间思考过程：thought.delta 累积于 state().thinking（一次回答约 2000 条）。
+            进行中默认展开流式显示，结束后保留可折叠。 */}
+        <Show when={state().thinking}>
+          <details class="ws-thinking" open={state().runStatus === "running"}>
+            <summary>思考过程</summary>
+            <pre>{state().thinking}</pre>
+          </details>
+        </Show>
+
         <ChatPanel
           state={state()}
           onSend={(text) => void session.sendMessage(text)}

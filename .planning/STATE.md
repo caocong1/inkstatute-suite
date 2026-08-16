@@ -2,16 +2,17 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
+current_phase: 127
 status: phase_complete
-stopped_at: 平台策略变更（2026-08-16 业主决定）：macOS 上先全部跑通，Windows 适配最后做。引擎已装入 ~/.local/share/InkStatute 并冒烟通过，tauri dev 可启动，待业主真机七场景核对 + Phase 128
-last_updated: "2026-08-17T00:00:00.000Z"
+stopped_at: context exhaustion at 75% (2026-08-16)
+last_updated: "2026-08-16T08:16:43.566Z"
 last_activity: 2026-08-17
 progress:
-  total_phases: 9
-  completed_phases: 7
-  total_plans: 35
-  completed_plans: 25
-  percent: 100
+  total_phases: 7
+  completed_phases: 3
+  total_plans: 20
+  completed_plans: 8
+  percent: 40
 ---
 
 # Project State
@@ -141,8 +142,8 @@ V4 文档中的 `/home/sorawatcher/...` 在当前开发机不存在。实际路�
 
 ## Session Continuity
 
-Last session: 2026-08-16T03:20:00.000Z
-Stopped at: v5.0 Phase 126 完成，GRD-11..16 + SKL-11..13 全部完成，准备进入 Phase 127
+Last session: 2026-08-16T08:16:43.544Z
+Stopped at: context exhaustion at 75% (2026-08-16)
 Product spec: docs/requirements/V5-PRD.md (Tauri Shell + DSH Three-Plane Integration)
 Research: .planning/research/V5-SELECTION.md (11 项本机实测, HIGH confidence)
 Requirements: .planning/REQUIREMENTS.md (34/34 mapped to phases 122-127, 100% coverage)

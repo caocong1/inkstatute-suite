@@ -115,6 +115,10 @@ export function TitleBar(props: TitleBarProps) {
     <div
       class={`tb${isMac ? " tb--mac" : " tb--win"}`}
       onDblClick={isMac ? undefined : handleDragRegionDoubleClick}
+      // Functional port fix (2026-08-16): handleMacDragMouseDown existed but was
+      // never attached, so the frameless titlebar had no drag / double-click on
+      // macOS. It also covers double-click (event.detail === 2 → toggleMaximize).
+      onMouseDown={isMac ? handleMacDragMouseDown : undefined}
     >
       <Show when={isMac && win}>
         <div class="tb-traffic tb-no-drag">
