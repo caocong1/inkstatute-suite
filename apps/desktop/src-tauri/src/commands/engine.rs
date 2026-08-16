@@ -18,6 +18,13 @@ use crate::engine::EngineError;
 pub struct EngineState {
     supervisor: RwLock<Option<EngineSupervisor>>,
     sessions: SessionMap,
+    /// Live observation handles keyed by conversation id. ObservationHandle
+    /// sets its stop flag on Drop, so the handle MUST be kept alive here —
+    /// discarding start_observation()'s return value (the original bug) stops
+    /// the tail loop in the same statement it was started in, and the UI never
+    /// receives a single engine event. Inserting for the same conversation
+    /// drops the previous handle, which is exactly the stop we want then.
+    observations: tokio::sync::Mutex<std::collections::HashMap<String, crate::engine::runtime::ObservationHandle>>,
 }
 
 impl EngineState {
@@ -25,6 +32,7 @@ impl EngineState {
         Self {
             supervisor: RwLock::new(None),
             sessions: SessionMap::new(),
+            observations: tokio::sync::Mutex::new(std::collections::HashMap::new()),
         }
     }
 }
@@ -128,6 +136,7 @@ pub async fn engine_send(
     state: State<'_, EngineState>,
     app: AppHandle,
 ) -> Result<(), String> {
+    eprintln!("[dbg-send] conv={} text_len={}", conversation_id, text.len());
     let guard = state.supervisor.read().await;
     let sup = guard.as_ref().ok_or("引擎未启动")?;
     let acp = sup.acp_client();
@@ -150,12 +159,18 @@ pub async fn engine_send(
     // Start observing this session's log
     let sessions_root = paths::sessions_root()
         .map_err(|e| format!("无法获取会话目录：{}", e))?;
-    crate::engine::runtime::start_observation(
+    eprintln!("[dbg-send] session={} starting observation", session_id);
+    let handle = crate::engine::runtime::start_observation(
         app.clone(),
         sessions_root,
         session_id.clone(),
         conversation_id.clone(),
     );
+    state
+        .observations
+        .lock()
+        .await
+        .insert(conversation_id.clone(), handle);
 
     // Emit a session.started event so the UI knows the run is active
     let _ = app.emit(

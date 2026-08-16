@@ -33,6 +33,7 @@ import {
   type CitationGroups,
   type CitationCard,
 } from "@inkstatute/ui-core";
+import { useConversations } from "../contexts/ConversationContext";
 import { useSession } from "../contexts/SessionContext";
 import { PermissionCard } from "./PermissionCard";
 import "./Workspace.css";
@@ -105,6 +106,14 @@ export interface WorkspaceProps {
 
 export const Workspace: Component<WorkspaceProps> = (props) => {
   const session = useSession();
+  const convs = useConversations();
+
+  // Consume the prompt typed on the home page and actually send it.
+  onMount(() => {
+    const pending = convs.consumePendingPrompt();
+    if (pending) void session.sendMessage(pending);
+  });
+
   const [chatWidth, setChatWidth] = createSignal(loadChatWidth());
   const [citePanelOpen, setCitePanelOpen] = createSignal(false);
   const [showConfidentiality, setShowConfidentiality] = createSignal(false);

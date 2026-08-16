@@ -138,6 +138,7 @@ async fn observation_loop(
 }
 
 fn emit(app: &AppHandle, env: &RunEventEnvelope) {
+    eprintln!("[dbg-emit] {} run={} seq={}", env.event_type, env.run_id, env.seq);
     let payload: Value = serde_json::to_value(env)
         .unwrap_or_else(|_| Value::Null);
     let _ = app.emit(RUN_EVENT_CHANNEL, payload);

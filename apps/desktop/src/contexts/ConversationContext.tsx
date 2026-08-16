@@ -18,7 +18,8 @@ import { listConversations, type SessionSummary } from "../services/engine";
 export interface ConversationContextValue {
   conversations: () => Conversation[];
   currentConversationId: () => string | null;
-  createConversation: (title?: string) => Promise<string>;
+  createConversation: (prompt?: string) => Promise<string>;
+  consumePendingPrompt: () => string | null;
   refreshConversations: () => Promise<void>;
   setCurrentConversation: (id: string) => void;
 }
@@ -42,12 +43,23 @@ export const ConversationProvider: ParentComponent = (props) => {
    * Create a conversation locally. The ACP session is created lazily by the
    * engine on the first message (SessionMap::ensure in Rust).
    */
-  async function createConversation(title?: string): Promise<string> {
+  // The prompt typed on the home page travels here; the workspace consumes it
+  // on mount and actually sends it. Before this existed, handleStart() used the
+  // prompt only as the conversation title and the message silently vanished.
+  const [pendingPrompt, setPendingPrompt] = createSignal<string | null>(null);
+  function consumePendingPrompt(): string | null {
+    const p = pendingPrompt();
+    setPendingPrompt(null);
+    return p;
+  }
+
+  async function createConversation(prompt?: string): Promise<string> {
     const convId = crypto.randomUUID();
     const now = new Date().toISOString();
+    if (prompt) setPendingPrompt(prompt);
     const conv: Conversation = {
       id: convId,
-      title: title ?? convId,
+      title: prompt ? (prompt.length > 24 ? prompt.slice(0, 24) + "…" : prompt) : "新会话",
       created_at: now,
       updated_at: now,
     };
@@ -77,6 +89,7 @@ export const ConversationProvider: ParentComponent = (props) => {
     conversations,
     currentConversationId,
     createConversation,
+    consumePendingPrompt,
     refreshConversations,
     setCurrentConversation: setCurrentConversationId,
   };

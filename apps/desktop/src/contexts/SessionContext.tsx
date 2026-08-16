@@ -75,6 +75,7 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
 
   async function sendMessage(prompt: string): Promise<void> {
     // Set runId to conversationId so useEventStream subscribes to events
+    console.warn("[dbg-ui] sendMessage conv=", props.conversationId);
     setRunId(props.conversationId);
     setLocalUser((p) => [...p, { text: prompt, at: eventStream.state().messages.length }]);
     // Send the prompt to the engine
