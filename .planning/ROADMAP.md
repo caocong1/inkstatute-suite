@@ -99,6 +99,154 @@ Carried human gates from v1.x (NOT closed by v3.0 or v3.1):
 > **多模型互评是配置而非编排代码**。Phase 125-01 已改为"拆 Arena"——
 > 呈现层（6 组件 + arenaEventReducer + types/arena）保留，只删 Gateway/SSE 传输层。
 
+## Phase Details
+
+### Phase 122: Engine Assembly Pipeline Overhaul
+**Goal**: 把引擎装配从「克隆 DSH 源码 + pnpm 构建 + 170MB zip」换成「按 npm lockfile 铺平依赖树」，并修复 V4 遗留的 ACP 配置缺陷。交付一条能从空目录装出可启动引擎的管线
+**Depends on**: Nothing (first v5.0 phase; builds on v4.0 引擎层成果)
+**Requirements**: ENG-01, ENG-02, ENG-03, ENG-04, GATE-11
+**Success Criteria** (what must be TRUE):
+  1. `engines/dsh-pin.txt` 记录 `dsh_version` 精确版本 + 组合包清单 + `node_version`；仓库任何位置不出现 dist-tag（`latest` / `next`）
+  2. `scripts/gen-engine-lock.mjs` 从 pin 文件产出 lockfile v3 格式的 `engine-lock.json`（约 40KB），裁剪 `node-pty/prebuilds` 非目标平台目录
+  3. Rust 装配器从空目录出发，逐包下载 tarball、校验 sha512 `integrity`、铺平解包；运行时不依赖 npm / pnpm / yarn
+  4. registry 基址可配，默认 `registry.npmmirror.com`，可回退 `registry.npmjs.org`
+  5. `engines/acp.cordis.yml` 的 `persistenceRoot` 用 `!!js process.env.DSH_HOME + '/sessions'`（修复 V4 缺陷 D1）；`packChunks: false` + `persistenceCompression: none` 已生效
+  6. GATE-11 绿灯：装配出的引擎完成 `initialize` → `session/new`；会话日志落在 `DSH_HOME` 下且为明文 NDJSON；密钥零明文残留（grep 断言）
+**Plans**: 3 plans
+
+Plans:
+- [x] 122-01: Pin File Migration + engine-lock.json Generator
+- [x] 122-02: Rust Lockfile Assembler
+- [x] 122-03: Engine Smoke Harness + GATE-11
+
+### Phase 123: Engine Supervisor & Real Path
+**Goal**: 把「一个能装配的引擎目录」变成「一个 app 能驱动的真实引擎」：子进程生命周期、ACP 控制面、凭据注入、对话续接。本阶段是方案风险闸口，RTM-07 必须用真实 API key 实测
+**Depends on**: Phase 122
+**Requirements**: RTM-01, RTM-02, RTM-06, RTM-07
+**Success Criteria** (what must be TRUE):
+  1. 从 `engine/current` 指向的目录 spawn `node.exe`，`DSH_HOME` 指向运行时目录；`initialize` 握手健康探针通过
+  2. 关闭流程 stdin 关闭 → 等待退出 → 超时 SIGTERM → 再超时 SIGKILL；零孤儿进程断言通过
+  3. ACP 控制面：`initialize` / `session/new`（绝对 cwd，`mcpServers: []`）/ `session/prompt`（每会话单 in-flight）/ `session/request_permission` 应答全部工作
+  4. `session/cancel` 作为**通知**发送（无 `id` 字段）——按请求发会返回 `Method not found` 而静默失败
+  5. 密钥存 OS 凭据库，spawn 时按当前供应商注入环境变量；密钥零明文进入 JSON / 日志 / 遥测 / 进程参数
+  6. RTM-07 回灌闸门：重开旧对话时创建新 ACP 会话并回灌成稿往来作为首轮上下文前缀，轮数上限可配；**用真实 API key 实测通过**，结论记入 `123-DECISION.md`
+**Plans**: 3 plans
+
+Plans:
+- [x] 123-01: Process Lifecycle + Credential Injection
+- [x] 123-02: ACP Control-Plane Client
+- [x] 123-03: Conversation Resume by Replay — Real API Gate
+
+### Phase 124: Observation & History Planes
+**Goal**: 补齐 ACP 丢掉的数据——工具调用、推理、流式增量、会话列表、全文搜索。交付「事件正确到达前端」，用 fixture 验证，不依赖 UI
+**Depends on**: Phase 123（`123-DECISION.md` 结论为回灌方案验证通过）
+**Requirements**: RTM-03, RTM-04, RTM-05, GATE-12
+**Success Criteria** (what must be TRUE):
+  1. 观测面尾随 `<persistenceRoot>/--<规范化 cwd>--/<sessionId>/session.jsonl`，解析 14 种事件类型与 7 种 chunk 类型；断行/半行安全（只处理完整行）
+  2. 日志轮转与文件首次创建延迟均被容错，尾随器不因短暂静默而退出
+  3. 历史面以**只读**模式打开 `session-query.db`：`persisted_sessions` 供会话列表，`persisted_docs`（FTS5）供全文搜索；app 侧永不写入该库
+  4. 事件映射器把 DSH 会话事件映射为 `RunEventEnvelope` 的 15 种统一 `event_type`，`seq` 单调递增，经 Tauri event channel 推送前端
+  5. 已提交文本经 ACP 与日志双通道到达时**以日志为准**、ACP 仅作交叉校验
+  6. GATE-12 绿灯：真实录制的 `session.jsonl` 作 fixture 喂进 `event-reducer.ts`，流式正文 / 工具时间线 / 进度步骤三者同时正常
+**Plans**: 3 plans
+
+Plans:
+- [x] 124-01: Session Log Tailer
+- [x] 124-02: Read-Only History Plane
+- [x] 124-03: Event Mapper + GATE-12
+
+### Phase 125: Frontend Wiring & Pruning
+**Goal**: 把已经正确到达前端的事件真正渲染出来：换传输层、裁 V3 耦合、裁 Arena 传输层、补设置面板与工作区外壳。核心纪律是 `event-reducer.ts` 与全部 ui-core 组件源码零改动
+**Depends on**: Phase 124（GATE-12 绿灯）
+**Requirements**: UIW-01, UIW-02, UIW-03, UIW-04, UIW-05
+**Success Criteria** (what must be TRUE):
+  1. `apps/desktop/src/hooks/useEventStream.ts` 从 Gateway SSE 改为 Tauri `listen()` 订阅；`packages/ui-core/src/event-reducer.ts` 与全部 ui-core 组件**零改动**
+  2. V3 平台耦合已移除：`config/gateway.ts` · `config/arena.ts` · `contexts/AuthContext.tsx` · `contexts/ConnectionContext.tsx` · `pages/ArenaPage.tsx` · `lib/upload.ts` · `lib/runBuilder.ts` · `commands/offline_cache.rs`
+  3. `packages/platform-sdk-ts` 只保留 `src/events.ts`
+  4. Arena **传输层**已裁（Gateway/SSE 通路）；呈现层（6 组件 + `arenaEventReducer` + `types/arena`）按 2026-08-16 业主决定**保留**供 Phase 128 复用
+  5. 设置面板从 lawyer-desktop 移植并砍掉 sync / skillopt 页签，保留 LLM 供应商 / 技能 / 文件 / 关于，接 RTM-06 凭据命令
+  6. 工作区外壳（左右分栏可调宽度）+ 路由 + `index.css` 就位；`ConversationDrawer` 数据源改为 RTM-04 历史面
+**Plans**: 3 plans
+
+Plans:
+- [x] 125-01: Prune V3 Platform Coupling and Arena
+- [x] 125-02: Tauri Event Transport
+- [x] 125-03: Settings Panel + Workspace Shell
+
+### Phase 126: Guardrails & Capability Layer
+**Goal**: 把「能对话的外壳」变成「能做法律工作且不可绕过护栏的产品」：分域预设挂载、内容包更新、护栏双层落地。护栏双层缺一即视为绕过
+**Depends on**: Phase 125
+**Requirements**: GRD-11, GRD-12, GRD-13, GRD-14, GRD-15, GRD-16, SKL-11, SKL-12, SKL-13
+**Success Criteria** (what must be TRUE):
+  1. `presets/<domain>/` 物化到 `runtime/.dsh/.agent-presets/`，`skills.filesystem.customSkillDirs` 指向内容包分域目录；LLM 自动判断法律领域，用户不选执业方向
+  2. 内容包自动更新沿用 V4 `content-manifest.json` + sha256 + 原子切换 + 回滚；兼容性判据为 **semver 范围比较**（非字符串相等）
+  3. token 预算门禁：核心集目录渲染长度 ≤ 预算（默认 8,000 字符），超预算回归测试红灯、拒绝发货
+  4. research-gate 可核验：工具时间线显示检索工具是否被调用；无 verified 引用时结论区渲染「待核实」标记
+  5. 引用标注 verified / retrieved / unverified 三类徽记，unverified 视觉警示
+  6. `[CLARIFY: …]` → `elicitation.requested` → `ClarificationCard`，未澄清任务锁定；`[HUMAN_REVIEW: …]` 徽记不可自动消除
+  7. 批准卡片 allow-once / reject-once，**无批量批准入口**，未知 kind 一律拒绝
+  8. 输出边界：只渲染已提交 assistant 文本，DSH meta/system 噪声永不出现；错误映射用户可读，原始堆栈只进本地日志
+**Plans**: 2 plans
+
+Plans:
+- [x] 126-01: Domain Presets, Content Packs, Token Budget Gate
+- [x] 126-02: Six Guardrails — Two Layers
+
+### Phase 127: Packaging & Three-Layer Updates
+**Goal**: 收口——把「开发机上能跑的东西」变成「律师电脑上双击就能用的东西」：便携 Node、字体本地化、单 exe 安装包、首启向导、三层更新器、回滚门禁。本阶段是 v5.0 的交付闸
+**Depends on**: Phase 126
+**Requirements**: ENG-05, PKG-11, PKG-12, PKG-13, PKG-14, PKG-15, GATE-13
+**Success Criteria** (what must be TRUE):
+  1. 随包带 `node.exe`（官方 win-x64），引擎 spawn 用绝对路径，**不依赖系统 Node**（修复 V4 缺陷 D3）
+  2. `ui-core/src/themes/molv-tokens.css` 不再有 Google Fonts `@import`；字体随包分发或降级到系统 CJK 字体栈（修复 V4 缺陷 D2）
+  3. Windows 单 exe 安装包含 Tauri build + `node.exe` + 引擎基线树 + 内容包基线 + 预设，装到 `%LOCALAPPDATA%\InkStatute`，零命令行
+  4. 首启向导：供应商卡片 → 密钥（存 OS 凭据库）→ 模型确认；之后零终端零配置文件
+  5. 引擎半自动更新七步（取版本 → 兼容闸 → 下载校验 → 铺树 → 冒烟 → 指针切换 → 回滚）；**冒烟通过前 `current` 指针一次都不动**；旧版本保留一代
+  6. App 层 `tauri-plugin-updater` 就位，占位公钥已替换为真实签名公钥
+  7. GATE-13 绿灯：故意投坏包（sha512 不符 / 冒烟失败），`current` 指针未移动、旧引擎仍可用、用户无感
+**Plans**: 3 plans
+
+Plans:
+- [x] 127-01: Portable Node + Font Localization
+- [x] 127-02: Engine Semi-Auto Updater + GATE-13 Rollback
+- [x] 127-03: First-Run Wizard + Windows Single-Exe + App Updater
+
+### Phase 128: Multi-Model Cross-Review & Adversarial Challenge
+**Goal**: 把 v3.1 Arena 的核心价值——多个不同厂商的模型互相审查同一份法律意见——以增强附加功能的形式重建在 v5.0 架构上。范围收敛为交叉互评 + 对抗质询，多模型互评是**配置**而非编排代码
+**Depends on**: Phase 127
+**Requirements**: MMR-01, MMR-02, MMR-03, MMR-04, MMR-05, MMR-06, GATE-14
+**Success Criteria** (what must be TRUE):
+  1. `acp.cordis.yml` 注册 3 个 `dsh-tool-subagent` 实例（复核 A / 复核 B / 对抗质询），各绑不同厂商模型、独立人设、只读工具白名单、`maxDepth: 1`
+  2. 传输方式恒为 `subagent-spawn-in-process`（全新会话）；**`fork-in-process` 不入 pin、不入 lock、不入配置**；静态门禁固化该不变式
+  3. 复核意见按【同意】/【分歧】/【遗漏】/【风险】固定结构输出；分歧逐条呈现为 `[分歧] 争点 ｜ 本意见 ｜ 复核意见 ｜ 是否消解`
+  4. 对抗质询按【致命问题】/【可被攻击】/【建议补强】输出；多轮上限默认 2；某轮无新致命/可攻击项即早停
+  5. 未消解分歧与未回应的致命问题**强制** `[HUMAN_REVIEW:]`，徽记不可自动消除；模型漏标时 app 侧兜底补标并记诊断日志
+  6. 复用 Phase 125 保留的 `ReviewSummary` / `SynthesisViewer` / `ParallelStreamPanel` / `ScoreCard` / `SlotStreamView` / `arenaEventReducer` / `types/arena`；**reducer 零改动**
+  7. 触发为「高风险自动 + 一个深度复核按钮」，**无模式选择器**；按已配置厂商数自适应降级（0 家禁用 / 1 家提示效力有限 / ≥2 家完整互评）
+  8. GATE-14 绿灯：配置侧 / 人设侧 / 映射侧 / 呈现侧 / 纪律侧五项断言全过
+**Plans**: 3 plans
+
+Plans:
+- [ ] 128-01: Reviewer Subagents — Config + Fresh Context Guarantee
+- [ ] 128-02: Review Orchestration Persona, Adversarial Rounds, Synthesis
+- [ ] 128-03: Subagent Event Mapping, UI Wiring, GATE-14
+
+## Progress
+
+**Execution Order:** 122 → 123 → 124 → 125 → 126 → 127（严格串行）→ 128（交付后增强）
+
+**Parallelization opportunities:** 无——刻意串行。每阶段验收门禁是下一阶段输入前提。
+
+| Phase | Stage | Plans Complete | Status | Completed |
+|-------|-------|----------------|--------|-----------|
+| 122. Engine Assembly Pipeline Overhaul | A | 3/3 | Complete | 2026-08-15 |
+| 123. Engine Supervisor & Real Path | B | 3/3 | Complete | 2026-08-16 |
+| 124. Observation & History Planes | B | 3/3 | Complete | 2026-08-16 |
+| 125. Frontend Wiring & Pruning | C | 3/3 | Complete | 2026-08-16 |
+| 126. Guardrails & Capability Layer | C | 2/2 | Complete | 2026-08-16 |
+| 127. Packaging & Three-Layer Updates | D | 3/3 | Complete | 2026-08-17 |
+| 128. Multi-Model Cross-Review & Adversarial Challenge | E | 0/3 | Planned | — |
+
 ---
 
 ## ⏹️ v4.0 Flutter Native + DSH Engine (开发侧闭环 2026-08-15，产品层被 v5.0 推翻)
