@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
 status: phase_complete
-stopped_at: v5.0 Phase 127 完成——三计划全绿，6 道门禁全过，HG-1/HG-3 保持 DEFERRED
+stopped_at: 平台策略变更（2026-08-16 业主决定）：macOS 上先全部跑通，Windows 适配最后做。引擎已装入 ~/.local/share/InkStatute 并冒烟通过，tauri dev 可启动，待业主真机七场景核对 + Phase 128
 last_updated: "2026-08-17T00:00:00.000Z"
 last_activity: 2026-08-17
 progress:
