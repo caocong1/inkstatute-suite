@@ -4,8 +4,8 @@
   "node_version": "24.19.0",
   "target_platform": "win32-x64",
   "compatible_app_range": ">=0.1.0 <1.0.0",
-  "cordis_config_sha256": "af5e62de01817e4df723b9005ab4f24ae24543bb400faf6ddd4612c4cb53aac6",
-  "generated_at": "2026-08-16T15:41:51.636Z",
+  "cordis_config_sha256": "e35fb8742618e7da0cf4c42343adde5541ed5c1f97e7ecdf18858ef5a99e1511",
+  "generated_at": "2026-08-16T15:47:53.142Z",
   "prune": {
     "node-pty/prebuilds": [
       "darwin-x64",

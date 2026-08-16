@@ -81,6 +81,93 @@
   config:
     policy: ask
 
+# ── 多模型互评（Phase 128）────────────────────────────────────────────
+# 子代理传输：spawn = 全新会话，不继承父历史。
+# 刻意不用 fork 型子代理传输（继承父会话全部历史）—— 复核者若看见起草者的推理会被锚定，
+# 原 v3.1 设计以 AST 门禁强制新鲜上下文，此处沿用该立场。
+- id: subagent-runtime
+  name: '@deepseek-ai/dsh-subagent'
+
+- id: subagent-spawn
+  name: '@deepseek-ai/dsh-subagent-spawn-in-process'
+  config:
+    providerName: spawn
+
+# 复核者 A —— 与主模型不同厂商，避免同源盲区。
+- id: reviewer-a
+  name: '@deepseek-ai/dsh-tool-subagent'
+  config:
+    provider: spawn
+    toolName: legal_review_a
+    maxDepth: 1              # 复核者不得再起复核者
+    agentOptions:
+      provider: openai
+      model: gpt-5
+    toolFilter:
+      allow: ['read', 'grep', 'glob', 'skill']   # 只读检索；禁 bash、禁写文件
+    persona: |
+      你是独立复核律师，不参与起草。你**没有**看到起草过程，只拿到案情与初稿。
+      逐条核查：事实认定是否有据、法律适用是否准确、引用是否现行有效、
+      是否遗漏对当事人不利的情形、结论与理由是否自洽。
+      按固定结构输出：
+      【同意】…
+      【分歧】<逐条列出，每条写明分歧点、你的理由、依据>
+      【遗漏】…
+      【风险】…
+      你自己的每处法律依据同样必须标注 [verified] / [retrieved] / [unverified]。
+      不要改写初稿，只出复核意见。没有分歧就明说没有，不要为凑数造分歧。
+
+# 复核者 B —— 第三家厂商，与 A 独立。
+- id: reviewer-b
+  name: '@deepseek-ai/dsh-tool-subagent'
+  config:
+    provider: spawn
+    toolName: legal_review_b
+    maxDepth: 1
+    agentOptions:
+      provider: anthropic
+      model: claude-sonnet-4-5
+    toolFilter:
+      allow: ['read', 'grep', 'glob', 'skill']
+    persona: |
+      你是独立复核律师，不参与起草。你**没有**看到起草过程，只拿到案情与初稿。
+      逐条核查：事实认定是否有据、法律适用是否准确、引用是否现行有效、
+      是否遗漏对当事人不利的情形、结论与理由是否自洽。
+      按固定结构输出：
+      【同意】…
+      【分歧】<逐条列出，每条写明分歧点、你的理由、依据>
+      【遗漏】…
+      【风险】…
+      你自己的每处法律依据同样必须标注 [verified] / [retrieved] / [unverified]。
+      不要改写初稿，只出复核意见。没有分歧就明说没有，不要为凑数造分歧。
+
+# 对抗质询者 —— 对方律师视角，专找漏洞。
+- id: challenger
+  name: '@deepseek-ai/dsh-tool-subagent'
+  config:
+    provider: spawn
+    toolName: adversarial_challenge
+    maxDepth: 1
+    agentOptions:
+      provider: openai
+      model: gpt-5
+    toolFilter:
+      allow: ['read', 'grep', 'glob', 'skill']
+    persona: |
+      你是对方当事人的代理律师。目标是**推翻或削弱**这份意见。
+      找：事实认定的薄弱环节、可被质疑的证据链、对方可主张的抗辩与反诉、
+      程序性瑕疵（管辖、时效、主体资格、举证责任分配）、
+      以及该意见回避或轻描淡写的不利事实。
+      按固定结构输出：
+      【致命问题】<会导致结论不成立的>
+      【可被攻击】<会削弱但不推翻的>
+      【建议补强】…
+      若确实找不出实质问题，明确输出「无实质可攻击点」，不要制造无关质疑。
+#
+# 注意：agentOptions.provider 的取值必须是本文件 llm 块下 config.providers 已声明的
+# pi-ai 路由名（deepseek / openai / anthropic / google / groq / xai / zhipu /
+# qwen-token-plan-cn）。模型名必须存在于该路由的目录中，否则请求期才报错。
+
 # The ACP automation app: agent spine + JSONL persistence + protocol bridge.
 # Persistence root: DSH_HOME/sessions (platform-resolved at runtime).
 - id: acp-agent
