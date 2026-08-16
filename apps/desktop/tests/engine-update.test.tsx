@@ -15,8 +15,8 @@ import { render } from "solid-js/web";
 const mockInvoke = vi.fn();
 const mockListen = vi.fn(() => Promise.resolve(() => {}));
 
-vi.mock("@tauri-apps/api/core", () => ({ invoke: (...args: unknown[]) => mockInvoke(...args) }));
-vi.mock("@tauri-apps/api/event", () => ({ listen: (...args: unknown[]) => mockListen(...args) }));
+vi.mock("@tauri-apps/api/core", () => ({ invoke: (...args: unknown[]) => (mockInvoke as (...a: unknown[]) => unknown)(...args) }));
+vi.mock("@tauri-apps/api/event", () => ({ listen: (...args: unknown[]) => (mockListen as (...a: unknown[]) => unknown)(...args) }));
 
 import { EngineUpdateBanner } from "../src/components/EngineUpdateBanner";
 

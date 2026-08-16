@@ -155,7 +155,7 @@ export const FirstRunWizard: Component<{ onComplete: () => void }> = (props) => 
                   onClick={() => setSelectedProvider(p.id)}
                 >
                   <div class="firstrun-provider-name">
-                    {p.name}
+                    {p.display_name}
                     <Show when={p.id === "deepseek"}>
                       <span class="firstrun-recommend">推荐</span>
                     </Show>

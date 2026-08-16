@@ -1,7 +1,7 @@
 {
   "name": "@inkstatute/ui-core",
   "version": "0.1.0",
-  "description": "Shared SolidJS component package — single chat UI implementation for all clients.",
+  "description": "Shared SolidJS component package \u2014 single chat UI implementation for all clients.",
   "license": "Proprietary",
   "private": true,
   "type": "module",
@@ -15,7 +15,8 @@
       "types": "./dist/index.d.ts"
     },
     "./themes": "./src/themes/index.ts",
-    "./events": "./src/types/events.ts"
+    "./events": "./src/types/events.ts",
+    "./ui-core.css": "./dist/ui-core.css"
   },
   "scripts": {
     "build": "vite build && tsc --emitDeclarationOnly -p tsconfig.build.json",

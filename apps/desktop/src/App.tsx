@@ -34,6 +34,7 @@ const AppContent: Component = () => {
   const { setTheme } = useTheme();
   const [screen, setScreen] = createSignal<"home" | "workspace">("home");
   const [settingsOpen, setSettingsOpen] = createSignal(false);
+  const [drawerOpen, setDrawerOpen] = createSignal(false);
   const [ftsSearchOpen, setFtsSearchOpen] = createSignal(false);
   const [firstRun, setFirstRun] = createSignal(false);
   const [firstRunChecked, setFirstRunChecked] = createSignal(false);
@@ -147,24 +148,23 @@ const AppContent: Component = () => {
         <TitleBar
           screen={screen()}
           onGoHome={() => setScreen("home")}
-          onOpenConversations={() => {
-            /* drawer always open on desktop */
-          }}
+          onOpenConversations={() => setDrawerOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
       />
       <OfflineBanner />
       <div class="stage">
-        <div class="sidebar">
-          <ConversationDrawer
-            open={true}
-            onClose={() => {}}
+        {/* Slide-over drawer, closed by default — matches lawyer-desktop.
+            It positions itself (fixed overlay); no wrapper column. */}
+        <ConversationDrawer
+            open={drawerOpen()}
+            onClose={() => setDrawerOpen(false)}
             onOpenConversation={(id) => {
               convs.setCurrentConversation(id);
               setScreen("workspace");
+              setDrawerOpen(false);
             }}
             store={store}
           />
-        </div>
         <div class="main-content">
           {/* Engine startup states */}
           <Show when={engineStarting() && !engineReady()}>
