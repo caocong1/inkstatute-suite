@@ -75,7 +75,9 @@ pub async fn complete_setup(provider: String) -> Result<(), String> {
         obj.insert("setup_complete".to_string(), serde_json::json!(true));
     }
 
-    fs::write(&settings_path, serde_json::to_string_pretty(&settings).unwrap())
+    let settings_json = serde_json::to_string_pretty(&settings)
+        .map_err(|e| format!("设置序列化失败: {}", e))?;
+    fs::write(&settings_path, settings_json)
         .map_err(|e| e.to_string())?;
 
     Ok(())

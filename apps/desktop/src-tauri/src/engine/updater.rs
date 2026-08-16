@@ -331,8 +331,9 @@ impl EngineUpdater {
         // Switch pointer.
         paths::write_current(&target)?;
 
-        // Retain one previous (the old current becomes the retained one).
-        retain_one_previous(&Some(target.clone()), &target);
+        // Retain one previous: the old current (which we just rolled back
+        // FROM) should be kept as the rollback target for future rollbacks.
+        retain_one_previous(&current, &target);
 
         Ok(target)
     }

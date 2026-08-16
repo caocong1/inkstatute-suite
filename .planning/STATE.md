@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
-status: ready_to_plan
-stopped_at: v5.0 Phase 126 完成，GRD-11..16 + SKL-11..13 全部完成，准备进入 Phase 127
-last_updated: "2026-08-16T03:20:00.000Z"
-last_activity: 2026-08-16
+status: phase_complete
+stopped_at: v5.0 Phase 127 完成——三计划全绿，6 道门禁全过，HG-1/HG-3 保持 DEFERRED
+last_updated: "2026-08-17T00:00:00.000Z"
+last_activity: 2026-08-17
 progress:
   total_phases: 9
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 35
-  completed_plans: 22
-  percent: 67
+  completed_plans: 25
+  percent: 100
 ---
 
 # Project State
@@ -22,16 +22,16 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 127 — packaging-three-layer-updates
+**Current focus:** Phase 127 complete — v5.0 milestone delivered (pending human gates)
 
 ## Current Position
 
-Phase: 127
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-08-15
+Phase: 127 (complete)
+Plan: 127-01, 127-02, 127-03 all complete
+Status: Phase complete, milestone ready for archive
+Last activity: 2026-08-17
 
-Progress: [██████░░░░] 63%
+Progress: [██████████] 100%
 
 ## Milestone v5.0 Overview
 
@@ -94,8 +94,8 @@ v5.0 关键决策（依据 `.planning/research/V5-SELECTION.md` 11 项本机实�
 | # | 缺陷 | 位置 | 修法 | 归属 |
 |---|---|---|---|---|
 | D1 | `${DSH_HOME}` 不被 Cordis 展开，会话历史落在引擎目录（更新时被抹） | `engines/acp.cordis.yml` | `!!js process.env.DSH_HOME + '/sessions'`（已修复，冒烟通过） | ENG-04 / Phase 122 ✅ |
-| D2 | Google Fonts CDN 中国大陆不可达，字体静默回退 | `packages/ui-core/src/themes/molv-tokens.css:7` | 移除 `@import`，字体本地化 | PKG-12 / Phase 127 |
-| D3 | 依赖系统 Node，与零配置冲突 | Flutter 版 `DshConfig` 写死 `executable: 'node'` | 随包带 `node.exe`，绝对路径 spawn | PKG-11 / Phase 127 |
+| D2 | Google Fonts CDN 中国大陆不可达，字体静默回退 | `packages/ui-core/src/themes/molv-tokens.css:7` | 移除 `@import`，字体本地化 | PKG-12 / Phase 127 ✅ |
+| D3 | 依赖系统 Node，与零配置冲突 | Flutter 版 `DshConfig` 写死 `executable: 'node'` | 随包带 `node.exe`，绝对路径 spawn | PKG-11 / Phase 127 ✅ |
 | D4 | `DSH_REPO` 默认值指向不存在的 `/home/sorawatcher/...` | `scripts/build_dsh_release.sh` | 脚本在 Phase 122 退役 | ENG-01 / Phase 122 ✅ |
 
 ### 仓库路径更正
@@ -151,10 +151,14 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 
 ## Operator Next Steps
 
-- **Phase 126 已完成**：护栏双层（GRD-11..16）全部落地——模型侧 6 个 GUARDRAIL 锚点 + SKILL_LOADING；渲染侧 guardrails.rs 扫描器 + mapper 事件派生 + PermissionCard（allow-once/reject-once，无批量）+ Workspace 6 护栏接线 + 保密确认对话框。69 个 desktop 测试通过；123+ 个 Rust 测试通过；V5 门禁 4/4 绿；`packages/ui-core` 与 `event-reducer.ts` 未改动。
-- 执行顺序严格串行：122 → 123 → 124 → 125 → 126 → 127。Phase 126 验收门禁已亮灯，可进入 127。
-- **Phase 127 是交付收口**：便携 Node + 字体本地化 + 单 exe + 首启向导 + 引擎半自动更新 + 回滚门禁。
-- **Task 5 手动 UI 检查**（6 项真机验证）延后到 Phase 127 集成测试时执行——需要真实引擎装配 + API key。
+- **Phase 127 已完成**：三计划全绿（127-01 便携 Node + 字体本地化 + offline-assets 门禁；127-02 引擎半自动更新器 + GATE-13 回滚门禁；127-03 首启向导 + 安装包脚本 + app 更新器配置 + 发布 runbook）。6 道 V5 门禁全过。130 Rust 单测 + 74 desktop 前端测试 + 186 ui-core 测试全绿。
+- **v5.0 里程碑已交付**（自动化部分）。剩余人工闸门：
+  - **七个验收场景**（PRD §2）：需在干净 Windows 机器上安装后逐条演练（双击安装 → 向导 → 问答 → 审批 → 中止 → 引擎更新 → 断网）。证据存 `.planning/ui-reviews/127-acceptance-*.png`。
+  - **HG-1 法律质量抽样**：律师抽样确认不低于 lawyer-desktop/Hermes 基线。
+  - **HG-3 律师试运行**：五工作日 / 15 真实任务。
+  - 以上三项均**不得由自动化声称通过**。
+- **发布前必做**：生成 Tauri 签名密钥对（`bunx tauri signer generate`），替换 `tauri.conf.json` 中的 updater endpoint 占位地址。详见 `runbook/v5-release.md`。
 - 律师人工闸门（HG-1 / HG-3）保持 DEFERRED — 不得自动关闭。
 - `apps/flutter_app` 冻结：可读作参照，**不得修改、不得删除**。
 - `#[ignore]` 真实引擎测试（`query_real_engine_history` 等）需在网络 + 真实 API key 环境中手动运行。
+- **Phase 128（多模型交叉互评 + 对抗质询）为交付后增强，不在 v5.0 关键路径上，不执行。**

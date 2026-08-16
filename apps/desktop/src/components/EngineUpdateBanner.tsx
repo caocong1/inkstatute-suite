@@ -71,7 +71,8 @@ export const EngineUpdateBanner: Component = () => {
         setVersion(info.latest_version);
         setState("available");
       }
-    } catch {
+    } catch (err) {
+      console.error("Engine update check failed:", err);
       // Silent — don't bother the user on check failure.
     }
   }
