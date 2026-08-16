@@ -8,6 +8,7 @@ pub mod lock;
 pub mod mapper;
 pub mod paths;
 pub mod replay;
+pub mod review;
 pub mod runtime;
 pub mod session_map;
 pub mod smoke;
