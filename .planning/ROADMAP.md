@@ -256,7 +256,7 @@ Plans:
 Plans:
 
 - [x] 128-01: Reviewer Subagents — Config + Fresh Context Guarantee
-- [ ] 128-02: Review Orchestration Persona, Adversarial Rounds, Synthesis
+- [x] 128-02: Review Orchestration Persona, Adversarial Rounds, Synthesis
 - [ ] 128-03: Subagent Event Mapping, UI Wiring, GATE-14
 
 ## Progress
@@ -273,7 +273,7 @@ Plans:
 | 125. Frontend Wiring & Pruning | C | 3/3 | Complete | 2026-08-16 |
 | 126. Guardrails & Capability Layer | C | 2/2 | Complete | 2026-08-16 |
 | 127. Packaging & Three-Layer Updates | D | 3/3 | Complete | 2026-08-17 |
-| 128. Multi-Model Cross-Review & Adversarial Challenge | E | 0/3 | Planned | — |
+| 128. Multi-Model Cross-Review & Adversarial Challenge | E | 2/3 | In Progress|  |
 
 ---
 

@@ -2,19 +2,16 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
-current_phase: 128
-current_phase_name: Multi-Model Cross-Review & Adversarial Challenge
 status: executing
-stopped_at: Completed 128-01-PLAN.md
-last_updated: "2026-08-16T16:12:29.443Z"
+stopped_at: Completed 128-02-PLAN.md
+last_updated: "2026-08-16T16:51:55.379Z"
 last_activity: 2026-08-16
-last_activity_desc: Phase 128 execution started
 progress:
-  total_phases: 7
-  completed_phases: 3
-  total_plans: 20
-  completed_plans: 9
-  percent: 43
+  total_phases: 16
+  completed_phases: 6
+  total_plans: 55
+  completed_plans: 31
+  percent: 56
 ---
 
 # Project State
@@ -30,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 ## Current Position
 
 Phase: 128 (Multi-Model Cross-Review & Adversarial Challenge) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
-Last activity: 2026-08-16 -- Phase 128 execution started
+Last activity: 2026-08-16
 
-Progress: [█████░░░░░] 45%
+Progress: [██████░░░░] 56%
 
 ## Milestone v5.0 Overview
 
@@ -88,6 +85,8 @@ v5.0 关键决策（依据 `.planning/research/V5-SELECTION.md` 11 项本机实�
 - [Phase ?]: 128-01: Fresh-context guarantee enforced structurally — dsh-subagent-fork-in-process is simply never pinned, so it cannot enter the dependency tree regardless of config
 - [Phase ?]: 128-01: review_capability()/build_engine_env branch-selection and env-pair-assembly logic split into pure private functions, unit-tested with synthetic input to avoid dependence on shared process-global credential test state
 - [Phase ?]: 128-01: engine-lock.json regenerated a second time after the acp.cordis.yml edit (not just once after the pin edit) to keep cordis_config_sha256 in sync — same pattern as 126-01
+- [Phase ?]: 128-02: Guardrail text must sync to both preset.yml (grep-gated anchor) and agent.cordis.yml persona.text (what the model actually receives) — plan named only preset.yml; agent.cordis.yml's copy reflowed to one indent level for YAML >- folded-scalar safety
+- [Phase ?]: 128-02: review.rs is a pure text-convention scanner isomorphic to guardrails.rs::scan — scan_review()/ensure_escalated()/RoundTracker parse [分歧]/【致命问题】/[HUMAN_REVIEW:] from committed text; no caller wired yet, deferred to a future plan (MMR-06 presentation work)
 
 ### v4 结论被实测推翻的三条
 
@@ -149,8 +148,8 @@ V4 文档中的 `/home/sorawatcher/...` 在当前开发机不存在。实际路�
 
 **Resume file:** None
 
-Last session: 2026-08-16T16:12:29.428Z
-Stopped at: Completed 128-01-PLAN.md
+Last session: 2026-08-16T16:51:55.369Z
+Stopped at: Completed 128-02-PLAN.md
 Product spec: docs/requirements/V5-PRD.md (Tauri Shell + DSH Three-Plane Integration)
 Research: .planning/research/V5-SELECTION.md (11 项本机实测, HIGH confidence)
 Requirements: .planning/REQUIREMENTS.md (34/34 mapped to phases 122-127, 100% coverage)
@@ -176,3 +175,4 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 128 P128-01 | 50min | 5 tasks | 5 files |
+| Phase 128 P128-02 | ~30min | 4 tasks | 5 files |
