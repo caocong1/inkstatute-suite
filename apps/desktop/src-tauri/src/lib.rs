@@ -108,6 +108,9 @@ pub fn run() {
             commands::updater::apply_engine_update,
             commands::updater::rollback_engine,
             commands::updater::list_engine_versions,
+            commands::setup::is_first_run,
+            commands::setup::complete_setup,
+            commands::setup::preflight,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

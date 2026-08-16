@@ -24,8 +24,10 @@ import { WorkspacePage } from "./pages/WorkspacePage";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { FTS5SearchPanel } from "./components/FTS5SearchPanel";
+import { FirstRunWizard } from "./components/FirstRunWizard";
 import { engineStart, type EngineStatus } from "./services/engine";
 import { setupMenuHandlers } from "./menuHandlers";
+import { invoke } from "@tauri-apps/api/core";
 
 const AppContent: Component = () => {
   const convs = useConversations();
@@ -33,6 +35,8 @@ const AppContent: Component = () => {
   const [screen, setScreen] = createSignal<"home" | "workspace">("home");
   const [settingsOpen, setSettingsOpen] = createSignal(false);
   const [ftsSearchOpen, setFtsSearchOpen] = createSignal(false);
+  const [firstRun, setFirstRun] = createSignal(false);
+  const [firstRunChecked, setFirstRunChecked] = createSignal(false);
 
   // Engine startup state
   const [engineStarting, setEngineStarting] = createSignal(false);
@@ -108,8 +112,21 @@ const AppContent: Component = () => {
       onCloseWindow: () => void desktopWindowAdapter.close(),
     });
 
-    // Start engine on app launch
-    void startEngine();
+    // Check first run, then start engine if not first run.
+    void (async () => {
+      try {
+        const isFirst = await invoke<boolean>("is_first_run");
+        setFirstRun(isFirst);
+        setFirstRunChecked(true);
+        if (!isFirst) {
+          void startEngine();
+        }
+      } catch {
+        // If check fails, proceed normally.
+        setFirstRunChecked(true);
+        void startEngine();
+      }
+    })();
   });
 
   onCleanup(() => {
@@ -118,13 +135,22 @@ const AppContent: Component = () => {
 
   return (
     <div class="app">
-      <TitleBar
-        screen={screen()}
-        onGoHome={() => setScreen("home")}
-        onOpenConversations={() => {
-          /* drawer always open on desktop */
-        }}
-        onOpenSettings={() => setSettingsOpen(true)}
+      <Show when={firstRun() && firstRunChecked()}>
+        <FirstRunWizard
+          onComplete={() => {
+            setFirstRun(false);
+            void startEngine();
+          }}
+        />
+      </Show>
+      <Show when={!firstRun() && firstRunChecked()}>
+        <TitleBar
+          screen={screen()}
+          onGoHome={() => setScreen("home")}
+          onOpenConversations={() => {
+            /* drawer always open on desktop */
+          }}
+          onOpenSettings={() => setSettingsOpen(true)}
       />
       <OfflineBanner />
       <div class="stage">
@@ -207,6 +233,7 @@ const AppContent: Component = () => {
             if (!engineReady()) void startEngine();
           }}
         />
+      </Show>
       </Show>
     </div>
   );
