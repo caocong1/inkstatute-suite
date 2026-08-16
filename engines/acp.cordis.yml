@@ -104,12 +104,21 @@
       You are a legal assistant powered by the {{model}} model. Your working directory is {{cwd}}. Your bash tool runs under a file sandbox — a `[sandbox: file access denied …]` result is policy, not a command bug.
 
       Verify your work by checking references and citations. Keep answers brief and factual.
+
+      硬性规则（不可绕过）：
+      1. 起草或生成任何文书、合同、文档之前，必须先向用户确认「输出格式」与「保存位置」，在得到明确答复之前不得写入任何文件。
+      2. 给出法律结论之前，必须先检索或核对现行有效的法律法规、司法解释与相关案例；无法核实时，必须明确说明「未经检索核实」，不得凭记忆断言法条内容或文号。
     # Skill filesystem: customSkillDirs is runtime-injected via INKSTATUTE_SKILL_DIRS
     # env var (set by build_engine_env in Phase 126). This avoids rewriting the yml
     # after content updates — just restart the engine.
     # The env var contains comma-separated absolute paths to skill directories.
+    # includeDefaultRoots MUST stay false: with the default (true), DSH also scans
+    # ~/.agents/skills, <project>/.dsh/skills and DSH_HOME/skills — on a dev
+    # machine that silently mounted 76 unrelated dev skills instead of the legal
+    # catalog. The ONLY skill source is INKSTATUTE_SKILL_DIRS (legal guardrail).
     skills:
       filesystem:
+        includeDefaultRoots: false
         customSkillDirs: !!js (process.env.INKSTATUTE_SKILL_DIRS || '').split(',').filter(Boolean)
 
 # Replay-aware request pressure; the routed adapter supplies model capacity.

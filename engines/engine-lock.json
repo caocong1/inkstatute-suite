@@ -4,7 +4,7 @@
   "node_version": "24.19.0",
   "target_platform": "win32-x64",
   "compatible_app_range": ">=0.1.0 <1.0.0",
-  "cordis_config_sha256": "6441a49e268853b56f3e91abf7af9123ac68d273e13752d8c90a3932e136ace4",
+  "cordis_config_sha256": "af5e62de01817e4df723b9005ab4f24ae24543bb400faf6ddd4612c4cb53aac6",
   "generated_at": "2026-08-15T23:59:49.472Z",
   "prune": {
     "node-pty/prebuilds": [

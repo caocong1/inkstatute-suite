@@ -84,6 +84,12 @@ pub async fn engine_start(
     let provider = select_provider()
         .map_err(|e| format!("未配置 API 密钥：{}", e))?;
 
+    // SKL-11 硬护栏：spawn 前物化法律技能并确认目录非空。技能清单为空时
+    // DSH 会静默回退扫描用户主目录（开发机上曾因此挂载 76 条无关开发技能），
+    // 因此清单为空必须拒绝启动，而不是带病 spawn。
+    crate::content::presets::ensure_skills_mounted(&dsh_home)
+        .map_err(|e| e.to_string())?;
+
     let cfg = SpawnConfig {
         engine_dir,
         node_bin,

@@ -41,6 +41,11 @@ pub enum EngineError {
     NodeRuntimeMissing,
     #[error("API key not available for provider {0}")]
     MissingApiKey(String),
+    // User-facing Chinese, composed at construction: the spawn guard refuses to
+    // start the engine when the legal skill catalog would be empty (an empty
+    // catalog silently falls back to scanning the user's home directory).
+    #[error("{0}")]
+    SkillsNotMounted(String),
     #[error("prompt is already in flight for session {0}")]
     PromptInFlight(String),
     #[error("current working directory must be an absolute path")]

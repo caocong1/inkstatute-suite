@@ -24,6 +24,12 @@ fn resource_dir() -> Option<&'static Path> {
     RESOURCE_DIR.get().and_then(|opt| opt.as_deref())
 }
 
+/// Crate-visible accessor so `content::presets` can locate the bundled
+/// `presets/` source without re-plumbing the Tauri resource dir.
+pub(crate) fn bundled_resource_dir() -> Option<&'static Path> {
+    resource_dir()
+}
+
 /// `%LOCALAPPDATA%\InkStatute` on Windows, `~/.local/share/InkStatute` elsewhere.
 /// The `INKSTATUTE_APP_ROOT` environment variable overrides this **for tests only**.
 pub fn app_root() -> Result<PathBuf, EngineError> {
