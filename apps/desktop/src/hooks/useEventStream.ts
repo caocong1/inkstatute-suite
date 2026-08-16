@@ -56,7 +56,6 @@ export function useEventStream(conversationId: Accessor<string | null>): UseEven
     try {
       currentUnlisten = await onRunEvent((envelope: RunEventEnvelope) => {
         // Filter: only process events for this conversation
-        console.warn("[dbg-recv]", envelope.event_type, "run=", envelope.run_id, "want=", id, envelope.run_id === id ? "OK" : "DROP");
         if (envelope.run_id !== id) return;
 
         setState((prev) => reduce(prev, envelope));

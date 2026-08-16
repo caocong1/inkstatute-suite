@@ -7,6 +7,7 @@
 import {
   createContext,
   createSignal,
+  createMemo,
   useContext,
   type ParentComponent,
 } from "solid-js";
@@ -51,9 +52,15 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
   // mapper drops user/message by design (the user just typed it here). Record
   // each sent prompt with the assistant-count at send time, then interleave
   // in mergedState below. ui-core stays untouched.
-  const [localUser, setLocalUser] = createSignal<{ text: string; at: number }[]>([]);
+  // Entries hold a STABLE ChatMessage object created once at send time.
+  // Rebuilding these objects on every stream event gave <For> fresh references
+  // each delta, so the whole thread re-rendered ~3000 times per answer and the
+  // user's bubble visibly jittered.
+  const [localUser, setLocalUser] = createSignal<
+    { msg: RenderState["messages"][number]; at: number }[]
+  >([]);
 
-  function mergedState(): RenderState {
+  const mergedState = createMemo((): RenderState => {
     const s = eventStream.state();
     const users = localUser();
     if (users.length === 0) return s;
@@ -61,23 +68,28 @@ export const SessionProvider: ParentComponent<SessionProviderProps> = (props) =>
     let ui = 0;
     s.messages.forEach((msg, i) => {
       while (ui < users.length && users[ui].at <= i) {
-        merged.push({ id: `local-user-${ui}`, role: "user", content: users[ui].text, completed: true });
+        merged.push(users[ui].msg);
         ui++;
       }
       merged.push(msg);
     });
     while (ui < users.length) {
-      merged.push({ id: `local-user-${ui}`, role: "user", content: users[ui].text, completed: true });
+      merged.push(users[ui].msg);
       ui++;
     }
     return { ...s, messages: merged };
-  }
+  });
 
   async function sendMessage(prompt: string): Promise<void> {
     // Set runId to conversationId so useEventStream subscribes to events
-    console.warn("[dbg-ui] sendMessage conv=", props.conversationId);
     setRunId(props.conversationId);
-    setLocalUser((p) => [...p, { text: prompt, at: eventStream.state().messages.length }]);
+    setLocalUser((p) => [
+      ...p,
+      {
+        msg: { id: `local-user-${p.length}`, role: "user", content: prompt, completed: true },
+        at: eventStream.state().messages.length,
+      },
+    ]);
     // Send the prompt to the engine
     await engineSend(props.conversationId, prompt);
   }
