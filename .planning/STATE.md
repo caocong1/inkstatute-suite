@@ -2,17 +2,19 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Tauri Shell + DSH Three-Plane Integration
-current_phase: 127
-status: phase_complete
-stopped_at: context exhaustion at 75% (2026-08-16)
-last_updated: "2026-08-16T08:16:43.566Z"
-last_activity: 2026-08-17
+current_phase: 128
+current_phase_name: Multi-Model Cross-Review & Adversarial Challenge
+status: executing
+stopped_at: Completed 128-01-PLAN.md
+last_updated: "2026-08-16T16:12:29.443Z"
+last_activity: 2026-08-16
+last_activity_desc: Phase 128 execution started
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 20
-  completed_plans: 8
-  percent: 40
+  completed_plans: 9
+  percent: 43
 ---
 
 # Project State
@@ -23,16 +25,16 @@ See: .planning/PROJECT.md (updated 2026-08-15)
 
 **Core value:** 一名零技术操作的律师在 Windows 桌面上双击即用：Tauri 2 + SolidJS app（装配 `packages/ui-core` 墨律三主题）经 ACP over stdio 驱动本地嵌入的 DSH 引擎，**工具调用与思考过程可见**，分域法律技能随内容包自动更新，四条法律护栏与人审标记不可绕过，引擎半自动更新且失败自动回滚。
 
-**Current focus:** Phase 127 complete — v5.0 milestone delivered (pending human gates)
+**Current focus:** Phase 128 — Multi-Model Cross-Review & Adversarial Challenge
 
 ## Current Position
 
-Phase: 127 (complete)
-Plan: 127-01, 127-02, 127-03 all complete
-Status: Phase complete, milestone ready for archive
-Last activity: 2026-08-17
+Phase: 128 (Multi-Model Cross-Review & Adversarial Challenge) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-08-16 -- Phase 128 execution started
 
-Progress: [██████████] 100%
+Progress: [█████░░░░░] 45%
 
 ## Milestone v5.0 Overview
 
@@ -83,6 +85,9 @@ v5.0 关键决策（依据 `.planning/research/V5-SELECTION.md` 11 项本机实�
 - **引擎更新 = lockfile 装配 + 版本目录 + 冒烟闸 + 指针切换**；npm registry 即 CDN，业主只托管约 40KB 的 `engine-lock.json`
 - **放弃 Word 原生修订导出**，连带移除 `docx-rs`、`pdf-extract`、便携 Python、track-changes 脚本
 - [Phase ?]: 126-01 complete: Content manifest semver model, content updater with sha256/atomic/rollback, presets materialization with INKSTATUTE_SKILL_DIRS env injection, token budget gate
+- [Phase ?]: 128-01: Fresh-context guarantee enforced structurally — dsh-subagent-fork-in-process is simply never pinned, so it cannot enter the dependency tree regardless of config
+- [Phase ?]: 128-01: review_capability()/build_engine_env branch-selection and env-pair-assembly logic split into pure private functions, unit-tested with synthetic input to avoid dependence on shared process-global credential test state
+- [Phase ?]: 128-01: engine-lock.json regenerated a second time after the acp.cordis.yml edit (not just once after the pin edit) to keep cordis_config_sha256 in sync — same pattern as 126-01
 
 ### v4 结论被实测推翻的三条
 
@@ -142,8 +147,10 @@ V4 文档中的 `/home/sorawatcher/...` 在当前开发机不存在。实际路�
 
 ## Session Continuity
 
-Last session: 2026-08-16T08:16:43.544Z
-Stopped at: context exhaustion at 75% (2026-08-16)
+**Resume file:** None
+
+Last session: 2026-08-16T16:12:29.428Z
+Stopped at: Completed 128-01-PLAN.md
 Product spec: docs/requirements/V5-PRD.md (Tauri Shell + DSH Three-Plane Integration)
 Research: .planning/research/V5-SELECTION.md (11 项本机实测, HIGH confidence)
 Requirements: .planning/REQUIREMENTS.md (34/34 mapped to phases 122-127, 100% coverage)
@@ -163,3 +170,9 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 - `apps/flutter_app` 冻结：可读作参照，**不得修改、不得删除**。
 - `#[ignore]` 真实引擎测试（`query_real_engine_history` 等）需在网络 + 真实 API key 环境中手动运行。
 - **Phase 128（多模型交叉互评 + 对抗质询）为交付后增强，不在 v5.0 关键路径上，不执行。**
+
+## Performance Metrics
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 128 P128-01 | 50min | 5 tasks | 5 files |

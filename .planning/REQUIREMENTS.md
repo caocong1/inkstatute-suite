@@ -65,21 +65,26 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 > 范围收敛为**交叉互评 + 对抗质询**（原 Mode 3+4），不做并行与自评迭代；
 > 排期在 v5.0 交付之后，不进核心交付路径。
 
-- [ ] **MMR-01**: 复核子代理配置——`acp.cordis.yml` 注册 3 个 `dsh-tool-subagent` 实例
+- [x] **MMR-01**: 复核子代理配置——`acp.cordis.yml` 注册 3 个 `dsh-tool-subagent` 实例
   （复核 A / 复核 B / 对抗质询），各绑不同厂商模型（`agentOptions.{provider,model}`）、
   独立人设、只读工具白名单、`maxDepth: 1`；LLM 厂商经 `dsh-llm-pi-ai` 提供
-- [ ] **MMR-02**: 新鲜上下文保证——传输方式必须为 `subagent-spawn-in-process`（全新会话），
+
+- [x] **MMR-02**: 新鲜上下文保证——传输方式必须为 `subagent-spawn-in-process`（全新会话），
   **禁止 `fork-in-process`**（会让复核者继承起草者推理而被锚定）；
   `fork-in-process` 不入 pin、不入 lock、不入配置；案情与初稿经工具参数显式传入；
   静态门禁固化该不变式（v3.1 `test_fresh_context.py` AST 门禁的 v5 等价物）
+
 - [ ] **MMR-03**: 交叉互评——复核意见按【同意】/【分歧】/【遗漏】/【风险】固定结构输出；
   复核者自身引用同样受引用审查约束；分歧逐条呈现，格式
   `[分歧] 争点 ｜ 本意见 ｜ 复核意见 ｜ 是否消解`
+
 - [ ] **MMR-04**: 对抗质询——对方律师视角输出【致命问题】/【可被攻击】/【建议补强】；
   多轮上限默认 2；**早停**：某轮无新的致命/可攻击项即停，首轮返回"无实质可攻击点"则不发起第二轮
+
 - [ ] **MMR-05**: 综合与人审升级——分歧不得抹平；消解标准是"一方拿出对方无法反驳的现行法依据"，
   不确定按未消解处理；**未消解分歧与未回应的致命问题强制 `[HUMAN_REVIEW:]`**，
   徽记不可自动消除；模型漏标时 app 侧兜底补标并记诊断日志
+
 - [ ] **MMR-06**: 呈现与触发——复用 Phase 125 保留的 `ReviewSummary` / `SynthesisViewer` /
   `ParallelStreamPanel` / `ScoreCard` / `SlotStreamView` / `arenaEventReducer` / `types/arena`；
   `subagent/start|end|descriptor` → 既有 Arena 统一事件 → 现有 reducer（**reducer 零改动**）；
@@ -93,6 +98,7 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 - [ ] **GATE-14**: 多模型互评门禁——配置侧（3 实例 / depth 1 / 只读白名单 / 无 fork / ≥2 厂商）、
   人设侧（两段锚点存在且工具名与配置一致）、映射侧（`arena.*` 事件名与 reducer case 清单一致）、
   呈现侧（无模式选择控件、未消解分歧提示条无关闭按钮）、纪律侧（`event-reducer.ts` 零改动）
+
 - [ ] **GATE-13**: 更新回滚门禁——故意投一个坏包（sha512 不符 / 冒烟失败），断言 `current` 指针未移动、旧引擎仍可用、用户无感
 
 ## Non-Goals（v5.0 明确不做）
@@ -142,8 +148,8 @@ Traceability 见文末。**每条需求恰好映射一个 roadmap phase（122–
 | PKG-14 | 127 | Pending |
 | PKG-15 | 127 | Pending |
 | GATE-13 | 127 | Pending |
-| MMR-01 | 128 | Pending |
-| MMR-02 | 128 | Pending |
+| MMR-01 | 128 | Complete |
+| MMR-02 | 128 | Complete |
 | MMR-03 | 128 | Pending |
 | MMR-04 | 128 | Pending |
 | MMR-05 | 128 | Pending |
