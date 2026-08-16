@@ -36,6 +36,8 @@ pub enum EngineError {
     DownloadFailed(String),
     #[error("app data directory not resolvable")]
     NoAppRoot,
+    #[error("portable Node runtime not found — reinstall the app")]
+    NodeRuntimeMissing,
     #[error("API key not available for provider {0}")]
     MissingApiKey(String),
     #[error("prompt is already in flight for session {0}")]

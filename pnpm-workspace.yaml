@@ -1,0 +1,5 @@
+packages:
+  - "packages/platform-sdk-ts"
+  - "packages/ui-core"
+  - "apps/web"
+  - "apps/desktop"

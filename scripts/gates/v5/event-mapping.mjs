@@ -76,8 +76,10 @@ globalThis.localStorage = {
 globalThis.matchMedia = () => ({ matches: false, addEventListener: noop, removeEventListener: noop });
 
 // Load the reducer from the built ui-core dist.
+// On Windows, dynamic import() requires a file:// URL, not a bare C:\ path.
+const { pathToFileURL } = await import('node:url');
 const uiCore = await import(
-  path.join(REPO_ROOT, 'packages/ui-core/dist/index.js')
+  pathToFileURL(path.join(REPO_ROOT, 'packages/ui-core/dist/index.js')).href
 );
 const { initialState, reduce } = uiCore;
 

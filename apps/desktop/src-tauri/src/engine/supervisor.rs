@@ -196,23 +196,42 @@ impl EngineSupervisor {
 
         #[cfg(target_os = "windows")]
         {
-            let output = Command::new("tasklist")
-                .args([
-                    "/FI",
-                    &format!("PID eq {}", self.pid),
-                    "/FO",
-                    "CSV",
-                    "/NH",
-                ])
-                .output()
-                .await?;
-            let text = String::from_utf8_lossy(&output.stdout);
-            let non_info_lines: Vec<&str> = text
-                .lines()
-                .map(|l| l.trim())
-                .filter(|l| !l.is_empty() && !l.starts_with("INFO:"))
-                .collect();
-            Ok(non_info_lines.is_empty())
+            // On Windows, `tasklist` may still show the PID for a brief period
+            // after the process has exited and been reaped. Retry a few times
+            // with a small delay to avoid false-positive orphan reports.
+            //
+            // Locale independence: `tasklist` localizes its "no tasks" info
+            // message (e.g. "信息: ..." on Chinese Windows). Instead of
+            // filtering by the "INFO:" prefix, we detect a real process entry
+            // by checking for a CSV row that contains the PID as a quoted
+            // field — a real entry looks like `"node.exe","12345",...`.
+            let pid_str = self.pid.to_string();
+            for attempt in 0..5 {
+                let output = Command::new("tasklist")
+                    .args([
+                        "/FI",
+                        &format!("PID eq {}", self.pid),
+                        "/FO",
+                        "CSV",
+                        "/NH",
+                    ])
+                    .output()
+                    .await?;
+                let text = String::from_utf8_lossy(&output.stdout);
+                // A real process row in CSV format starts with `"` and contains
+                // `"<pid>"` as a field. An info/error message does neither.
+                let still_running = text.lines().any(|l| {
+                    let l = l.trim();
+                    l.starts_with('"') && l.contains(&format!("\"{}\"", pid_str))
+                });
+                if !still_running {
+                    return Ok(true);
+                }
+                if attempt < 4 {
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+            }
+            Ok(false)
         }
 
         #[cfg(not(target_os = "windows"))]

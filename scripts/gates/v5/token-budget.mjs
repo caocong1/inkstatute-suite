@@ -50,7 +50,9 @@ function check(name, fn) {
  * Returns { name, description } or throws if frontmatter is unparseable.
  */
 function parseFrontmatter(content, filePath) {
-  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  // Normalize CRLF → LF so the regex works on Windows-checked-out files.
+  const normalized = content.replace(/\r\n/g, '\n');
+  const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---/);
   if (!fmMatch) {
     throw new Error(`no frontmatter block found in ${filePath}`);
   }

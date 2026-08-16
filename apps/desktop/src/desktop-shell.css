@@ -5,9 +5,10 @@
  * .app: full-screen flex column (TitleBar + stage)
  * .stage: flex row (sidebar + main-content)
  *
- * Font @font-face declarations reference local bundled fonts.
- * Actual font files will be added to src-tauri/resources/fonts/ before
- * production build. For the tracer, system fonts are used as fallback.
+ * Fonts are bundled locally in packages/ui-core/src/themes/fonts/ (PK-12).
+ * Latin glyphs use the bundled Newsreader / Spline Sans Mono; CJK glyphs
+ * fall back to the host OS fonts (Microsoft YaHei / Source Han Serif on
+ * Windows). No CDN font references remain — the app works fully offline.
  */
 
 :root {
@@ -15,11 +16,8 @@
   --app-height: 100dvh;
 }
 
-/* Font bundling — local @font-face declarations for offline use.
- * Font files will be placed in src-tauri/resources/fonts/ before production.
- * The @import url(...) Google Fonts line from molv-tokens.css is suppressed
- * in the desktop build — the app falls back to system fonts if the local
- * font files are not yet present.
+/* Font bundling — @font-face declarations live in molv-tokens.css (PK-12).
+ * The local woff2 files are bundled via Vite from packages/ui-core/src/themes/fonts/.
  */
 
 html, body {
@@ -27,7 +25,8 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
-  font-family: "Noto Serif SC", "Noto Sans SC", serif, sans-serif;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC",
+               "Hiragino Sans GB", -apple-system, "Segoe UI", system-ui, sans-serif;
 }
 
 #root {

@@ -391,6 +391,10 @@ export const SettingsPanel: Component<SettingsPanelProps> = (props) => {
               <label>开源许可</label>
               <span class="about-value">MIT + CC-BY-NC（技能语料）</span>
             </div>
+            <div class="form-group">
+              <label>字体许可</label>
+              <span class="about-value">Newsreader、Spline Sans Mono 遵循 SIL Open Font License 1.1（本地内嵌拉丁子集）</span>
+            </div>
           </Show>
         </div>
       </div>

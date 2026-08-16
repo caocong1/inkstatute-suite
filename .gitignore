@@ -65,6 +65,10 @@ venv/
 target/
 src-tauri/target/
 
+# Portable Node runtime — fetched at build time by scripts/fetch-node-runtime.mjs
+# (not committed source; bundled into the installer from the local filesystem)
+apps/desktop/src-tauri/resources/node/
+
 # OS / editor
 .DS_Store
 Thumbs.db

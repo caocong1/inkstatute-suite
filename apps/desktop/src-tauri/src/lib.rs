@@ -44,6 +44,16 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)
                 .map_err(|e| format!("failed to create app data dir: {}", e))?;
 
+            // Inject the Tauri resource dir into engine::paths so node_binary()
+            // can resolve the bundled portable Node (PK-11 / defect D3).
+            // resource_dir() is unavailable in some test/dev contexts — None is
+            // legal and node_binary() falls back to INKSTATUTE_NODE_BIN / PATH.
+            let resource_dir = app
+                .path()
+                .resource_dir()
+                .ok();
+            engine::paths::init(resource_dir);
+
             // Initialize path sandbox from persisted allowed dirs (JSON file)
             let allowed_dirs = security::path_sandbox::load_allowed_dirs(&data_dir);
             let sandbox = Arc::new(RwLock::new(
