@@ -11,6 +11,7 @@ const GATES = [
   { name: 'token-budget', script: 'scripts/gates/v5/token-budget.mjs' },
   { name: 'guardrails', script: 'scripts/gates/v5/guardrails.mjs' },
   { name: 'offline-assets', script: 'scripts/gates/v5/offline-assets.mjs' },
+  { name: 'update-rollback', script: 'scripts/gates/v5/update-rollback.mjs' },
 ];
 
 function run(cmd) {

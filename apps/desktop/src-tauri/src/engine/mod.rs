@@ -13,6 +13,7 @@ pub mod session_map;
 pub mod smoke;
 pub mod supervisor;
 pub mod tailer;
+pub mod updater;
 
 use thiserror::Error;
 

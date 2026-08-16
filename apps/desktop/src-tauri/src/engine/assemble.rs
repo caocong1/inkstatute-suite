@@ -47,7 +47,7 @@ pub async fn assemble<F>(
     on_progress: F,
 ) -> Result<(), EngineError>
 where
-    F: Fn(AssembleProgress) + Clone + Send + Sync + 'static,
+    F: Fn(AssembleProgress) + Clone + Send + Sync,
 {
     if dest.exists() && dest.read_dir()?.next().is_some() {
         return Err(EngineError::DestNotEmpty(dest.display().to_string()));
@@ -75,7 +75,7 @@ where
 
     let total = lock.packages.len();
     let done_counter = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
-    stream::iter(lock.packages.iter().map(|(k, v)| (k.clone(), v.clone())))
+    stream::iter(lock.packages.iter().map(clone_pkg_entry))
         .map(|(lock_key, pkg)| {
             let client = client.clone();
             let partial_dir = partial_dir.clone();
@@ -338,4 +338,12 @@ mod tests {
             packages: HashMap::new(),
         }
     }
+}
+
+/// Helper function (not a closure) to avoid the HRTB limitation where
+/// `|(k, v)| (k.clone(), v.clone())` is not higher-ranked over lifetimes.
+/// Named functions are always higher-ranked, so `tokio::spawn` and the Tauri
+/// `generate_handler!` macro can accept them.
+fn clone_pkg_entry((k, v): (&String, &LockedPackage)) -> (String, LockedPackage) {
+    (k.clone(), v.clone())
 }

@@ -11,6 +11,7 @@
  * All interactions go through services/settings.ts — no direct invoke().
  */
 import { createSignal, onMount, For, Show, type Component } from "solid-js";
+import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   listProviders,
@@ -31,6 +32,82 @@ export interface SettingsPanelProps {
   onClose: () => void;
   onSaved?: (message: string) => void;
 }
+
+/** Engine version section — shows installed versions, check update, rollback. */
+const EngineVersionSection: Component = () => {
+  const [versions, setVersions] = createSignal<string[]>([]);
+  const [currentVersion, setCurrentVersion] = createSignal<string | null>(null);
+  const [rollbackMsg, setRollbackMsg] = createSignal<string | null>(null);
+  const [rollingBack, setRollingBack] = createSignal(false);
+
+  onMount(() => {
+    void refresh();
+  });
+
+  async function refresh(): Promise<void> {
+    try {
+      const v = await invoke<string[]>("list_engine_versions");
+      setVersions(v);
+      const info = await invoke<{ running: boolean; engine_version?: string }>("engine_status");
+      if (info?.engine_version) {
+        setCurrentVersion(info.engine_version);
+      }
+    } catch {
+      // Engine not yet started — versions list is still useful.
+      try {
+        const v = await invoke<string[]>("list_engine_versions");
+        setVersions(v);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  async function handleRollback(): Promise<void> {
+    setRollingBack(true);
+    setRollbackMsg(null);
+    try {
+      const result = await invoke<string>("rollback_engine");
+      setRollbackMsg(`已回退到引擎版本 ${result}`);
+      void refresh();
+    } catch (err) {
+      setRollbackMsg(`回退失败：${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setRollingBack(false);
+    }
+  }
+
+  const canRollback = () => versions().length >= 2;
+
+  return (
+    <>
+      <div class="form-group">
+        <label>已安装引擎版本</label>
+        <span class="about-value">
+          {versions().length > 0 ? versions().join("、") : "无"}
+        </span>
+      </div>
+      <Show when={canRollback()}>
+        <div class="form-group">
+          <label>回退到上一版本</label>
+          <button
+            class="settings-btn"
+            type="button"
+            disabled={rollingBack()}
+            onClick={() => void handleRollback()}
+          >
+            {rollingBack() ? "回退中…" : "回退"}
+          </button>
+        </div>
+      </Show>
+      <Show when={rollbackMsg()}>
+        <div class="form-group">
+          <span class="about-value">{rollbackMsg()}</span>
+        </div>
+      </Show>
+    </>
+  );
+};
 
 export const SettingsPanel: Component<SettingsPanelProps> = (props) => {
   const [activeTab, setActiveTab] = createSignal<
@@ -387,6 +464,7 @@ export const SettingsPanel: Component<SettingsPanelProps> = (props) => {
               <label>DSH 版本</label>
               <span class="about-value">由 engines/dsh-pin.txt 钉版</span>
             </div>
+            <EngineVersionSection />
             <div class="form-group">
               <label>开源许可</label>
               <span class="about-value">MIT + CC-BY-NC（技能语料）</span>
