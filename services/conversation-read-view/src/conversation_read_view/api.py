@@ -30,14 +30,18 @@ def handle_get(
         return _handle_list_tasks(route_query, read_model)
 
     if route_path.startswith("/conversations/"):
-        conversation_id = route_path.removeprefix("/conversations/")
+        conversation_id = _sanitize_path_param(route_path.removeprefix("/conversations/"))
+        if conversation_id is None:
+            return 400, _invalid_identifier_response("conversation_id")
         conversation = read_model.get_conversation(conversation_id)
         if conversation is None:
             return 404, not_found_response("conversation", conversation_id)
         return 200, _with_contract_metadata(conversation)
 
     if route_path.startswith("/tasks/"):
-        identifier = route_path.removeprefix("/tasks/")
+        identifier = _sanitize_path_param(route_path.removeprefix("/tasks/"))
+        if identifier is None:
+            return 400, _invalid_identifier_response("task_id")
         task = read_model.get_task(identifier)
         if task is None:
             task = read_model.get_task_by_trace_id(identifier)
@@ -315,6 +319,29 @@ def _split_path_query(path: str, query: str | Mapping[str, str] | None) -> tuple
         merged.update(parse_query_string(query))
         return route_path, merged
     return path, parse_query_string(query)
+
+
+def _sanitize_path_param(value: str) -> str | None:
+    """Reject path parameters containing traversal sequences or control chars."""
+
+    if not value or ".." in value or "/" in value or "\\" in value:
+        return None
+    if any(ord(ch) < 0x20 for ch in value):
+        return None
+    return value
+
+
+def _invalid_identifier_response(field: str) -> dict[str, Any]:
+    return {
+        "error": {
+            "code": "invalid_identifier",
+            "message": f"{field} contains invalid characters",
+        },
+        "metadata": {
+            "derived_from_contract_log": True,
+            "source_status": "rejected",
+        },
+    }
 
 
 def _with_contract_metadata(body: dict[str, Any]) -> dict[str, Any]:

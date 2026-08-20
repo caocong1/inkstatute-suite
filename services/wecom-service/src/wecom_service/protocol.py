@@ -6,6 +6,7 @@ import hashlib
 import hmac
 from typing import Any, Mapping
 import xml.etree.ElementTree as ET
+from xml.parsers.expat import ExpatError
 
 
 class RawPayloadForbiddenError(ValueError):
@@ -19,9 +20,13 @@ def verify_callback_signature(
     msg_signature: str,
     encrypted_payload: str,
 ) -> bool:
-    """Verify a WeCom-style callback signature."""
+    """Verify a WeCom-style callback signature.
 
-    digest = hashlib.sha1(
+    SHA-1 is used here because the WeCom callback protocol mandates it;
+    the digest algorithm is not a choice of this codebase.
+    """
+
+    digest = hashlib.sha1(  # noqa: S324 – WeCom protocol requires SHA-1
         "".join(sorted([token, timestamp, nonce, encrypted_payload])).encode("utf-8")
     ).hexdigest()
     return hmac.compare_digest(digest, msg_signature)
@@ -66,13 +71,29 @@ def ack_response() -> str:
     return "success"
 
 
+_XML_MAX_LENGTH = 65536
+
+
 def _mapping_from_input(callback: Mapping[str, Any]) -> Mapping[str, Any]:
     if isinstance(callback, Mapping):
         return callback
     if isinstance(callback, str):
-        root = ET.fromstring(callback)
-        return {child.tag: child.text for child in list(root)}
+        return _parse_xml_safely(callback)
     raise TypeError("callback must be a mapping or sanitized XML string")
+
+
+def _parse_xml_safely(text: str) -> Mapping[str, Any]:
+    """Parse XML with entity-expansion and size protections."""
+
+    if len(text) > _XML_MAX_LENGTH:
+        raise ValueError(f"XML callback exceeds {_XML_MAX_LENGTH} byte safety limit")
+    if "<!" in text:
+        raise ValueError("XML callbacks must not contain DTD declarations or entity definitions")
+    try:
+        root = ET.fromstring(text)  # noqa: S314 – DTD/entities blocked above
+    except ExpatError as exc:
+        raise ValueError(f"malformed XML callback: {exc}") from exc
+    return {child.tag: child.text for child in list(root)}
 
 
 def _first_string(fields: Mapping[str, Any], *keys: str) -> str | None:
