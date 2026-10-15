@@ -32,6 +32,8 @@ output/
 tmp/
 temp/
 .omo/
+# Local AI-assistant tool state (WorkBuddy session memory)
+.workbuddy/
 
 # Legal/customer documents must be deliberately added, never swept in by default
 *.doc
@@ -41,6 +43,8 @@ temp/
 *.ppt
 *.pptx
 *.pdf
+# Case library / legal-ops records stay local — de-identified, but never published from this public repo
+docs/legal-ops/
 
 # Node / web
 node_modules/
@@ -85,3 +89,6 @@ engines/engine-manifest.json
 # Temporary fix scripts (not part of the codebase)
 tmp_fix_*.cjs
 tmp_fix_*.js
+# Deck build scratch (officecli slide exports + build batches); deliverables and build_deck.py live outside the repo
+tmp_pptx_build/
+/s[0-9][0-9].html
