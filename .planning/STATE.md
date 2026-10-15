@@ -169,6 +169,8 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 - `apps/flutter_app` 冻结：可读作参照，**不得修改、不得删除**。
 - `#[ignore]` 真实引擎测试（`query_real_engine_history` 等）需在网络 + 真实 API key 环境中手动运行。
 - **Phase 128（多模型交叉互评 + 对抗质询）为交付后增强，不在 v5.0 关键路径上，不执行。**
+- **2026-10-15 语料仓同步与案例复盘**：`ai-for-china-legal` v1.2（案例库 LWC-2026-0001～0006 驱动：股权尽调 + 劳动用工合规调查两条工作流、`REVIEW_STATUS` 可观察复核状态、信用修复 / 司法解释二锚点、最高法法发〔2026〕10号第19条提交前核验规则）已物化进 `presets/`（23 父技能，目录预算 5,119 / 8,000）。跨案复盘见 `docs/legal-ops/case-library/RETROSPECTIVE-2026-10-15.md`（该目录尚未纳入 git）。案例证据：三件 critical 任务均未做独立复核，是 Phase 128 的业务依据。
+- **引擎配置待办（外部调研 2026-10-15，未改动）**：`engines/acp.cordis.yml` L52 `deepseek-v4-flash` 自 2026-09-10 起仅为临时路由别名，官方名已改为 `deepseek-flash`；L53/L177 `deepseek-v4-pro` 的服务状态官方两页说法不一致；L34/L38 `glm-4-plus` / `glm-4-flash` 条目过时。更换须走 `acp.cordis.yml` → 冒烟闸（需真实 key）。另：Vals Legal Research Bench（2026-10-12）DeepSeek V4 Pro 40.9% vs 榜首 55.3%（美国法，仅作参照）。
 
 ## Performance Metrics
 
