@@ -73,9 +73,111 @@
 | LLM-as-judge 预印本（2026，M） | LexRubric 裁判与 3 名专家一致率 79.4%、κ 0.589；原始一致率高估 33–41 点；9 模型跨族集成在 COLIEE 2026 法条蕴含 96.3% | 裁判校准；集成仅用于是非判断 |
 | 多模型「盲审」 | 无同行评议研究或律协指引；HC142 明示 AI 核 AI 不算核验 | 交叉复核只作筛查，标「AI 交叉审阅（非核验）」 |
 
-## 2. 开源生态与组件
+## 2. 开源生态与组件（2026-10-15）
 
-（待第二路调研返回后补充。）
+来源：GitHub / npm / PyPI / crates.io / Hugging Face API 当日查询；「最近活动」= 最近 push 或发布；厂商自报数据已注明。调研代理同时读了本仓、语料仓与本地 `deepseek-harness` 仓以判断相关性。
+
+### 2.1 中国法律 LLM：均已停更（H）
+
+DISC-LawLLM（Apache-2.0，2025-05 仅改 README）、ChatLaw（AGPL-3.0，2025-01）、LaWGPT / Lawyer-LLaMA / InternLM-Law（2024 停更）、LexiLaw（MIT，2026-03 仅改 README）、夫子·明察 / HanFei（停更）、智海-录问（2026-04 新技术报告，模型仍为 2023 年 Baichuan-7B）、Unilaw-R1 / PoliLegalLM（2026 论文，未见权重）；通义 / 智谱 / DeepSeek / Qwen 无法律专用开源权重。**结论：不采用、不微调；精力投入检索接地与评测。**
+
+### 2.2 评测与基准
+
+| 项目 | 许可 | 最近活动 | 内容 | 用途 |
+|---|---|---|---|---|
+| [LexRubric](https://github.com/foggpoy/LexRubric) | MIT | 2026-08-29 | EMNLP 2026：649 个中文开放式任务、12,337 条专家 pass/fail 标准、14 场景 | 咨询类回答的 rubric 模板 |
+| [PLawBench](https://github.com/SKYLENAGE-AI/PLawBench) | 仓库无许可（论文 CC BY 4.0） | 2026-02-09 | 850 题、约 12.5k rubric；含 250 案例分析、18 咨询、12 起诉状 / 答辩状起草 | 最接近的公开中文起草评测 |
+| [LegalCiteTrust](https://github.com/lyxx3rd/LegalCiteTrust) | Apache-2.0 | 2026-07-12 | 72 份中文长篇研究报告的引用：是否存在、是否忠实、是否支持命题 | **引用审计的现成回归集** |
+| [LegalAgentBench](https://github.com/CSHaitao/LegalAgentBench) | 无 | 2026-04-10 | 300 个中文 agent 任务、17 语料、37 工具、中间步骤计分 | DSH + skills 端到端 |
+| [LexGenius](https://github.com/QwenQKing/LexGenius) | 无 | 2026-09-03 | ACL 2026：7 维 11 任务 20 能力 | 选型能力图 |
+| LawBench / LexEval | Apache-2.0 / MIT | 2023 / 2024 | 考试式静态题库 | 冒烟 |
+| LawFlow / MSLR-Bench / JuDGE / CaseGen | 无 / Apache-2.0 / MIT / 无 | 2025–2026 | 多阶段民事诉讼推理、判决与案件文书生成 | 诉讼推理参照 |
+| [CAIL2025](https://github.com/china-ai-law-challenge/CAIL2025) | 无 | 2025-10-22 | 法考客观 / 主观、agent 庭审、agent 调解、法律数值计算、量刑；**无合同审查赛道**；CAIL 2026 未见公告 | 数值任务可用于赔偿 / 利息技能 |
+| [Harvey LAB](https://github.com/harveyai/harvey-labs) | MIT | 2026-10-08（1,450★） | 1,200+ 任务、24 领域、75k 条全通过标准；含首轮 / 后轮 redline、约 17.5k 个 .docx 样本、并购尽调扩展（2026-07-17）；美国法 | **redline / DD / memo 评测的最佳开放格式**（`task.json`） |
+| [ContractScrub](https://arxiv.org/abs/2608.20204) | 论文 CC BY-NC-SA | 2026-08-20 | 合同终稿校对：误用定义术语、错误交叉引用、措辞不一致；数据集未公开 | 终稿校对 rubric 的错误清单 |
+
+**结论：GitHub / Hugging Face / arXiv 上没有公开的中国法合同修订或尽调基准（M-H）。**
+
+### 2.3 中国法律数据连接器（2026 实测状态）
+
+| 源 | 状态 | 说明 |
+|---|---|---|
+| flk.npc.gov.cn | ✅ JSON 接口无 key 无验证码 | 旧 `/api/` 已下线；`/law-search/search/list`、`flfgDetails?bbbs=`、`download/pc`、`enumData` 可用；语料仓 `law-database` 连接器已迁移 |
+| [lawtext/laws](https://github.com/lawtext/laws) | ✅ 每日自动更新 | 2,000+ 国家法律 Markdown / docx；地方法规卷 2026-04-19 停更；无许可声明 → 只作变化信号 |
+| [law-crawler-unified](https://github.com/Li2zon3/law-crawler-unified) | MIT，2026-04-18 | flk + 外交部条约库 + 国务院规章库 | 
+| 北大法宝 MCP + [`@pkulaw/mcp-cli`](https://www.npmjs.com/package/@pkulaw/mcp-cli) 0.3.2 | 付费；CLI MIT，2026-09-22 | 法规 / 案例语义与关键词检索、条文定位、法规与案号识别、**引用校验** `pku_citation_validator`；Bearer token；CLI 不耗 LLM token |
+| 元典开放平台 + [官方 DSH 插件](https://github.com/yuandian-ailaw/yuandian_dsh_plugin) | 付费；插件 MIT，2026-10-02 | 统一 MCP 端点 `open.chineselaw.com/mcp`（法规、案例、企业 26 接口、证券）；OAuth 或 API key；**插件要求 DSH ≥0.1.2-rc.1 <0.2.0** |
+| [企查查法律数据 MCP](https://agent.qcc.com/legal) + [DSH OAuth 插件](https://github.com/duhu2000/qcc-mcp-legal-oauth) | 付费；插件 MIT，2026-08-19 | 10 个工具含 `get_legal_citation_verify` / `get_judicial_citation_verify`；企业数据另一 MCP；插件要求 `dsh-mcp-client ^0.1.0-rc.6` |
+| 得理开放平台 | 付费（页面 © 2024） | 判决、法规、评注、专利、商标预付费 API；MCP 仅见于搜索摘要，页面未证实 |
+| 法信 | — | 无公开 API / MCP；服务协议禁止系统提取 |
+| 人民法院案例库 | ✅ 本人登录后可用 | 约 5.2k 案例；社区 MCP server 被 Glama 标为无响应 |
+| 裁判文书网 | 仅本人浏览器会话 | [cncases/cases](https://github.com/cncases/cases)（MPL-2.0，1,134★）本地检索 85M 文书第三方 dump——来源与个人信息（PIPL）风险 |
+| gsxt.gov.cn | ❌ 2026-08 境外自动请求 24 次中 21 次 403 | 改用企查查 / 元典企业数据；语料仓 `connectors/gsxt` 仍为占位 |
+| 信用中国 | ❌ 验证码 / 限速 | 社区监测工具预留打码服务与代理设置 |
+| fgk.chinatax.gov.cn | ✅ 普通 HTTP 带重试 | 与 LWC-2026-0004 实测一致 |
+
+### 2.4 技能仓库与 SKILL.md 规范
+
+| 仓库 | 许可 | 最近活动 | 内容 | 相关性 |
+|---|---|---|---|---|
+| [anthropics/claude-for-legal](https://github.com/anthropics/claude-for-legal) | Apache-2.0 | 2026-07-23（9,677★） | 12 个执业领域插件 + CoCounsel 插件，151 个 SKILL.md | 语料仓上游；其 `corporate-legal`（tabular review、DD issue extraction、closing checklist、written consents、entity compliance）、`product-legal`、`legal-clinic` 无本地对应 |
+| [knowledge-work-plugins/legal](https://github.com/anthropics/knowledge-work-plugins) | Apache-2.0 | 2026-09-21 | 合同审查、NDA 分诊、合规检查等 9 个技能 | 薄基线 |
+| [cat-xierluo/legal-skills](https://github.com/cat-xierluo/legal-skills) | **逐 skill：约 42 MIT / 19 CC BY-NC 4.0** | 2026-10-14（732★，2,211 commits） | 66 个 SKILL.md，46 个带 Python；非商业：contract-copilot、judgment-analysis、legal-case-analysis、legal-text-format 等；MIT：legal-ocr、yuandian-law-search、verification-gate、de-ai-polish、md2word、dsh-plugin-dev | 即 AGENTS.md 所指 `legal-skills`；DEFER-01 可按 skill 逐个评估 |
+| claude-for-legal-HoriZon / workbuddy-cn-legal-skills / claude-for-legal-cn | Apache-2.0 | 2026-06-10 / 05-14 / 10-14 | 面向中国执业的上游改编（HoriZon 9 插件 69 技能，内置元典） | 对比参照 |
+| [lawve-ai/awesome-legal-skills](https://github.com/lawve-ai/awesome-legal-skills) | NOASSERTION | 2026-10-02（865★） | 无中文条目 | 分发缺口 |
+| gongwen-gbt9704-skill / gongwen-skill | MIT | 2026-09 / 10 | GB/T 9704 公文版式；后者可写原生修订与批注 | 中文字体与版式参照 |
+| element-lawsuit-templates | 无许可 | 2026-05-26 | 最高法要素式诉状模板 58 案由、104 空白 + 104 示例 | 仅参照 |
+
+**SKILL.md 规范（[agentskills.io](https://agentskills.io/specification)，Apache-2.0，26k★）2026 年未变**：`name` ≤64 字符、小写字母 / 数字 / 连字符、无双连字符、须与目录名一致；`description` ≤1,024 字符；可选 `license` / `compatibility`（≤500）/ `metadata` / `allowed-tools`。2026 提交仅澄清（name 允许数字 2026-05-16；metadata 措辞 2026-08-03；新增 `evals/evals.json` 评测指南，有 / 无技能对照运行）。Claude Code 另加 `when_to_use` 等字段并在 1,536 字符截断描述；claude.ai 与 Skills API 拒绝规范外字段；DSH `skill-filesystem` 支持 `disable-model-invocation` / `user-invocable`。
+
+### 2.5 Word / DOCX 工程
+
+| 工具 | 许可 | 最近活动 | 能力 | 相关性 |
+|---|---|---|---|---|
+| [OfficeCLI](https://github.com/iOfficeAI/OfficeCLI) | Apache-2.0 | v1.0.157，2026-10-12（32k★） | 内置 .NET 单二进制；插入 / 删除 / 格式 / 移动修订、按作者接受拒绝、修订式查找替换、批注 | Windows 单文件最佳；本仓笔记记其截图功能失效 |
+| [docx-redline-js](https://github.com/AnsonLai/docx-redline-js) | MIT | 0.9.0，2026-10-11 | 纯 JS 真实 `w:ins` / `w:del`、格式修订、批注、接受 / 拒绝；**「拒绝全部修订」不能恢复源稿时拒绝输出** | LWC-2026-0002 的可逆性测试现成实现 |
+| [Docxodus](https://github.com/JSv4/Docxodus) / [Python-Redlines](https://github.com/JSv4/Python-Redlines) | MIT | 2026-10-12 / 1.0.0 | .NET / WebAssembly：两稿比较生成原生修订、渲染、编辑 | 两稿比对 |
+| [jubarte-redlines](https://github.com/jandira-tech/jubarte-redlines) | **AGPL-3.0** | 2026-10-15 | Rust 引擎，比较 / 接受拒绝 / DOCX→PDF/PNG | Rust 适合 Tauri 但 AGPL 阻碍闭源分发 |
+| [adeu](https://github.com/dealfluence/adeu) / [safe-docx](https://github.com/UseJunior/safe-docx) | MIT / Apache-2.0 | 2026-10 | MCP server：把 agent 文本编辑落为原生修订 | agent 侧修订层 |
+| [vespper-docx-conformance](https://github.com/ANKOHR/vespper-docx-conformance) | 无 | 2026-08-24 | 8 个有效 + 5 个故意损坏的修订样本，含原稿 / 接受视图与 Word 渲染对照 | docx 门禁样本模式 |
+| python-docx 1.2.0 / docx (JS) 9.11.0 | MIT | 2025-06 / 2026-10-13 | 前者有批注无修订；后者支持修订与批注 | DSH 内置 Word 技能用 python-docx，并声明不得伪造修订 |
+| pandoc + [TomBener/pandoc-templates](https://github.com/TomBener/pandoc-templates)、[docx-pipeline](https://github.com/redamancy231-create/docx-pipeline) | GPL-2.0 / MIT / MIT | 2026-10-14 | 读修订（接受 / 拒绝）；中文 reference.docx 模板（后者 4 套预设） | 外部调用 |
+
+APP-04 已放弃；这些工具服务于语料仓修订工作流，或日后重开 APP-04 时的选型。
+
+### 2.6 扫描件 OCR（中文）
+
+OmniDocBench v1.6（维护方自报，中英通用页面含模糊扫描）：PaddleOCR-VL-1.6 96.34、MinerU2.5-Pro 95.75、GLM-OCR 95.22、dots.ocr 90.77、DeepSeek-OCR 2 90.25、HunyuanOCR 89.95、Qwen3-VL-235B 89.78。**无任何工具公布中国法院文书的识别准确率。**
+
+| 工具 | 许可 | 最近活动 | 说明 | 离线 Windows 适配 |
+|---|---|---|---|---|
+| [PaddleOCR 3.7](https://github.com/PaddlePaddle/PaddleOCR) | Apache-2.0 | 2026-06-11 | PP-OCRv6（34.5M 参数，识别 +5.1%、CPU 5.2×）；PaddleOCR-VL-1.6（0.9B）；DOCX 导出 | 最准；Python 运行时重 |
+| [RapidOCR 3.10](https://github.com/RapidAI/RapidOCR) | Apache-2.0 | 2026-10-08 | ONNX Runtime；3.9 起默认 PP-OCRv6 | CPU 基线 |
+| [oar-ocr](https://github.com/GreatV/oar-ocr)（Rust crate） | Apache-2.0 | 0.10.0，2026-10-03 | PP-OCRv6 预设、印章文字模式、PaddleOCR-VL-1.5；模型可编译进二进制 | **最适合 Tauri**（无 Python） |
+| [MinerU 4](https://github.com/opendatalab/MinerU) | Apache-2.0 附条件（月活 >1 亿或月收入 >2,000 万美元需授权；在线服务须署名） | 4.0.12，2026-10-11 | PDF / OFD / Office → Markdown / JSON；默认 CPU（ONNX + llama.cpp） | Python sidecar |
+| GLM-OCR / dots.ocr / DeepSeek-OCR-2 | Apache+MIT / MIT / Apache-2.0 | 2026 | 0.9B–3B 文档视觉模型 | GLM-OCR 为宽松小模型 |
+| HunyuanOCR-1.5 | 腾讯社区许可 | 2026-09-24 | 1B | 需许可审查 |
+| Marker / Surya / Chandra | 代码 Apache-2.0，权重 modified OpenRAIL-M（融资 / 收入 <500 万美元免费） | 2026 | PDF→Markdown | **权重许可是商业陷阱** |
+| [OmniDocBench](https://github.com/opendatalab/OmniDocBench) v1.7 | Apache-2.0 | 2026-09-11 | 解析评测框架 | 用自有案卷集评分 |
+
+### 2.7 引擎与 ACP 生态
+
+| 项目 | 许可 | 最近活动 | 说明 | 相关性 |
+|---|---|---|---|---|
+| [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | MIT（插件 MIT / BSD-3） | v0.2.1-alpha.3，2026-10-14（249,709★，2026-08-13 创建）；npm `@deepseek-ai/dsh` latest 与 next 均 0.2.0-rc.2（2026-09-29） | **本仓钉 0.1.0-rc.6（2026-08-13）**；`session/list` / `resume` / `close` 自 2026-08-22（`dsh-v0.1.2-alpha.1`）加入，现为稳定 ACP v1 方法；`session/resume` 恢复会话「不重放旧更新」 | 触及决策 #3 与 FUTURE-08 |
+| `@deepseek-ai/dsh-acp` / `dsh-acp-app` | BSD-3 / MIT | 0.2.0-rc.2 | ACP 服务端；`dsh-acp-demo` 停在 0.1.1-rc.2，由 `dsh-acp-app` 取代；ACP SDK 1.4.0；`session/new` 接受 HTTP MCP 服务器；仍无 `session/load` | 本仓 lock 仍为 SDK 0.25.1 |
+| npm `deepseek-harness` | MIT | 0.0.1，2026-08-19 | **仅占名的占位包** | 勿依赖 |
+| [ACP 规范](https://github.com/agentclientprotocol/agent-client-protocol) / TS SDK 1.8.0 / [Rust crate](https://crates.io/crates/agent-client-protocol) 3.3.0 | Apache-2.0 | 2026-10 | 稳定 v1 含 `session/list`、`resume`、`close`、`delete`、`set_config_option`；SDK 1.0.0 于 2026-06-24 | Rust crate 可替代 `src-tauri` 手写 JSON-RPC（新依赖需计划批准） |
+| [ACP registry](https://github.com/agentclientprotocol/registry) | Apache-2.0 | 2026-10-14 | 列有 qwen-code、qoder、kimi、glm-acp-agent、codebuddy-code、minimax-code；**DSH 未列入** | 国产 agent 已采用 ACP |
+| [Jockey](https://github.com/recailai/jockey) / [Perch](https://github.com/chenweigao/perch) / [Martty](https://github.com/openma-ai/Martty) | MIT | 2026-10 | Jockey：Tauri + Rust + SolidJS 的 ACP 客户端；Perch：驱动 DSH，有审批卡与会话恢复；Martty：Rust 终端 DSH 客户端 | 同栈 / 同引擎参照 |
+| AionUi / DeepChat | Apache-2.0 | 2026-10 | 桌面 ACP 客户端，技能与 MCP 管理，中文本地化 | UX 参照 |
+| Zed / JetBrains / 100+ 客户端（含 Lark ACP、WeChat ACP） | — | — | ACP 起于 Zed（2025-08），JetBrains 共同开发 | 生态健康 |
+
+### 2.8 与本地仓库的不一致
+
+- `engines/dsh-pin.txt` 钉 `0.1.0-rc.6` + 已冻结的 `dsh-acp-demo`；`engine-lock.json` 的 ACP SDK 为 0.25.1，上游 0.1.2-rc.1 起为 1.4.0。
+- `AGENTS.md` 对 `legal-skills` 的描述（51 个、CC-BY-NC）已过时——现为 66 个、逐 skill 许可（2026-10-15 已改）。
+- 语料仓 `connectors/gsxt/connector.json` 声明的 `https://www.gsxt.gov.cn/api` 不存在（CONNECTORS.md 已称占位）。
 
 ## 3. 2026 年中国法规更新与陈旧引用清单
 
@@ -150,7 +252,7 @@
 | 1 | 「已核验」= 法条逐字一致且现行有效 / 案例案号可解析且法院、案由、要旨与命题一致；其余只能是 retrieved / unverified | 通州、宜昌案；Princeton 核查器研究；HC142 | ✅ 语料 v1.2 研究闸门；产品侧 CITATION_AUDIT 护栏文案可同步细化 |
 | 2 | 诉讼类导出门禁 + 自动生成《AI 辅助使用情况说明》；任一引用未核验不得标可提交 | 法发〔2026〕10号第 19 条；通州案要旨 | ✅ 语料；⏳ 产品（Phase 128 之后的导出面） |
 | 3 | `deepseek-v4-flash` → `deepseek-flash`，走 `acp.cordis.yml` + 冒烟闸；增加「实际服务模型 == 钉住模型」门禁 | DeepSeek 2026-07-24 下线旧模型；官方两页冲突 | ⏳ 需真实 key，已记 STATE.md |
-| 4 | 把北大法宝 MCP（citation-validator / case-number-recognition / law-recognition）或元典 MCP 作为研究闸门的 DSH 工具接入，并列入 GRD-06 外传提示 | 唯一发现的中国法引用校验工具；Astra 显示权威索引接地提升 15 点 | ⏳ 产品决策（语料已登记服务器名） |
+| 4 | 把北大法宝 MCP（`pku_citation_validator` 等，官方 CLI `@pkulaw/mcp-cli`）或企查查法律数据 MCP（`get_legal_citation_verify` / `get_judicial_citation_verify`）经 `session/new` 注入为研究闸门工具，token 入凭据库并列入 GRD-06 外传提示；用 LegalCiteTrust（Apache-2.0）做引用审计回归集 | 仅有的中国法引用校验服务；Astra 显示权威索引接地提升 15 点 | ⏳ 产品决策（语料 authoritative-sources 已登记） |
 | 5 | GRD-06 按事项确认并记录「委托人已同意 / 已脱敏」，显示模型提供方所在地；含客户材料的事项默认境内提供方 | 大湾区倡议要求当事人同意；上海指引禁止未授权上传；境外提供方触发 PIPL 出境规则 | ⏳ 产品 |
 | 6 | 去 AI 腔润色只改文风，不得删除 AI 使用说明、人审标记、导出文件标识 | 标识办法第 4 / 10 条 + 清朗执法；法发〔2026〕10号披露要求 | ✅ 语料交付 QA；⏳ 产品 DE_AI_POLISH 护栏文案 |
 | 7 | 建 20–50 题中国法评测集（取自真实失败：假案号、改写司法解释、虚构条文序号、已废止法规），律师写 rubric，all-pass + pass^k，κ 校准裁判 | 无中国法 agent 基准；DeepSeek V4 Pro 落后榜首约 14 点；可作 HG-1 证据 | ⏳ 案例库复盘已列为下一步 |
@@ -159,5 +261,14 @@
 | 10 | 导出文本中 `[HUMAN_REVIEW:]` 呈现为「【需律师核查】」；预设加入「不得编造法律依据、监管口径或案例」 | 上海律协 2026 指引惯例 | ✅ 语料交付 QA（可选惯例）；⏳ 产品 |
 | 11 | 向业主以外的人分发 exe 前评估 CAC 登记义务 | 经 API 调用已备案模型的应用登记 731 款；清朗执法活跃；2023 暂行办法第 2 条对非公众服务的豁免未在本次重新核对 | ⏳ 发布前法律意见 |
 | 12 | 批量任务（尽调扫描、复核轮次）避开北京工作日 09–12、14–18 | DeepSeek 峰谷定价两倍差 | ⏳ 操作建议 |
+| 13 | DSH 钉版升级到 ≥0.1.2-rc.1 的精确版本（现 0.2.0-rc.2），`dsh-acp-demo` 换 `dsh-acp-app`，在 RTM-07 实测 `session/list` / `session/resume`；若可用，回灌路径可缩减或移除 | 2.7；FUTURE-08 触发条件已满足；触及决策 #3 | ⏳ **业主决定**；走 dsh-pin → gen-engine-lock → 冒烟闸 |
+| 14 | 全部技能加 `evals/evals.json`（有 / 无技能对照），pass/fail 标准参照 LexRubric / PLawBench | agentskills 评测指南；HG-1 需逐技能证据 | ⏳ |
+| 15 | 以 Harvey LAB `task.json` 格式建中国法 redline / DD 任务集 | 无中国基准 | ⏳（与第 7 条合并执行） |
+| 16 | 移植上游 `corporate-legal`（tabular review、DD issue extraction、closing checklist、written consents、entity compliance）到中国实务 | 上游最大缺口；`equity-transaction-dd` 已覆盖部分 | ⏳ |
+| 17 | DEFER-01 按 skill 逐个许可评估：约 42 个 MIT 可署名参照，19 个 CC BY-NC 排除 | legal-skills 实测 | ⏳ 业主决定 |
+| 18 | App 内 OCR 用 oar-ocr（Rust，PP-OCRv6，印章模式），复杂版面可选 MinerU 4 sidecar；用自有扫描案卷（案号、金额、日期）抽样评分 | 2.6；厂商无法院文书准确率 | ⏳ 产品（新依赖需计划批准） |
+| 19 | 语料仓 `connectors/gsxt` 占位改用企查查 / 元典企业数据 | GSXT 403；信用中国验证码 | ⏳；语料已登记替代源 |
+| 20 | 修订类工作流（语料侧，或日后重开 APP-04）以 docx-redline-js 的「拒绝全部恢复源稿」为门禁，配合 OfficeCLI；避开 AGPL 的 jubarte 与专有条款的 Anthropic docx 脚本 | 2.5 | ✅ 语料 document-delivery-qa 第 6 节已登记 |
+| 21 | `src-tauri` 控制面参考 Rust `agent-client-protocol` crate 与 Jockey / Perch / Martty | 2.7 | ⏳ 新依赖需 phase 计划批准 |
 
 **未找到 / 未核实**：通义法睿、法行宝、AlphaGPT、MeCheck、小包公、法狗狗、无讼的 2026 官方发布；中国产品的 Word / WPS 原生修订；Vals 2026 报告或 Stanford 2026 幻觉更新；全国律协 / 司法部全国指引；2026 年 9–10 月《人工智能法》草案；DeepSeek 2026 隐私政策变更；标识办法对律所交付物的官方口径。

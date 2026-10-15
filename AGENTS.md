@@ -54,7 +54,7 @@ Do not relitigate these without an explicit user decision. Full rationale in `.p
 |---|---|
 | `deepseek-harness` | V5 引擎 npm 发布源（本地仅作只读参照；构建改走 npm lockfile）。 |
 | `ai-for-china-legal` | 345 个 SKILL.md，唯一语料事实源。`convert-skills.js` 加 `dsh` target。 |
-| `legal-skills` | 51 个 SKILL.md（37 带 .py，CC-BY-NC）。DEFER-01：许可评估后另议，v5 不并入。 |
+| `legal-skills` | 66 个 SKILL.md（46 带 .py），许可逐 skill 声明：约 42 个 MIT、19 个 CC BY-NC 4.0（2026-10-15 核实）。DEFER-01：按 skill 逐个评估后另议，v5 不并入。 |
 | `lawyer-desktop` | 前身（Tauri 2.11 + SolidJS）。V5 UI 移植源；agent 逻辑（router/classifier/tool_leak）退役。 |
 | `lawyer-ai` | OpenCode 原型，搁置，不迁入。 |
 

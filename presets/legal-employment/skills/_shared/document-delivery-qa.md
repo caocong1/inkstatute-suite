@@ -47,3 +47,17 @@
 - 拟提交法庭 / 仲裁机构的诉讼文书、案例检索报告、代理词：随附《AI 辅助使用情况说明》，交付说明列出逐条引用核验状态（最高法法发〔2026〕10号第 19 条，2026-09-07）；任一引用为未核验时不得标为可提交；
 - 对外文书中的人审标记可按上海律协《律师企业法律顾问服务 AI 应用操作指引（2026）（试行）》的惯例呈现为「【需律师核查】」；去 AI 腔润色不得删除人审标记与 AI 使用说明；
 - 结构指标（页数、表格数、待核实数）仅作解释，不作质量评分。
+
+## 6. 工具参考（2026-10-15 调研，均未在本仓实测）
+
+| 检查项 | 可用工具 | 许可 | 说明 |
+|---|---|---|---|
+| 真实修订 + 可逆性（第 1 节） | docx-redline-js 0.9.0 | MIT | 纯 JS 生成 `w:ins` / `w:del`、格式修订、批注、接受 / 拒绝；**「拒绝全部修订」不能恢复源稿时拒绝输出**，可直接作门禁 |
+| 两稿比对生成修订 | Docxodus / Python-Redlines 1.0.0 | MIT | .NET / WebAssembly 引擎，比较两份文档生成原生修订并可渲染 |
+| 单文件命令行 | OfficeCLI v1.0.157 | Apache-2.0 | 内置 .NET 单二进制：插入 / 删除 / 格式 / 移动修订，按作者接受 / 拒绝，修订式查找替换，批注；本仓记录其截图功能失效，渲染仍用 LibreOffice |
+| agent 直接写修订 | adeu 3.0.7 / safe-docx 0.25.0 | MIT / Apache-2.0 | MCP server，把模型文本编辑落为原生修订 |
+| 修订一致性测试样本 | vespper-docx-conformance | 无许可声明 | 8 个有效 + 5 个故意损坏的修订样本，含原稿 / 接受视图与 Word 渲染对照；可仿其结构建门禁样本 |
+| Markdown → DOCX 中文模板（第 3 节） | pandoc + TomBener/pandoc-templates；docx-pipeline（4 套中文预设） | GPL-2.0（外部调用）/ MIT / MIT | 配合自备 reference.docx |
+| 公文版式 | gongwen-gbt9704-skill / gongwen-skill | MIT | GB/T 9704 版式；后者可写原生修订与批注 |
+| 基础库 | python-docx 1.2.0（有批注、无修订）；docx (JS) 9.11.0（支持修订与批注） | MIT | python-docx 直接改文本不是修订，不得冒充修订稿 |
+| 避免 | jubarte-redlines（AGPL-3.0）；Anthropic docx skill 脚本（专有条款） | — | 许可不适合闭源分发 / 不得 vendoring |

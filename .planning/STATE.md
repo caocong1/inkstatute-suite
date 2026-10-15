@@ -171,6 +171,8 @@ v4.0 archive: .planning/milestones/v4.0-REQUIREMENTS.md · v1.x/v3.0 archives: .
 - **Phase 128（多模型交叉互评 + 对抗质询）为交付后增强，不在 v5.0 关键路径上，不执行。**
 - **2026-10-15 语料仓同步与案例复盘**：`ai-for-china-legal` v1.2（案例库 LWC-2026-0001～0006 驱动：股权尽调 + 劳动用工合规调查两条工作流、`REVIEW_STATUS` 可观察复核状态、信用修复 / 司法解释二锚点、最高法法发〔2026〕10号第19条提交前核验规则）已物化进 `presets/`（23 父技能，目录预算 5,119 / 8,000）。跨案复盘见 `docs/legal-ops/case-library/RETROSPECTIVE-2026-10-15.md`（该目录尚未纳入 git）。案例证据：三件 critical 任务均未做独立复核，是 Phase 128 的业务依据。
 - **引擎配置待办（外部调研 2026-10-15，未改动）**：`engines/acp.cordis.yml` L52 `deepseek-v4-flash` 自 2026-09-10 起仅为临时路由别名，官方名已改为 `deepseek-flash`；L53/L177 `deepseek-v4-pro` 的服务状态官方两页说法不一致；L34/L38 `glm-4-plus` / `glm-4-flash` 条目过时。更换须走 `acp.cordis.yml` → 冒烟闸（需真实 key）。另：Vals Legal Research Bench（2026-10-12）DeepSeek V4 Pro 40.9% vs 榜首 55.3%（美国法，仅作参照）。
+- **DSH 钉版落后上游（外部调研 2026-10-15，未改动）**：`engines/dsh-pin.txt` 钉 `0.1.0-rc.6`（2026-08-13）+ 已冻结的 `dsh-acp-demo`（由 `dsh-acp-app` 取代）；上游自 `0.1.2-alpha.1`（2026-08-22）起实现 ACP `session/list` / `session/resume` / `session/close`（现为稳定 v1 方法，resume「不重放旧更新」），npm 现为 `0.2.0-rc.2`，ACP SDK 1.4.0（本仓 lock 0.25.1）。**这满足 FUTURE-08 的触发条件，触及关键决策 #3（回灌续接）**，须业主决定是否重开；升级路径 dsh-pin → gen-engine-lock → 冒烟闸 → RTM-07 实测。元典官方 DSH 插件要求 DSH ≥0.1.2-rc.1。
+- **DEFER-01 事实更新**：`legal-skills` 仓现为 66 个 SKILL.md（46 个带 Python），许可逐 skill 声明：约 42 个 MIT、19 个 CC BY-NC 4.0（非商业的含 contract-copilot、judgment-analysis、legal-case-analysis 等；MIT 的含 legal-ocr、verification-gate、de-ai-polish、md2word）。可按 skill 逐个评估，不必整体排除。完整调研见 `.planning/research/LEGAL-AI-LANDSCAPE-2026-10.md`。
 
 ## Performance Metrics
 
