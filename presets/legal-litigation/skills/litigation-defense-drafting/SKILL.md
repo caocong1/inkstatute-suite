@@ -6,7 +6,8 @@ description: 答辩状起草编排入口。编排五个子技能（答辩策略�
 > **墨律桌面环境适配说明**（物化管线自动生成）：
 > - 本文档已把全部子技能**内联**为「子技能」章节；原文对子技能路径或斜杠命令的引用均已改写为文档内引用。
 > - 实践配置文件（`CLAUDE.md`）在本环境**不存在**：读取不到时一律按模板默认值处理，**不要**尝试创建或写入 CLAUDE.md。
-> - `../_shared/` 参考文档随技能包提供；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - `../_shared/` 参考文档随技能包提供（含本域引用库与语料仓跨插件参考：尽调 playbook、文档交付 QA、主体资格陷阱等）；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - 原文引用的 `shared/research-gate/SKILL.md` 与 `shared/legal-document-intake/SKILL.md` 在本环境由系统护栏承担（研究闸口、引用审计、`[CLARIFY:]` 澄清、人审标记、交叉复核）；不要尝试读取这两个路径，按护栏执行即可。
 > - 输出格式与保存位置：用户请求已明确时直接执行，不重复询问；只有目标不明、可能覆盖原件或涉及外部发送时才以 `[CLARIFY:]` 确认（见文末「硬性护栏」）。
 
 
@@ -142,7 +143,7 @@ description: 答辩状起草编排入口。编排五个子技能（答辩策略�
 - `../_shared/civil-procedure-citations.md` — 诉讼仲裁引用库（民诉法/仲裁法/时效/证据规定）
 - `../_shared/legal-basis-conventions.md` — 引用规范（法条/案例/学说 + 来源标签 + 待验证规则）
 - `shared/research-gate/SKILL.md` — 研究闸门（已在顶部前置）
-- `shared/references/document-structures.md` — 诉讼文书结构模板（答辩状/代理意见/证据目录）
+- `../_shared/document-structures.md` — 诉讼文书结构模板（答辩状/代理意见/证据目录）
 
 ---
 
@@ -422,7 +423,7 @@ description: 答辩状起草编排入口。编排五个子技能（答辩策略�
 
 > 引用规范：`../_shared/legal-basis-conventions.md`
 > 引用库：`../_shared/civil-procedure-citations.md`（重点：A.2节级别管辖 + A.3节地域/专属管辖 + A.4节管辖权异议程序）
-> 结构模板：`shared/references/document-structures.md`（管辖法院部分 + 管辖条文表）
+> 结构模板：`../_shared/document-structures.md`（管辖法院部分 + 管辖条文表）
 > 本子技能可被 `litigation-legal/skills/defense-drafting/SKILL.md` 编排入口调用，
 > 也可通过 `「子技能：jurisdiction-objection」章节（见本文档）` 单独触发。
 
@@ -443,7 +444,7 @@ description: 答辩状起草编排入口。编排五个子技能（答辩策略�
 1. **研究闸门**：除非用户明确豁免联网检索，先运行 `shared/research-gate/SKILL.md`，完成研究底稿后再进入本子技能
 2. `../_shared/civil-procedure-citations.md` — A.2（级别管辖）+ A.3（地域/专属/协议管辖）+ A.4（管辖权异议程序）
 3. `../_shared/legal-basis-conventions.md` — 引用规范
-4. `shared/references/document-structures.md` — 管辖法院部分（地域管辖规则 + 起诉策略对比）
+4. `../_shared/document-structures.md` — 管辖法院部分（地域管辖规则 + 起诉策略对比）
 5. `litigation-legal/CLAUDE.md` — `## 主要执业法院`（了解当地级别管辖标准）
 
 ---
@@ -1271,7 +1272,7 @@ description: 答辩状起草编排入口。编排五个子技能（答辩策略�
 
 > 引用规范：`../_shared/legal-basis-conventions.md`
 > 引用库：`../_shared/civil-procedure-citations.md`
-> 结构模板：`shared/references/document-structures.md`（答辩状/代理意见结构 + 证据目录模板）
+> 结构模板：`../_shared/document-structures.md`（答辩状/代理意见结构 + 证据目录模板）
 > 本子技能可被 `litigation-legal/skills/defense-drafting/SKILL.md` 编排入口调用，
 > 也可通过 `「子技能：defense-assembly」章节（见本文档）` 单独触发。
 
@@ -1292,7 +1293,7 @@ description: 答辩状起草编排入口。编排五个子技能（答辩策略�
 1. **研究闸门检查**：确认研究闸门已完成（在编排入口或各子技能中完成），未完成时标记 `[研究闸门未完成 — 需补充法律验证]`
 2. `../_shared/civil-procedure-citations.md` — A节（答辩格式）+ A.5（答辩期/举证期）
 3. `../_shared/legal-basis-conventions.md` — 引用规范
-4. `shared/references/document-structures.md` — 答辩状/代理意见结构 + 证据目录三大类模板
+4. `../_shared/document-structures.md` — 答辩状/代理意见结构 + 证据目录三大类模板
 5. `litigation-legal/CLAUDE.md` — `## 文书风格`（代理词风格）+ `## 输出`（工作产物标题）
 6. 前序子技能输出（defense-strategy、jurisdiction-objection、substantive-defense、procedural-limitation-defense 的结果）
 

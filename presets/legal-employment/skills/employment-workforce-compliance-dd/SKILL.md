@@ -6,7 +6,8 @@ description: 劳动用工合规调查（尽调）报告编排入口。面向「�
 > **墨律桌面环境适配说明**（物化管线自动生成）：
 > - 本文档已把全部子技能**内联**为「子技能」章节；原文对子技能路径或斜杠命令的引用均已改写为文档内引用。
 > - 实践配置文件（`CLAUDE.md`）在本环境**不存在**：读取不到时一律按模板默认值处理，**不要**尝试创建或写入 CLAUDE.md。
-> - `../_shared/` 参考文档随技能包提供；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - `../_shared/` 参考文档随技能包提供（含本域引用库与语料仓跨插件参考：尽调 playbook、文档交付 QA、主体资格陷阱等）；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - 原文引用的 `shared/research-gate/SKILL.md` 与 `shared/legal-document-intake/SKILL.md` 在本环境由系统护栏承担（研究闸口、引用审计、`[CLARIFY:]` 澄清、人审标记、交叉复核）；不要尝试读取这两个路径，按护栏执行即可。
 > - 输出格式与保存位置：用户请求已明确时直接执行，不重复询问；只有目标不明、可能覆盖原件或涉及外部发送时才以 `[CLARIFY:]` 确认（见文末「硬性护栏」）。
 
 
@@ -31,7 +32,7 @@ description: 劳动用工合规调查（尽调）报告编排入口。面向「�
 
 ## 动态事项确认（先读材料，后提问）
 
-执行 `shared/legal-document-intake/SKILL.md`，并按 `shared/references/due-diligence-playbook.md` 第 1 节判定必答项：
+执行 `shared/legal-document-intake/SKILL.md`，并按 `../_shared/due-diligence-playbook.md` 第 1 节判定必答项：
 
 - **受众与立场**：报告面向公司管理层自查，还是投资方 / 贷款人；决定措辞确定性与附录口径；
 - **重点关注项**：指令文件列明的（如「假外包真派遣」「社保委托代缴」）优先；无则按本技能默认清单；
@@ -44,8 +45,8 @@ description: 劳动用工合规调查（尽调）报告编排入口。面向「�
 
 ## 共享资源
 
-- `shared/references/due-diligence-playbook.md` — 资料清单、分章底稿、覆盖审计、问题清单三分类的数据结构
-- `shared/references/document-delivery-qa.md` — 模板包成稿、渲染 QA、发送包隐私检查
+- `../_shared/due-diligence-playbook.md` — 资料清单、分章底稿、覆盖审计、问题清单三分类的数据结构
+- `../_shared/document-delivery-qa.md` — 模板包成稿、渲染 QA、发送包隐私检查
 - `shared/research-gate/SKILL.md` — 法条与地方标准联网核对
 - `../_shared/legal-basis-conventions.md` — 引用规范
 - `../_shared/labor-law-citations.md` — 引用库（G 节：法释〔2025〕12 号；H 节：劳务派遣）
@@ -116,7 +117,7 @@ description: 劳动用工合规调查（尽调）报告编排入口。面向「�
 # 资料清点与三表交叉比对（headcount-reconciliation）
 
 > **前置**：
-> 1. 读取 `shared/references/due-diligence-playbook.md` 第 2、3 节，按其 schema 建资料清单与底稿；
+> 1. 读取 `../_shared/due-diligence-playbook.md` 第 2、3 节，按其 schema 建资料清单与底稿；
 > 2. 读取 `../_shared/local-rules-beijing.md`（或工作地点对应文件），取当年度社保基数上下限；
 > 3. 本子技能只产出**事实口径**，不下法律结论；定性见 `workforce-classification`。
 >
@@ -416,7 +417,7 @@ description: 劳动用工合规调查（尽调）报告编排入口。面向「�
 # 报告装配（dd-report-assembly）
 
 > **前置**：
-> 1. 读取 `shared/references/due-diligence-playbook.md` 第 4–8 节与 `shared/references/document-delivery-qa.md` 第 2、4、5 节；
+> 1. 读取 `../_shared/due-diligence-playbook.md` 第 4–8 节与 `../_shared/document-delivery-qa.md` 第 2、4、5 节；
 > 2. 前三个子技能的输出已落盘为分章内容文件（防止上下文压缩丢失）；
 > 3. 读取 `employment-legal/CLAUDE.md` → `## 输出` 取工作产物标题。
 >
@@ -507,7 +508,7 @@ description: 劳动用工合规调查（尽调）报告编排入口。面向「�
 
 | 情形 | 处理 |
 |---|---|
-| 无客户模板 | 用 `shared/references/document-structures.md` 的意见书 / 报告结构 + 中文 reference.docx（QA 清单第 3 节） |
+| 无客户模板 | 用 `../_shared/document-structures.md` 的意见书 / 报告结构 + 中文 reference.docx（QA 清单第 3 节） |
 | 指令要求先写第二部分 | 仍先写正文草稿再归纳，向律师说明原因 |
 | 上下文压缩发生 | 从分章内容文件续写，不重做比对 |
 | 律师要求外发版 | 另存去除内部评级与【律师决定】说明的版本 |

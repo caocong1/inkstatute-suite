@@ -6,7 +6,8 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 > **墨律桌面环境适配说明**（物化管线自动生成）：
 > - 本文档已把全部子技能**内联**为「子技能」章节；原文对子技能路径或斜杠命令的引用均已改写为文档内引用。
 > - 实践配置文件（`CLAUDE.md`）在本环境**不存在**：读取不到时一律按模板默认值处理，**不要**尝试创建或写入 CLAUDE.md。
-> - `../_shared/` 参考文档随技能包提供；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - `../_shared/` 参考文档随技能包提供（含本域引用库与语料仓跨插件参考：尽调 playbook、文档交付 QA、主体资格陷阱等）；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - 原文引用的 `shared/research-gate/SKILL.md` 与 `shared/legal-document-intake/SKILL.md` 在本环境由系统护栏承担（研究闸口、引用审计、`[CLARIFY:]` 澄清、人审标记、交叉复核）；不要尝试读取这两个路径，按护栏执行即可。
 > - 输出格式与保存位置：用户请求已明确时直接执行，不重复询问；只有目标不明、可能覆盖原件或涉及外部发送时才以 `[CLARIFY:]` 确认（见文末「硬性护栏」）。
 
 
@@ -31,7 +32,7 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 
 ## 动态事项确认（先读材料，后提问）
 
-执行 `shared/legal-document-intake/SKILL.md`，并按 `shared/references/due-diligence-playbook.md` 第 1 节判定：
+执行 `shared/legal-document-intake/SKILL.md`，并按 `../_shared/due-diligence-playbook.md` 第 1 节判定：
 
 - **阻断项**：委托方身份与报告受众；参考稿 / 模板的使用规则（哪些段落不得参考，版式沿用范围）；
 - **交易结构**（受让哪一方股权、比例、是否增资、是否取得控制权）：会改变国资程序、外资程序、经营者集中、优先购买权与控制权变更条款分析。可考虑开工前用一个问题澄清；未答时按「一般情形」继续并列为 `deferred_items` 首项，受影响章节逐章注明；
@@ -43,9 +44,9 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 
 ## 共享资源
 
-- `shared/references/due-diligence-playbook.md` — 资料清单、底稿 schema、覆盖审计、问题清单三分类
-- `shared/references/document-delivery-qa.md` — 模板复刻、渲染 QA、发送包隐私检查
-- `shared/references/subject-qualification-traps.md` — 国企 / 上市公司 / 外商投资企业主体陷阱
+- `../_shared/due-diligence-playbook.md` — 资料清单、底稿 schema、覆盖审计、问题清单三分类
+- `../_shared/document-delivery-qa.md` — 模板复刻、渲染 QA、发送包隐私检查
+- `../_shared/subject-qualification-traps.md` — 国企 / 上市公司 / 外商投资企业主体陷阱
 - `shared/research-gate/SKILL.md` — 法条原文核对
 - `../_shared/legal-basis-conventions.md` — 引用规范
 - `../_shared/transaction-procedure-citations.md` — 国资 / 外资 / 公司法 / 经营者集中程序锚点
@@ -115,7 +116,7 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 
 # 资料室清点与覆盖审计（data-room-inventory）
 
-> **前置**：读取 `shared/references/due-diligence-playbook.md` 第 2、4 节，按其 schema 输出。
+> **前置**：读取 `../_shared/due-diligence-playbook.md` 第 2、4 节，按其 schema 输出。
 > 可被 `equity-transaction-dd/SKILL.md` 编排入口调用，也可通过 `「子技能：data-room-inventory」章节（见本文档）` 单独触发。
 
 ---
@@ -209,7 +210,7 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 # 分章事实底稿（chapter-fact-memos）
 
 > **前置**：
-> 1. 读取 `shared/references/due-diligence-playbook.md` 第 3 节 schema；
+> 1. 读取 `../_shared/due-diligence-playbook.md` 第 3 节 schema；
 > 2. 读取 `data-room-inventory` 的清单与章节映射；
 > 3. 子代理参与时，先下发统一规则文件（见步骤 4）。
 >
@@ -307,7 +308,7 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 > **前置**：
 > 1. 读取 `chapter-fact-memos` 的股权、章程、合资合同、重大合同、融资底稿；
 > 2. 读取 `../_shared/transaction-procedure-citations.md`（锚点与验证状态）；
-> 3. 读取 `shared/references/subject-qualification-traps.md`（国企 / 上市公司 / 外商投资企业）；
+> 3. 读取 `../_shared/subject-qualification-traps.md`（国企 / 上市公司 / 外商投资企业）；
 > 4. 每一处条文经 `shared/research-gate/SKILL.md` 取官方原文核对现行版本。
 >
 > 可被 `equity-transaction-dd/SKILL.md` 编排入口调用，也可通过 `「子技能：transaction-procedure-check」章节（见本文档）` 单独触发。
@@ -394,7 +395,7 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 # 报告、问题清单与编制说明（dd-report-issue-list）
 
 > **前置**：
-> 1. 读取 `shared/references/due-diligence-playbook.md` 第 4–8 节与 `shared/references/document-delivery-qa.md` 第 2、4、5 节；
+> 1. 读取 `../_shared/due-diligence-playbook.md` 第 4–8 节与 `../_shared/document-delivery-qa.md` 第 2、4、5 节；
 > 2. 读取 `commercial-legal/CLAUDE.md` → `## 输出` 取工作产物标题；
 > 3. 前三个子技能输出已落盘。
 >
@@ -472,6 +473,6 @@ description: 股权交易法律尽职调查报告编排入口。面向投资方 
 
 | 情形 | 处理 |
 |---|---|
-| 无参考稿 | 用 `shared/references/document-structures.md` 的报告结构 + 中文 reference.docx |
+| 无参考稿 | 用 `../_shared/document-structures.md` 的报告结构 + 中文 reference.docx |
 | 律师要求只出问题清单 | 仍需底稿支撑，每项注明 `fact_id` |
 | 上下文压缩 | 从分章底稿与 DSL 源文件续写 |

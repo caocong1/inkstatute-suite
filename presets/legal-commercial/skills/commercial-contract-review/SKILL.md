@@ -6,7 +6,8 @@ description: 合同审查编排入口。编排五个审查子技能（风险识�
 > **墨律桌面环境适配说明**（物化管线自动生成）：
 > - 本文档已把全部子技能**内联**为「子技能」章节；原文对子技能路径或斜杠命令的引用均已改写为文档内引用。
 > - 实践配置文件（`CLAUDE.md`）在本环境**不存在**：读取不到时一律按模板默认值处理，**不要**尝试创建或写入 CLAUDE.md。
-> - `../_shared/` 参考文档随技能包提供；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - `../_shared/` 参考文档随技能包提供（含本域引用库与语料仓跨插件参考：尽调 playbook、文档交付 QA、主体资格陷阱等）；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - 原文引用的 `shared/research-gate/SKILL.md` 与 `shared/legal-document-intake/SKILL.md` 在本环境由系统护栏承担（研究闸口、引用审计、`[CLARIFY:]` 澄清、人审标记、交叉复核）；不要尝试读取这两个路径，按护栏执行即可。
 > - 输出格式与保存位置：用户请求已明确时直接执行，不重复询问；只有目标不明、可能覆盖原件或涉及外部发送时才以 `[CLARIFY:]` 确认（见文末「硬性护栏」）。
 
 
@@ -80,7 +81,7 @@ description: 合同审查编排入口。编排五个审查子技能（风险识�
 
 进入子技能前，读取以下共享资源（子技能自身也会读取，此处列出确保编排时已加载）：
 
-- `shared/references/subject-qualification-traps.md` — 主体资格陷阱清单（risk-identification 引用）
+- `../_shared/subject-qualification-traps.md` — 主体资格陷阱清单（risk-identification 引用）
 - `shared/research-gate/references/search-playbooks.md` — 搜索策略（涉担保/主体资格/管辖时使用）
 - `shared/research-gate/references/quality-gates.md` — 研究质量闸门（合同审查附加闸门）
 - `../_shared/legal-basis-conventions.md` — 法律引用规范（legal-basis 引用）
@@ -168,7 +169,7 @@ description: 合同审查编排入口。编排五个审查子技能（风险识�
 
 1. **实践配置文件**：`commercial-legal/CLAUDE.md`（审查立场、交易破坏者、升级矩阵）
    - 若配置文件缺失或有占位符，提示用户运行 ``commercial-cold-start-interview` 技能` 或说「临时模式」
-2. **主体资格陷阱清单**：`shared/references/subject-qualification-traps.md`
+2. **主体资格陷阱清单**：`../_shared/subject-qualification-traps.md`
 3. **引用规范**：`../_shared/legal-basis-conventions.md`
 4. **引用库**：`../_shared/civil-code-contract-citations.md`
 
@@ -197,7 +198,7 @@ description: 合同审查编排入口。编排五个审查子技能（风险识�
 
 ### 第二步：主体资格预检
 
-**对照 `shared/references/subject-qualification-traps.md`**，若合同存在以下情形，**优先核查主体资格**：
+**对照 `../_shared/subject-qualification-traps.md`**，若合同存在以下情形，**优先核查主体资格**：
 
 | 情形 | 核查内容 | 依据 |
 |------|---------|------|

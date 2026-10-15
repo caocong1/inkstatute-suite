@@ -6,7 +6,8 @@ description: 案件录入编排入口——按顺序调用五个子技能完成�
 > **墨律桌面环境适配说明**（物化管线自动生成）：
 > - 本文档已把全部子技能**内联**为「子技能」章节；原文对子技能路径或斜杠命令的引用均已改写为文档内引用。
 > - 实践配置文件（`CLAUDE.md`）在本环境**不存在**：读取不到时一律按模板默认值处理，**不要**尝试创建或写入 CLAUDE.md。
-> - `../_shared/` 参考文档随技能包提供；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - `../_shared/` 参考文档随技能包提供（含本域引用库与语料仓跨插件参考：尽调 playbook、文档交付 QA、主体资格陷阱等）；若读取被沙箱拒绝，按各文档的默认约定处理。
+> - 原文引用的 `shared/research-gate/SKILL.md` 与 `shared/legal-document-intake/SKILL.md` 在本环境由系统护栏承担（研究闸口、引用审计、`[CLARIFY:]` 澄清、人审标记、交叉复核）；不要尝试读取这两个路径，按护栏执行即可。
 > - 输出格式与保存位置：用户请求已明确时直接执行，不重复询问；只有目标不明、可能覆盖原件或涉及外部发送时才以 `[CLARIFY:]` 确认（见文末「硬性护栏」）。
 
 
@@ -122,7 +123,7 @@ description: 案件录入编排入口——按顺序调用五个子技能完成�
 | 诉讼引用规范 | `../_shared/legal-basis-conventions.md` | 法条/案例/学说分类 + 待验证规则 |
 | 诉讼引用库 | `../_shared/civil-procedure-citations.md` | 民诉法/仲裁法/证据规定/民法典时效 |
 | 配置文件契约 | `../_shared/practice-profile-schema.md` | 字段映射 + 读取契约 + 临时模式 |
-| 主体资格陷阱 | `shared/references/subject-qualification-traps.md` | 特殊主体类型核查 |
+| 主体资格陷阱 | `../_shared/subject-qualification-traps.md` | 特殊主体类型核查 |
 | 实践配置文件 | `litigation-legal/CLAUDE.md` | 风险校准/角色倾向/和解策略/证据保全 |
 
 ---
@@ -173,7 +174,7 @@ description: 案件录入编排入口——按顺序调用五个子技能完成�
 1. `litigation-legal/CLAUDE.md` — 读取「利益冲突清除」章节（清除方法 + 负责人 + 并行录入政策）
 2. `../_shared/legal-basis-conventions.md` — 引用规范（来源分类 + 待验证规则）
 3. `../_shared/practice-profile-schema.md` — 配置读取契约（冲突门槛字段映射）
-4. `shared/references/subject-qualification-traps.md` — 主体资格陷阱清单（全量读取）
+4. `../_shared/subject-qualification-traps.md` — 主体资格陷阱清单（全量读取）
 
 ---
 
@@ -188,7 +189,7 @@ description: 案件录入编排入口——按顺序调用五个子技能完成�
 
 ### 1.2 特殊主体资格触发检查
 
-对照 `shared/references/subject-qualification-traps.md`，如果案件涉及以下任一主体类型，**必须先核查主体资格**：
+对照 `../_shared/subject-qualification-traps.md`，如果案件涉及以下任一主体类型，**必须先核查主体资格**：
 
 | 主体类型 | 核查重点 | 案由影响 |
 |---------|---------|---------|
@@ -358,7 +359,7 @@ conflicts:
 | 《仲裁法》关于仲裁协议效力异议 `[条号待验证]` | 当事人对仲裁协议效力有异议，可请求仲裁委决定或向法院申请裁定；同时请求时，仲裁委无权决定 | `[模型知识 — 需验证]` | `[待验证]` |
 | 《民法典》第504条 `[待验证]` | 越权代表：法人代表超越权限订立合同，相对人有理由相信其有权代表的合同有效（善意相对人保护）；公司决议程序对担保合同效力的影响 | `[模型知识 — 需验证]` | `[待验证]` |
 | 《最高人民法院关于适用〈中华人民共和国民法典〉有关担保制度的解释》（法释〔2020〕28号）第21条 `[待验证]` | 担保纠纷管辖：按主合同确定管辖 | `[模型知识 — 需验证]` | `[待验证]` |
-| `shared/references/subject-qualification-traps.md` 所列依据 | 融资担保公司/银行分支/保险公司/上市公司/国企各类主体资格依据，详见该文件 | `[用户提供]` | 见原文件 |
+| `../_shared/subject-qualification-traps.md` 所列依据 | 融资担保公司/银行分支/保险公司/上市公司/国企各类主体资格依据，详见该文件 | `[用户提供]` | 见原文件 |
 
 ### 案例类
 
